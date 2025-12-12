@@ -1,5 +1,5 @@
 use pest_derive::Parser;
 
 #[derive(Parser)]
-#[grammar = "kerml.pest"]
+#[grammar = "parser/kerml.pest"]
 pub struct KerMLParser;

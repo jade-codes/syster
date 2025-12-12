@@ -1,7 +1,7 @@
 use pest_derive::Parser;
 
 #[derive(Parser)]
-#[grammar = "sysml.pest"]
+#[grammar = "parser/sysml.pest"]
 pub struct SysMLParser;
 
 #[cfg(test)]
