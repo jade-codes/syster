@@ -514,7 +514,7 @@ alias_member_element = {
     ~ relationship_body
 }
 
-definition_member_element = { visibility? ~ identifier ~ ";" }
+definition_member_element = { visibility? ~ definition_element }
 
 // Definition Structure
 

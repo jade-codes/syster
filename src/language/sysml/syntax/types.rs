@@ -17,10 +17,35 @@ pub struct Package {
     pub elements: Vec<Element>,
 }
 
+/// Represents relationship information that can be attached to definitions and usages
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Relationships {
+    /// Specializations (:> or "specializes")
+    pub specializes: Vec<String>,
+    /// Redefinitions (:>> or "redefines")
+    pub redefines: Vec<String>,
+    /// Subsetting (:> or "subsets")
+    pub subsets: Vec<String>,
+    /// Feature typing (: or "typed by")
+    pub typed_by: Option<String>,
+    /// References (::> or "references")
+    pub references: Vec<String>,
+    /// Crosses (=> or "crosses")  
+    pub crosses: Vec<String>,
+}
+
+impl Relationships {
+    /// Create an empty relationships struct (for tests)
+    pub fn none() -> Self {
+        Self::default()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Definition {
     pub kind: DefinitionKind,
     pub name: Option<String>,
+    pub relationships: Relationships,
     pub body: Vec<DefinitionMember>,
 }
 
@@ -28,6 +53,7 @@ pub struct Definition {
 pub struct Usage {
     pub kind: UsageKind,
     pub name: Option<String>,
+    pub relationships: Relationships,
     pub body: Vec<UsageMember>,
 }
 

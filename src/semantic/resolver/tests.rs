@@ -11,6 +11,7 @@ fn test_resolve_simple_name() {
         .insert(
             "MyPackage".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "MyPackage".to_string(),
                 qualified_name: "MyPackage".to_string(),
             },
@@ -43,6 +44,7 @@ fn test_resolve_qualified_name() {
         .insert(
             "Root".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -54,6 +56,7 @@ fn test_resolve_qualified_name() {
         .insert(
             "Child".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Child".to_string(),
                 qualified_name: "Root::Child".to_string(),
             },
@@ -64,6 +67,7 @@ fn test_resolve_qualified_name() {
     let result = resolver.resolve("Root::Child");
 
     let Some(Symbol::Package {
+        scope_id: 0,
         name,
         qualified_name,
     }) = result
@@ -82,6 +86,7 @@ fn test_resolve_deeply_nested_qualified_name() {
         .insert(
             "A".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -93,6 +98,7 @@ fn test_resolve_deeply_nested_qualified_name() {
         .insert(
             "B".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -104,6 +110,7 @@ fn test_resolve_deeply_nested_qualified_name() {
         .insert(
             "C".to_string(),
             Symbol::Classifier {
+                scope_id: 0,
                 name: "C".to_string(),
                 qualified_name: "A::B::C".to_string(),
                 kind: ClassifierKind::Class,
@@ -116,6 +123,7 @@ fn test_resolve_deeply_nested_qualified_name() {
     let result = resolver.resolve("A::B::C");
 
     let Some(Symbol::Classifier {
+        scope_id: 0,
         name,
         qualified_name,
         ..
@@ -135,6 +143,7 @@ fn test_resolve_classifier_in_package() {
         .insert(
             "Pkg".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Pkg".to_string(),
                 qualified_name: "Pkg".to_string(),
             },
@@ -146,6 +155,7 @@ fn test_resolve_classifier_in_package() {
         .insert(
             "MyClass".to_string(),
             Symbol::Classifier {
+                scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "Pkg::MyClass".to_string(),
                 kind: ClassifierKind::Class,
@@ -171,6 +181,7 @@ fn test_resolve_invalid_qualified_name() {
         .insert(
             "Root".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -191,6 +202,7 @@ fn test_resolve_partial_qualified_name() {
         .insert(
             "A".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -202,6 +214,7 @@ fn test_resolve_partial_qualified_name() {
         .insert(
             "B".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -222,6 +235,7 @@ fn test_resolve_feature_symbol() {
         .insert(
             "Pkg".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Pkg".to_string(),
                 qualified_name: "Pkg".to_string(),
             },
@@ -233,6 +247,7 @@ fn test_resolve_feature_symbol() {
         .insert(
             "attr".to_string(),
             Symbol::Feature {
+                scope_id: 0,
                 name: "attr".to_string(),
                 qualified_name: "Pkg::attr".to_string(),
                 feature_type: Some("Integer".to_string()),
@@ -244,7 +259,10 @@ fn test_resolve_feature_symbol() {
     let result = resolver.resolve("Pkg::attr");
 
     let Some(Symbol::Feature {
-        name, feature_type, ..
+        scope_id: 0,
+        name,
+        feature_type,
+        ..
     }) = result
     else {
         panic!("Expected Feature symbol, got: {result:?}");
@@ -261,6 +279,7 @@ fn test_resolve_definition_symbol() {
         .insert(
             "MyPart".to_string(),
             Symbol::Definition {
+                scope_id: 0,
                 name: "MyPart".to_string(),
                 qualified_name: "MyPart".to_string(),
                 kind: DefinitionKind::Part,
@@ -286,6 +305,7 @@ fn test_resolve_usage_symbol() {
         .insert(
             "System".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "System".to_string(),
                 qualified_name: "System".to_string(),
             },
@@ -297,6 +317,7 @@ fn test_resolve_usage_symbol() {
         .insert(
             "myPort".to_string(),
             Symbol::Usage {
+                scope_id: 0,
                 name: "myPort".to_string(),
                 qualified_name: "System::myPort".to_string(),
                 kind: UsageKind::Port,
@@ -322,6 +343,7 @@ fn test_resolve_mixed_symbol_path() {
         .insert(
             "Root".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -333,6 +355,7 @@ fn test_resolve_mixed_symbol_path() {
         .insert(
             "MyClass".to_string(),
             Symbol::Classifier {
+                scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "Root::MyClass".to_string(),
                 kind: ClassifierKind::Class,
@@ -346,6 +369,7 @@ fn test_resolve_mixed_symbol_path() {
         .insert(
             "feature".to_string(),
             Symbol::Feature {
+                scope_id: 0,
                 name: "feature".to_string(),
                 qualified_name: "Root::MyClass::feature".to_string(),
                 feature_type: None,
@@ -357,6 +381,7 @@ fn test_resolve_mixed_symbol_path() {
     let result = resolver.resolve("Root::MyClass::feature");
 
     let Some(Symbol::Feature {
+        scope_id: 0,
         name,
         qualified_name,
         ..
@@ -393,6 +418,7 @@ fn test_resolve_leading_separator() {
         .insert(
             "Package".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Package".to_string(),
                 qualified_name: "Package".to_string(),
             },
@@ -412,6 +438,7 @@ fn test_resolve_trailing_separator() {
         .insert(
             "Package".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "Package".to_string(),
                 qualified_name: "Package".to_string(),
             },
@@ -431,6 +458,7 @@ fn test_resolve_multiple_consecutive_separators() {
         .insert(
             "A".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -442,6 +470,7 @@ fn test_resolve_multiple_consecutive_separators() {
         .insert(
             "B".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -462,6 +491,7 @@ fn test_resolve_definition_in_nested_scopes() {
         .insert(
             "OuterPkg".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "OuterPkg".to_string(),
                 qualified_name: "OuterPkg".to_string(),
             },
@@ -473,6 +503,7 @@ fn test_resolve_definition_in_nested_scopes() {
         .insert(
             "InnerPkg".to_string(),
             Symbol::Package {
+                scope_id: 0,
                 name: "InnerPkg".to_string(),
                 qualified_name: "OuterPkg::InnerPkg".to_string(),
             },
@@ -484,6 +515,7 @@ fn test_resolve_definition_in_nested_scopes() {
         .insert(
             "requirement".to_string(),
             Symbol::Definition {
+                scope_id: 0,
                 name: "requirement".to_string(),
                 qualified_name: "OuterPkg::InnerPkg::requirement".to_string(),
                 kind: DefinitionKind::Requirement,
@@ -498,6 +530,7 @@ fn test_resolve_definition_in_nested_scopes() {
         name,
         qualified_name,
         kind,
+        scope_id: _,
     }) = result
     else {
         panic!("Expected Definition symbol, got: {result:?}");
@@ -515,6 +548,7 @@ fn test_resolve_abstract_classifier() {
         .insert(
             "AbstractClass".to_string(),
             Symbol::Classifier {
+                scope_id: 0,
                 name: "AbstractClass".to_string(),
                 qualified_name: "AbstractClass".to_string(),
                 kind: ClassifierKind::Class,
@@ -540,6 +574,7 @@ fn test_resolve_different_classifier_kinds() {
         .insert(
             "MyBehavior".to_string(),
             Symbol::Classifier {
+                scope_id: 0,
                 name: "MyBehavior".to_string(),
                 qualified_name: "MyBehavior".to_string(),
                 kind: ClassifierKind::Behavior,
@@ -552,6 +587,7 @@ fn test_resolve_different_classifier_kinds() {
         .insert(
             "MyFunction".to_string(),
             Symbol::Classifier {
+                scope_id: 0,
                 name: "MyFunction".to_string(),
                 qualified_name: "MyFunction".to_string(),
                 kind: ClassifierKind::Function,

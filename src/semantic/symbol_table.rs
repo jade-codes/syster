@@ -5,28 +5,81 @@ pub enum Symbol {
     Package {
         name: String,
         qualified_name: String,
+        scope_id: usize,
     },
     Classifier {
         name: String,
         qualified_name: String,
         kind: ClassifierKind,
         is_abstract: bool,
+        scope_id: usize,
     },
     Feature {
         name: String,
         qualified_name: String,
         feature_type: Option<String>,
+        scope_id: usize,
     },
     Definition {
         name: String,
         qualified_name: String,
         kind: DefinitionKind,
+        scope_id: usize,
     },
     Usage {
         name: String,
         qualified_name: String,
         kind: UsageKind,
+        scope_id: usize,
     },
+}
+
+impl Symbol {
+    /// Returns the qualified name of this symbol
+    pub fn qualified_name(&self) -> &str {
+        match self {
+            Symbol::Package { qualified_name, .. }
+            | Symbol::Classifier { qualified_name, .. }
+            | Symbol::Feature { qualified_name, .. }
+            | Symbol::Definition { qualified_name, .. }
+            | Symbol::Usage { qualified_name, .. } => qualified_name,
+        }
+    }
+
+    /// Returns the simple name of this symbol
+    pub fn name(&self) -> &str {
+        match self {
+            Symbol::Package { name, .. }
+            | Symbol::Classifier { name, .. }
+            | Symbol::Feature { name, .. }
+            | Symbol::Definition { name, .. }
+            | Symbol::Usage { name, .. } => name,
+        }
+    }
+
+    /// Returns the scope ID where this symbol was defined
+    pub fn scope_id(&self) -> usize {
+        match self {
+            Symbol::Package { scope_id, .. }
+            | Symbol::Classifier { scope_id, .. }
+            | Symbol::Feature { scope_id, .. }
+            | Symbol::Definition { scope_id, .. }
+            | Symbol::Usage { scope_id, .. } => *scope_id,
+        }
+    }
+
+    /// Returns true if this symbol can be used as a type
+    pub fn is_type(&self) -> bool {
+        matches!(self, Symbol::Classifier { .. } | Symbol::Definition { .. })
+    }
+
+    /// Returns the type reference for Features that have one
+    pub fn type_reference(&self) -> Option<&str> {
+        match self {
+            Symbol::Feature { feature_type, .. } => feature_type.as_deref(),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -137,6 +190,19 @@ impl SymbolTable {
 
     pub fn lookup(&self, name: &str) -> Option<&Symbol> {
         let mut current = self.current_scope;
+        loop {
+            if let Some(symbol) = self.scopes[current].symbols.get(name) {
+                return Some(symbol);
+            }
+            match self.scopes[current].parent {
+                Some(parent) => current = parent,
+                None => return None,
+            }
+        }
+    }
+
+    pub fn lookup_from_scope(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
+        let mut current = scope_id;
         loop {
             if let Some(symbol) = self.scopes[current].symbols.get(name) {
                 return Some(symbol);

@@ -341,6 +341,7 @@ fn test_definition_traits() {
         kind: DefinitionKind::Part,
         name: Some("Vehicle".to_string()),
         body: vec![],
+        relationships: crate::language::sysml::syntax::Relationships::none(),
     };
 
     assert_eq!(def.node_type(), "Definition");
@@ -375,6 +376,7 @@ fn test_visitor_pattern() {
                 kind: DefinitionKind::Part,
                 name: Some("TestDef".to_string()),
                 body: vec![],
+                relationships: crate::language::sysml::syntax::Relationships::none(),
             }),
         ],
     };
@@ -388,4 +390,381 @@ fn test_visitor_pattern() {
 
     assert_eq!(visitor.packages, 1);
     assert_eq!(visitor.definitions, 1);
+}
+
+#[test]
+fn test_definition_with_specialization() {
+    let source = "part def Car :> Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::part_definition, source).unwrap();
+
+    let definition = Definition::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(definition.kind, DefinitionKind::Part);
+    assert_eq!(definition.name, Some("Car".to_string()));
+    assert_eq!(definition.relationships.specializes.len(), 1);
+    assert_eq!(definition.relationships.specializes[0], "Vehicle");
+}
+
+#[test]
+fn test_definition_with_multiple_specializations() {
+    let source = "part def MultipleCar :> Vehicle, Machine;";
+    let mut pairs = SysMLParser::parse(Rule::part_definition, source).unwrap();
+
+    let definition = Definition::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(definition.kind, DefinitionKind::Part);
+    assert_eq!(definition.name, Some("MultipleCar".to_string()));
+    assert_eq!(definition.relationships.specializes.len(), 2);
+    assert!(
+        definition
+            .relationships
+            .specializes
+            .contains(&"Vehicle".to_string())
+    );
+    assert!(
+        definition
+            .relationships
+            .specializes
+            .contains(&"Machine".to_string())
+    );
+}
+
+#[test]
+fn test_usage_with_typing() {
+    let source = "part myCar : Car;";
+    let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.kind, UsageKind::Part);
+    assert_eq!(usage.name, Some("myCar".to_string()));
+    assert_eq!(usage.relationships.typed_by, Some("Car".to_string()));
+}
+
+#[test]
+fn test_usage_with_subsetting() {
+    let source = "part specialCar : Car :> baseCar;";
+    let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.kind, UsageKind::Part);
+    assert_eq!(usage.name, Some("specialCar".to_string()));
+    assert_eq!(usage.relationships.typed_by, Some("Car".to_string()));
+    assert_eq!(usage.relationships.subsets.len(), 1);
+    assert_eq!(usage.relationships.subsets[0], "baseCar");
+}
+
+#[test]
+fn test_usage_with_redefinition() {
+    let source = "part redefinedCar : Car :>> originalCar;";
+    let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.kind, UsageKind::Part);
+    assert_eq!(usage.name, Some("redefinedCar".to_string()));
+    assert_eq!(usage.relationships.typed_by, Some("Car".to_string()));
+    assert_eq!(usage.relationships.redefines.len(), 1);
+    assert_eq!(usage.relationships.redefines[0], "originalCar");
+}
+
+#[test]
+fn test_usage_with_multiple_subsettings() {
+    let source = "part multiCar : Car :> car1, car2, car3;";
+    let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.kind, UsageKind::Part);
+    assert_eq!(usage.relationships.subsets.len(), 3);
+    assert!(usage.relationships.subsets.contains(&"car1".to_string()));
+    assert!(usage.relationships.subsets.contains(&"car2".to_string()));
+    assert!(usage.relationships.subsets.contains(&"car3".to_string()));
+}
+
+#[test]
+fn test_anonymous_definition() {
+    let source = "part def;";
+    let mut pairs = SysMLParser::parse(Rule::part_definition, source).unwrap();
+
+    let definition = Definition::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(definition.kind, DefinitionKind::Part);
+    assert_eq!(definition.name, None);
+}
+
+#[test]
+fn test_usage_with_name_and_typing() {
+    // Test a usage with both an explicit name and a type
+    let source = "part vehicle : Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.kind, UsageKind::Part);
+    assert_eq!(usage.name, Some("vehicle".to_string()));
+    assert_eq!(usage.relationships.typed_by, Some("Vehicle".to_string()));
+}
+
+#[test]
+fn test_action_usage_with_relationships() {
+    let source = "action myDrive : Drive :> baseAction;";
+    let mut pairs = SysMLParser::parse(Rule::action_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.kind, UsageKind::Action);
+    assert_eq!(usage.name, Some("myDrive".to_string()));
+    assert_eq!(usage.relationships.typed_by, Some("Drive".to_string()));
+    assert_eq!(usage.relationships.subsets.len(), 1);
+    assert_eq!(usage.relationships.subsets[0], "baseAction");
+}
+
+#[test]
+fn test_requirement_with_specialization() {
+    let source = "requirement def SafetyReq :> BaseReq;";
+    let mut pairs = SysMLParser::parse(Rule::requirement_definition, source).unwrap();
+
+    let definition = Definition::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(definition.kind, DefinitionKind::Requirement);
+    assert_eq!(definition.name, Some("SafetyReq".to_string()));
+    assert_eq!(definition.relationships.specializes.len(), 1);
+    assert_eq!(definition.relationships.specializes[0], "BaseReq");
+}
+
+#[test]
+fn test_all_definition_kinds() {
+    let test_cases = vec![
+        (
+            "part def Test;",
+            DefinitionKind::Part,
+            Rule::part_definition,
+        ),
+        (
+            "action def Test;",
+            DefinitionKind::Action,
+            Rule::action_definition,
+        ),
+        (
+            "requirement def Test;",
+            DefinitionKind::Requirement,
+            Rule::requirement_definition,
+        ),
+        (
+            "port def Test;",
+            DefinitionKind::Port,
+            Rule::port_definition,
+        ),
+        (
+            "item def Test;",
+            DefinitionKind::Item,
+            Rule::item_definition,
+        ),
+        (
+            "attribute def Test;",
+            DefinitionKind::Attribute,
+            Rule::attribute_definition,
+        ),
+        (
+            "concern def Test;",
+            DefinitionKind::Concern,
+            Rule::concern_definition,
+        ),
+        (
+            "case def Test;",
+            DefinitionKind::Case,
+            Rule::case_definition,
+        ),
+        (
+            "analysis case def Test;",
+            DefinitionKind::AnalysisCase,
+            Rule::analysis_case_definition,
+        ),
+        (
+            "verification case def Test;",
+            DefinitionKind::VerificationCase,
+            Rule::verification_case_definition,
+        ),
+        (
+            "use case def Test;",
+            DefinitionKind::UseCase,
+            Rule::use_case_definition,
+        ),
+        (
+            "view def Test;",
+            DefinitionKind::View,
+            Rule::view_definition,
+        ),
+        (
+            "viewpoint def Test;",
+            DefinitionKind::Viewpoint,
+            Rule::viewpoint_definition,
+        ),
+        (
+            "rendering def Test;",
+            DefinitionKind::Rendering,
+            Rule::rendering_definition,
+        ),
+    ];
+
+    for (source, expected_kind, rule) in test_cases {
+        let mut pairs = SysMLParser::parse(rule, source).unwrap();
+        let definition = Definition::from_pest(&mut pairs).unwrap();
+        assert_eq!(definition.kind, expected_kind, "Failed for: {}", source);
+        assert_eq!(definition.name, Some("Test".to_string()));
+    }
+}
+
+#[test]
+fn test_all_usage_kinds() {
+    let test_cases = vec![
+        ("part test;", UsageKind::Part, Rule::part_usage),
+        ("action test;", UsageKind::Action, Rule::action_usage),
+        (
+            "requirement test;",
+            UsageKind::Requirement,
+            Rule::requirement_usage,
+        ),
+        ("port test;", UsageKind::Port, Rule::port_usage),
+        ("item test;", UsageKind::Item, Rule::item_usage),
+        (
+            "attribute test;",
+            UsageKind::Attribute,
+            Rule::attribute_usage,
+        ),
+        ("concern test;", UsageKind::Concern, Rule::concern_usage),
+        ("case test;", UsageKind::Case, Rule::case_usage),
+        ("view test;", UsageKind::View, Rule::view_usage),
+    ];
+
+    for (source, expected_kind, rule) in test_cases {
+        let mut pairs = SysMLParser::parse(rule, source).unwrap();
+        let usage = Usage::from_pest(&mut pairs).unwrap();
+        assert_eq!(usage.kind, expected_kind, "Failed for: {}", source);
+        assert_eq!(usage.name, Some("test".to_string()));
+    }
+}
+
+#[test]
+fn test_relationships_none() {
+    let relationships = crate::language::sysml::syntax::Relationships::none();
+
+    assert_eq!(relationships.specializes.len(), 0);
+    assert_eq!(relationships.typed_by, None);
+    assert_eq!(relationships.subsets.len(), 0);
+    assert_eq!(relationships.redefines.len(), 0);
+    assert_eq!(relationships.references.len(), 0);
+}
+
+#[test]
+fn test_element_is_package() {
+    let element = Element::Package(Package {
+        name: Some("Test".to_string()),
+        elements: vec![],
+    });
+
+    match element {
+        Element::Package(_) => {}
+        _ => panic!("Expected Package variant"),
+    }
+}
+
+#[test]
+fn test_element_is_definition() {
+    let element = Element::Definition(Definition {
+        kind: DefinitionKind::Part,
+        name: Some("Test".to_string()),
+        body: vec![],
+        relationships: crate::language::sysml::syntax::Relationships::none(),
+    });
+
+    match element {
+        Element::Definition(def) => {
+            assert_eq!(def.kind, DefinitionKind::Part);
+            assert_eq!(def.name, Some("Test".to_string()));
+        }
+        _ => panic!("Expected Definition variant"),
+    }
+}
+
+#[test]
+fn test_element_is_usage() {
+    let element = Element::Usage(Usage {
+        kind: UsageKind::Part,
+        name: Some("test".to_string()),
+        body: vec![],
+        relationships: crate::language::sysml::syntax::Relationships::none(),
+    });
+
+    match element {
+        Element::Usage(usage) => {
+            assert_eq!(usage.kind, UsageKind::Part);
+            assert_eq!(usage.name, Some("test".to_string()));
+        }
+        _ => panic!("Expected Usage variant"),
+    }
+}
+
+#[test]
+fn test_complex_usage_all_relationships() {
+    let source = "part complexPart : PartType :> base1, base2 :>> redefined1;";
+    let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
+
+    let usage = Usage::from_pest(&mut pairs).unwrap();
+
+    assert_eq!(usage.name, Some("complexPart".to_string()));
+    assert_eq!(usage.relationships.typed_by, Some("PartType".to_string()));
+    assert_eq!(usage.relationships.subsets.len(), 2);
+    assert!(usage.relationships.subsets.contains(&"base1".to_string()));
+    assert!(usage.relationships.subsets.contains(&"base2".to_string()));
+    assert_eq!(usage.relationships.redefines.len(), 1);
+    assert_eq!(usage.relationships.redefines[0], "redefined1");
+}
+
+#[test]
+fn test_named_trait_for_definition() {
+    let definition = Definition {
+        kind: DefinitionKind::Part,
+        name: Some("TestDef".to_string()),
+        body: vec![],
+        relationships: crate::language::sysml::syntax::Relationships::none(),
+    };
+
+    assert_eq!(definition.name(), Some("TestDef"));
+}
+
+#[test]
+fn test_named_trait_for_usage() {
+    let usage = Usage {
+        kind: UsageKind::Part,
+        name: Some("testUsage".to_string()),
+        body: vec![],
+        relationships: crate::language::sysml::syntax::Relationships::none(),
+    };
+
+    assert_eq!(usage.name.as_deref(), Some("testUsage"));
+}
+
+#[test]
+fn test_named_trait_for_package() {
+    let package = Package {
+        name: Some("TestPackage".to_string()),
+        elements: vec![],
+    };
+
+    assert_eq!(package.name(), Some("TestPackage"));
+}
+
+#[test]
+fn test_named_trait_none() {
+    let definition = Definition {
+        kind: DefinitionKind::Part,
+        name: None,
+        body: vec![],
+        relationships: crate::language::sysml::syntax::Relationships::none(),
+    };
+
+    assert_eq!(definition.name(), None);
 }

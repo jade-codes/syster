@@ -29,10 +29,10 @@ fn test_error_display_without_location() {
 #[test]
 fn test_duplicate_definition_error() {
     let error = SemanticError::duplicate_definition("Test".to_string(), None);
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::DuplicateDefinition { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::DuplicateDefinition { .. }),
+        "Expected DuplicateDefinition error kind"
+    );
     assert!(error.message.contains("Test"));
     assert!(error.message.contains("already defined"));
 }
@@ -44,7 +44,10 @@ fn test_type_mismatch_error() {
         "String".to_string(),
         "assignment".to_string(),
     );
-    assert!(matches!(error.kind, SemanticErrorKind::TypeMismatch { .. }));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::TypeMismatch { .. }),
+        "Expected TypeMismatch error kind"
+    );
     assert!(error.message.contains("Integer"));
     assert!(error.message.contains("String"));
     assert!(error.message.contains("assignment"));
@@ -59,17 +62,20 @@ fn test_circular_dependency_error() {
         "A".to_string(),
     ];
     let error = SemanticError::circular_dependency(cycle);
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::CircularDependency { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::CircularDependency { .. }),
+        "Expected CircularDependency error kind"
+    );
     assert!(error.message.contains("A -> B -> C -> A"));
 }
 
 #[test]
 fn test_invalid_type_error() {
     let error = SemanticError::invalid_type("UnknownType".to_string());
-    assert!(matches!(error.kind, SemanticErrorKind::InvalidType { .. }));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::InvalidType { .. }),
+        "Expected InvalidType error kind"
+    );
     assert!(error.message.contains("UnknownType"));
     assert!(error.message.contains("not defined"));
 }
@@ -148,10 +154,10 @@ fn test_invalid_specialization_error() {
         "Cannot specialize Base with Derived: incompatible types".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::InvalidSpecialization { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::InvalidSpecialization { .. }),
+        "Expected InvalidSpecialization error kind"
+    );
     assert!(error.message.contains("Derived"));
     assert!(error.message.contains("Base"));
 }
@@ -167,10 +173,10 @@ fn test_invalid_redefinition_error() {
         "Invalid redefinition of baseFeature by myFeature: type mismatch".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::InvalidRedefinition { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::InvalidRedefinition { .. }),
+        "Expected InvalidRedefinition error kind"
+    );
 }
 
 #[test]
@@ -184,10 +190,10 @@ fn test_invalid_subsetting_error() {
         "Invalid subsetting: subFeature cannot subset superFeature".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::InvalidSubsetting { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::InvalidSubsetting { .. }),
+        "Expected InvalidSubsetting error kind"
+    );
 }
 
 #[test]
@@ -200,10 +206,10 @@ fn test_constraint_violation_error() {
         "Constraint violation: multiplicity - expected 1..*, got 0..1".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::ConstraintViolation { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::ConstraintViolation { .. }),
+        "Expected ConstraintViolation error kind"
+    );
 }
 
 #[test]
@@ -216,10 +222,10 @@ fn test_invalid_feature_context_error() {
         "Feature 'attribute' cannot be used in function context".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::InvalidFeatureContext { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::InvalidFeatureContext { .. }),
+        "Expected InvalidFeatureContext error kind"
+    );
 }
 
 #[test]
@@ -231,10 +237,10 @@ fn test_abstract_instantiation_error() {
         "Cannot instantiate abstract element 'AbstractClass'".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::AbstractInstantiation { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::AbstractInstantiation { .. }),
+        "Expected AbstractInstantiation error kind"
+    );
 }
 
 #[test]
@@ -247,19 +253,19 @@ fn test_invalid_import_error() {
         "Invalid import 'NonExistent::Package': package not found".to_string(),
     );
 
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::InvalidImport { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::InvalidImport { .. }),
+        "Expected InvalidImport error kind"
+    );
 }
 
 #[test]
 fn test_empty_cycle_error() {
     let error = SemanticError::circular_dependency(vec![]);
-    assert!(matches!(
-        error.kind,
-        SemanticErrorKind::CircularDependency { .. }
-    ));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::CircularDependency { .. }),
+        "Expected CircularDependency error kind"
+    );
 }
 
 #[test]
@@ -301,7 +307,10 @@ fn test_location_equality() {
 #[test]
 fn test_type_mismatch_with_empty_strings() {
     let error = SemanticError::type_mismatch("".to_string(), "".to_string(), "".to_string());
-    assert!(matches!(error.kind, SemanticErrorKind::TypeMismatch { .. }));
+    assert!(
+        matches!(error.kind, SemanticErrorKind::TypeMismatch { .. }),
+        "Expected TypeMismatch error kind"
+    );
 }
 
 #[test]
