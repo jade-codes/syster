@@ -32,6 +32,20 @@ pub struct Relationships {
     pub references: Vec<String>,
     /// Crosses (=> or "crosses")  
     pub crosses: Vec<String>,
+
+    // Domain-specific SysML relationships
+    /// Satisfy (satisfy) - satisfaction of requirements
+    pub satisfies: Vec<String>,
+    /// Perform (perform) - performance relationships
+    pub performs: Vec<String>,
+    /// Exhibit (exhibit) - exhibition of states
+    pub exhibits: Vec<String>,
+    /// Include (include) - use case inclusion
+    pub includes: Vec<String>,
+    /// Assert (assert) - constraint assertion
+    pub asserts: Vec<String>,
+    /// Verify (verify) - requirement verification
+    pub verifies: Vec<String>,
 }
 
 impl Relationships {

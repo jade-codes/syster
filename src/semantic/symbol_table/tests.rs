@@ -12,7 +12,7 @@ fn test_symbol_table_creation() {
 fn test_insert_and_lookup() {
     let mut table = SymbolTable::new();
     let symbol = Symbol::Package {
-                scope_id: 0,
+        scope_id: 0,
         name: "MyPackage".to_string(),
         qualified_name: "MyPackage".to_string(),
     };
@@ -29,7 +29,7 @@ fn test_insert_and_lookup() {
 fn test_duplicate_symbol_error() {
     let mut table = SymbolTable::new();
     let symbol = Symbol::Package {
-                scope_id: 0,
+        scope_id: 0,
         name: "MyPackage".to_string(),
         qualified_name: "MyPackage".to_string(),
     };
@@ -46,7 +46,7 @@ fn test_scope_hierarchy() {
     let mut table = SymbolTable::new();
 
     let pkg_symbol = Symbol::Package {
-                scope_id: 0,
+        scope_id: 0,
         name: "Root".to_string(),
         qualified_name: "Root".to_string(),
     };
@@ -54,10 +54,10 @@ fn test_scope_hierarchy() {
 
     table.enter_scope();
     let class_symbol = Symbol::Classifier {
-                scope_id: 0,
+        scope_id: 0,
         name: "MyClass".to_string(),
         qualified_name: "Root::MyClass".to_string(),
-        kind: ClassifierKind::Class,
+        kind: "Class".to_string(),
         is_abstract: false,
     };
     table.insert("MyClass".to_string(), class_symbol).unwrap();
@@ -76,7 +76,7 @@ fn test_local_lookup() {
     let mut table = SymbolTable::new();
 
     let root_symbol = Symbol::Package {
-                scope_id: 0,
+        scope_id: 0,
         name: "Root".to_string(),
         qualified_name: "Root".to_string(),
     };
@@ -84,10 +84,10 @@ fn test_local_lookup() {
 
     table.enter_scope();
     let nested_symbol = Symbol::Classifier {
-                scope_id: 0,
+        scope_id: 0,
         name: "Nested".to_string(),
         qualified_name: "Root::Nested".to_string(),
-        kind: ClassifierKind::Class,
+        kind: "Class".to_string(),
         is_abstract: false,
     };
     table.insert("Nested".to_string(), nested_symbol).unwrap();
@@ -103,7 +103,7 @@ fn test_symbols_in_scope() {
     let mut table = SymbolTable::new();
 
     let pkg = Symbol::Package {
-                scope_id: 0,
+        scope_id: 0,
         name: "Pkg".to_string(),
         qualified_name: "Pkg".to_string(),
     };
@@ -115,10 +115,10 @@ fn test_symbols_in_scope() {
 
     table.enter_scope();
     let class = Symbol::Classifier {
-                scope_id: 0,
+        scope_id: 0,
         name: "Class".to_string(),
         qualified_name: "Pkg::Class".to_string(),
-        kind: ClassifierKind::Class,
+        kind: "Class".to_string(),
         is_abstract: false,
     };
     table.insert("Class".to_string(), class).unwrap();
@@ -133,7 +133,7 @@ fn test_all_symbols() {
     let mut table = SymbolTable::new();
 
     let pkg = Symbol::Package {
-                scope_id: 0,
+        scope_id: 0,
         name: "Pkg".to_string(),
         qualified_name: "Pkg".to_string(),
     };
@@ -141,10 +141,10 @@ fn test_all_symbols() {
 
     table.enter_scope();
     let class = Symbol::Classifier {
-                scope_id: 0,
+        scope_id: 0,
         name: "Class".to_string(),
         qualified_name: "Pkg::Class".to_string(),
-        kind: ClassifierKind::Class,
+        kind: "Class".to_string(),
         is_abstract: false,
     };
     table.insert("Class".to_string(), class).unwrap();
@@ -227,7 +227,7 @@ fn test_different_symbol_types() {
                 scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "MyClass".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -252,7 +252,7 @@ fn test_different_symbol_types() {
                 scope_id: 0,
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -264,7 +264,7 @@ fn test_different_symbol_types() {
                 scope_id: 0,
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),
-                kind: UsageKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();

@@ -1,2 +1,2 @@
-mod relationship_graph_tests;
-mod relationship_parsing_tests;
+mod sysml_graph_tests;
+mod sysml_parsing_tests;

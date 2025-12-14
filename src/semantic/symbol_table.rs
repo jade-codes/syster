@@ -10,7 +10,7 @@ pub enum Symbol {
     Classifier {
         name: String,
         qualified_name: String,
-        kind: ClassifierKind,
+        kind: String,
         is_abstract: bool,
         scope_id: usize,
     },
@@ -23,13 +23,13 @@ pub enum Symbol {
     Definition {
         name: String,
         qualified_name: String,
-        kind: DefinitionKind,
+        kind: String,
         scope_id: usize,
     },
     Usage {
         name: String,
         qualified_name: String,
-        kind: UsageKind,
+        kind: String,
         scope_id: usize,
     },
 }
@@ -80,52 +80,6 @@ impl Symbol {
             _ => None,
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ClassifierKind {
-    Type,
-    Class,
-    DataType,
-    Structure,
-    Association,
-    AssociationStructure,
-    Behavior,
-    Function,
-    Predicate,
-    Interaction,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum DefinitionKind {
-    Part,
-    Port,
-    Action,
-    State,
-    Requirement,
-    UseCase,
-    VerificationCase,
-    Item,
-    Connection,
-    Allocation,
-    Interface,
-    Attribute,
-    View,
-    Viewpoint,
-    Rendering,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum UsageKind {
-    Part,
-    Port,
-    Action,
-    State,
-    Requirement,
-    Item,
-    Connection,
-    Allocation,
-    View,
 }
 
 #[derive(Debug)]

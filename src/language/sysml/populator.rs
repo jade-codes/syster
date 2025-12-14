@@ -2,7 +2,7 @@ use crate::core::visitor::AstVisitor;
 use crate::language::sysml::syntax::{Definition, Element, Package, SysMLFile, Usage};
 use crate::semantic::error::SemanticError;
 use crate::semantic::graph::RelationshipGraph;
-use crate::semantic::symbol_table::{DefinitionKind, Symbol, SymbolTable, UsageKind};
+use crate::semantic::symbol_table::{Symbol, SymbolTable};
 
 // SysML relationship type constants
 pub const REL_SPECIALIZATION: &str = "specialization";
@@ -11,6 +11,14 @@ pub const REL_SUBSETTING: &str = "subsetting";
 pub const REL_TYPING: &str = "typing";
 pub const REL_REFERENCE_SUBSETTING: &str = "reference_subsetting";
 pub const REL_CROSS_SUBSETTING: &str = "cross_subsetting";
+
+// Domain-specific SysML relationships
+pub const REL_SATISFY: &str = "satisfy";
+pub const REL_PERFORM: &str = "perform";
+pub const REL_EXHIBIT: &str = "exhibit";
+pub const REL_INCLUDE: &str = "include";
+pub const REL_ASSERT: &str = "assert";
+pub const REL_VERIFY: &str = "verify";
 
 pub struct SymbolTablePopulator<'a> {
     symbol_table: &'a mut SymbolTable,
@@ -108,42 +116,49 @@ impl<'a> SymbolTablePopulator<'a> {
         }
     }
 
-    fn map_definition_kind(
-        kind: &crate::language::sysml::syntax::DefinitionKind,
-    ) -> DefinitionKind {
+    fn map_definition_kind(kind: &crate::language::sysml::syntax::DefinitionKind) -> String {
         match kind {
-            crate::language::sysml::syntax::DefinitionKind::Part => DefinitionKind::Part,
-            crate::language::sysml::syntax::DefinitionKind::Port => DefinitionKind::Port,
-            crate::language::sysml::syntax::DefinitionKind::Action => DefinitionKind::Action,
-            crate::language::sysml::syntax::DefinitionKind::Item => DefinitionKind::Item,
-            crate::language::sysml::syntax::DefinitionKind::Attribute => DefinitionKind::Attribute,
+            crate::language::sysml::syntax::DefinitionKind::Part => "Part".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Port => "Port".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Action => "Action".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::State => "State".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Item => "Item".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Attribute => "Attribute".to_string(),
             crate::language::sysml::syntax::DefinitionKind::Requirement => {
-                DefinitionKind::Requirement
+                "Requirement".to_string()
             }
-            crate::language::sysml::syntax::DefinitionKind::Concern => DefinitionKind::UseCase,
-            crate::language::sysml::syntax::DefinitionKind::Case => DefinitionKind::UseCase,
-            crate::language::sysml::syntax::DefinitionKind::AnalysisCase => DefinitionKind::UseCase,
+            crate::language::sysml::syntax::DefinitionKind::Concern => "UseCase".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Case => "UseCase".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::AnalysisCase => "UseCase".to_string(),
             crate::language::sysml::syntax::DefinitionKind::VerificationCase => {
-                DefinitionKind::VerificationCase
+                "VerificationCase".to_string()
             }
-            crate::language::sysml::syntax::DefinitionKind::UseCase => DefinitionKind::UseCase,
-            crate::language::sysml::syntax::DefinitionKind::View => DefinitionKind::View,
-            crate::language::sysml::syntax::DefinitionKind::Viewpoint => DefinitionKind::Viewpoint,
-            crate::language::sysml::syntax::DefinitionKind::Rendering => DefinitionKind::Rendering,
+            crate::language::sysml::syntax::DefinitionKind::UseCase => "UseCase".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::View => "View".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Viewpoint => "Viewpoint".to_string(),
+            crate::language::sysml::syntax::DefinitionKind::Rendering => "Rendering".to_string(),
         }
     }
 
-    fn map_usage_kind(kind: &crate::language::sysml::syntax::UsageKind) -> UsageKind {
+    fn map_usage_kind(kind: &crate::language::sysml::syntax::UsageKind) -> String {
         match kind {
-            crate::language::sysml::syntax::UsageKind::Part => UsageKind::Part,
-            crate::language::sysml::syntax::UsageKind::Port => UsageKind::Port,
-            crate::language::sysml::syntax::UsageKind::Action => UsageKind::Action,
-            crate::language::sysml::syntax::UsageKind::Item => UsageKind::Item,
-            crate::language::sysml::syntax::UsageKind::Attribute => UsageKind::Part,
-            crate::language::sysml::syntax::UsageKind::Requirement => UsageKind::Requirement,
-            crate::language::sysml::syntax::UsageKind::Concern => UsageKind::Part,
-            crate::language::sysml::syntax::UsageKind::Case => UsageKind::Part,
-            crate::language::sysml::syntax::UsageKind::View => UsageKind::View,
+            crate::language::sysml::syntax::UsageKind::Part => "Part".to_string(),
+            crate::language::sysml::syntax::UsageKind::Port => "Port".to_string(),
+            crate::language::sysml::syntax::UsageKind::Action => "Action".to_string(),
+            crate::language::sysml::syntax::UsageKind::Item => "Item".to_string(),
+            crate::language::sysml::syntax::UsageKind::Attribute => "Attribute".to_string(),
+            crate::language::sysml::syntax::UsageKind::Requirement => "Requirement".to_string(),
+            crate::language::sysml::syntax::UsageKind::Concern => "Concern".to_string(),
+            crate::language::sysml::syntax::UsageKind::Case => "Case".to_string(),
+            crate::language::sysml::syntax::UsageKind::View => "View".to_string(),
+            crate::language::sysml::syntax::UsageKind::SatisfyRequirement => {
+                "SatisfyRequirement".to_string()
+            }
+            crate::language::sysml::syntax::UsageKind::PerformAction => "PerformAction".to_string(),
+            crate::language::sysml::syntax::UsageKind::ExhibitState => "ExhibitState".to_string(),
+            crate::language::sysml::syntax::UsageKind::IncludeUseCase => {
+                "IncludeUseCase".to_string()
+            }
         }
     }
 }
@@ -183,6 +198,46 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                         qualified_name.clone(),
                         target.clone(),
                     );
+                }
+
+                // Extract top-level domain relationships (e.g., include in use case definitions)
+                // Note: exhibit/perform/satisfy are handled as nested usages below
+                for target in &definition.relationships.includes {
+                    graph.add_one_to_many(REL_INCLUDE, qualified_name.clone(), target.clone());
+                }
+
+                // Extract domain relationships from nested usages in the body
+                // Note: include relationships are at the definition level, not in nested usages
+                for member in &definition.body {
+                    if let crate::language::sysml::syntax::enums::DefinitionMember::Usage(usage) =
+                        member
+                    {
+                        // Extract satisfy relationships
+                        for target in &usage.relationships.satisfies {
+                            graph.add_one_to_many(
+                                REL_SATISFY,
+                                qualified_name.clone(),
+                                target.clone(),
+                            );
+                        }
+                        // Extract perform relationships
+                        for target in &usage.relationships.performs {
+                            graph.add_one_to_many(
+                                REL_PERFORM,
+                                qualified_name.clone(),
+                                target.clone(),
+                            );
+                        }
+                        // Extract exhibit relationships
+                        for target in &usage.relationships.exhibits {
+                            graph.add_one_to_many(
+                                REL_EXHIBIT,
+                                qualified_name.clone(),
+                                target.clone(),
+                            );
+                        }
+                        // Note: include relationships are handled at the definition level above
+                    }
                 }
             }
         }

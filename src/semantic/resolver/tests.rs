@@ -2,7 +2,7 @@
 #![allow(clippy::panic)]
 
 use super::*;
-use crate::semantic::symbol_table::{ClassifierKind, DefinitionKind, Symbol, UsageKind};
+use crate::semantic::symbol_table::Symbol;
 
 #[test]
 fn test_resolve_simple_name() {
@@ -113,7 +113,7 @@ fn test_resolve_deeply_nested_qualified_name() {
                 scope_id: 0,
                 name: "C".to_string(),
                 qualified_name: "A::B::C".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -158,7 +158,7 @@ fn test_resolve_classifier_in_package() {
                 scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "Pkg::MyClass".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -170,7 +170,7 @@ fn test_resolve_classifier_in_package() {
     let Some(Symbol::Classifier { kind, .. }) = result else {
         panic!("Expected Classifier symbol, got: {result:?}");
     };
-    assert_eq!(kind, &ClassifierKind::Class);
+    assert_eq!(kind, "Class");
 }
 
 #[test]
@@ -282,7 +282,7 @@ fn test_resolve_definition_symbol() {
                 scope_id: 0,
                 name: "MyPart".to_string(),
                 qualified_name: "MyPart".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -294,7 +294,7 @@ fn test_resolve_definition_symbol() {
         panic!("Expected Definition symbol, got: {result:?}");
     };
     assert_eq!(name, "MyPart");
-    assert_eq!(kind, &DefinitionKind::Part);
+    assert_eq!(kind, "Part");
 }
 
 #[test]
@@ -320,7 +320,7 @@ fn test_resolve_usage_symbol() {
                 scope_id: 0,
                 name: "myPort".to_string(),
                 qualified_name: "System::myPort".to_string(),
-                kind: UsageKind::Port,
+                kind: "Port".to_string(),
             },
         )
         .unwrap();
@@ -332,7 +332,7 @@ fn test_resolve_usage_symbol() {
         panic!("Expected Usage symbol, got: {result:?}");
     };
     assert_eq!(name, "myPort");
-    assert_eq!(kind, &UsageKind::Port);
+    assert_eq!(kind, "Port");
 }
 
 #[test]
@@ -358,7 +358,7 @@ fn test_resolve_mixed_symbol_path() {
                 scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "Root::MyClass".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -518,7 +518,7 @@ fn test_resolve_definition_in_nested_scopes() {
                 scope_id: 0,
                 name: "requirement".to_string(),
                 qualified_name: "OuterPkg::InnerPkg::requirement".to_string(),
-                kind: DefinitionKind::Requirement,
+                kind: "Requirement".to_string(),
             },
         )
         .unwrap();
@@ -537,7 +537,7 @@ fn test_resolve_definition_in_nested_scopes() {
     };
     assert_eq!(name, "requirement");
     assert_eq!(qualified_name, "OuterPkg::InnerPkg::requirement");
-    assert_eq!(kind, &DefinitionKind::Requirement);
+    assert_eq!(kind, "Requirement");
 }
 
 #[test]
@@ -551,7 +551,7 @@ fn test_resolve_abstract_classifier() {
                 scope_id: 0,
                 name: "AbstractClass".to_string(),
                 qualified_name: "AbstractClass".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: true,
             },
         )
@@ -577,7 +577,7 @@ fn test_resolve_different_classifier_kinds() {
                 scope_id: 0,
                 name: "MyBehavior".to_string(),
                 qualified_name: "MyBehavior".to_string(),
-                kind: ClassifierKind::Behavior,
+                kind: "Behavior".to_string(),
                 is_abstract: false,
             },
         )
@@ -590,7 +590,7 @@ fn test_resolve_different_classifier_kinds() {
                 scope_id: 0,
                 name: "MyFunction".to_string(),
                 qualified_name: "MyFunction".to_string(),
-                kind: ClassifierKind::Function,
+                kind: "Function".to_string(),
                 is_abstract: false,
             },
         )
@@ -602,11 +602,11 @@ fn test_resolve_different_classifier_kinds() {
     let Some(Symbol::Classifier { kind, .. }) = behavior_result else {
         panic!("Expected Classifier symbol for Behavior, got: {behavior_result:?}");
     };
-    assert_eq!(kind, &ClassifierKind::Behavior);
+    assert_eq!(kind, "Behavior");
 
     let function_result = resolver.resolve("MyFunction");
     let Some(Symbol::Classifier { kind, .. }) = function_result else {
         panic!("Expected Classifier symbol for Function, got: {function_result:?}");
     };
-    assert_eq!(kind, &ClassifierKind::Function);
+    assert_eq!(kind, "Function");
 }

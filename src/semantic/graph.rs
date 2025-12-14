@@ -1,11 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-// ============================================================================
-// Low-Level Graph Primitives
-// ============================================================================
-
-/// Generic one-to-many relationship graph
-/// Maps from source element to multiple target elements
 #[derive(Debug, Clone, Default)]
 pub struct OneToManyGraph {
     relationships: HashMap<String, Vec<String>>,
@@ -18,17 +12,14 @@ impl OneToManyGraph {
         }
     }
 
-    /// Add a relationship from source to target
     pub fn add(&mut self, source: String, target: String) {
         self.relationships.entry(source).or_default().push(target);
     }
 
-    /// Get all targets for a source
     pub fn get_targets(&self, source: &str) -> Option<&[String]> {
         self.relationships.get(source).map(|v| v.as_slice())
     }
 
-    /// Get all sources that point to a given target (reverse lookup)
     pub fn get_sources(&self, target: &str) -> Vec<&String> {
         self.relationships
             .iter()
@@ -37,7 +28,6 @@ impl OneToManyGraph {
             .collect()
     }
 
-    /// Check if there's a path from source to target (transitive)
     pub fn has_path(&self, from: &str, to: &str) -> bool {
         if from == to {
             return true;
@@ -65,7 +55,6 @@ impl OneToManyGraph {
         false
     }
 
-    /// Find all cycles in the graph
     pub fn find_cycles(&self) -> Vec<Vec<String>> {
         let mut cycles = Vec::new();
         let mut visited = HashSet::new();
@@ -110,7 +99,6 @@ impl OneToManyGraph {
         path.pop();
     }
 
-    /// Check if there's a circular dependency starting from a given node
     pub fn has_circular_dependency(&self, element: &str) -> bool {
         let mut visited = HashSet::new();
         self.dfs_circular(element, element, &mut visited)
@@ -136,8 +124,6 @@ impl OneToManyGraph {
     }
 }
 
-/// Generic one-to-one relationship graph
-/// Maps from source element to a single target element
 #[derive(Debug, Clone, Default)]
 pub struct OneToOneGraph {
     relationships: HashMap<String, String>,
@@ -150,22 +136,18 @@ impl OneToOneGraph {
         }
     }
 
-    /// Add or update a relationship
     pub fn add(&mut self, source: String, target: String) {
         self.relationships.insert(source, target);
     }
 
-    /// Get the target for a source
     pub fn get_target(&self, source: &str) -> Option<&String> {
         self.relationships.get(source)
     }
 
-    /// Check if a source has a relationship
     pub fn has_relationship(&self, source: &str) -> bool {
         self.relationships.contains_key(source)
     }
 
-    /// Get all sources that point to a given target (reverse lookup)
     pub fn get_sources(&self, target: &str) -> Vec<&String> {
         self.relationships
             .iter()
@@ -175,8 +157,6 @@ impl OneToOneGraph {
     }
 }
 
-/// Generic symmetric relationship graph (bidirectional)
-/// Used for relationships where if A relates to B, then B relates to A
 #[derive(Debug, Clone, Default)]
 pub struct SymmetricGraph {
     relationships: HashMap<String, Vec<String>>,
@@ -189,7 +169,6 @@ impl SymmetricGraph {
         }
     }
 
-    /// Add a symmetric relationship (adds both directions)
     pub fn add(&mut self, element1: String, element2: String) {
         self.relationships
             .entry(element1.clone())
@@ -201,12 +180,10 @@ impl SymmetricGraph {
             .push(element1);
     }
 
-    /// Get all elements related to the given element
     pub fn get_related(&self, element: &str) -> Option<&[String]> {
         self.relationships.get(element).map(|v| v.as_slice())
     }
 
-    /// Check if two elements are related
     pub fn are_related(&self, element1: &str, element2: &str) -> bool {
         self.relationships
             .get(element1)
@@ -214,12 +191,6 @@ impl SymmetricGraph {
     }
 }
 
-// ============================================================================
-// Generic Relationship Graph
-// ============================================================================
-
-/// Generic relationship graph that stores named relationships between symbols
-/// Each relationship type is identified by a string key
 #[derive(Debug, Clone, Default)]
 pub struct RelationshipGraph {
     /// One-to-many relationships (e.g., specialization, subsetting, etc.)
@@ -236,22 +207,19 @@ impl RelationshipGraph {
         Self::default()
     }
 
-    /// Add a one-to-many relationship
     pub fn add_one_to_many(&mut self, relationship_type: &str, source: String, target: String) {
         self.one_to_many
             .entry(relationship_type.to_string())
-            .or_insert_with(OneToManyGraph::new)
+            .or_default()
             .add(source, target);
     }
 
-    /// Get targets for a one-to-many relationship
     pub fn get_one_to_many(&self, relationship_type: &str, source: &str) -> Option<&[String]> {
         self.one_to_many
             .get(relationship_type)
             .and_then(|g| g.get_targets(source))
     }
 
-    /// Get sources for a one-to-many relationship (reverse lookup)
     pub fn get_one_to_many_sources(&self, relationship_type: &str, target: &str) -> Vec<&String> {
         self.one_to_many
             .get(relationship_type)
@@ -259,37 +227,32 @@ impl RelationshipGraph {
             .unwrap_or_default()
     }
 
-    /// Add a one-to-one relationship
     pub fn add_one_to_one(&mut self, relationship_type: &str, source: String, target: String) {
         self.one_to_one
             .entry(relationship_type.to_string())
-            .or_insert_with(OneToOneGraph::new)
+            .or_default()
             .add(source, target);
     }
 
-    /// Get target for a one-to-one relationship
     pub fn get_one_to_one(&self, relationship_type: &str, source: &str) -> Option<&String> {
         self.one_to_one
             .get(relationship_type)
             .and_then(|g| g.get_target(source))
     }
 
-    /// Add a symmetric relationship
     pub fn add_symmetric(&mut self, relationship_type: &str, element1: String, element2: String) {
         self.symmetric
             .entry(relationship_type.to_string())
-            .or_insert_with(SymmetricGraph::new)
+            .or_default()
             .add(element1, element2);
     }
 
-    /// Get related elements for a symmetric relationship
     pub fn get_symmetric(&self, relationship_type: &str, element: &str) -> Option<&[String]> {
         self.symmetric
             .get(relationship_type)
             .and_then(|g| g.get_related(element))
     }
 
-    /// Check if there's a transitive path in a one-to-many relationship
     pub fn has_transitive_path(&self, relationship_type: &str, from: &str, to: &str) -> bool {
         self.one_to_many
             .get(relationship_type)
@@ -297,7 +260,6 @@ impl RelationshipGraph {
             .unwrap_or(false)
     }
 
-    /// Get all relationship types stored in this graph
     pub fn relationship_types(&self) -> Vec<String> {
         let mut types = Vec::new();
         types.extend(self.one_to_many.keys().cloned());

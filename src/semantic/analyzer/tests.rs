@@ -4,7 +4,7 @@
 use super::*;
 use crate::semantic::RelationshipGraph;
 use crate::semantic::SemanticErrorKind;
-use crate::semantic::symbol_table::{ClassifierKind, DefinitionKind, Symbol, UsageKind};
+use crate::semantic::symbol_table::Symbol;
 
 #[test]
 fn test_analyzer_creation() {
@@ -117,7 +117,7 @@ fn test_analyzer_with_multiple_symbols() {
                 scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "MyClass".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -130,7 +130,7 @@ fn test_analyzer_with_multiple_symbols() {
                 scope_id: 0,
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -175,7 +175,7 @@ fn test_analyzer_with_nested_scopes() {
                 scope_id: 0,
                 name: "GrandChild".to_string(),
                 qualified_name: "Root::Child::GrandChild".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -258,7 +258,7 @@ fn test_analyze_with_all_symbol_types() {
                 scope_id: 0,
                 name: "MyClass".to_string(),
                 qualified_name: "MyClass".to_string(),
-                kind: ClassifierKind::Behavior,
+                kind: "Behavior".to_string(),
                 is_abstract: true,
             },
         )
@@ -272,7 +272,7 @@ fn test_analyze_with_all_symbol_types() {
                 scope_id: 0,
                 name: "Integer".to_string(),
                 qualified_name: "Integer".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -296,7 +296,7 @@ fn test_analyze_with_all_symbol_types() {
                 scope_id: 0,
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
-                kind: DefinitionKind::Requirement,
+                kind: "Requirement".to_string(),
             },
         )
         .unwrap();
@@ -308,7 +308,7 @@ fn test_analyze_with_all_symbol_types() {
                 scope_id: 0,
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),
-                kind: UsageKind::Action,
+                kind: "Action".to_string(),
             },
         )
         .unwrap();
@@ -408,7 +408,7 @@ fn test_analyzer_with_features() {
                 scope_id: 0,
                 name: "String".to_string(),
                 qualified_name: "String".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -447,13 +447,13 @@ fn test_analyzer_with_different_classifier_kinds() {
     let mut table = SymbolTable::new();
 
     for (idx, kind) in [
-        ClassifierKind::Type,
-        ClassifierKind::Class,
-        ClassifierKind::DataType,
-        ClassifierKind::Structure,
-        ClassifierKind::Association,
-        ClassifierKind::Behavior,
-        ClassifierKind::Function,
+        "Type",
+        "Class",
+        "DataType",
+        "Structure",
+        "Association",
+        "Behavior",
+        "Function",
     ]
     .iter()
     .enumerate()
@@ -465,7 +465,7 @@ fn test_analyzer_with_different_classifier_kinds() {
                     scope_id: 0,
                     name: format!("Classifier{}", idx),
                     qualified_name: format!("Classifier{}", idx),
-                    kind: kind.clone(),
+                    kind: (*kind).to_string(),
                     is_abstract: false,
                 },
             )
@@ -481,16 +481,9 @@ fn test_analyzer_with_different_classifier_kinds() {
 fn test_analyzer_with_different_definition_kinds() {
     let mut table = SymbolTable::new();
 
-    for (idx, kind) in [
-        DefinitionKind::Part,
-        DefinitionKind::Port,
-        DefinitionKind::Action,
-        DefinitionKind::State,
-        DefinitionKind::Requirement,
-        DefinitionKind::Item,
-    ]
-    .iter()
-    .enumerate()
+    for (idx, kind) in ["Part", "Port", "Action", "State", "Requirement", "Item"]
+        .iter()
+        .enumerate()
     {
         table
             .insert(
@@ -499,7 +492,7 @@ fn test_analyzer_with_different_definition_kinds() {
                     scope_id: 0,
                     name: format!("Def{}", idx),
                     qualified_name: format!("Def{}", idx),
-                    kind: kind.clone(),
+                    kind: (*kind).to_string(),
                 },
             )
             .unwrap();
@@ -514,15 +507,9 @@ fn test_analyzer_with_different_definition_kinds() {
 fn test_analyzer_with_different_usage_kinds() {
     let mut table = SymbolTable::new();
 
-    for (idx, kind) in [
-        UsageKind::Part,
-        UsageKind::Port,
-        UsageKind::Action,
-        UsageKind::State,
-        UsageKind::Requirement,
-    ]
-    .iter()
-    .enumerate()
+    for (idx, kind) in ["Part", "Port", "Action", "State", "Requirement"]
+        .iter()
+        .enumerate()
     {
         table
             .insert(
@@ -531,7 +518,7 @@ fn test_analyzer_with_different_usage_kinds() {
                     scope_id: 0,
                     name: format!("Usage{}", idx),
                     qualified_name: format!("Usage{}", idx),
-                    kind: kind.clone(),
+                    kind: (*kind).to_string(),
                 },
             )
             .unwrap();
@@ -586,7 +573,7 @@ fn test_analyzer_with_abstract_classifiers() {
                 scope_id: 0,
                 name: "Abstract1".to_string(),
                 qualified_name: "Abstract1".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: true,
             },
         )
@@ -599,7 +586,7 @@ fn test_analyzer_with_abstract_classifiers() {
                 scope_id: 0,
                 name: "Concrete1".to_string(),
                 qualified_name: "Concrete1".to_string(),
-                kind: ClassifierKind::Class,
+                kind: "Class".to_string(),
                 is_abstract: false,
             },
         )
@@ -747,7 +734,7 @@ fn test_type_validation_valid_type_reference() {
                 scope_id: 0,
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -852,7 +839,7 @@ fn test_type_validation_classifier_as_type() {
                 scope_id: 0,
                 name: "MyClassifier".to_string(),
                 qualified_name: "MyClassifier".to_string(),
-                kind: ClassifierKind::Type,
+                kind: "Type".to_string(),
                 is_abstract: false,
             },
         )
@@ -888,7 +875,7 @@ fn test_type_validation_multiple_features() {
                 scope_id: 0,
                 name: "Type1".to_string(),
                 qualified_name: "Type1".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -900,7 +887,7 @@ fn test_type_validation_multiple_features() {
                 scope_id: 0,
                 name: "Type2".to_string(),
                 qualified_name: "Type2".to_string(),
-                kind: DefinitionKind::Port,
+                kind: "Port".to_string(),
             },
         )
         .unwrap();
@@ -960,7 +947,7 @@ fn test_type_validation_qualified_type_reference() {
                 scope_id: 0,
                 name: "SubType".to_string(),
                 qualified_name: "Package::SubType".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
             },
         )
         .unwrap();
@@ -1092,7 +1079,7 @@ fn test_type_validation_scope_aware_resolution() {
             Symbol::Definition {
                 name: "Vehicle".to_string(),
                 qualified_name: "Pkg1::Vehicle".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
                 scope_id: pkg1_scope,
             },
         )
@@ -1124,7 +1111,7 @@ fn test_type_validation_scope_aware_resolution() {
             Symbol::Definition {
                 name: "Vehicle".to_string(),
                 qualified_name: "Pkg2::Vehicle".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
                 scope_id: pkg2_scope,
             },
         )
@@ -1179,7 +1166,7 @@ fn test_type_validation_scope_aware_undefined() {
             Symbol::Definition {
                 name: "Vehicle".to_string(),
                 qualified_name: "Pkg2::Vehicle".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
                 scope_id: pkg2_scope,
             },
         )
@@ -1243,7 +1230,7 @@ fn test_type_validation_usage_not_valid_type() {
             Symbol::Usage {
                 name: "myUsage".to_string(),
                 qualified_name: "myUsage".to_string(),
-                kind: UsageKind::Part,
+                kind: "Part".to_string(),
                 scope_id: 0,
             },
         )
@@ -1287,7 +1274,7 @@ fn test_type_validation_shadowing() {
             Symbol::Definition {
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
-                kind: DefinitionKind::Part,
+                kind: "Part".to_string(),
                 scope_id: 0,
             },
         )
@@ -1303,7 +1290,7 @@ fn test_type_validation_shadowing() {
             Symbol::Definition {
                 name: "Vehicle".to_string(),
                 qualified_name: "Nested::Vehicle".to_string(),
-                kind: DefinitionKind::Port,
+                kind: "Port".to_string(),
                 scope_id: nested_scope,
             },
         )
@@ -1344,5 +1331,609 @@ fn test_type_validation_shadowing() {
     assert!(
         result.is_ok(),
         "Shadowing should work correctly - each scope finds its appropriate Vehicle"
+    );
+}
+
+#[test]
+fn test_relationship_validation_undefined_target() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a definition
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Vehicle".to_string(),
+                qualified_name: "Vehicle".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add a specialization relationship to a non-existent target
+    graph.add_one_to_many(
+        "specialization",
+        "Vehicle".to_string(),
+        "NonExistent".to_string(),
+    );
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    assert!(!errors.is_empty());
+    assert!(
+        errors.iter().any(|e| matches!(&e.kind, SemanticErrorKind::UndefinedReference { name } if name.contains("NonExistent"))),
+        "Expected undefined reference error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn test_relationship_validation_typing_undefined_target() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a usage
+    table
+        .insert(
+            "myPart".to_string(),
+            Symbol::Usage {
+                scope_id: 0,
+                name: "myPart".to_string(),
+                qualified_name: "myPart".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add a typing relationship to a non-existent definition
+    graph.add_one_to_one("typing", "myPart".to_string(), "UndefinedDef".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    assert!(!errors.is_empty());
+    assert!(
+        errors.iter().any(|e| matches!(&e.kind, SemanticErrorKind::UndefinedReference { name } if name.contains("UndefinedDef"))),
+        "Expected undefined reference error for typing target"
+    );
+}
+
+#[test]
+fn test_circular_specialization_detection() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Create three definitions in a circular specialization chain
+    table
+        .insert(
+            "A".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "A".to_string(),
+                qualified_name: "A".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "B".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "B".to_string(),
+                qualified_name: "B".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "C".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "C".to_string(),
+                qualified_name: "C".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Create circular specialization: A -> B -> C -> A
+    graph.add_one_to_many("specialization", "A".to_string(), "B".to_string());
+    graph.add_one_to_many("specialization", "B".to_string(), "C".to_string());
+    graph.add_one_to_many("specialization", "C".to_string(), "A".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    // Should detect at least one circular dependency (could be 3, one for each element in the cycle)
+    assert!(!errors.is_empty());
+    assert!(
+        errors
+            .iter()
+            .any(|e| matches!(&e.kind, SemanticErrorKind::CircularDependency { .. })),
+        "Expected circular dependency error"
+    );
+}
+
+#[test]
+fn test_self_specialization_detection() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Create a definition that specializes itself
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Vehicle".to_string(),
+                qualified_name: "Vehicle".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Vehicle specializes itself
+    graph.add_one_to_many(
+        "specialization",
+        "Vehicle".to_string(),
+        "Vehicle".to_string(),
+    );
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    assert!(!errors.is_empty());
+    assert!(
+        errors
+            .iter()
+            .any(|e| matches!(&e.kind, SemanticErrorKind::CircularDependency { .. })),
+        "Expected circular dependency error for self-specialization"
+    );
+}
+
+#[test]
+fn test_valid_specialization_chain() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Create a valid specialization chain: Vehicle -> Car -> SportsCar
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Vehicle".to_string(),
+                qualified_name: "Vehicle".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "Car".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Car".to_string(),
+                qualified_name: "Car".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "SportsCar".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "SportsCar".to_string(),
+                qualified_name: "SportsCar".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Create linear specialization chain (no cycles)
+    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
+    graph.add_one_to_many("specialization", "SportsCar".to_string(), "Car".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(
+        result.is_ok(),
+        "Valid specialization chain should not produce errors"
+    );
+}
+
+#[test]
+fn test_multiple_relationship_types_validation() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add definitions and usages
+    table
+        .insert(
+            "VehicleDef".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "VehicleDef".to_string(),
+                qualified_name: "VehicleDef".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "myVehicle".to_string(),
+            Symbol::Usage {
+                scope_id: 0,
+                name: "myVehicle".to_string(),
+                qualified_name: "myVehicle".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Valid typing relationship
+    graph.add_one_to_one("typing", "myVehicle".to_string(), "VehicleDef".to_string());
+
+    // Invalid subsetting relationship (target doesn't exist)
+    graph.add_one_to_many(
+        "subsetting",
+        "myVehicle".to_string(),
+        "NonExistent".to_string(),
+    );
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    assert!(!errors.is_empty());
+    assert!(
+        errors.iter().any(|e| e.message.contains("NonExistent")),
+        "Error should mention the undefined target"
+    );
+}
+
+#[test]
+fn test_relationship_validation_with_qualified_names() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a package
+    table
+        .insert(
+            "Vehicles".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                name: "Vehicles".to_string(),
+                qualified_name: "Vehicles".to_string(),
+            },
+        )
+        .unwrap();
+
+    table.enter_scope();
+
+    // Add a definition in the package - use qualified name as key for lookup
+    table
+        .insert(
+            "Vehicles::Car".to_string(),
+            Symbol::Definition {
+                scope_id: 1,
+                name: "Car".to_string(),
+                qualified_name: "Vehicles::Car".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "Vehicles::SportsCar".to_string(),
+            Symbol::Definition {
+                scope_id: 1,
+                name: "SportsCar".to_string(),
+                qualified_name: "Vehicles::SportsCar".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Valid relationship using qualified names
+    graph.add_one_to_many(
+        "specialization",
+        "Vehicles::SportsCar".to_string(),
+        "Vehicles::Car".to_string(),
+    );
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(
+        result.is_ok(),
+        "Qualified name relationships should be validated correctly"
+    );
+}
+
+#[test]
+fn test_satisfy_relationship_validation_valid() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a case
+    table
+        .insert(
+            "SafetyCase".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "SafetyCase".to_string(),
+                qualified_name: "SafetyCase".to_string(),
+                kind: "Case".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add a requirement
+    table
+        .insert(
+            "SafetyReq".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "SafetyReq".to_string(),
+                qualified_name: "SafetyReq".to_string(),
+                kind: "Requirement".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Valid satisfy relationship
+    graph.add_one_to_many("satisfy", "SafetyCase".to_string(), "SafetyReq".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(
+        result.is_ok(),
+        "Valid satisfy relationship should pass validation"
+    );
+}
+
+#[test]
+fn test_satisfy_relationship_validation_invalid_target() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a case
+    table
+        .insert(
+            "MyCase".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "MyCase".to_string(),
+                qualified_name: "MyCase".to_string(),
+                kind: "Case".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add a part (not a requirement)
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Vehicle".to_string(),
+                qualified_name: "Vehicle".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Invalid satisfy relationship - targeting a part instead of requirement
+    graph.add_one_to_many("satisfy", "MyCase".to_string(), "Vehicle".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    assert!(
+        errors
+            .iter()
+            .any(|e| matches!(&e.kind, SemanticErrorKind::InvalidType { .. })),
+        "Should detect invalid satisfy target type"
+    );
+}
+
+#[test]
+fn test_perform_relationship_validation() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a part
+    table
+        .insert(
+            "Robot".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Robot".to_string(),
+                qualified_name: "Robot".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add an action
+    table
+        .insert(
+            "Move".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Move".to_string(),
+                qualified_name: "Move".to_string(),
+                kind: "Action".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Valid perform relationship
+    graph.add_one_to_many("perform", "Robot".to_string(), "Move".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(
+        result.is_ok(),
+        "Valid perform relationship should pass validation"
+    );
+}
+
+#[test]
+fn test_perform_relationship_invalid_target() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a part
+    table
+        .insert(
+            "Robot".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Robot".to_string(),
+                qualified_name: "Robot".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add another part (not an action)
+    table
+        .insert(
+            "Tool".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Tool".to_string(),
+                qualified_name: "Tool".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Invalid perform relationship - targeting a part instead of action
+    graph.add_one_to_many("perform", "Robot".to_string(), "Tool".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(result.is_err());
+    let errors = result.unwrap_err();
+    assert!(
+        errors
+            .iter()
+            .any(|e| matches!(&e.kind, SemanticErrorKind::InvalidType { .. })),
+        "Should detect invalid perform target type"
+    );
+}
+
+#[test]
+fn test_exhibit_relationship_validation() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add a part
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Vehicle".to_string(),
+                qualified_name: "Vehicle".to_string(),
+                kind: "Part".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add a state
+    table
+        .insert(
+            "Moving".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Moving".to_string(),
+                qualified_name: "Moving".to_string(),
+                kind: "State".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Valid exhibit relationship
+    graph.add_one_to_many("exhibit", "Vehicle".to_string(), "Moving".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(
+        result.is_ok(),
+        "Valid exhibit relationship should pass validation"
+    );
+}
+
+#[test]
+fn test_include_relationship_validation() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Add use cases
+    table
+        .insert(
+            "ManageAccount".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "ManageAccount".to_string(),
+                qualified_name: "ManageAccount".to_string(),
+                kind: "UseCase".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "Login".to_string(),
+            Symbol::Definition {
+                scope_id: 0,
+                name: "Login".to_string(),
+                qualified_name: "Login".to_string(),
+                kind: "UseCase".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Valid include relationship
+    graph.add_one_to_many("include", "ManageAccount".to_string(), "Login".to_string());
+
+    let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
+    let result = analyzer.analyze();
+
+    assert!(
+        result.is_ok(),
+        "Valid include relationship should pass validation"
     );
 }

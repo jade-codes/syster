@@ -3,7 +3,6 @@ use crate::semantic::error::{SemanticError, SemanticResult};
 use crate::semantic::resolver::NameResolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 
-/// Context for semantic analysis passes
 pub struct AnalysisContext<'a> {
     pub symbol_table: &'a SymbolTable,
     pub relationship_graph: &'a RelationshipGraph,
@@ -100,30 +99,19 @@ impl SemanticAnalyzer {
     pub fn analyze(&self) -> SemanticResult<()> {
         let mut context = AnalysisContext::new(&self.symbol_table, &self.relationship_graph);
 
-        // Pass 1: Validate symbol table structure (scoping, duplicates)
-        self.validate_symbol_table(&mut context);
-
-        // Pass 2: Validate type references
+        // Pass 1: Validate type references
         self.validate_types(&mut context);
 
-        // Pass 3: Validate relationships (specialization, redefinition, etc.)
+        // Pass 2: Validate relationships (specialization, redefinition, etc.)
         self.validate_relationships(&mut context);
 
         context.into_result(())
     }
 
-    fn validate_symbol_table(&self, _context: &mut AnalysisContext) {
-        // Symbol table validation happens during insertion
-        // This pass can check for additional structural issues
-    }
-
     fn validate_types(&self, context: &mut AnalysisContext) {
-        // Validate that all type references resolve to valid type symbols
-        // Use scope-aware resolution: resolve from the scope where the symbol was defined
         for (_name, symbol) in self.symbol_table.all_symbols() {
             if let Some(type_ref) = symbol.type_reference() {
                 let scope_id = symbol.scope_id();
-                // Resolve the type reference from the symbol's defining scope
                 let resolved = self.symbol_table.lookup_from_scope(type_ref, scope_id);
 
                 match resolved {
@@ -149,40 +137,142 @@ impl SemanticAnalyzer {
     }
 
     fn validate_relationships(&self, context: &mut AnalysisContext) {
-        // Relationship validation checks semantic constraints between symbols
-        // Future: This will validate specialization chains, redefinition rules, etc.
-        // when relationship information is added to the Symbol structure.
+        // Validate that all relationship targets exist
+        for relationship_type in self.relationship_graph.relationship_types() {
+            for (_name, symbol) in self.symbol_table.all_symbols() {
+                let qualified_name = symbol.qualified_name();
 
-        // For now, validate basic structural constraints:
+                if let Some(targets) = self
+                    .relationship_graph
+                    .get_one_to_many(&relationship_type, qualified_name)
+                {
+                    for target in targets {
+                        if let Some(target_symbol) = self.symbol_table.lookup(target) {
+                            // Validate domain-specific relationship constraints
+                            self.validate_domain_relationship_constraints(
+                                &relationship_type,
+                                symbol,
+                                target_symbol,
+                                context,
+                            );
+                        } else {
+                            context.add_error(SemanticError::undefined_reference(format!(
+                                "'{}' has {} relationship to undefined target '{}'",
+                                qualified_name, relationship_type, target
+                            )));
+                        }
+                    }
+                }
 
-        // Check for potentially problematic patterns
+                if let Some(target) = self
+                    .relationship_graph
+                    .get_one_to_one(&relationship_type, qualified_name)
+                {
+                    if let Some(target_symbol) = self.symbol_table.lookup(target) {
+                        self.validate_domain_relationship_constraints(
+                            &relationship_type,
+                            symbol,
+                            target_symbol,
+                            context,
+                        );
+                    } else {
+                        context.add_error(SemanticError::undefined_reference(format!(
+                            "'{}' has {} relationship to undefined target '{}'",
+                            qualified_name, relationship_type, target
+                        )));
+                    }
+                }
+            }
+        }
+
+        // Check for circular specialization dependencies
         for (_name, symbol) in self.symbol_table.all_symbols() {
-            match symbol {
-                Symbol::Classifier {
-                    is_abstract: true, ..
-                } => {
-                    // Abstract classifiers shouldn't be directly instantiated
-                    // This check would require tracking usages/instantiations
+            let qualified_name = symbol.qualified_name();
+
+            if let Some(targets) = self
+                .relationship_graph
+                .get_one_to_many("specialization", qualified_name)
+            {
+                for target in targets {
+                    if self.relationship_graph.has_transitive_path(
+                        "specialization",
+                        target,
+                        qualified_name,
+                    ) {
+                        let cycle = vec![qualified_name.to_string(), target.to_string()];
+                        context.add_error(SemanticError::circular_dependency(cycle));
+                        break;
+                    }
                 }
-                Symbol::Definition { kind, .. } => {
-                    // Verify definition kind constraints
-                    // For example: certain definition kinds may have specific requirements
-                    self.validate_definition_constraints(kind, symbol, context);
-                }
-                _ => {}
             }
         }
     }
 
-    fn validate_definition_constraints(
+    fn validate_domain_relationship_constraints(
         &self,
-        _kind: &crate::semantic::symbol_table::DefinitionKind,
-        _symbol: &Symbol,
-        _context: &mut AnalysisContext,
+        relationship_type: &str,
+        _source: &Symbol,
+        target: &Symbol,
+        context: &mut AnalysisContext,
     ) {
-        // Placeholder for definition-specific constraint validation
-        // Future: Validate that Requirements have proper structure,
-        // ViewPoints have Views, etc.
+        match relationship_type {
+            "satisfy" => {
+                // Satisfy relationships should target requirements
+                if let Symbol::Definition { kind, .. } = target {
+                    if kind != "Requirement" {
+                        context.add_error(SemanticError::invalid_type(format!(
+                            "satisfy relationship must target a requirement, but '{}' is a {}",
+                            target.qualified_name(),
+                            kind
+                        )));
+                    }
+                } else if !matches!(target, Symbol::Usage { kind, .. } if kind == "Requirement") {
+                    context.add_error(SemanticError::invalid_type(format!(
+                        "satisfy relationship must target a requirement, but '{}' is not",
+                        target.qualified_name()
+                    )));
+                }
+            }
+            "perform" => {
+                // Perform relationships should target actions
+                if let Symbol::Definition { kind, .. } = target
+                    && kind != "Action"
+                {
+                    context.add_error(SemanticError::invalid_type(format!(
+                        "perform relationship must target an action, but '{}' is a {}",
+                        target.qualified_name(),
+                        kind
+                    )));
+                }
+            }
+            "exhibit" => {
+                // Exhibit relationships should target states
+                if let Symbol::Definition { kind, .. } = target
+                    && kind != "State"
+                {
+                    context.add_error(SemanticError::invalid_type(format!(
+                        "exhibit relationship must target a state, but '{}' is a {}",
+                        target.qualified_name(),
+                        kind
+                    )));
+                }
+            }
+            "include" => {
+                // Include relationships should target use cases
+                if let Symbol::Definition { kind, .. } = target
+                    && kind != "UseCase"
+                {
+                    context.add_error(SemanticError::invalid_type(format!(
+                        "include relationship must target a use case, but '{}' is a {}",
+                        target.qualified_name(),
+                        kind
+                    )));
+                }
+            }
+            _ => {
+                // Other relationships don't have specific type constraints yet
+            }
+        }
     }
 }
 

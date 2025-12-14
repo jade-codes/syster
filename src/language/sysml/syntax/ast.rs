@@ -1,9 +1,40 @@
 use super::{
-    enums::{DefinitionKind, Element, UsageKind},
+    enums::{DefinitionKind, DefinitionMember, Element, UsageKind},
     types::{Comment, Definition, Import, Package, Relationships, SysMLFile, Usage},
 };
 use crate::parser::sysml::Rule;
 use from_pest::{ConversionError, FromPest, Void};
+
+// Helper function to recursively extract usages from body items
+fn extract_usages_from_body<'a>(
+    pair: &pest::iterators::Pair<'a, Rule>,
+    body: &mut Vec<DefinitionMember>,
+) {
+    match pair.as_rule() {
+        // Domain-specific usages we want to capture
+        Rule::exhibit_state_usage
+        | Rule::perform_action_usage
+        | Rule::satisfy_requirement_usage
+        | Rule::include_use_case_usage => {
+            // Manually build the Usage instead of using from_pest
+            let kind = rule_to_usage_kind(pair.as_rule()).unwrap();
+            let name = find_name(pair.clone().into_inner());
+            let relationships = extract_relationships(&pair);
+            body.push(DefinitionMember::Usage(Usage {
+                kind,
+                name,
+                relationships,
+                body: vec![],
+            }));
+        }
+        // Recursively search children
+        _ => {
+            for inner in pair.clone().into_inner() {
+                extract_usages_from_body(&inner, body);
+            }
+        }
+    }
+}
 
 fn find_reference(pair: &pest::iterators::Pair<Rule>) -> Option<String> {
     match pair.as_rule() {
@@ -29,6 +60,7 @@ fn rule_to_definition_kind(rule: Rule) -> Result<DefinitionKind, ConversionError
     match rule {
         Rule::part_definition => Ok(DefinitionKind::Part),
         Rule::action_definition => Ok(DefinitionKind::Action),
+        Rule::state_definition => Ok(DefinitionKind::State),
         Rule::requirement_definition => Ok(DefinitionKind::Requirement),
         Rule::port_definition => Ok(DefinitionKind::Port),
         Rule::item_definition => Ok(DefinitionKind::Item),
@@ -57,6 +89,10 @@ fn rule_to_usage_kind(rule: Rule) -> Result<UsageKind, ConversionError<Void>> {
         Rule::concern_usage => Ok(UsageKind::Concern),
         Rule::case_usage => Ok(UsageKind::Case),
         Rule::view_usage => Ok(UsageKind::View),
+        Rule::satisfy_requirement_usage => Ok(UsageKind::SatisfyRequirement),
+        Rule::perform_action_usage => Ok(UsageKind::PerformAction),
+        Rule::exhibit_state_usage => Ok(UsageKind::ExhibitState),
+        Rule::include_use_case_usage => Ok(UsageKind::IncludeUseCase),
         _ => Err(ConversionError::NoMatch),
     }
 }
@@ -91,6 +127,7 @@ fn extract_relationships(pair: &pest::iterators::Pair<Rule>) -> Relationships {
                 pair.as_rule(),
                 Rule::part_definition
                     | Rule::action_definition
+                    | Rule::state_definition
                     | Rule::requirement_definition
                     | Rule::part_usage
                     | Rule::action_usage
@@ -109,6 +146,30 @@ fn extract_relationships(pair: &pest::iterators::Pair<Rule>) -> Relationships {
                     {
                         relationships.specializes.push(target);
                     }
+                }
+            }
+            Rule::satisfy_requirement_usage => {
+                // Extract target from satisfy usage
+                if let Some(target) = find_reference(pair) {
+                    relationships.satisfies.push(target);
+                }
+            }
+            Rule::perform_action_usage => {
+                // Extract target from perform usage
+                if let Some(target) = find_reference(pair) {
+                    relationships.performs.push(target);
+                }
+            }
+            Rule::exhibit_state_usage => {
+                // Extract target from exhibit usage
+                if let Some(target) = find_reference(pair) {
+                    relationships.exhibits.push(target);
+                }
+            }
+            Rule::include_use_case_usage => {
+                // Extract target from include usage
+                if let Some(target) = find_reference(pair) {
+                    relationships.includes.push(target);
                 }
             }
             Rule::feature_specialization => {
@@ -204,18 +265,41 @@ impl_from_pest!(Definition, |pest| {
     let name = find_name(pair.clone().into_inner());
     let relationships = extract_relationships(&pair);
 
+    // Parse body items - handle both definition_body and state_def_body
+    let mut body = vec![];
+    for inner in pair.clone().into_inner() {
+        if inner.as_rule() == Rule::definition_body
+            || inner.as_rule() == Rule::state_def_body
+            || inner.as_rule() == Rule::case_body
+            || inner.as_rule() == Rule::calculation_body
+            || inner.as_rule() == Rule::requirement_body
+        {
+            // Recursively search for any usage elements
+            for descendant in inner.clone().into_inner() {
+                extract_usages_from_body(&descendant, &mut body);
+            }
+        }
+    }
     Ok(Definition {
         kind,
         name,
         relationships,
-        body: vec![],
+        body,
     })
 });
 impl_from_pest!(Usage, |pest| {
     let pair = pest.next().ok_or(ConversionError::NoMatch)?;
+    eprintln!("Usage::from_pest got rule: {:?}", pair.as_rule());
     let kind = rule_to_usage_kind(pair.as_rule())?;
     let name = find_name(pair.clone().into_inner());
     let relationships = extract_relationships(&pair);
+    eprintln!(
+        "Usage relationships after extract: satisfies={:?}, performs={:?}, exhibits={:?}, includes={:?}",
+        relationships.satisfies,
+        relationships.performs,
+        relationships.exhibits,
+        relationships.includes
+    );
 
     Ok(Usage {
         kind,
@@ -266,6 +350,7 @@ impl_from_pest!(Element, |pest| {
         | Rule::non_occurrence_usage_element => Element::from_pest(&mut pair.into_inner())?,
         Rule::part_definition
         | Rule::action_definition
+        | Rule::state_definition
         | Rule::requirement_definition
         | Rule::port_definition
         | Rule::item_definition
@@ -282,11 +367,27 @@ impl_from_pest!(Element, |pest| {
             let name = find_name(pair.clone().into_inner());
             let relationships = extract_relationships(&pair);
 
+            // Parse body items - handle all body types
+            let mut body = vec![];
+            for inner in pair.clone().into_inner() {
+                if inner.as_rule() == Rule::definition_body
+                    || inner.as_rule() == Rule::state_def_body
+                    || inner.as_rule() == Rule::case_body
+                    || inner.as_rule() == Rule::calculation_body
+                    || inner.as_rule() == Rule::requirement_body
+                {
+                    // Recursively search for any usage elements
+                    for descendant in inner.clone().into_inner() {
+                        extract_usages_from_body(&descendant, &mut body);
+                    }
+                }
+            }
+
             Element::Definition(Definition {
                 kind,
                 name,
                 relationships,
-                body: vec![],
+                body,
             })
         }
         Rule::part_usage

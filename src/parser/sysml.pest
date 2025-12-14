@@ -1133,8 +1133,11 @@ guarded_succession_member = {
 }
 
 guarded_succession = {
-    identifier
+    !(domain_usage_keyword) ~ identifier
 }
+
+// Domain-specific usage keywords that should not be matched as guarded successions
+domain_usage_keyword = { "satisfy" | "perform" | "exhibit" | "include" }
 
 // Calculation Keywords
 calculation_keyword = { "calc" }
@@ -1273,10 +1276,27 @@ case_body = {
 }
 
 case_body_item = {
-    calculation_body_item
+    case_calculation_body_item
     | subject_member
     | actor_member
     | objective_member
+}
+
+case_calculation_body_item = {
+    case_action_body_item
+    | return_parameter_member
+}
+
+case_action_body_item = {
+    behavior_usage_member
+    | import
+    | alias_member_element
+    | definition_member
+    | variant_usage_member
+    | non_occurrence_usage_member
+    | structure_usage_member
+    | action_node_member
+    | guarded_succession_member
 }
 
 objective_member = {
@@ -1503,7 +1523,6 @@ behavior_usage_element = {
     | calculation_usage
     | state_usage
     | constraint_usage
-    | requirement_usage
     | concern_usage
     | case_usage
     | analysis_case_usage
@@ -1515,6 +1534,7 @@ behavior_usage_element = {
     | include_use_case_usage
     | assert_constraint_usage
     | satisfy_requirement_usage
+    | requirement_usage
 }
 
 variant_usage_element = {
@@ -1830,8 +1850,8 @@ requirement_usage = {
 
 satisfy_requirement_usage = {
     occurrence_usage_prefix ~ "assert"? ~ ("not")? ~ "satisfy" ~ (
-        owned_reference_subsetting ~ feature_specialization_part?
-        | requirement_usage_keyword ~ usage_declaration?
+        requirement_usage_keyword ~ usage_declaration?
+        | owned_reference_subsetting ~ feature_specialization_part?
     ) ~ value_part? ~ ("by" ~ satisfaction_subject_member)? ~ requirement_body
 }
 

@@ -4,8 +4,10 @@ use from_pest::FromPest;
 use pest::Parser;
 use syster::language::sysml::SymbolTablePopulator;
 use syster::language::sysml::populator::{
-    REL_REDEFINITION, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
+    REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_REDEFINITION, REL_SATISFY, REL_SPECIALIZATION,
+    REL_SUBSETTING, REL_TYPING,
 };
+use syster::language::sysml::syntax::Element;
 use syster::language::sysml::syntax::SysMLFile;
 use syster::parser::{SysMLParser, sysml::Rule};
 use syster::semantic::RelationshipGraph;
@@ -385,4 +387,186 @@ fn test_no_circular_relationships() {
     assert!(relationship_graph.has_transitive_path(REL_SPECIALIZATION, "B", "A"));
     assert!(relationship_graph.has_transitive_path(REL_SPECIALIZATION, "C", "B"));
     assert!(relationship_graph.has_transitive_path(REL_SPECIALIZATION, "C", "A"));
+}
+
+#[test]
+fn test_satisfy_requirement_relationship() {
+    let source = "requirement def SafetyReq; case def SafetyCase { satisfy SafetyReq; }";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify symbols exist
+    assert!(symbol_table.lookup("SafetyReq").is_some());
+    assert!(symbol_table.lookup("SafetyCase").is_some());
+
+    // Verify satisfy relationship
+    let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
+    assert!(satisfies.is_some(), "Expected satisfy relationship");
+    assert_eq!(satisfies.unwrap(), &["SafetyReq".to_string()][..]);
+}
+
+#[test]
+fn test_satisfy_with_requirement_keyword() {
+    let source =
+        "requirement def SafetyReq; case def SafetyCase { satisfy requirement SafetyReq; }";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify satisfy relationship works with full 'requirement' keyword
+    let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
+    assert!(
+        satisfies.is_some(),
+        "Expected satisfy relationship with requirement keyword"
+    );
+    assert_eq!(satisfies.unwrap(), &["SafetyReq".to_string()][..]);
+}
+
+#[test]
+fn test_perform_action_relationship() {
+    let source = "action def Move; part def Robot { perform Move; }";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify symbols exist
+    assert!(symbol_table.lookup("Move").is_some());
+    assert!(symbol_table.lookup("Robot").is_some());
+
+    // Verify perform relationship
+    let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
+    assert!(performs.is_some(), "Expected perform relationship");
+    assert_eq!(performs.unwrap(), &["Move".to_string()][..]);
+}
+
+#[test]
+fn test_exhibit_state_relationship() {
+    let source = "state def Moving; part def Vehicle { exhibit Moving; }";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify symbols exist
+    assert!(
+        symbol_table.lookup("Moving").is_some(),
+        "Moving symbol not found"
+    );
+    assert!(
+        symbol_table.lookup("Vehicle").is_some(),
+        "Vehicle symbol not found"
+    );
+
+    // Verify exhibit relationship
+    let exhibits = relationship_graph.get_one_to_many(REL_EXHIBIT, "Vehicle");
+    assert!(exhibits.is_some(), "Expected exhibit relationship");
+    assert_eq!(exhibits.unwrap(), &["Moving".to_string()][..]);
+}
+
+#[test]
+fn test_include_use_case_relationship() {
+    let source = "use case def Login; use case def ManageAccount { include Login; }";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify symbols exist
+    assert!(symbol_table.lookup("Login").is_some());
+    assert!(symbol_table.lookup("ManageAccount").is_some());
+
+    // Verify include relationship
+    let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
+    assert!(includes.is_some(), "Expected include relationship");
+    assert_eq!(includes.unwrap(), &["Login".to_string()][..]);
+}
+
+#[test]
+fn test_multiple_satisfy_relationships() {
+    let source = "requirement def Req1; requirement def Req2; case def TestCase { 
+        satisfy Req1; 
+        satisfy Req2; 
+    }";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify multiple satisfy relationships
+    let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "TestCase");
+    assert!(satisfies.is_some());
+    let satisfies = satisfies.unwrap();
+    println!(
+        "Found {} satisfy relationships: {:?}",
+        satisfies.len(),
+        satisfies
+    );
+    assert_eq!(satisfies.len(), 2);
+    assert!(satisfies.contains(&"Req1".to_string()));
+    assert!(satisfies.contains(&"Req2".to_string()));
+}
+
+#[test]
+fn test_mixed_domain_and_structural_relationships() {
+    // Test that we can parse models with both types of relationships
+    let source = r#"
+        part def BasePart;
+        part def SpecializedPart :> BasePart;
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SymbolTablePopulator::with_relationships(&mut symbol_table, &mut relationship_graph);
+
+    populator.populate(&file).unwrap();
+
+    // Verify structural relationship (specialization) works
+    assert_eq!(
+        relationship_graph.get_one_to_many(REL_SPECIALIZATION, "SpecializedPart"),
+        Some(&["BasePart".to_string()][..])
+    );
 }

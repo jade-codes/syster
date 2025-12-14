@@ -112,7 +112,7 @@ fn test_populate_definition() {
         panic!("Expected Definition symbol, got: {symbol:?}");
     };
     assert_eq!(name, "MyPart");
-    assert_eq!(kind, &crate::semantic::symbol_table::DefinitionKind::Part);
+    assert_eq!(kind, "Part");
 }
 
 #[test]
@@ -126,7 +126,7 @@ fn test_populate_usage() {
             kind: UsageKind::Action,
             name: Some("myAction".to_string()),
             body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::language::sysml::syntax::Relationships::none(),
         })],
     };
 
@@ -140,7 +140,7 @@ fn test_populate_usage() {
         panic!("Expected Usage symbol, got: {symbol:?}");
     };
     assert_eq!(name, "myAction");
-    assert_eq!(kind, &crate::semantic::symbol_table::UsageKind::Action);
+    assert_eq!(kind, "Action");
 }
 
 #[test]
@@ -184,7 +184,7 @@ fn test_populate_definition_in_package() {
                     kind: DefinitionKind::Part,
                     name: Some("NestedPart".to_string()),
                     body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::language::sysml::syntax::Relationships::none(),
                 },
             )],
         })],
@@ -300,7 +300,7 @@ fn test_populate_deeply_nested_structure() {
                             kind: DefinitionKind::Part,
                             name: Some("DeepPart".to_string()),
                             body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                            relationships: crate::language::sysml::syntax::Relationships::none(),
                         },
                     )],
                 })],
@@ -381,13 +381,13 @@ fn test_populate_mixed_elements_in_package() {
                     kind: DefinitionKind::Part,
                     name: Some("PartDef".to_string()),
                     body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::language::sysml::syntax::Relationships::none(),
                 }),
                 Element::Usage(crate::language::sysml::syntax::Usage {
                     kind: UsageKind::Part,
                     name: Some("partUsage".to_string()),
                     body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::language::sysml::syntax::Relationships::none(),
                 }),
                 Element::Package(Package {
                     name: Some("NestedPkg".to_string()),
@@ -446,7 +446,7 @@ fn test_populate_sibling_packages() {
                         kind: DefinitionKind::Part,
                         name: Some("Part1".to_string()),
                         body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                        relationships: crate::language::sysml::syntax::Relationships::none(),
                     },
                 )],
             }),
@@ -457,7 +457,7 @@ fn test_populate_sibling_packages() {
                         kind: DefinitionKind::Part,
                         name: Some("Part2".to_string()),
                         body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                        relationships: crate::language::sysml::syntax::Relationships::none(),
                     },
                 )],
             }),
@@ -502,13 +502,13 @@ fn test_populate_duplicate_in_nested_scope() {
                     kind: DefinitionKind::Part,
                     name: Some("Duplicate".to_string()),
                     body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::language::sysml::syntax::Relationships::none(),
                 }),
                 Element::Definition(crate::language::sysml::syntax::Definition {
                     kind: DefinitionKind::Port,
                     name: Some("Duplicate".to_string()),
                     body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::language::sysml::syntax::Relationships::none(),
                 }),
             ],
         })],
@@ -537,7 +537,7 @@ fn test_populate_same_name_different_scopes() {
                         kind: DefinitionKind::Part,
                         name: Some("Common".to_string()),
                         body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                        relationships: crate::language::sysml::syntax::Relationships::none(),
                     },
                 )],
             }),
@@ -548,7 +548,7 @@ fn test_populate_same_name_different_scopes() {
                         kind: DefinitionKind::Part,
                         name: Some("Common".to_string()),
                         body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                        relationships: crate::language::sysml::syntax::Relationships::none(),
                     },
                 )],
             }),
@@ -591,7 +591,7 @@ fn test_populate_all_usage_kinds() {
             kind,
             name: Some(name.to_string()),
             body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::language::sysml::syntax::Relationships::none(),
         }));
     }
 
@@ -626,7 +626,7 @@ fn test_populate_complex_hierarchy() {
                         kind: DefinitionKind::Part,
                         name: Some("RootPart".to_string()),
                         body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                        relationships: crate::language::sysml::syntax::Relationships::none(),
                     }),
                     Element::Package(Package {
                         name: Some("Sub1".to_string()),
@@ -635,7 +635,8 @@ fn test_populate_complex_hierarchy() {
                                 kind: UsageKind::Part,
                                 name: Some("sub1Usage".to_string()),
                                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                                relationships: crate::language::sysml::syntax::Relationships::none(
+                                ),
                             }),
                             Element::Package(Package {
                                 name: Some("Sub2".to_string()),
@@ -644,7 +645,8 @@ fn test_populate_complex_hierarchy() {
                                         kind: DefinitionKind::Action,
                                         name: Some("DeepAction".to_string()),
                                         body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                                        relationships:
+                                            crate::language::sysml::syntax::Relationships::none(),
                                     },
                                 )],
                             }),
@@ -810,7 +812,7 @@ fn test_populate_with_relationship_graph() {
             kind: DefinitionKind::Part,
             name: Some("Vehicle".to_string()),
             body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::language::sysml::syntax::Relationships::none(),
         })],
     };
 
@@ -837,7 +839,7 @@ fn test_populator_without_relationship_graph() {
             kind: DefinitionKind::Part,
             name: Some("Test".to_string()),
             body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::language::sysml::syntax::Relationships::none(),
         })],
     };
 

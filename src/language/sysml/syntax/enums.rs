@@ -14,6 +14,7 @@ pub enum DefinitionKind {
     Part,
     Port,
     Action,
+    State,
     Item,
     Attribute,
     Requirement,
@@ -38,11 +39,17 @@ pub enum UsageKind {
     Concern,
     Case,
     View,
+    // Domain-specific usage types
+    SatisfyRequirement,
+    PerformAction,
+    ExhibitState,
+    IncludeUseCase,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DefinitionMember {
-    Comment(Comment),
+    Comment(Box<Comment>),
+    Usage(Box<Usage>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
