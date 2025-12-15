@@ -1,5 +1,6 @@
 use crate::core::constants::{KERML_EXT, SUPPORTED_EXTENSIONS, SYSML_EXT};
 use crate::language::sysml::syntax::SysMLFile;
+use crate::project::parse_result::{ParseError, ParseResult};
 use from_pest::FromPest;
 use pest::Parser;
 use std::fs;
@@ -89,6 +90,52 @@ fn collect_recursive(dir: &PathBuf, paths: &mut Vec<PathBuf>) -> Result<(), Stri
     }
 
     Ok(())
+}
+
+/// Parses content and returns a ParseResult with detailed error information.
+/// This is the primary function for LSP usage - errors don't fail, they're captured.
+///
+/// Returns ParseResult with:
+/// - Parsed file and empty errors on success
+/// - None and detailed errors on failure
+pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
+    let ext = path.extension().and_then(|e| e.to_str());
+
+    match ext {
+        Some(SYSML_EXT) => {
+            match crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, content) {
+                Ok(mut pairs) => match SysMLFile::from_pest(&mut pairs) {
+                    Ok(file) => ParseResult::success(file),
+                    Err(e) => {
+                        let error = ParseError::ast_error(format!("{:?}", e), 0, 0);
+                        ParseResult::with_errors(vec![error])
+                    }
+                },
+                Err(parse_error) => {
+                    // Extract position from pest error
+                    let (line, col) = match parse_error.line_col {
+                        pest::error::LineColLocation::Pos((l, c)) => (l - 1, c - 1), // Convert to 0-indexed
+                        pest::error::LineColLocation::Span((l, c), _) => (l - 1, c - 1),
+                    };
+
+                    let error =
+                        ParseError::syntax_error(format!("{}", parse_error.variant), line, col);
+                    ParseResult::with_errors(vec![error])
+                }
+            }
+        }
+        Some(KERML_EXT) => {
+            // TODO: Add KerML parser support
+            ParseResult::success(SysMLFile {
+                namespace: None,
+                elements: vec![],
+            })
+        }
+        _ => {
+            let error = ParseError::syntax_error("Unsupported file extension", 0, 0);
+            ParseResult::with_errors(vec![error])
+        }
+    }
 }
 
 #[cfg(test)]

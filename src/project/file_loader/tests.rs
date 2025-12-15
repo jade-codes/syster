@@ -1,6 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::*;
+use crate::project::ParseErrorKind;
 use std::path::PathBuf;
 
 #[test]
@@ -116,4 +117,90 @@ fn test_parse_content_empty_file() {
     let result = parse_content(content, &path);
     // Empty content should still parse successfully (empty model)
     assert!(result.is_ok(), "Should handle empty content");
+}
+
+#[test]
+fn test_parse_with_result_success() {
+    // TDD: Successful parse returns no errors
+    let content = "part def Vehicle;";
+    let path = PathBuf::from("test.sysml");
+
+    let result = parse_with_result(content, &path);
+
+    assert!(result.is_ok());
+    assert!(!result.has_errors());
+    assert_eq!(result.errors.len(), 0);
+    assert!(result.content.is_some());
+    assert!(!result.content.unwrap().elements.is_empty());
+}
+
+#[test]
+fn test_parse_with_result_syntax_error() {
+    // TDD: Syntax error returns ParseError with position
+    let content = "part def {"; // Missing name
+    let path = PathBuf::from("test.sysml");
+
+    let result = parse_with_result(content, &path);
+
+    assert!(!result.is_ok());
+    assert!(result.has_errors());
+    assert_eq!(result.errors.len(), 1);
+    assert_eq!(result.errors[0].kind, ParseErrorKind::SyntaxError);
+}
+
+#[test]
+fn test_error_has_position_info() {
+    let content = "part def Vehicle;\npart def {"; // Error on line 2, after "def "
+    let path = PathBuf::from("test.sysml");
+
+    let result = parse_with_result(content, &path);
+    assert!(result.has_errors());
+
+    let error = &result.errors[0];
+
+    assert_eq!(
+        error.position.line, 1,
+        "Error should be on line 1 (0-indexed)"
+    );
+
+    // Column should be around where the brace appears (after "part def ")
+    assert!(
+        error.position.column >= 9,
+        "Error column should be at or after the brace character"
+    );
+}
+
+#[test]
+fn test_parse_error_details() {
+    let content = "this is not valid sysml syntax at all!!!";
+    let path = PathBuf::from("error.sysml");
+
+    let result = parse_with_result(content, &path);
+
+    assert!(result.has_errors());
+    let error = &result.errors[0];
+    assert!(!error.message.is_empty());
+    assert_eq!(error.kind, ParseErrorKind::SyntaxError);
+}
+
+#[test]
+fn test_unsupported_extension() {
+    let content = "part def Vehicle;";
+    let path = PathBuf::from("test.txt");
+
+    let result = parse_with_result(content, &path);
+
+    assert!(result.has_errors());
+    assert!(result.errors[0].message.contains("Unsupported"));
+}
+
+#[test]
+fn test_empty_file_success() {
+    let content = "";
+    let path = PathBuf::from("empty.sysml");
+
+    let result = parse_with_result(content, &path);
+
+    assert!(result.content.is_some());
+    assert_eq!(result.content.unwrap().elements.len(), 0);
 }

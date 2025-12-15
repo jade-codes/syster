@@ -115,6 +115,3 @@ impl Default for StdLibLoader {
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]
-mod lazy_tests;

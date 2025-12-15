@@ -39,6 +39,7 @@
 //! See [SEMANTIC_ANALYSIS.md](../../docs/SEMANTIC_ANALYSIS.md) for detailed documentation.
 
 pub mod analyzer;
+pub mod diagnostic;
 pub mod error;
 pub mod graph;
 pub mod resolver;
@@ -46,6 +47,7 @@ pub mod symbol_table;
 pub mod workspace;
 
 pub use analyzer::{AnalysisContext, SemanticAnalyzer};
+pub use diagnostic::{Diagnostic, Location as DiagnosticLocation, Position, Range, Severity};
 pub use error::{Location, SemanticError, SemanticErrorKind, SemanticResult};
 pub use graph::RelationshipGraph;
 pub use resolver::NameResolver;
