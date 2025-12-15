@@ -169,7 +169,7 @@ mod tests {
         fn set_value(&mut self, new_value: i32) {
             let old = self.value;
             self.value = new_value;
-            let emitter = std::mem::replace(&mut self.emitter, EventEmitter::new());
+            let emitter = std::mem::take(&mut self.emitter);
             self.emitter = emitter.emit(
                 TestEvent::ValueChanged {
                     old,
@@ -181,7 +181,7 @@ mod tests {
 
         fn reset(&mut self) {
             self.value = 0;
-            let emitter = std::mem::replace(&mut self.emitter, EventEmitter::new());
+            let emitter = std::mem::take(&mut self.emitter);
             self.emitter = emitter.emit(TestEvent::Reset, self);
         }
     }

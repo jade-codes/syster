@@ -371,22 +371,20 @@ impl Workspace {
     /// Returns an error if any unpopulated file fails to populate due to invalid syntax
     /// or semantic errors in the SysML content.
     pub fn populate_affected(&mut self) -> Result<usize, String> {
-        // Collect unpopulated files
+        // Collect unpopulated files (sorted for determinism)
         let mut unpopulated: Vec<_> = self
             .files
-            .iter()
-            .filter(|(_, file)| !file.is_populated())
-            .map(|(path, _)| path.clone())
+            .keys()
+            .filter(|path| !self.files[*path].is_populated())
+            .cloned()
             .collect();
-
-        // Sort for deterministic ordering
         unpopulated.sort();
 
         let count = unpopulated.len();
 
-        for path in unpopulated {
-            self.populate_file(&path)?;
-        }
+        unpopulated
+            .into_iter()
+            .try_for_each(|path| self.populate_file(&path))?;
 
         Ok(count)
     }
@@ -465,10 +463,7 @@ impl Workspace {
 
     /// Rebuilds the symbol index from the symbol table
     pub fn rebuild_symbol_index(&mut self) {
-        self.symbol_index.clear();
-        for (qualified_name, scope_ids) in self.symbol_table.all_qualified_names() {
-            self.symbol_index.insert(qualified_name, scope_ids);
-        }
+        self.symbol_index = self.symbol_table.all_qualified_names();
     }
 
     /// Looks up a symbol by qualified name using the index (O(1))

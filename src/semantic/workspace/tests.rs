@@ -510,7 +510,7 @@ fn test_invalidate_on_update() {
     );
 
     // Populate the file
-    workspace.populate_file(&path);
+    let _ = workspace.populate_file(&path);
     assert!(workspace.get_file(&path).unwrap().is_populated());
 
     // Update the file - should trigger invalidation
@@ -555,8 +555,8 @@ fn test_invalidate_dependent_files() {
         .add_dependency(&app_path, &base_path);
 
     // Populate both files
-    workspace.populate_file(&base_path);
-    workspace.populate_file(&app_path);
+    let _ = workspace.populate_file(&base_path);
+    let _ = workspace.populate_file(&app_path);
     assert!(workspace.get_file(&base_path).unwrap().is_populated());
     assert!(workspace.get_file(&app_path).unwrap().is_populated());
 
@@ -613,9 +613,9 @@ fn test_invalidate_transitive_dependencies() {
         .add_dependency(&b_path, &c_path);
 
     // Populate all files
-    workspace.populate_file(&a_path);
-    workspace.populate_file(&b_path);
-    workspace.populate_file(&c_path);
+    let _ = workspace.populate_file(&a_path);
+    let _ = workspace.populate_file(&b_path);
+    let _ = workspace.populate_file(&c_path);
 
     // Update C - should invalidate B and A
     workspace.update_file(
