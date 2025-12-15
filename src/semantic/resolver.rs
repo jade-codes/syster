@@ -140,7 +140,7 @@ impl<'a> NameResolver<'a> {
                 .all_symbols()
                 .into_iter()
                 .filter_map(|(_, symbol)| {
-                    let qname = self.get_qualified_name(symbol);
+                    let qname = symbol.qualified_name();
                     if !qname.contains("::") {
                         Some(qname.to_string())
                     } else {
@@ -158,7 +158,7 @@ impl<'a> NameResolver<'a> {
             .all_symbols()
             .into_iter()
             .filter_map(|(_, symbol)| {
-                let qname = self.get_qualified_name(symbol);
+                let qname = symbol.qualified_name();
 
                 // Check if this symbol is a direct child of prefix
                 if let Some(remainder) = qname.strip_prefix(prefix)
@@ -172,18 +172,6 @@ impl<'a> NameResolver<'a> {
                 None
             })
             .collect()
-    }
-
-    /// Helper to extract qualified name from any Symbol variant
-    fn get_qualified_name<'b>(&self, symbol: &'b Symbol) -> &'b str {
-        match symbol {
-            Symbol::Package { qualified_name, .. } => qualified_name,
-            Symbol::Classifier { qualified_name, .. } => qualified_name,
-            Symbol::Feature { qualified_name, .. } => qualified_name,
-            Symbol::Definition { qualified_name, .. } => qualified_name,
-            Symbol::Usage { qualified_name, .. } => qualified_name,
-            Symbol::Alias { qualified_name, .. } => qualified_name,
-        }
     }
 }
 

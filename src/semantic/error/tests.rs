@@ -2,6 +2,53 @@
 #![allow(clippy::panic)]
 
 use super::*;
+use crate::core::error_codes::{
+    SEMANTIC_ABSTRACT_INSTANTIATION, SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_CONSTRAINT_VIOLATION,
+    SEMANTIC_DUPLICATE_DEFINITION, SEMANTIC_INVALID_FEATURE_CONTEXT, SEMANTIC_INVALID_IMPORT,
+    SEMANTIC_INVALID_REDEFINITION, SEMANTIC_INVALID_SPECIALIZATION, SEMANTIC_INVALID_SUBSETTING,
+    SEMANTIC_INVALID_TYPE, SEMANTIC_TYPE_MISMATCH, SEMANTIC_UNDEFINED_REFERENCE,
+};
+
+#[test]
+fn test_error_has_code() {
+    let error = SemanticError::undefined_reference("MySymbol".to_string());
+    assert_eq!(error.error_code, SEMANTIC_UNDEFINED_REFERENCE);
+}
+
+#[test]
+fn test_duplicate_definition_has_code() {
+    let error = SemanticError::duplicate_definition("Test".to_string(), None);
+    assert_eq!(error.error_code, SEMANTIC_DUPLICATE_DEFINITION);
+}
+
+#[test]
+fn test_type_mismatch_has_code() {
+    let error = SemanticError::type_mismatch(
+        "Integer".to_string(),
+        "String".to_string(),
+        "assignment".to_string(),
+    );
+    assert_eq!(error.error_code, SEMANTIC_TYPE_MISMATCH);
+}
+
+#[test]
+fn test_invalid_type_has_code() {
+    let error = SemanticError::invalid_type("Unknown".to_string());
+    assert_eq!(error.error_code, SEMANTIC_INVALID_TYPE);
+}
+
+#[test]
+fn test_circular_dependency_has_code() {
+    let error = SemanticError::circular_dependency(vec!["A".to_string(), "B".to_string()]);
+    assert_eq!(error.error_code, SEMANTIC_CIRCULAR_DEPENDENCY);
+}
+
+#[test]
+fn test_error_display_includes_code() {
+    let error = SemanticError::undefined_reference("MySymbol".to_string());
+    let display = format!("{}", error);
+    assert!(display.starts_with("E002:"));
+}
 
 #[test]
 fn test_error_display_with_location() {
@@ -146,6 +193,7 @@ fn test_duplicate_definition_with_first_location() {
 #[test]
 fn test_invalid_specialization_error() {
     let error = SemanticError::new(
+        SEMANTIC_INVALID_SPECIALIZATION,
         SemanticErrorKind::InvalidSpecialization {
             child: "Derived".to_string(),
             parent: "Base".to_string(),
@@ -165,6 +213,7 @@ fn test_invalid_specialization_error() {
 #[test]
 fn test_invalid_redefinition_error() {
     let error = SemanticError::new(
+        SEMANTIC_INVALID_REDEFINITION,
         SemanticErrorKind::InvalidRedefinition {
             feature: "myFeature".to_string(),
             redefined: "baseFeature".to_string(),
@@ -182,6 +231,7 @@ fn test_invalid_redefinition_error() {
 #[test]
 fn test_invalid_subsetting_error() {
     let error = SemanticError::new(
+        SEMANTIC_INVALID_SUBSETTING,
         SemanticErrorKind::InvalidSubsetting {
             feature: "subFeature".to_string(),
             subset_of: "superFeature".to_string(),
@@ -199,6 +249,7 @@ fn test_invalid_subsetting_error() {
 #[test]
 fn test_constraint_violation_error() {
     let error = SemanticError::new(
+        SEMANTIC_CONSTRAINT_VIOLATION,
         SemanticErrorKind::ConstraintViolation {
             constraint: "multiplicity".to_string(),
             reason: "expected 1..*, got 0..1".to_string(),
@@ -215,6 +266,7 @@ fn test_constraint_violation_error() {
 #[test]
 fn test_invalid_feature_context_error() {
     let error = SemanticError::new(
+        SEMANTIC_INVALID_FEATURE_CONTEXT,
         SemanticErrorKind::InvalidFeatureContext {
             feature: "attribute".to_string(),
             context: "function".to_string(),
@@ -231,6 +283,7 @@ fn test_invalid_feature_context_error() {
 #[test]
 fn test_abstract_instantiation_error() {
     let error = SemanticError::new(
+        SEMANTIC_ABSTRACT_INSTANTIATION,
         SemanticErrorKind::AbstractInstantiation {
             element: "AbstractClass".to_string(),
         },
@@ -246,6 +299,7 @@ fn test_abstract_instantiation_error() {
 #[test]
 fn test_invalid_import_error() {
     let error = SemanticError::new(
+        SEMANTIC_INVALID_IMPORT,
         SemanticErrorKind::InvalidImport {
             path: "NonExistent::Package".to_string(),
             reason: "package not found".to_string(),

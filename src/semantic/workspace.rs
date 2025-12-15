@@ -172,51 +172,8 @@ use crate::semantic::symbol_table::SymbolTable;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-/// Represents a file in the workspace with its path and parsed content
-#[derive(Debug)]
-pub struct WorkspaceFile {
-    path: PathBuf,
-    content: SysMLFile,
-    version: u32,
-    populated: bool,
-}
-
-impl WorkspaceFile {
-    pub fn new(path: PathBuf, content: SysMLFile) -> Self {
-        Self {
-            path,
-            content,
-            version: 0,
-            populated: false,
-        }
-    }
-
-    pub fn path(&self) -> &PathBuf {
-        &self.path
-    }
-
-    pub fn content(&self) -> &SysMLFile {
-        &self.content
-    }
-
-    pub fn version(&self) -> u32 {
-        self.version
-    }
-
-    pub fn is_populated(&self) -> bool {
-        self.populated
-    }
-
-    fn set_populated(&mut self, populated: bool) {
-        self.populated = populated;
-    }
-
-    fn update_content(&mut self, content: SysMLFile) {
-        self.content = content;
-        self.version += 1;
-        self.populated = false; // Need to re-populate after content change
-    }
-}
+mod file;
+pub use file::WorkspaceFile;
 
 /// A workspace manages multiple SysML files with a shared symbol table and relationship graph
 pub struct Workspace {
@@ -246,10 +203,6 @@ impl Workspace {
     }
 
     /// Creates a new workspace with the standard library pre-loaded
-    ///
-    /// Note: This is a placeholder. In a complete implementation, use a separate
-    /// `LibraryLoader` or `WorkspaceBuilder` to load standard library files from
-    /// `/sysml.lib/` before creating the workspace.
     pub fn with_stdlib() -> Self {
         let mut workspace = Self::new();
         workspace.stdlib_loaded = true;
@@ -289,8 +242,8 @@ impl Workspace {
 
     /// Updates an existing file's content (for LSP document sync)
     ///
-    /// Returns true if the file was found and updated, false otherwise.
-    /// Emits a FileUpdated event that listeners can use for invalidation.
+    /// Returns true if updated, false if file not found.
+    /// Emits a FileUpdated event for invalidation listeners.
     pub fn update_file(&mut self, path: &PathBuf, content: SysMLFile) -> bool {
         // Check if file exists first
         if !self.files.contains_key(path) {
@@ -491,13 +444,9 @@ impl Workspace {
         self.dependency_graph.get_dependents(path)
     }
 
-    /// Enables automatic invalidation of dependent files when files are updated.
+    /// Enables automatic invalidation of dependent files when files are updated
     ///
-    /// When a file is updated, this will automatically mark the file and all files
-    /// that transitively depend on it as unpopulated (needing re-population).
-    ///
-    /// This is the recommended approach for LSP implementations where file changes
-    /// should trigger smart re-analysis of only affected files.
+    /// Recommended for LSP implementations where file changes trigger re-analysis.
     pub fn enable_auto_invalidation(&mut self) {
         self.subscribe(|event, workspace| {
             if let WorkspaceEvent::FileUpdated { path } = event {
@@ -512,12 +461,7 @@ impl Workspace {
         });
     }
 
-    /// Subscribes a listener to workspace events
-    ///
-    /// The listener will be called whenever files are added, updated, or removed.
-    /// Use this for custom side effects beyond the standard auto-invalidation.
-    ///
-    /// For most use cases, prefer `enable_auto_invalidation()` instead.
+    /// Subscribes a listener to workspace events for custom side effects
     pub fn subscribe<F>(&mut self, listener: F)
     where
         F: Fn(&WorkspaceEvent, &mut Workspace) + Send + Sync + 'static,
@@ -526,10 +470,6 @@ impl Workspace {
     }
 
     /// Marks a file as unpopulated (needing re-population)
-    ///
-    /// This is typically called automatically by event listeners when using
-    /// `enable_auto_invalidation()`. You can also call it manually for custom
-    /// invalidation logic.
     pub fn mark_file_unpopulated(&mut self, path: &PathBuf) {
         if let Some(file) = self.files.get_mut(path) {
             file.set_populated(false);

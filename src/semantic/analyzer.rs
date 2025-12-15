@@ -233,50 +233,32 @@ impl SemanticAnalyzer {
     }
 
     fn validate_relationships(&self, context: &mut AnalysisContext) {
-        // Validate that all relationship targets exist
+        // Validate that all relationship targets exist and check domain constraints
         for relationship_type in self.relationship_graph.relationship_types() {
             for (_name, symbol) in self.symbol_table.all_symbols() {
                 let qualified_name = symbol.qualified_name();
 
+                // Check one-to-many relationships
                 if let Some(targets) = self
                     .relationship_graph
                     .get_one_to_many(&relationship_type, qualified_name)
                 {
                     for target in targets {
-                        if let Some(target_symbol) = self.symbol_table.lookup(target) {
-                            // Validate domain-specific relationship constraints
-                            self.validate_domain_relationship_constraints(
-                                &relationship_type,
-                                symbol,
-                                target_symbol,
-                                context,
-                            );
-                        } else {
-                            context.add_error(SemanticError::undefined_reference(format!(
-                                "'{}' has {} relationship to undefined target '{}'",
-                                qualified_name, relationship_type, target
-                            )));
-                        }
+                        self.validate_single_relationship(
+                            &relationship_type,
+                            symbol,
+                            target,
+                            context,
+                        );
                     }
                 }
 
+                // Check one-to-one relationships
                 if let Some(target) = self
                     .relationship_graph
                     .get_one_to_one(&relationship_type, qualified_name)
                 {
-                    if let Some(target_symbol) = self.symbol_table.lookup(target) {
-                        self.validate_domain_relationship_constraints(
-                            &relationship_type,
-                            symbol,
-                            target_symbol,
-                            context,
-                        );
-                    } else {
-                        context.add_error(SemanticError::undefined_reference(format!(
-                            "'{}' has {} relationship to undefined target '{}'",
-                            qualified_name, relationship_type, target
-                        )));
-                    }
+                    self.validate_single_relationship(&relationship_type, symbol, target, context);
                 }
             }
         }
@@ -304,6 +286,35 @@ impl SemanticAnalyzer {
         }
     }
 
+    /// Validates a single relationship between source symbol and target name
+    fn validate_single_relationship(
+        &self,
+        relationship_type: &str,
+        source: &Symbol,
+        target_name: &str,
+        context: &mut AnalysisContext,
+    ) {
+        match self.symbol_table.lookup(target_name) {
+            Some(target_symbol) => {
+                // Validate domain-specific relationship constraints
+                self.validate_domain_relationship_constraints(
+                    relationship_type,
+                    source,
+                    target_symbol,
+                    context,
+                );
+            }
+            None => {
+                context.add_error(SemanticError::undefined_reference(format!(
+                    "'{}' has {} relationship to undefined target '{}'",
+                    source.qualified_name(),
+                    relationship_type,
+                    target_name
+                )));
+            }
+        }
+    }
+
     fn validate_domain_relationship_constraints(
         &self,
         relationship_type: &str,
@@ -312,62 +323,68 @@ impl SemanticAnalyzer {
         context: &mut AnalysisContext,
     ) {
         match relationship_type {
-            "satisfy" => {
-                // Satisfy relationships should target requirements
-                if let Symbol::Definition { kind, .. } = target {
-                    if kind != "Requirement" {
-                        context.add_error(SemanticError::invalid_type(format!(
-                            "satisfy relationship must target a requirement, but '{}' is a {}",
-                            target.qualified_name(),
-                            kind
-                        )));
-                    }
-                } else if !matches!(target, Symbol::Usage { kind, .. } if kind == "Requirement") {
-                    context.add_error(SemanticError::invalid_type(format!(
-                        "satisfy relationship must target a requirement, but '{}' is not",
-                        target.qualified_name()
-                    )));
-                }
-            }
-            "perform" => {
-                // Perform relationships should target actions
-                if let Symbol::Definition { kind, .. } = target
-                    && kind != "Action"
-                {
-                    context.add_error(SemanticError::invalid_type(format!(
-                        "perform relationship must target an action, but '{}' is a {}",
-                        target.qualified_name(),
-                        kind
-                    )));
-                }
-            }
-            "exhibit" => {
-                // Exhibit relationships should target states
-                if let Symbol::Definition { kind, .. } = target
-                    && kind != "State"
-                {
-                    context.add_error(SemanticError::invalid_type(format!(
-                        "exhibit relationship must target a state, but '{}' is a {}",
-                        target.qualified_name(),
-                        kind
-                    )));
-                }
-            }
-            "include" => {
-                // Include relationships should target use cases
-                if let Symbol::Definition { kind, .. } = target
-                    && kind != "UseCase"
-                {
-                    context.add_error(SemanticError::invalid_type(format!(
-                        "include relationship must target a use case, but '{}' is a {}",
-                        target.qualified_name(),
-                        kind
-                    )));
-                }
-            }
+            "satisfy" => self.validate_satisfy_constraint(target, context),
+            "perform" => self.validate_perform_constraint(target, context),
+            "exhibit" => self.validate_exhibit_constraint(target, context),
+            "include" => self.validate_include_constraint(target, context),
             _ => {
                 // Other relationships don't have specific type constraints yet
             }
+        }
+    }
+
+    /// Validates that satisfy relationships target requirements
+    fn validate_satisfy_constraint(&self, target: &Symbol, context: &mut AnalysisContext) {
+        let is_requirement = match target {
+            Symbol::Definition { kind, .. } => kind == "Requirement",
+            Symbol::Usage { kind, .. } => kind == "Requirement",
+            _ => false,
+        };
+
+        if !is_requirement {
+            context.add_error(SemanticError::invalid_type(format!(
+                "satisfy relationship must target a requirement, but '{}' is not",
+                target.qualified_name()
+            )));
+        }
+    }
+
+    /// Validates that perform relationships target actions
+    fn validate_perform_constraint(&self, target: &Symbol, context: &mut AnalysisContext) {
+        if let Symbol::Definition { kind, .. } = target
+            && kind != "Action"
+        {
+            context.add_error(SemanticError::invalid_type(format!(
+                "perform relationship must target an action, but '{}' is a {}",
+                target.qualified_name(),
+                kind
+            )));
+        }
+    }
+
+    /// Validates that exhibit relationships target states
+    fn validate_exhibit_constraint(&self, target: &Symbol, context: &mut AnalysisContext) {
+        if let Symbol::Definition { kind, .. } = target
+            && kind != "State"
+        {
+            context.add_error(SemanticError::invalid_type(format!(
+                "exhibit relationship must target a state, but '{}' is a {}",
+                target.qualified_name(),
+                kind
+            )));
+        }
+    }
+
+    /// Validates that include relationships target use cases
+    fn validate_include_constraint(&self, target: &Symbol, context: &mut AnalysisContext) {
+        if let Symbol::Definition { kind, .. } = target
+            && kind != "UseCase"
+        {
+            context.add_error(SemanticError::invalid_type(format!(
+                "include relationship must target a use case, but '{}' is a {}",
+                target.qualified_name(),
+                kind
+            )));
         }
     }
 }

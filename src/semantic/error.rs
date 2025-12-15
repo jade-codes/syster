@@ -1,8 +1,13 @@
+use crate::core::error_codes::{
+    SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_DUPLICATE_DEFINITION, SEMANTIC_INVALID_TYPE,
+    SEMANTIC_TYPE_MISMATCH, SEMANTIC_UNDEFINED_REFERENCE,
+};
 use std::fmt;
 
 /// Represents semantic errors found during analysis
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticError {
+    pub error_code: &'static str,
     pub kind: SemanticErrorKind,
     pub message: String,
     pub location: Option<Location>,
@@ -63,8 +68,9 @@ pub enum SemanticErrorKind {
 }
 
 impl SemanticError {
-    pub fn new(kind: SemanticErrorKind, message: String) -> Self {
+    pub fn new(error_code: &'static str, kind: SemanticErrorKind, message: String) -> Self {
         Self {
+            error_code,
             kind,
             message,
             location: None,
@@ -78,6 +84,7 @@ impl SemanticError {
 
     pub fn duplicate_definition(name: String, first_location: Option<Location>) -> Self {
         Self::new(
+            SEMANTIC_DUPLICATE_DEFINITION,
             SemanticErrorKind::DuplicateDefinition {
                 name: name.clone(),
                 first_location,
@@ -88,6 +95,7 @@ impl SemanticError {
 
     pub fn undefined_reference(name: String) -> Self {
         Self::new(
+            SEMANTIC_UNDEFINED_REFERENCE,
             SemanticErrorKind::UndefinedReference { name: name.clone() },
             format!("Cannot find symbol '{}'", name),
         )
@@ -95,6 +103,7 @@ impl SemanticError {
 
     pub fn type_mismatch(expected: String, found: String, context: String) -> Self {
         Self::new(
+            SEMANTIC_TYPE_MISMATCH,
             SemanticErrorKind::TypeMismatch {
                 expected: expected.clone(),
                 found: found.clone(),
@@ -109,6 +118,7 @@ impl SemanticError {
 
     pub fn invalid_type(type_name: String) -> Self {
         Self::new(
+            SEMANTIC_INVALID_TYPE,
             SemanticErrorKind::InvalidType {
                 type_name: type_name.clone(),
             },
@@ -118,6 +128,7 @@ impl SemanticError {
 
     pub fn circular_dependency(cycle: Vec<String>) -> Self {
         Self::new(
+            SEMANTIC_CIRCULAR_DEPENDENCY,
             SemanticErrorKind::CircularDependency {
                 cycle: cycle.clone(),
             },
@@ -128,6 +139,10 @@ impl SemanticError {
 
 impl fmt::Display for SemanticError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Write error code first
+        write!(f, "{}: ", self.error_code)?;
+
+        // Write location if available
         if let Some(loc) = &self.location {
             if let Some(file) = &loc.file {
                 write!(f, "{}:", file)?;
@@ -140,6 +155,8 @@ impl fmt::Display for SemanticError {
             }
             write!(f, " ")?;
         }
+
+        // Write message
         write!(f, "{}", self.message)
     }
 }
