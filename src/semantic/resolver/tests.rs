@@ -644,3 +644,178 @@ fn test_resolve_different_classifier_kinds() {
     };
     assert_eq!(kind, "Function");
 }
+
+#[test]
+fn test_resolve_import_specific_member() {
+    let mut table = SymbolTable::new();
+
+    table
+        .insert(
+            "Base".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: None,
+                name: "Base".to_string(),
+                qualified_name: "Base".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "Base::Vehicle".to_string(),
+            Symbol::Classifier {
+                scope_id: 1,
+                source_file: None,
+                name: "Vehicle".to_string(),
+                qualified_name: "Base::Vehicle".to_string(),
+                kind: "PartDef".to_string(),
+                is_abstract: false,
+            },
+        )
+        .unwrap();
+
+    let resolver = NameResolver::new(&table);
+
+    // Specific import
+    let imports = resolver.resolve_import("Base::Vehicle");
+    assert_eq!(imports.len(), 1);
+    assert_eq!(imports[0], "Base::Vehicle");
+}
+
+#[test]
+fn test_resolve_import_wildcard() {
+    let mut table = SymbolTable::new();
+
+    table
+        .insert(
+            "Base".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: None,
+                name: "Base".to_string(),
+                qualified_name: "Base".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "Base::Vehicle".to_string(),
+            Symbol::Classifier {
+                scope_id: 1,
+                source_file: None,
+                name: "Vehicle".to_string(),
+                qualified_name: "Base::Vehicle".to_string(),
+                kind: "PartDef".to_string(),
+                is_abstract: false,
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "Base::Engine".to_string(),
+            Symbol::Classifier {
+                scope_id: 1,
+                source_file: None,
+                name: "Engine".to_string(),
+                qualified_name: "Base::Engine".to_string(),
+                kind: "PartDef".to_string(),
+                is_abstract: false,
+            },
+        )
+        .unwrap();
+
+    // Nested symbol - should not be included
+    table
+        .insert(
+            "Base::Vehicle::Wheel".to_string(),
+            Symbol::Classifier {
+                scope_id: 2,
+                source_file: None,
+                name: "Wheel".to_string(),
+                qualified_name: "Base::Vehicle::Wheel".to_string(),
+                kind: "PartDef".to_string(),
+                is_abstract: false,
+            },
+        )
+        .unwrap();
+
+    let resolver = NameResolver::new(&table);
+
+    // Wildcard import
+    let mut imports = resolver.resolve_import("Base::*");
+    imports.sort(); // For deterministic ordering
+
+    assert_eq!(imports.len(), 2);
+    assert_eq!(imports[0], "Base::Engine");
+    assert_eq!(imports[1], "Base::Vehicle");
+    // Wheel should not be included (nested)
+}
+
+#[test]
+fn test_resolve_import_bare_wildcard() {
+    let mut table = SymbolTable::new();
+
+    table
+        .insert(
+            "PackageA".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: None,
+                name: "PackageA".to_string(),
+                qualified_name: "PackageA".to_string(),
+            },
+        )
+        .unwrap();
+
+    table
+        .insert(
+            "PackageB".to_string(),
+            Symbol::Package {
+                scope_id: 1,
+                source_file: None,
+                name: "PackageB".to_string(),
+                qualified_name: "PackageB".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Nested - should not be included
+    table
+        .insert(
+            "PackageA::Nested".to_string(),
+            Symbol::Package {
+                scope_id: 2,
+                source_file: None,
+                name: "Nested".to_string(),
+                qualified_name: "PackageA::Nested".to_string(),
+            },
+        )
+        .unwrap();
+
+    let resolver = NameResolver::new(&table);
+
+    // Bare wildcard
+    let mut imports = resolver.resolve_import("*");
+    imports.sort();
+
+    assert_eq!(imports.len(), 2);
+    assert_eq!(imports[0], "PackageA");
+    assert_eq!(imports[1], "PackageB");
+}
+
+#[test]
+fn test_resolve_import_nonexistent() {
+    let table = SymbolTable::new();
+    let resolver = NameResolver::new(&table);
+
+    // Specific import that doesn't exist
+    let imports = resolver.resolve_import("DoesNotExist::Member");
+    assert_eq!(imports.len(), 0);
+
+    // Wildcard import that doesn't match anything
+    let imports = resolver.resolve_import("DoesNotExist::*");
+    assert_eq!(imports.len(), 0);
+}

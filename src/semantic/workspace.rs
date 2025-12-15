@@ -330,6 +330,49 @@ impl Workspace {
         Ok(())
     }
 
+    /// Populates only files that are marked as unpopulated (needing re-population)
+    ///
+    /// This is more efficient than `populate_all()` for incremental updates in LSP scenarios
+    /// where only a subset of files have been modified or invalidated.
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of files that were repopulated.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any unpopulated file fails to populate due to invalid syntax
+    /// or semantic errors in the SysML content.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// workspace.enable_auto_invalidation();
+    /// workspace.update_file(&path, new_content); // Invalidates affected files
+    /// let count = workspace.populate_affected()?; // Only repopulates invalidated files
+    /// println!("Repopulated {} files", count);
+    /// ```
+    pub fn populate_affected(&mut self) -> Result<usize, String> {
+        // Collect unpopulated files
+        let mut unpopulated: Vec<_> = self
+            .files
+            .iter()
+            .filter(|(_, file)| !file.is_populated())
+            .map(|(path, _)| path.clone())
+            .collect();
+
+        // Sort for deterministic ordering
+        unpopulated.sort();
+
+        let count = unpopulated.len();
+
+        for path in unpopulated {
+            self.populate_file(&path)?;
+        }
+
+        Ok(count)
+    }
+
     /// Populates the symbol table and relationship graph for a specific file
     ///
     /// # Errors

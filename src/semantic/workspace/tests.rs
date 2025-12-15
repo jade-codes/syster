@@ -631,3 +631,385 @@ fn test_invalidate_transitive_dependencies() {
     assert!(!workspace.get_file(&b_path).unwrap().is_populated());
     assert!(!workspace.get_file(&a_path).unwrap().is_populated());
 }
+
+#[test]
+fn test_circular_dependency_simple() {
+    let mut workspace = Workspace::new();
+
+    let a_path = PathBuf::from("a.sysml");
+    let b_path = PathBuf::from("b.sysml");
+
+    // Add files
+    workspace.add_file(
+        a_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        b_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Create circular dependency: A -> B -> A
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&a_path, &b_path);
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&b_path, &a_path);
+
+    // Both files should have circular dependencies
+    assert!(
+        workspace
+            .dependency_graph()
+            .has_circular_dependency(&a_path)
+    );
+    assert!(
+        workspace
+            .dependency_graph()
+            .has_circular_dependency(&b_path)
+    );
+}
+
+#[test]
+fn test_circular_dependency_complex() {
+    let mut workspace = Workspace::new();
+
+    let a_path = PathBuf::from("a.sysml");
+    let b_path = PathBuf::from("b.sysml");
+    let c_path = PathBuf::from("c.sysml");
+
+    // Add files
+    workspace.add_file(
+        a_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        b_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        c_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Create circular dependency: A -> B -> C -> A
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&a_path, &b_path);
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&b_path, &c_path);
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&c_path, &a_path);
+
+    // All files should detect the circular dependency
+    assert!(
+        workspace
+            .dependency_graph()
+            .has_circular_dependency(&a_path)
+    );
+    assert!(
+        workspace
+            .dependency_graph()
+            .has_circular_dependency(&b_path)
+    );
+    assert!(
+        workspace
+            .dependency_graph()
+            .has_circular_dependency(&c_path)
+    );
+}
+
+#[test]
+fn test_no_circular_dependency_in_chain() {
+    let mut workspace = Workspace::new();
+
+    let a_path = PathBuf::from("a.sysml");
+    let b_path = PathBuf::from("b.sysml");
+    let c_path = PathBuf::from("c.sysml");
+
+    // Add files
+    workspace.add_file(
+        a_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        b_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        c_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Create linear dependency: A -> B -> C (no cycle)
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&a_path, &b_path);
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&b_path, &c_path);
+
+    // No files should have circular dependencies
+    assert!(
+        !workspace
+            .dependency_graph()
+            .has_circular_dependency(&a_path)
+    );
+    assert!(
+        !workspace
+            .dependency_graph()
+            .has_circular_dependency(&b_path)
+    );
+    assert!(
+        !workspace
+            .dependency_graph()
+            .has_circular_dependency(&c_path)
+    );
+}
+
+#[test]
+fn test_invalidation_with_circular_dependency() {
+    let mut workspace = Workspace::new();
+    workspace.enable_auto_invalidation();
+
+    let a_path = PathBuf::from("a.sysml");
+    let b_path = PathBuf::from("b.sysml");
+
+    // Add files
+    workspace.add_file(
+        a_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        b_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Create circular dependency: A -> B -> A
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&a_path, &b_path);
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&b_path, &a_path);
+
+    // Populate both files
+    workspace.populate_file(&a_path).unwrap();
+    workspace.populate_file(&b_path).unwrap();
+
+    // Update one file - should invalidate both without infinite loop
+    workspace.update_file(
+        &a_path,
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Both files should be unpopulated (invalidation visited each once)
+    assert!(!workspace.get_file(&a_path).unwrap().is_populated());
+    assert!(!workspace.get_file(&b_path).unwrap().is_populated());
+}
+
+#[test]
+fn test_circular_dependency_self_reference() {
+    let mut workspace = Workspace::new();
+
+    let a_path = PathBuf::from("a.sysml");
+
+    // Add file
+    workspace.add_file(
+        a_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Create self-reference: A -> A
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&a_path, &a_path);
+
+    // Should detect circular dependency
+    assert!(
+        workspace
+            .dependency_graph()
+            .has_circular_dependency(&a_path)
+    );
+}
+
+#[test]
+fn test_populate_affected_empty() {
+    let mut workspace = Workspace::new();
+
+    // No unpopulated files
+    let count = workspace.populate_affected().unwrap();
+    assert_eq!(count, 0);
+}
+
+#[test]
+fn test_populate_affected_single_file() {
+    let mut workspace = Workspace::new();
+
+    let source = "part def Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let path = PathBuf::from("vehicle.sysml");
+    workspace.add_file(path.clone(), file);
+
+    // File should be unpopulated
+    assert!(!workspace.get_file(&path).unwrap().is_populated());
+
+    // Populate affected
+    let count = workspace.populate_affected().unwrap();
+    assert_eq!(count, 1);
+
+    // File should now be populated
+    assert!(workspace.get_file(&path).unwrap().is_populated());
+
+    // Running again should populate nothing
+    let count = workspace.populate_affected().unwrap();
+    assert_eq!(count, 0);
+}
+
+#[test]
+fn test_populate_affected_after_update() {
+    let mut workspace = Workspace::new();
+    workspace.enable_auto_invalidation();
+
+    let base_path = PathBuf::from("base.sysml");
+    let app_path = PathBuf::from("app.sysml");
+
+    // Add files
+    workspace.add_file(
+        base_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        app_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Set up dependency: app imports base
+    workspace
+        .dependency_graph_mut()
+        .add_dependency(&app_path, &base_path);
+
+    // Populate all files
+    workspace.populate_all().unwrap();
+    assert!(workspace.get_file(&base_path).unwrap().is_populated());
+    assert!(workspace.get_file(&app_path).unwrap().is_populated());
+
+    // Update base - invalidates both files
+    workspace.update_file(
+        &base_path,
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Both should be unpopulated
+    assert!(!workspace.get_file(&base_path).unwrap().is_populated());
+    assert!(!workspace.get_file(&app_path).unwrap().is_populated());
+
+    // Populate affected should repopulate both
+    let count = workspace.populate_affected().unwrap();
+    assert_eq!(count, 2);
+
+    // Both should be populated again
+    assert!(workspace.get_file(&base_path).unwrap().is_populated());
+    assert!(workspace.get_file(&app_path).unwrap().is_populated());
+}
+
+#[test]
+fn test_populate_affected_selective() {
+    let mut workspace = Workspace::new();
+
+    let a_path = PathBuf::from("a.sysml");
+    let b_path = PathBuf::from("b.sysml");
+    let c_path = PathBuf::from("c.sysml");
+
+    // Add three files
+    workspace.add_file(
+        a_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        b_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+    workspace.add_file(
+        c_path.clone(),
+        SysMLFile {
+            namespace: None,
+            elements: vec![],
+        },
+    );
+
+    // Populate all
+    workspace.populate_all().unwrap();
+
+    // Manually invalidate only one file
+    workspace.mark_file_unpopulated(&b_path);
+
+    // Only b should be unpopulated
+    assert!(workspace.get_file(&a_path).unwrap().is_populated());
+    assert!(!workspace.get_file(&b_path).unwrap().is_populated());
+    assert!(workspace.get_file(&c_path).unwrap().is_populated());
+
+    // Populate affected should only repopulate b
+    let count = workspace.populate_affected().unwrap();
+    assert_eq!(count, 1);
+
+    // All should be populated
+    assert!(workspace.get_file(&a_path).unwrap().is_populated());
+    assert!(workspace.get_file(&b_path).unwrap().is_populated());
+    assert!(workspace.get_file(&c_path).unwrap().is_populated());
+}
