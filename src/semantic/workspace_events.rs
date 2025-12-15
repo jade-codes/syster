@@ -3,6 +3,7 @@
 //! Provides a pub/sub mechanism for reacting to workspace changes like file updates,
 //! additions, and removals. This enables decoupled invalidation and notification logic.
 
+use crate::core::events::Event;
 use std::path::PathBuf;
 
 /// Events emitted by the workspace during file operations
@@ -17,6 +18,8 @@ pub enum WorkspaceEvent {
     /// A file was removed from the workspace
     FileRemoved { path: PathBuf },
 }
+
+impl Event for WorkspaceEvent {}
 
 #[cfg(test)]
 mod tests {

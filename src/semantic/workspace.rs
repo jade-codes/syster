@@ -141,6 +141,7 @@
 //!
 //! See [Workspace Management](../../docs/SEMANTIC_ANALYSIS.md#workspace-management) for details.
 
+use crate::core::events::EventEmitter;
 use crate::language::sysml::SymbolTablePopulator;
 use crate::language::sysml::syntax::SysMLFile;
 use crate::semantic::dependency_graph::DependencyGraph;
@@ -210,7 +211,7 @@ pub struct Workspace {
     file_imports: HashMap<PathBuf, Vec<String>>,
     stdlib_loaded: bool,
     symbol_index: HashMap<String, Vec<usize>>,
-    event_listeners: Vec<EventListener>,
+    events: EventEmitter<WorkspaceEvent, Workspace>,
 }
 
 impl Workspace {
@@ -224,7 +225,7 @@ impl Workspace {
             file_imports: HashMap::new(),
             stdlib_loaded: false,
             symbol_index: HashMap::new(),
-            event_listeners: Vec::new(),
+            events: EventEmitter::new(),
         }
     }
 
@@ -259,7 +260,8 @@ impl Workspace {
         self.files.insert(path.clone(), file);
 
         // Emit event
-        self.emit_event(WorkspaceEvent::FileAdded { path });
+        let events = std::mem::replace(&mut self.events, EventEmitter::new());
+        self.events = events.emit(WorkspaceEvent::FileAdded { path }, self);
     }
 
     /// Gets a reference to a file in the workspace
@@ -278,7 +280,8 @@ impl Workspace {
         }
 
         // Emit event BEFORE clearing dependencies so listeners can query the graph
-        self.emit_event(WorkspaceEvent::FileUpdated { path: path.clone() });
+        let events = std::mem::replace(&mut self.events, EventEmitter::new());
+        self.events = events.emit(WorkspaceEvent::FileUpdated { path: path.clone() }, self);
 
         // Now update the file
         if let Some(file) = self.files.get_mut(path) {
@@ -307,7 +310,8 @@ impl Workspace {
             self.file_imports.remove(path);
 
             // Emit event
-            self.emit_event(WorkspaceEvent::FileRemoved { path: path.clone() });
+            let events = std::mem::replace(&mut self.events, EventEmitter::new());
+            self.events = events.emit(WorkspaceEvent::FileRemoved { path: path.clone() }, self);
         }
         existed
     }
@@ -532,7 +536,7 @@ impl Workspace {
     where
         F: Fn(&WorkspaceEvent, &mut Workspace) + Send + Sync + 'static,
     {
-        self.event_listeners.push(Arc::new(listener));
+        self.events.subscribe(listener);
     }
 
     /// Marks a file as unpopulated (needing re-population)
@@ -543,19 +547,6 @@ impl Workspace {
     pub fn mark_file_unpopulated(&mut self, path: &PathBuf) {
         if let Some(file) = self.files.get_mut(path) {
             file.set_populated(false);
-        }
-    }
-
-    /// Emits an event to all registered listeners
-    ///
-    /// Note: This temporarily takes ownership to avoid borrow checker issues.
-    /// Listeners get mutable access to workspace for invalidation.
-    fn emit_event(&mut self, event: WorkspaceEvent) {
-        // Clone listeners to avoid borrow issues
-        let listeners: Vec<_> = self.event_listeners.iter().cloned().collect();
-
-        for listener in listeners {
-            listener(&event, self);
         }
     }
 }
