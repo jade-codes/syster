@@ -412,16 +412,8 @@ impl SymbolTable {
         }
     }
 
-    pub fn lookup_local(&self, name: &str) -> Option<&Symbol> {
-        self.scopes[self.current_scope].symbols.get(name)
-    }
-
     pub fn current_scope_id(&self) -> usize {
         self.current_scope
-    }
-
-    pub fn symbols_in_scope(&self, scope_id: usize) -> Option<&HashMap<String, Symbol>> {
-        self.scopes.get(scope_id).map(|s| &s.symbols)
     }
 
     pub fn all_symbols(&self) -> Vec<(&String, &Symbol)> {
@@ -429,6 +421,22 @@ impl SymbolTable {
             .iter()
             .flat_map(|scope| scope.symbols.iter())
             .collect()
+    }
+
+    /// Removes all symbols from a specific source file
+    ///
+    /// Returns the number of symbols removed.
+    pub fn remove_symbols_from_file(&mut self, file_path: &str) -> usize {
+        self.scopes
+            .iter_mut()
+            .map(|scope| {
+                let before = scope.symbols.len();
+                scope
+                    .symbols
+                    .retain(|_, symbol| symbol.source_file() != Some(file_path));
+                before - scope.symbols.len()
+            })
+            .sum()
     }
 
     /// Looks up a symbol by its qualified name across all scopes
@@ -441,21 +449,6 @@ impl SymbolTable {
             }
         }
         None
-    }
-
-    /// Returns all qualified names with their scope IDs for indexing
-    pub fn all_qualified_names(&self) -> HashMap<String, Vec<usize>> {
-        let mut index = HashMap::new();
-        for (scope_id, scope) in self.scopes.iter().enumerate() {
-            for symbol in scope.symbols.values() {
-                let qualified = symbol.qualified_name().to_string();
-                index
-                    .entry(qualified)
-                    .or_insert_with(Vec::new)
-                    .push(scope_id);
-            }
-        }
-        index
     }
 }
 

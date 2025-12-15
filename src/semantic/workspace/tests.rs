@@ -440,7 +440,7 @@ fn test_subscribe_to_file_added() {
     let events_received = Arc::new(Mutex::new(Vec::new()));
     let events_clone = events_received.clone();
 
-    workspace.subscribe(move |event, _workspace| {
+    workspace.events.subscribe(move |event, _workspace| {
         events_clone.lock().unwrap().push(event.clone());
     });
 
@@ -477,7 +477,7 @@ fn test_subscribe_to_file_updated() {
     let events_received = Arc::new(Mutex::new(Vec::new()));
     let events_clone = events_received.clone();
 
-    workspace.subscribe(move |event, _workspace| {
+    workspace.events.subscribe(move |event, _workspace| {
         events_clone.lock().unwrap().push(event.clone());
     });
 

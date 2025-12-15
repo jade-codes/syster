@@ -76,67 +76,6 @@ fn test_scope_hierarchy() {
 }
 
 #[test]
-fn test_local_lookup() {
-    let mut table = SymbolTable::new();
-
-    let root_symbol = Symbol::Package {
-        scope_id: 0,
-        source_file: None,
-        name: "Root".to_string(),
-        qualified_name: "Root".to_string(),
-    };
-    table.insert("Root".to_string(), root_symbol).unwrap();
-
-    table.enter_scope();
-    let nested_symbol = Symbol::Classifier {
-        scope_id: 0,
-        source_file: None,
-        name: "Nested".to_string(),
-        qualified_name: "Root::Nested".to_string(),
-        kind: "Class".to_string(),
-        is_abstract: false,
-    };
-    table.insert("Nested".to_string(), nested_symbol).unwrap();
-
-    assert!(table.lookup_local("Nested").is_some());
-    assert!(table.lookup_local("Root").is_none());
-
-    assert!(table.lookup("Root").is_some());
-}
-
-#[test]
-fn test_symbols_in_scope() {
-    let mut table = SymbolTable::new();
-
-    let pkg = Symbol::Package {
-        scope_id: 0,
-        source_file: None,
-        name: "Pkg".to_string(),
-        qualified_name: "Pkg".to_string(),
-    };
-    table.insert("Pkg".to_string(), pkg).unwrap();
-
-    let root_symbols = table.symbols_in_scope(0).unwrap();
-    assert_eq!(root_symbols.len(), 1);
-    assert!(root_symbols.contains_key("Pkg"));
-
-    table.enter_scope();
-    let class = Symbol::Classifier {
-        scope_id: 0,
-        source_file: None,
-        name: "Class".to_string(),
-        qualified_name: "Pkg::Class".to_string(),
-        kind: "Class".to_string(),
-        is_abstract: false,
-    };
-    table.insert("Class".to_string(), class).unwrap();
-
-    let nested_symbols = table.symbols_in_scope(1).unwrap();
-    assert_eq!(nested_symbols.len(), 1);
-    assert!(nested_symbols.contains_key("Class"));
-}
-
-#[test]
 fn test_all_symbols() {
     let mut table = SymbolTable::new();
 
@@ -311,11 +250,72 @@ fn test_exit_scope_at_root() {
 fn test_lookup_nonexistent_symbol() {
     let table = SymbolTable::new();
     assert!(table.lookup("DoesNotExist").is_none());
-    assert!(table.lookup_local("DoesNotExist").is_none());
 }
 
 #[test]
-fn test_symbols_in_invalid_scope() {
-    let table = SymbolTable::new();
-    assert!(table.symbols_in_scope(999).is_none());
+fn test_remove_symbols_from_file() {
+    let mut table = SymbolTable::new();
+
+    // Add symbols from file1
+    table.set_current_file(Some("file1.sysml".to_string()));
+    table
+        .insert(
+            "Pkg1".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: Some("file1.sysml".to_string()),
+                name: "Pkg1".to_string(),
+                qualified_name: "Pkg1".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add symbols from file2
+    table.set_current_file(Some("file2.sysml".to_string()));
+    table
+        .insert(
+            "Pkg2".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: Some("file2.sysml".to_string()),
+                name: "Pkg2".to_string(),
+                qualified_name: "Pkg2".to_string(),
+            },
+        )
+        .unwrap();
+
+    // Add another symbol from file1
+    table.set_current_file(Some("file1.sysml".to_string()));
+    table.enter_scope();
+    table
+        .insert(
+            "Class1".to_string(),
+            Symbol::Classifier {
+                scope_id: 1,
+                source_file: Some("file1.sysml".to_string()),
+                name: "Class1".to_string(),
+                qualified_name: "Pkg1::Class1".to_string(),
+                kind: "class".to_string(),
+                is_abstract: false,
+            },
+        )
+        .unwrap();
+
+    // Verify all symbols exist
+    assert!(table.lookup("Pkg1").is_some());
+    assert!(table.lookup("Pkg2").is_some());
+    assert!(table.lookup("Class1").is_some());
+
+    // Remove file1 symbols
+    let removed = table.remove_symbols_from_file("file1.sysml");
+
+    // Should have removed 2 symbols (Pkg1 and Class1)
+    assert_eq!(removed, 2);
+
+    // Verify file1 symbols are gone
+    assert!(table.lookup("Pkg1").is_none());
+    assert!(table.lookup("Class1").is_none());
+
+    // Verify file2 symbols remain
+    assert!(table.lookup("Pkg2").is_some());
 }

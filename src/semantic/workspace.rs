@@ -183,7 +183,6 @@ pub struct Workspace {
     dependency_graph: DependencyGraph,
     file_imports: HashMap<PathBuf, Vec<String>>,
     stdlib_loaded: bool,
-    symbol_index: HashMap<String, Vec<usize>>,
     pub events: EventEmitter<WorkspaceEvent, Workspace>,
 }
 
@@ -197,7 +196,6 @@ impl Workspace {
             dependency_graph: DependencyGraph::new(),
             file_imports: HashMap::new(),
             stdlib_loaded: false,
-            symbol_index: HashMap::new(),
             events: EventEmitter::new(),
         }
     }
@@ -344,6 +342,8 @@ impl Workspace {
 
     /// Populates the symbol table and relationship graph for a specific file
     ///
+    /// Incrementally removes old symbols from this file before re-populating.
+    ///
     /// # Errors
     ///
     /// Returns an error if the file is not found in the workspace or if the file fails
@@ -354,9 +354,13 @@ impl Workspace {
             .get(path)
             .ok_or_else(|| format!("File not found in workspace: {}", path.display()))?;
 
+        let file_path_str = path.to_string_lossy().to_string();
+
+        // Remove old symbols from this file
+        self.symbol_table.remove_symbols_from_file(&file_path_str);
+
         // Set the current file context in the symbol table
-        self.symbol_table
-            .set_current_file(Some(path.to_string_lossy().to_string()));
+        self.symbol_table.set_current_file(Some(file_path_str));
 
         // Populate the symbol table and relationship graph
         let mut populator = SymbolTablePopulator::with_relationships(
@@ -372,9 +376,6 @@ impl Workspace {
         if let Some(file) = self.files.get_mut(path) {
             file.set_populated(true);
         }
-
-        // Rebuild symbol index after population
-        self.rebuild_symbol_index();
 
         Ok(())
     }
@@ -414,16 +415,6 @@ impl Workspace {
         self.files.contains_key(path)
     }
 
-    /// Rebuilds the symbol index from the symbol table
-    pub fn rebuild_symbol_index(&mut self) {
-        self.symbol_index = self.symbol_table.all_qualified_names();
-    }
-
-    /// Looks up a symbol by qualified name using the index (O(1))
-    pub fn lookup_qualified(&self, qualified_name: &str) -> Option<Vec<usize>> {
-        self.symbol_index.get(qualified_name).cloned()
-    }
-
     /// Returns a reference to the dependency graph
     pub fn dependency_graph(&self) -> &DependencyGraph {
         &self.dependency_graph
@@ -448,7 +439,7 @@ impl Workspace {
     ///
     /// Recommended for LSP implementations where file changes trigger re-analysis.
     pub fn enable_auto_invalidation(&mut self) {
-        self.subscribe(|event, workspace| {
+        self.events.subscribe(|event, workspace| {
             if let WorkspaceEvent::FileUpdated { path } = event {
                 // Invalidate the file itself and all its dependents
                 let mut to_invalidate = vec![path.clone()];
@@ -459,14 +450,6 @@ impl Workspace {
                 }
             }
         });
-    }
-
-    /// Subscribes a listener to workspace events for custom side effects
-    pub fn subscribe<F>(&mut self, listener: F)
-    where
-        F: Fn(&WorkspaceEvent, &mut Workspace) + Send + Sync + 'static,
-    {
-        self.events.subscribe(listener);
     }
 
     /// Marks a file as unpopulated (needing re-population)
