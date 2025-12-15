@@ -123,7 +123,9 @@
 
 use crate::language::sysml::SymbolTablePopulator;
 use crate::language::sysml::syntax::SysMLFile;
-use crate::semantic::RelationshipGraph;
+use crate::semantic::dependency_graph::DependencyGraph;
+use crate::semantic::graph::RelationshipGraph;
+use crate::semantic::import_extractor::extract_imports;
 use crate::semantic::symbol_table::SymbolTable;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -180,6 +182,8 @@ pub struct Workspace {
     files: HashMap<PathBuf, WorkspaceFile>,
     symbol_table: SymbolTable,
     relationship_graph: RelationshipGraph,
+    dependency_graph: DependencyGraph,
+    file_imports: HashMap<PathBuf, Vec<String>>,
     stdlib_loaded: bool,
     symbol_index: HashMap<String, Vec<usize>>,
 }
@@ -191,6 +195,8 @@ impl Workspace {
             files: HashMap::new(),
             symbol_table: SymbolTable::new(),
             relationship_graph: RelationshipGraph::new(),
+            dependency_graph: DependencyGraph::new(),
+            file_imports: HashMap::new(),
             stdlib_loaded: false,
             symbol_index: HashMap::new(),
         }
@@ -219,6 +225,10 @@ impl Workspace {
 
     /// Adds a file to the workspace
     pub fn add_file(&mut self, path: PathBuf, content: SysMLFile) {
+        // Extract imports from the file
+        let imports = extract_imports(&content);
+        self.file_imports.insert(path.clone(), imports);
+
         let file = WorkspaceFile::new(path.clone(), content);
         self.files.insert(path, file);
     }
@@ -234,6 +244,13 @@ impl Workspace {
     /// The file will need to be re-populated after this call.
     pub fn update_file(&mut self, path: &PathBuf, content: SysMLFile) -> bool {
         if let Some(file) = self.files.get_mut(path) {
+            // Clear old dependencies
+            self.dependency_graph.remove_file(path);
+
+            // Extract new imports
+            let imports = extract_imports(&content);
+            self.file_imports.insert(path.clone(), imports);
+
             file.update_content(content);
             true
         } else {
@@ -246,6 +263,8 @@ impl Workspace {
     /// Returns true if the file was found and removed, false otherwise.
     /// Note: This does not remove symbols from the symbol table - use `repopulate_all()` after.
     pub fn remove_file(&mut self, path: &PathBuf) -> bool {
+        self.dependency_graph.remove_file(path);
+        self.file_imports.remove(path);
         self.files.remove(path).is_some()
     }
 
@@ -350,6 +369,21 @@ impl Workspace {
     /// Looks up a symbol by qualified name using the index (O(1))
     pub fn lookup_qualified(&self, qualified_name: &str) -> Option<Vec<usize>> {
         self.symbol_index.get(qualified_name).cloned()
+    }
+
+    /// Returns a reference to the dependency graph
+    pub fn dependency_graph(&self) -> &DependencyGraph {
+        &self.dependency_graph
+    }
+
+    /// Returns the list of import paths for a file
+    pub fn get_file_imports(&self, path: &PathBuf) -> Vec<String> {
+        self.file_imports.get(path).cloned().unwrap_or_default()
+    }
+
+    /// Returns the list of files that depend on the given file
+    pub fn get_file_dependents(&self, path: &PathBuf) -> Vec<PathBuf> {
+        self.dependency_graph.get_dependents(path)
     }
 }
 

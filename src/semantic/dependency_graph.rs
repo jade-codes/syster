@@ -120,14 +120,19 @@ impl DependencyGraph {
             }
         }
 
-        // Remove file from being a dependent
-        if let Some(dependents) = self.dependents.remove(file) {
-            for dependent in dependents {
-                if let Some(dep_set) = self.dependencies.get_mut(&dependent) {
+        // Remove file from dependents
+        if let Some(deps) = self.dependents.remove(file) {
+            for dep in deps {
+                if let Some(dep_set) = self.dependencies.get_mut(&dep) {
                     dep_set.remove(file);
                 }
             }
         }
+    }
+
+    /// Returns the total number of tracked dependencies
+    pub fn dependencies_count(&self) -> usize {
+        self.dependencies.values().map(|set| set.len()).sum()
     }
 }
 

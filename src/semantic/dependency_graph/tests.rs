@@ -152,3 +152,30 @@ fn test_remove_dependency() {
     assert_eq!(graph.get_dependencies(&file_a).len(), 0);
     assert_eq!(graph.get_dependents(&file_b).len(), 0);
 }
+
+#[test]
+fn test_dependencies_count() {
+    // TDD: Count total number of dependencies in the graph
+    let mut graph = DependencyGraph::new();
+    assert_eq!(graph.dependencies_count(), 0);
+
+    let file_a = PathBuf::from("a.sysml");
+    let file_b = PathBuf::from("b.sysml");
+    let file_c = PathBuf::from("c.sysml");
+
+    // A -> B
+    graph.add_dependency(&file_a, &file_b);
+    assert_eq!(graph.dependencies_count(), 1);
+
+    // A -> C (A now has 2 dependencies)
+    graph.add_dependency(&file_a, &file_c);
+    assert_eq!(graph.dependencies_count(), 2);
+
+    // B -> C (total 3 dependencies)
+    graph.add_dependency(&file_b, &file_c);
+    assert_eq!(graph.dependencies_count(), 3);
+
+    // Remove A (removes A->B and A->C, leaves B->C)
+    graph.remove_file(&file_a);
+    assert_eq!(graph.dependencies_count(), 1);
+}
