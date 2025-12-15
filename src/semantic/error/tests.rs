@@ -3,10 +3,12 @@
 
 use super::*;
 use crate::core::error_codes::{
-    SEMANTIC_ABSTRACT_INSTANTIATION, SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_CONSTRAINT_VIOLATION,
-    SEMANTIC_DUPLICATE_DEFINITION, SEMANTIC_INVALID_FEATURE_CONTEXT, SEMANTIC_INVALID_IMPORT,
+    SEMANTIC_ABSTRACT_INSTANTIATION, SEMANTIC_CIRCULAR_DEPENDENCY,
+    SEMANTIC_CIRCULAR_DEPENDENCY_MSG, SEMANTIC_CONSTRAINT_VIOLATION, SEMANTIC_DUPLICATE_DEFINITION,
+    SEMANTIC_DUPLICATE_DEFINITION_MSG, SEMANTIC_INVALID_FEATURE_CONTEXT, SEMANTIC_INVALID_IMPORT,
     SEMANTIC_INVALID_REDEFINITION, SEMANTIC_INVALID_SPECIALIZATION, SEMANTIC_INVALID_SUBSETTING,
-    SEMANTIC_INVALID_TYPE, SEMANTIC_TYPE_MISMATCH, SEMANTIC_UNDEFINED_REFERENCE,
+    SEMANTIC_INVALID_TYPE, SEMANTIC_INVALID_TYPE_MSG, SEMANTIC_TYPE_MISMATCH,
+    SEMANTIC_TYPE_MISMATCH_MSG, SEMANTIC_UNDEFINED_REFERENCE,
 };
 
 #[test]
@@ -81,7 +83,7 @@ fn test_duplicate_definition_error() {
         "Expected DuplicateDefinition error kind"
     );
     assert!(error.message.contains("Test"));
-    assert!(error.message.contains("already defined"));
+    assert!(error.message.contains(SEMANTIC_DUPLICATE_DEFINITION_MSG));
 }
 
 #[test]
@@ -95,6 +97,7 @@ fn test_type_mismatch_error() {
         matches!(error.kind, SemanticErrorKind::TypeMismatch { .. }),
         "Expected TypeMismatch error kind"
     );
+    assert!(error.message.contains(SEMANTIC_TYPE_MISMATCH_MSG));
     assert!(error.message.contains("Integer"));
     assert!(error.message.contains("String"));
     assert!(error.message.contains("assignment"));
@@ -113,6 +116,7 @@ fn test_circular_dependency_error() {
         matches!(error.kind, SemanticErrorKind::CircularDependency { .. }),
         "Expected CircularDependency error kind"
     );
+    assert!(error.message.contains(SEMANTIC_CIRCULAR_DEPENDENCY_MSG));
     assert!(error.message.contains("A -> B -> C -> A"));
 }
 
@@ -124,7 +128,7 @@ fn test_invalid_type_error() {
         "Expected InvalidType error kind"
     );
     assert!(error.message.contains("UnknownType"));
-    assert!(error.message.contains("not defined"));
+    assert!(error.message.contains(SEMANTIC_INVALID_TYPE_MSG));
 }
 
 #[test]
@@ -326,6 +330,7 @@ fn test_empty_cycle_error() {
 fn test_single_element_cycle() {
     let cycle = vec!["A".to_string(), "A".to_string()];
     let error = SemanticError::circular_dependency(cycle);
+    assert!(error.message.contains(SEMANTIC_CIRCULAR_DEPENDENCY_MSG));
     assert!(error.message.contains("A -> A"));
 }
 

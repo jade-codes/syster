@@ -33,97 +33,97 @@
 // SEMANTIC ERROR CODES (E001-E999)
 // ============================================================================
 
-/// Symbol is defined multiple times in the same scope
 pub const SEMANTIC_DUPLICATE_DEFINITION: &str = "E001";
+pub const SEMANTIC_DUPLICATE_DEFINITION_MSG: &str = "Symbol is already defined in this scope";
 
-/// Referenced symbol cannot be found
 pub const SEMANTIC_UNDEFINED_REFERENCE: &str = "E002";
+pub const SEMANTIC_UNDEFINED_REFERENCE_MSG: &str = "Cannot find symbol";
 
-/// Type mismatch between expected and actual types
 pub const SEMANTIC_TYPE_MISMATCH: &str = "E003";
+pub const SEMANTIC_TYPE_MISMATCH_MSG: &str = "Type mismatch";
 
-/// Invalid type reference (type doesn't exist or isn't a valid type)
 pub const SEMANTIC_INVALID_TYPE: &str = "E004";
+pub const SEMANTIC_INVALID_TYPE_MSG: &str = "Invalid type";
 
-/// Circular dependency detected in specialization, imports, etc.
 pub const SEMANTIC_CIRCULAR_DEPENDENCY: &str = "E005";
+pub const SEMANTIC_CIRCULAR_DEPENDENCY_MSG: &str = "Circular dependency detected";
 
-/// Invalid specialization relationship
 pub const SEMANTIC_INVALID_SPECIALIZATION: &str = "E006";
+pub const SEMANTIC_INVALID_SPECIALIZATION_MSG: &str = "Invalid specialization relationship";
 
-/// Invalid redefinition of a feature
 pub const SEMANTIC_INVALID_REDEFINITION: &str = "E007";
+pub const SEMANTIC_INVALID_REDEFINITION_MSG: &str = "Invalid redefinition";
 
-/// Invalid subsetting relationship
 pub const SEMANTIC_INVALID_SUBSETTING: &str = "E008";
+pub const SEMANTIC_INVALID_SUBSETTING_MSG: &str = "Invalid subsetting relationship";
 
-/// Constraint violation (multiplicity, cardinality, etc.)
 pub const SEMANTIC_CONSTRAINT_VIOLATION: &str = "E009";
+pub const SEMANTIC_CONSTRAINT_VIOLATION_MSG: &str = "Constraint violation";
 
-/// Feature used in invalid context
 pub const SEMANTIC_INVALID_FEATURE_CONTEXT: &str = "E010";
+pub const SEMANTIC_INVALID_FEATURE_CONTEXT_MSG: &str = "Feature used in invalid context";
 
-/// Abstract element cannot be instantiated
 pub const SEMANTIC_ABSTRACT_INSTANTIATION: &str = "E011";
+pub const SEMANTIC_ABSTRACT_INSTANTIATION_MSG: &str = "Cannot instantiate abstract element";
 
-/// Invalid import statement
 pub const SEMANTIC_INVALID_IMPORT: &str = "E012";
+pub const SEMANTIC_INVALID_IMPORT_MSG: &str = "Invalid import statement";
 
 // ============================================================================
 // PARSER ERROR CODES (P001-P999)
 // ============================================================================
 
-/// Generic syntax error
 pub const PARSER_SYNTAX_ERROR: &str = "P001";
+pub const PARSER_SYNTAX_ERROR_MSG: &str = "Syntax error";
 
-/// Unexpected token encountered
 pub const PARSER_UNEXPECTED_TOKEN: &str = "P002";
+pub const PARSER_UNEXPECTED_TOKEN_MSG: &str = "Unexpected token";
 
-/// Expected token not found
 pub const PARSER_EXPECTED_TOKEN: &str = "P003";
+pub const PARSER_EXPECTED_TOKEN_MSG: &str = "Expected token not found";
 
-/// Invalid identifier
 pub const PARSER_INVALID_IDENTIFIER: &str = "P004";
+pub const PARSER_INVALID_IDENTIFIER_MSG: &str = "Invalid identifier";
 
-/// Invalid literal value
 pub const PARSER_INVALID_LITERAL: &str = "P005";
+pub const PARSER_INVALID_LITERAL_MSG: &str = "Invalid literal value";
 
-/// Unterminated string or comment
 pub const PARSER_UNTERMINATED: &str = "P006";
+pub const PARSER_UNTERMINATED_MSG: &str = "Unterminated string or comment";
 
-/// Invalid character in input
 pub const PARSER_INVALID_CHARACTER: &str = "P007";
+pub const PARSER_INVALID_CHARACTER_MSG: &str = "Invalid character in input";
 
 // ============================================================================
 // FILE SYSTEM / IO ERROR CODES (IO001-IO999)
 // ============================================================================
 
-/// File not found
 pub const IO_FILE_NOT_FOUND: &str = "IO001";
+pub const IO_FILE_NOT_FOUND_MSG: &str = "File not found";
 
-/// Permission denied when accessing file
 pub const IO_PERMISSION_DENIED: &str = "IO002";
+pub const IO_PERMISSION_DENIED_MSG: &str = "Permission denied";
 
-/// Failed to read file contents
 pub const IO_READ_FAILED: &str = "IO003";
+pub const IO_READ_FAILED_MSG: &str = "Failed to read file";
 
-/// Failed to write file contents
 pub const IO_WRITE_FAILED: &str = "IO004";
+pub const IO_WRITE_FAILED_MSG: &str = "Failed to write file";
 
-/// Invalid file path
 pub const IO_INVALID_PATH: &str = "IO005";
+pub const IO_INVALID_PATH_MSG: &str = "Invalid file path";
 
-/// File already exists (when creating new file)
 pub const IO_FILE_EXISTS: &str = "IO006";
+pub const IO_FILE_EXISTS_MSG: &str = "File already exists";
 
-/// Directory not found
 pub const IO_DIRECTORY_NOT_FOUND: &str = "IO007";
+pub const IO_DIRECTORY_NOT_FOUND_MSG: &str = "Directory not found";
 
-/// Workspace error (file not in workspace, invalid workspace state)
 pub const IO_WORKSPACE_ERROR: &str = "IO008";
+pub const IO_WORKSPACE_ERROR_MSG: &str = "Workspace error";
 
-/// Standard library loading failed
 pub const IO_STDLIB_LOAD_FAILED: &str = "IO009";
+pub const IO_STDLIB_LOAD_FAILED_MSG: &str = "Failed to load standard library";
 
 #[cfg(test)]
 #[path = "error_codes/tests.rs"]

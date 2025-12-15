@@ -1,6 +1,8 @@
 use crate::core::error_codes::{
-    SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_DUPLICATE_DEFINITION, SEMANTIC_INVALID_TYPE,
-    SEMANTIC_TYPE_MISMATCH, SEMANTIC_UNDEFINED_REFERENCE,
+    SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_CIRCULAR_DEPENDENCY_MSG, SEMANTIC_DUPLICATE_DEFINITION,
+    SEMANTIC_DUPLICATE_DEFINITION_MSG, SEMANTIC_INVALID_TYPE, SEMANTIC_INVALID_TYPE_MSG,
+    SEMANTIC_TYPE_MISMATCH, SEMANTIC_TYPE_MISMATCH_MSG, SEMANTIC_UNDEFINED_REFERENCE,
+    SEMANTIC_UNDEFINED_REFERENCE_MSG,
 };
 use std::fmt;
 
@@ -83,56 +85,77 @@ impl SemanticError {
     }
 
     pub fn duplicate_definition(name: String, first_location: Option<Location>) -> Self {
+        let message = if name.is_empty() {
+            SEMANTIC_DUPLICATE_DEFINITION_MSG.to_string()
+        } else {
+            format!("{}: '{}'", SEMANTIC_DUPLICATE_DEFINITION_MSG, name)
+        };
         Self::new(
             SEMANTIC_DUPLICATE_DEFINITION,
             SemanticErrorKind::DuplicateDefinition {
-                name: name.clone(),
+                name,
                 first_location,
             },
-            format!("Symbol '{}' is already defined in this scope", name),
+            message,
         )
     }
 
     pub fn undefined_reference(name: String) -> Self {
+        let message = if name.is_empty() {
+            SEMANTIC_UNDEFINED_REFERENCE_MSG.to_string()
+        } else {
+            format!("{}: '{}'", SEMANTIC_UNDEFINED_REFERENCE_MSG, name)
+        };
         Self::new(
             SEMANTIC_UNDEFINED_REFERENCE,
-            SemanticErrorKind::UndefinedReference { name: name.clone() },
-            format!("Cannot find symbol '{}'", name),
+            SemanticErrorKind::UndefinedReference { name },
+            message,
         )
     }
 
     pub fn type_mismatch(expected: String, found: String, context: String) -> Self {
+        let message = format!(
+            "{}: expected '{}', found '{}' in {}",
+            SEMANTIC_TYPE_MISMATCH_MSG, expected, found, context
+        );
         Self::new(
             SEMANTIC_TYPE_MISMATCH,
             SemanticErrorKind::TypeMismatch {
-                expected: expected.clone(),
-                found: found.clone(),
-                context: context.clone(),
+                expected,
+                found,
+                context,
             },
-            format!(
-                "Type mismatch in {}: expected '{}', found '{}'",
-                context, expected, found
-            ),
+            message,
         )
     }
 
     pub fn invalid_type(type_name: String) -> Self {
+        let message = if type_name.is_empty() {
+            SEMANTIC_INVALID_TYPE_MSG.to_string()
+        } else {
+            format!("{}: '{}'", SEMANTIC_INVALID_TYPE_MSG, type_name)
+        };
         Self::new(
             SEMANTIC_INVALID_TYPE,
-            SemanticErrorKind::InvalidType {
-                type_name: type_name.clone(),
-            },
-            format!("Type '{}' is not defined or invalid", type_name),
+            SemanticErrorKind::InvalidType { type_name },
+            message,
         )
     }
 
     pub fn circular_dependency(cycle: Vec<String>) -> Self {
+        let message = if cycle.is_empty() {
+            SEMANTIC_CIRCULAR_DEPENDENCY_MSG.to_string()
+        } else {
+            format!(
+                "{}: {}",
+                SEMANTIC_CIRCULAR_DEPENDENCY_MSG,
+                cycle.join(" -> ")
+            )
+        };
         Self::new(
             SEMANTIC_CIRCULAR_DEPENDENCY,
-            SemanticErrorKind::CircularDependency {
-                cycle: cycle.clone(),
-            },
-            format!("Circular dependency detected: {}", cycle.join(" -> ")),
+            SemanticErrorKind::CircularDependency { cycle },
+            message,
         )
     }
 }
