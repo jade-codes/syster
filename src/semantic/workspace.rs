@@ -133,11 +133,18 @@ use std::path::PathBuf;
 pub struct WorkspaceFile {
     path: PathBuf,
     content: SysMLFile,
+    version: u32,
+    populated: bool,
 }
 
 impl WorkspaceFile {
     pub fn new(path: PathBuf, content: SysMLFile) -> Self {
-        Self { path, content }
+        Self {
+            path,
+            content,
+            version: 0,
+            populated: false,
+        }
     }
 
     pub fn path(&self) -> &PathBuf {
@@ -146,6 +153,24 @@ impl WorkspaceFile {
 
     pub fn content(&self) -> &SysMLFile {
         &self.content
+    }
+
+    pub fn version(&self) -> u32 {
+        self.version
+    }
+
+    pub fn is_populated(&self) -> bool {
+        self.populated
+    }
+
+    fn set_populated(&mut self, populated: bool) {
+        self.populated = populated;
+    }
+
+    fn update_content(&mut self, content: SysMLFile) {
+        self.content = content;
+        self.version += 1;
+        self.populated = false; // Need to re-populate after content change
     }
 }
 
@@ -198,6 +223,32 @@ impl Workspace {
         self.files.insert(path, file);
     }
 
+    /// Gets a reference to a file in the workspace
+    pub fn get_file(&self, path: &PathBuf) -> Option<&WorkspaceFile> {
+        self.files.get(path)
+    }
+
+    /// Updates an existing file's content (for LSP document sync)
+    ///
+    /// Returns true if the file was found and updated, false otherwise.
+    /// The file will need to be re-populated after this call.
+    pub fn update_file(&mut self, path: &PathBuf, content: SysMLFile) -> bool {
+        if let Some(file) = self.files.get_mut(path) {
+            file.update_content(content);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Removes a file from the workspace
+    ///
+    /// Returns true if the file was found and removed, false otherwise.
+    /// Note: This does not remove symbols from the symbol table - use `repopulate_all()` after.
+    pub fn remove_file(&mut self, path: &PathBuf) -> bool {
+        self.files.remove(path).is_some()
+    }
+
     /// Populates the symbol table and relationship graph for all files in the workspace
     ///
     /// # Errors
@@ -241,6 +292,11 @@ impl Workspace {
         populator
             .populate(file.content())
             .map_err(|e| format!("Failed to populate {}: {:?}", path.display(), e))?;
+
+        // Mark file as populated
+        if let Some(file) = self.files.get_mut(path) {
+            file.set_populated(true);
+        }
 
         // Rebuild symbol index after population
         self.rebuild_symbol_index();

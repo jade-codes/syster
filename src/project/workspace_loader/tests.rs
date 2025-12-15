@@ -1,5 +1,7 @@
 #![allow(unused_imports)]
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::WorkspaceLoader;
 use crate::semantic::Workspace;
 use std::fs;

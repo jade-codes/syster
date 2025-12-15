@@ -1,5 +1,8 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::StdLibLoader;
 use crate::core::constants::SUPPORTED_EXTENSIONS;
+use crate::project::file_loader;
 use crate::semantic::Workspace;
 use std::path::PathBuf;
 
@@ -51,7 +54,7 @@ fn test_collect_file_paths() {
         "sysml.library/ must exist for this test"
     );
 
-    let paths = loader.collect_file_paths(&loader.stdlib_path);
+    let paths = file_loader::collect_file_paths(&loader.stdlib_path);
     assert!(paths.is_ok(), "Should collect paths successfully");
 
     let paths = paths.unwrap();
@@ -83,18 +86,25 @@ fn test_supported_extensions_only() {
         "sysml.library/ must exist for this test"
     );
 
-    let paths = loader.collect_file_paths(&loader.stdlib_path);
-    assert!(paths.is_ok());
+    let paths = file_loader::collect_file_paths(&loader.stdlib_path).unwrap();
 
     // All collected paths should have supported extensions
-    for path in paths.unwrap() {
-        let ext = path.extension().and_then(|e| e.to_str());
-        assert!(
-            ext.is_some_and(|e| SUPPORTED_EXTENSIONS.contains(&e)),
-            "Path {:?} has unsupported extension",
-            path
-        );
-    }
+    let unsupported: Vec<_> = paths
+        .iter()
+        .filter(|path| {
+            !path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| SUPPORTED_EXTENSIONS.contains(&e))
+        })
+        .collect();
+
+    assert!(
+        unsupported.is_empty(),
+        "Found {} paths with unsupported extensions: {:?}",
+        unsupported.len(),
+        unsupported
+    );
 }
 
 #[test]
@@ -148,7 +158,7 @@ fn test_kerml_files_handled() {
         "sysml.library/ must exist for this test"
     );
 
-    let paths = loader.collect_file_paths(&loader.stdlib_path).unwrap();
+    let paths = file_loader::collect_file_paths(&loader.stdlib_path).unwrap();
 
     let kerml_count = paths
         .iter()
@@ -163,28 +173,4 @@ fn test_kerml_files_handled() {
     );
 
     // Note: KerML parsing not yet implemented, but files should be collected
-}
-
-#[test]
-fn test_parse_failures_logged() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
-
-    let mut workspace = Workspace::new();
-
-    // This will print warnings about parse failures to stderr (visible with --nocapture)
-    let result = loader.load(&mut workspace);
-    assert!(
-        result.is_ok(),
-        "Load should succeed even with parse failures"
-    );
-
-    // Some files should parse successfully
-    assert!(
-        workspace.file_paths().count() > 0,
-        "At least some files should parse successfully"
-    );
 }

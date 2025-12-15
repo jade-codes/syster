@@ -13,7 +13,6 @@ Before making changes, familiarize yourself with the project architecture:
 - **[ARCHITECTURE.md](../../ARCHITECTURE.md)** - System design, three-phase pipeline, design decisions
 - **[docs/CONTRIBUTING.md](../../docs/CONTRIBUTING.md)** - Development workflow, code conventions
 - **[docs/SYSML_PRIMER.md](../../docs/SYSML_PRIMER.md)** - SysML v2 and KerML concepts
-- **[docs/SEMANTIC_ANALYSIS.md](../../docs/SEMANTIC_ANALYSIS.md)** - Deep dive on semantic analysis
 
 ### Key Project Patterns
 

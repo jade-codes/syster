@@ -103,6 +103,21 @@ let symbol = self.symbol_table.lookup(name).unwrap(); // Don't do this
 fn test_something() {
     let symbol = workspace.lookup("Test").unwrap(); // OK in tests
 }
+
+// ❌ Bad: Loops in tests that assert on each iteration
+#[test]
+fn test_with_loop() {
+    for item in items {
+        assert!(item.is_valid()); // Fails on first invalid, hides rest
+    }
+}
+
+// ✅ Good: Collect failures and assert once with full context
+#[test]
+fn test_with_filter() {
+    let invalid: Vec<_> = items.iter().filter(|i| !i.is_valid()).collect();
+    assert!(invalid.is_empty(), "Found invalid items: {:?}", invalid);
+}
 ```
 
 ### Documentation

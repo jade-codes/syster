@@ -1,10 +1,7 @@
-use crate::core::constants::SUPPORTED_EXTENSIONS;
-use crate::language::sysml::syntax::SysMLFile;
 use crate::semantic::Workspace;
-use from_pest::FromPest;
-use pest::Parser;
-use std::fs;
 use std::path::PathBuf;
+
+use super::file_loader;
 
 /// Loads workspace files on demand
 pub struct WorkspaceLoader;
@@ -57,55 +54,18 @@ impl WorkspaceLoader {
         dir: &PathBuf,
         workspace: &mut Workspace,
     ) -> Result<(), String> {
-        let entries = fs::read_dir(dir)
-            .map_err(|e| format!("Failed to read directory {}: {}", dir.display(), e))?;
+        let paths = file_loader::collect_file_paths(dir)?;
 
-        for entry in entries {
-            let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
-            let path = entry.path();
-
-            if path.is_dir() {
-                // Recursively process subdirectories
-                self.load_directory_recursive(&path, workspace)?;
-            } else if path.is_file()
-                && path
-                    .extension()
-                    .and_then(|e| e.to_str())
-                    .is_some_and(|ext| SUPPORTED_EXTENSIONS.contains(&ext))
-            {
-                self.load_file_internal(&path, workspace)?;
-            }
+        for path in paths {
+            self.load_file_internal(&path, workspace)?;
         }
 
         Ok(())
     }
 
     fn load_file_internal(&self, path: &PathBuf, workspace: &mut Workspace) -> Result<(), String> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
-
-        let ext = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .ok_or_else(|| format!("Invalid file extension for {}", path.display()))?;
-
-        match ext {
-            "sysml" => {
-                let mut pairs =
-                    crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, &content)
-                        .map_err(|e| format!("Parse error in {}: {}", path.display(), e))?;
-
-                let file = SysMLFile::from_pest(&mut pairs)
-                    .map_err(|e| format!("AST error in {}: {:?}", path.display(), e))?;
-
-                workspace.add_file(path.clone(), file);
-            }
-            "kerml" => {
-                // TODO: Add KerML parser support
-            }
-            _ => return Err(format!("Unsupported file extension: {}", ext)),
-        }
-
+        let file = file_loader::load_and_parse(path)?;
+        workspace.add_file(path.clone(), file);
         Ok(())
     }
 }

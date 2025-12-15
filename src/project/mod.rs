@@ -1,3 +1,4 @@
+mod file_loader;
 pub mod stdlib_loader;
 pub mod workspace_loader;
 
