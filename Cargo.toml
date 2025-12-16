@@ -36,6 +36,10 @@ unnecessary_wraps = "warn"
 enum_glob_use = "warn"
 wildcard_imports = "warn"
 
+# Test quality
+collapsible_if = "warn"
+collapsible_else_if = "warn"
+
 # Deny by category (set explicit priority to avoid ambiguity)
 correctness = { level = "deny", priority = -1 }
 suspicious = { level = "deny", priority = -1 }

@@ -715,3 +715,36 @@ part engine : Engine;
     assert!(names.contains(&"Engine"));
     assert!(names.contains(&"engine"));
 }
+
+#[test]
+fn test_semantic_tokens() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Auto {
+    part def Vehicle;
+    part myVehicle : Vehicle;
+    alias MyAlias for Vehicle;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(tokens) =
+        server.get_semantic_tokens(uri.as_str()).unwrap()
+    else {
+        panic!("Expected SemanticTokens result");
+    };
+
+    // Should have tokens for: Auto (package), Vehicle (def), myVehicle (usage), MyAlias (alias)
+    assert!(tokens.data.len() >= 4);
+
+    // Verify we got different token types
+    let token_types: Vec<u32> = tokens.data.iter().map(|t| t.token_type).collect();
+
+    // TokenType enum values: Namespace=0, Type=1, Variable=2, Property=3, Keyword=4
+    assert!(token_types.contains(&0)); // NAMESPACE
+    assert!(token_types.contains(&1)); // TYPE
+    assert!(token_types.contains(&2)); // VARIABLE
+    assert!(token_types.contains(&3)); // PROPERTY
+}

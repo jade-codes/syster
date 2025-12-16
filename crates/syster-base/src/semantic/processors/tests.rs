@@ -1,13 +1,16 @@
-use crate::semantic::processors::{NoOpValidator, RelationshipValidator};
-use crate::semantic::symbol_table::Symbol;
-
 use super::*;
-use crate::core::{Position, Span};
-use crate::language::sysml::populator::{
+use crate::core::constants::{
     REL_REDEFINITION, REL_REFERENCE_SUBSETTING, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
 };
+use crate::core::{Position, Span};
+use crate::language::sysml::syntax::{
+    Alias, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage, UsageKind,
+};
 use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::processors::{NoOpValidator, RelationshipValidator};
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
+use crate::semantic::workspace::WorkspaceFile;
+use std::path::PathBuf;
 
 #[test]
 fn test_noop_validator_accepts_all_relationships() {
@@ -676,4 +679,148 @@ fn test_mixed_relationships() {
         .collect();
     assert!(lines.contains(&3)); // from Derived
     assert!(lines.contains(&5)); // from instance
+}
+
+#[test]
+fn test_collect_package_tokens() {
+    let pkg = Package {
+        name: Some("TestPackage".to_string()),
+        span: Some(Span::new(Position::new(0, 8), Position::new(0, 19))),
+        elements: vec![],
+    };
+    let sysml_file = SysMLFile {
+        namespace: None,
+        elements: vec![Element::Package(pkg)],
+    };
+    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+
+    let tokens = SemanticTokenCollector::collect(&workspace_file);
+
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(tokens[0].line, 0);
+    assert_eq!(tokens[0].column, 8);
+    assert_eq!(tokens[0].length, 11);
+    assert_eq!(tokens[0].token_type, TokenType::Namespace);
+}
+
+#[test]
+fn test_collect_definition_tokens() {
+    let mut def = Definition::new(
+        DefinitionKind::Part,
+        Some("MyDef".to_string()),
+        Relationships::default(),
+        vec![],
+    );
+    def.span = Some(Span::new(Position::new(1, 4), Position::new(1, 9)));
+
+    let sysml_file = SysMLFile {
+        namespace: None,
+        elements: vec![Element::Definition(def)],
+    };
+    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+
+    let tokens = SemanticTokenCollector::collect(&workspace_file);
+
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(tokens[0].token_type, TokenType::Type);
+}
+
+#[test]
+fn test_collect_usage_tokens() {
+    let mut usage = Usage::new(
+        UsageKind::Part,
+        Some("myUsage".to_string()),
+        Relationships::default(),
+        vec![],
+    );
+    usage.span = Some(Span::new(Position::new(2, 4), Position::new(2, 11)));
+
+    let sysml_file = SysMLFile {
+        namespace: None,
+        elements: vec![Element::Usage(usage)],
+    };
+    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+
+    let tokens = SemanticTokenCollector::collect(&workspace_file);
+
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(tokens[0].token_type, TokenType::Property);
+}
+
+#[test]
+fn test_collect_alias_tokens() {
+    let alias = Alias {
+        name: Some("myAlias".to_string()),
+        target: "SomeTarget".to_string(),
+        span: Some(Span::new(Position::new(3, 6), Position::new(3, 13))),
+    };
+    let sysml_file = SysMLFile {
+        namespace: None,
+        elements: vec![Element::Alias(alias)],
+    };
+    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+
+    let tokens = SemanticTokenCollector::collect(&workspace_file);
+
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(tokens[0].token_type, TokenType::Variable);
+}
+
+#[test]
+fn test_collect_nested_tokens() {
+    let mut inner_def = Definition::new(
+        DefinitionKind::Part,
+        Some("Inner".to_string()),
+        Relationships::default(),
+        vec![],
+    );
+    inner_def.span = Some(Span::new(Position::new(1, 4), Position::new(1, 9)));
+
+    let pkg = Package {
+        name: Some("Outer".to_string()),
+        span: Some(Span::new(Position::new(0, 8), Position::new(0, 13))),
+        elements: vec![Element::Definition(inner_def)],
+    };
+    let sysml_file = SysMLFile {
+        namespace: None,
+        elements: vec![Element::Package(pkg)],
+    };
+    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+
+    let tokens = SemanticTokenCollector::collect(&workspace_file);
+
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(tokens[0].token_type, TokenType::Namespace); // Outer
+    assert_eq!(tokens[1].token_type, TokenType::Type); // Inner
+}
+
+#[test]
+fn test_tokens_sorted_by_position() {
+    let mut def2 = Definition::new(
+        DefinitionKind::Part,
+        Some("Second".to_string()),
+        Relationships::default(),
+        vec![],
+    );
+    def2.span = Some(Span::new(Position::new(2, 0), Position::new(2, 6)));
+
+    let mut def1 = Definition::new(
+        DefinitionKind::Part,
+        Some("First".to_string()),
+        Relationships::default(),
+        vec![],
+    );
+    def1.span = Some(Span::new(Position::new(1, 0), Position::new(1, 5)));
+
+    let sysml_file = SysMLFile {
+        namespace: None,
+        elements: vec![Element::Definition(def2), Element::Definition(def1)],
+    };
+    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+
+    let tokens = SemanticTokenCollector::collect(&workspace_file);
+
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(tokens[0].line, 1); // First comes first after sorting
+    assert_eq!(tokens[1].line, 2);
 }

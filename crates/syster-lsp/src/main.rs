@@ -22,6 +22,16 @@ impl LanguageServer for SysterLanguageServer {
                 definition_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 document_symbol_provider: Some(OneOf::Left(true)),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        SemanticTokensOptions {
+                            legend: LspServer::semantic_tokens_legend(),
+                            full: Some(SemanticTokensFullOptions::Bool(true)),
+                            range: None,
+                            work_done_progress_options: WorkDoneProgressOptions::default(),
+                        },
+                    ),
+                ),
                 ..Default::default()
             },
             ..Default::default()
@@ -158,6 +168,16 @@ impl LanguageServer for SysterLanguageServer {
         } else {
             Ok(Some(DocumentSymbolResponse::Nested(symbols)))
         }
+    }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
+        let uri = params.text_document.uri;
+
+        let server = self.server.lock().await;
+        Ok(server.get_semantic_tokens(uri.as_str()))
     }
 
     async fn shutdown(&self) -> Result<()> {
