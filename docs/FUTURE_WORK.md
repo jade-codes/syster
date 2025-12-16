@@ -2,16 +2,13 @@
 
 ## LSP Feature Implementation (Priority Order)
 
-### In Progress / Next Tasks
-- [ ] **Task 11: Find References**
-  - [ ] Add `get_references()` method to Backend
-  - [ ] Search all files for symbol references using qualified name
-  - [ ] Use `extract_word_at_cursor()` to identify symbol at position
-  - [ ] Return all locations where symbol is used
-  - [ ] Wire up `textDocument/references` LSP handler
-  - [ ] Tests: same-file refs, cross-file refs, type references, no references
+### Completed ✓
+- [x] Task 8: AST span tracking for all elements
+- [x] Task 9: Rich hover with relationships
+- [x] Task 10: Go-to-definition
+- [x] Task 11: Find References (text-based search)
 
-- [ ] **Task 12: Document Symbols** (Outline view)
+### In Progress / Next Tasks
   - [ ] Add `get_document_symbols()` method to Backend
   - [ ] Extract all symbols from a file with hierarchy
   - [ ] Map Symbol types to LSP SymbolKind (Package → Namespace, Definition → Class, etc.)
