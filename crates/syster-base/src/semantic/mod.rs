@@ -10,6 +10,7 @@
 //! - **Symbol Table** (`symbol_table`): Global registry of all named elements
 //! - **Relationship Graphs** (`graph`): Tracks specialization, typing, subsetting, etc.
 //! - **Name Resolver** (`resolver`): Resolves qualified names to symbols
+//! - **Reference Collector** (`reference_collector`): Tracks symbol references for Find References
 //! - **Workspace** (`workspace`): Manages multi-file projects
 //! - **Analyzer** (`analyzer`): Orchestrates validation passes
 //!
@@ -49,6 +50,7 @@ pub mod error;
 pub mod events;
 pub mod graph;
 pub mod import_extractor;
+pub mod reference_collector;
 pub mod relationship_validator;
 pub mod resolver;
 pub mod symbol_table;

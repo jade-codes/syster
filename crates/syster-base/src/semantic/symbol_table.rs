@@ -398,6 +398,35 @@ impl SymbolTable {
         }
     }
 
+    /// Looks up a symbol mutably by name
+    pub fn lookup_mut(&mut self, name: &str) -> Option<&mut Symbol> {
+        let current_scope = self.current_scope;
+        self.lookup_in_scope_mut(name, current_scope)
+    }
+
+    /// Looks up a symbol mutably in a specific scope, walking up the scope chain
+    fn lookup_in_scope_mut(&mut self, name: &str, scope_id: usize) -> Option<&mut Symbol> {
+        // First, collect the scope chain (non-mutable)
+        let mut scope_chain = Vec::new();
+        let mut current = scope_id;
+        loop {
+            scope_chain.push(current);
+            match self.scopes[current].parent {
+                Some(parent) => current = parent,
+                None => break,
+            }
+        }
+
+        // Then, try to find the symbol in each scope
+        for &scope_id in &scope_chain {
+            if self.scopes[scope_id].symbols.contains_key(name) {
+                return self.scopes[scope_id].symbols.get_mut(name);
+            }
+        }
+
+        None
+    }
+
     /// Looks up a symbol in imported namespaces from a given scope
     fn lookup_in_imports(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
         for import in &self.scopes[scope_id].imports {
