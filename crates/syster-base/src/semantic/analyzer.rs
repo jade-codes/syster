@@ -96,7 +96,7 @@
 
 use crate::semantic::RelationshipGraph;
 use crate::semantic::error::{SemanticError, SemanticResult};
-use crate::semantic::relationship_validator::{NoOpValidator, RelationshipValidator};
+use crate::semantic::processors::{NoOpValidator, RelationshipValidator};
 use crate::semantic::resolver::NameResolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use std::sync::Arc;

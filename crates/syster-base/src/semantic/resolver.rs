@@ -42,8 +42,10 @@
 //!
 //! See [Import Resolution](../../docs/SEMANTIC_ANALYSIS.md#import-resolution) for details.
 
-use crate::semantic::import_extractor::is_wildcard_import;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
+
+mod import_extractor;
+pub use import_extractor::{extract_imports, is_wildcard_import, parse_import_path};
 
 pub struct NameResolver<'a> {
     symbol_table: &'a SymbolTable,

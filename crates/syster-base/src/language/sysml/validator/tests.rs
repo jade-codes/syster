@@ -5,7 +5,7 @@ use crate::language::sysml::syntax::constants::{
     SYSML_KIND_ACTION, SYSML_KIND_REQUIREMENT, SYSML_KIND_STATE, SYSML_KIND_USE_CASE,
 };
 use crate::language::sysml::validator::SysMLRelationshipValidator;
-use crate::semantic::relationship_validator::RelationshipValidator;
+use crate::semantic::processors::RelationshipValidator;
 use crate::semantic::symbol_table::Symbol;
 
 fn create_requirement(name: &str) -> Symbol {

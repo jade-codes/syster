@@ -1,4 +1,4 @@
-use crate::semantic::relationship_validator::{NoOpValidator, RelationshipValidator};
+use crate::semantic::processors::{NoOpValidator, RelationshipValidator};
 use crate::semantic::symbol_table::Symbol;
 
 #[test]

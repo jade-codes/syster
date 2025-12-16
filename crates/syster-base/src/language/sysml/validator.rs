@@ -6,7 +6,7 @@ use crate::language::sysml::syntax::constants::{
     SYSML_KIND_ACTION, SYSML_KIND_REQUIREMENT, SYSML_KIND_STATE, SYSML_KIND_USE_CASE,
 };
 use crate::semantic::error::SemanticError;
-use crate::semantic::relationship_validator::RelationshipValidator;
+use crate::semantic::processors::RelationshipValidator;
 use crate::semantic::symbol_table::Symbol;
 
 pub struct SysMLRelationshipValidator;

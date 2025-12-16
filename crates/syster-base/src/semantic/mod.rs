@@ -48,9 +48,7 @@ pub mod diagnostic;
 pub mod error;
 pub mod events;
 pub mod graph;
-pub mod import_extractor;
-pub mod reference_collector;
-pub mod relationship_validator;
+pub mod processors;
 pub mod resolver;
 pub mod symbol_table;
 pub mod workspace;
@@ -60,9 +58,8 @@ pub use diagnostic::{Diagnostic, Location as DiagnosticLocation, Position, Range
 pub use error::{Location, SemanticError, SemanticErrorKind, SemanticResult};
 pub use events::{DependencyEvent, SymbolTableEvent, WorkspaceEvent};
 pub use graph::{DependencyGraph, RelationshipGraph};
-pub use import_extractor::{extract_imports, is_wildcard_import, parse_import_path};
-pub use relationship_validator::{NoOpValidator, RelationshipValidator};
-pub use resolver::NameResolver;
+pub use processors::{NoOpValidator, ReferenceCollector, RelationshipValidator};
+pub use resolver::{NameResolver, extract_imports, is_wildcard_import, parse_import_path};
 pub use symbol_table::SymbolTable;
 pub use workspace::Workspace;
 

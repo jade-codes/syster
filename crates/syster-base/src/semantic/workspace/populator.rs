@@ -6,7 +6,7 @@
 use crate::language::sysml::SymbolTablePopulator;
 use crate::language::sysml::syntax::SysMLFile;
 use crate::semantic::graph::RelationshipGraph;
-use crate::semantic::reference_collector::ReferenceCollector;
+use crate::semantic::processors::ReferenceCollector;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::workspace::WorkspaceFile;
 use std::collections::HashMap;

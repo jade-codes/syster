@@ -10,7 +10,7 @@ use crate::core::operation::{EventBus, OperationResult};
 use crate::language::sysml::syntax::SysMLFile;
 use crate::semantic::events::WorkspaceEvent;
 use crate::semantic::graph::{DependencyGraph, RelationshipGraph};
-use crate::semantic::import_extractor::extract_imports;
+use crate::semantic::resolver::extract_imports;
 use crate::semantic::symbol_table::SymbolTable;
 use std::collections::HashMap;
 use std::path::PathBuf;
