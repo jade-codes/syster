@@ -1,6 +1,6 @@
 use crate::core::visitor::AstVisitor;
 use crate::language::sysml::syntax::{
-    Alias, Comment, Definition, Element, Import, Package, SysMLFile, Usage,
+    Alias, Comment, Definition, Element, Import, NamespaceDeclaration, Package, SysMLFile, Usage,
 };
 use crate::semantic::error::SemanticError;
 use crate::semantic::graph::RelationshipGraph;
@@ -58,10 +58,30 @@ impl<'a> SymbolTablePopulator<'a> {
     /// Returns a vector of `SemanticError` if any semantic errors are encountered
     /// during population, such as duplicate symbol definitions.
     pub fn populate(&mut self, file: &SysMLFile) -> Result<(), Vec<SemanticError>> {
-        if let Some(ref ns) = file.namespace {
+        // If there's a file-level namespace, enter it first
+        let namespace_name = if let Some(ref ns) = file.namespace {
             self.visit_namespace(ns);
-        }
+            Some(ns.name.clone())
+        } else {
+            None
+        };
+
+        // Process all elements in the file
         for element in &file.elements {
+            // Skip Package element if it's the same as the file-level namespace
+            // (we've already processed it via visit_namespace above)
+            if let Element::Package(p) = element
+                && let Some(ref ns_name) = namespace_name
+                && p.name.as_ref() == Some(ns_name)
+            {
+                // This is the file-level package - skip it, we've already entered its namespace
+                // But still process its children
+                for child in &p.elements {
+                    self.visit_element_with_lifecycle(child);
+                }
+                continue;
+            }
+
             self.visit_element_with_lifecycle(element);
         }
 
@@ -167,6 +187,24 @@ impl<'a> SymbolTablePopulator<'a> {
 }
 
 impl<'a> AstVisitor for SymbolTablePopulator<'a> {
+    fn visit_namespace(&mut self, namespace: &NamespaceDeclaration) {
+        // Create the Package symbol for the file-level namespace
+        let qualified_name = self.qualified_name(&namespace.name);
+        let scope_id = self.symbol_table.current_scope_id();
+        let symbol = Symbol::Package {
+            name: namespace.name.clone(),
+            qualified_name,
+            scope_id,
+            source_file: self.symbol_table.current_file().map(String::from),
+            span: namespace.span,
+        };
+        self.insert_symbol(namespace.name.clone(), symbol);
+
+        // Enter the file-level namespace
+        // This ensures all subsequent elements at file level are qualified with the namespace
+        self.enter_namespace(namespace.name.clone());
+    }
+
     fn visit_package(&mut self, package: &Package) {
         if let Some(name) = &package.name {
             let qualified_name = self.qualified_name(name);
@@ -176,6 +214,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                 qualified_name,
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
+                span: package.span,
             };
             self.insert_symbol(name.clone(), symbol);
             self.enter_namespace(name.clone());
@@ -193,6 +232,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                 kind,
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
+                span: definition.span,
             };
             self.insert_symbol(name.clone(), symbol);
 
@@ -270,6 +310,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                 kind,
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
+                span: usage.span,
             };
             self.insert_symbol(name.clone(), symbol);
 
@@ -326,6 +367,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                 target: alias.target.clone(),
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
+                span: alias.span,
             };
             self.insert_symbol(name.clone(), symbol);
         }

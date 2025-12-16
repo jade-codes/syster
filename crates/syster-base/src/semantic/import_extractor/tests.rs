@@ -23,6 +23,7 @@ fn test_extract_single_import() {
         elements: vec![Element::Import(Import {
             path: "Base::Vehicle".to_string(),
             is_recursive: false,
+            span: None,
         })],
     };
 
@@ -40,14 +41,17 @@ fn test_extract_multiple_imports() {
             Element::Import(Import {
                 path: "Base::Vehicle".to_string(),
                 is_recursive: false,
+                span: None,
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
                 is_recursive: false,
+                span: None,
             }),
             Element::Import(Import {
                 path: "Utils::*".to_string(),
                 is_recursive: true,
+                span: None,
             }),
         ],
     };
@@ -67,6 +71,7 @@ fn test_extract_recursive_imports() {
         elements: vec![Element::Import(Import {
             path: "SysML::*".to_string(),
             is_recursive: true,
+            span: None,
         })],
     };
 
@@ -83,18 +88,22 @@ fn test_extract_imports_mixed_elements() {
     let file = SysMLFile {
         namespace: Some(NamespaceDeclaration {
             name: "MyPackage".to_string(),
+            span: None,
         }),
         elements: vec![
             Element::Import(Import {
                 path: "Base::Vehicle".to_string(),
                 is_recursive: false,
+                span: None,
             }),
             Element::Comment(crate::language::sysml::syntax::Comment {
                 content: "Some comment".to_string(),
+                span: None,
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
                 is_recursive: false,
+                span: None,
             }),
         ],
     };

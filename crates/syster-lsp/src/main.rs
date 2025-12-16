@@ -18,6 +18,7 @@ impl LanguageServer for SysterLanguageServer {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 ..Default::default()
             },
             ..Default::default()
@@ -107,6 +108,14 @@ impl LanguageServer for SysterLanguageServer {
                     .await;
             }
         }
+    }
+
+    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+        let uri = params.text_document_position_params.text_document.uri;
+        let position = params.text_document_position_params.position;
+
+        let backend = self.backend.lock().await;
+        Ok(backend.get_hover(&uri, position))
     }
 
     async fn shutdown(&self) -> Result<()> {

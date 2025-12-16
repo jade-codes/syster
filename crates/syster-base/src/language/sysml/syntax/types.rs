@@ -1,5 +1,12 @@
 use super::enums::{DefinitionKind, DefinitionMember, Element, UsageKind, UsageMember};
+use crate::core::Span;
 
+// TODO: Refactor to support multiple packages per file
+// Currently only tracks the first package declaration as `namespace`,
+// but SysML files can contain multiple packages. Should change to:
+// - Either: `namespaces: Vec<NamespaceDeclaration>` to track all packages
+// - Or: Remove `namespace` field and query packages from `elements` directly
+// This affects parser (ast.rs) and all code using SysMLFile.namespace
 #[derive(Debug, Clone, PartialEq)]
 pub struct SysMLFile {
     pub namespace: Option<NamespaceDeclaration>,
@@ -9,12 +16,14 @@ pub struct SysMLFile {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NamespaceDeclaration {
     pub name: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Package {
     pub name: Option<String>,
     pub elements: Vec<Element>,
+    pub span: Option<Span>,
 }
 
 /// Represents relationship information that can be attached to definitions and usages
@@ -61,6 +70,7 @@ pub struct Definition {
     pub name: Option<String>,
     pub relationships: Relationships,
     pub body: Vec<DefinitionMember>,
+    pub span: Option<Span>,
     // Property modifiers
     #[doc(hidden)]
     pub is_abstract: bool,
@@ -80,6 +90,7 @@ impl Definition {
             name,
             relationships,
             body,
+            span: None,
             is_abstract: false,
             is_variation: false,
         }
@@ -92,6 +103,7 @@ pub struct Usage {
     pub name: Option<String>,
     pub relationships: Relationships,
     pub body: Vec<UsageMember>,
+    pub span: Option<Span>,
     // Property modifiers
     #[doc(hidden)]
     pub is_derived: bool,
@@ -112,6 +124,7 @@ impl Usage {
             name,
             relationships,
             body,
+            span: None,
             is_derived: false,
             is_readonly: false,
         }
@@ -121,16 +134,25 @@ impl Usage {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Comment {
     pub content: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Import {
     pub path: String,
     pub is_recursive: bool,
+    pub span: Option<Span>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Documentation {
+    pub comment: Comment,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Alias {
     pub name: Option<String>,
     pub target: String,
+    pub span: Option<Span>,
 }

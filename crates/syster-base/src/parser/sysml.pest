@@ -2129,7 +2129,7 @@ namespace_element = {
 }
 
 // Supporting Rules
-element_reference = { identifier | quoted_name }
+element_reference = { qualified_name | quoted_name }
 identification = { identifier | quoted_name }
 quoted_name = @{ "'" ~ (!("'") ~ ANY)+ ~ "'" }
 relationship_body = { ";" | ( "{" ~ relationship_body_elements ~ "}" ) }
@@ -2151,7 +2151,7 @@ annotating_element = {
 
 comment_annotation = { "comment" ~ identifier ~ ("about" ~ element_reference)? ~ ";" }
 
-documentation = { "doc" ~ (identifier ~ ";")? }
+documentation = { "doc" ~ block_comment? ~ (identifier ~ ";")? }
 
 textual_representation = { "rep" ~ "language" ~ quoted_name ~ block_comment? }
 

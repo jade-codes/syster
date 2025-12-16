@@ -13,6 +13,7 @@ fn test_resolve_simple_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyPackage".to_string(),
                 qualified_name: "MyPackage".to_string(),
             },
@@ -47,6 +48,7 @@ fn test_resolve_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -60,6 +62,7 @@ fn test_resolve_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Child".to_string(),
                 qualified_name: "Root::Child".to_string(),
             },
@@ -72,6 +75,7 @@ fn test_resolve_qualified_name() {
     let Some(Symbol::Package {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name,
         qualified_name,
     }) = result
@@ -92,6 +96,7 @@ fn test_resolve_deeply_nested_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -105,6 +110,7 @@ fn test_resolve_deeply_nested_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -118,6 +124,7 @@ fn test_resolve_deeply_nested_qualified_name() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "C".to_string(),
                 qualified_name: "A::B::C".to_string(),
                 kind: "Class".to_string(),
@@ -132,6 +139,7 @@ fn test_resolve_deeply_nested_qualified_name() {
     let Some(Symbol::Classifier {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name,
         qualified_name,
         ..
@@ -153,6 +161,7 @@ fn test_resolve_classifier_in_package() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Pkg".to_string(),
                 qualified_name: "Pkg".to_string(),
             },
@@ -166,6 +175,7 @@ fn test_resolve_classifier_in_package() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyClass".to_string(),
                 qualified_name: "Pkg::MyClass".to_string(),
                 kind: "Class".to_string(),
@@ -193,6 +203,7 @@ fn test_resolve_invalid_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -215,6 +226,7 @@ fn test_resolve_partial_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -228,6 +240,7 @@ fn test_resolve_partial_qualified_name() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -250,6 +263,7 @@ fn test_resolve_feature_symbol() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Pkg".to_string(),
                 qualified_name: "Pkg".to_string(),
             },
@@ -263,6 +277,7 @@ fn test_resolve_feature_symbol() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "attr".to_string(),
                 qualified_name: "Pkg::attr".to_string(),
                 feature_type: Some("Integer".to_string()),
@@ -276,6 +291,7 @@ fn test_resolve_feature_symbol() {
     let Some(Symbol::Feature {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name,
         feature_type,
         ..
@@ -297,6 +313,7 @@ fn test_resolve_definition_symbol() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyPart".to_string(),
                 qualified_name: "MyPart".to_string(),
                 kind: "Part".to_string(),
@@ -324,6 +341,7 @@ fn test_resolve_usage_symbol() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "System".to_string(),
                 qualified_name: "System".to_string(),
             },
@@ -337,6 +355,7 @@ fn test_resolve_usage_symbol() {
             Symbol::Usage {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "myPort".to_string(),
                 qualified_name: "System::myPort".to_string(),
                 kind: "Port".to_string(),
@@ -364,6 +383,7 @@ fn test_resolve_mixed_symbol_path() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -377,6 +397,7 @@ fn test_resolve_mixed_symbol_path() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyClass".to_string(),
                 qualified_name: "Root::MyClass".to_string(),
                 kind: "Class".to_string(),
@@ -392,6 +413,7 @@ fn test_resolve_mixed_symbol_path() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "feature".to_string(),
                 qualified_name: "Root::MyClass::feature".to_string(),
                 feature_type: None,
@@ -405,6 +427,7 @@ fn test_resolve_mixed_symbol_path() {
     let Some(Symbol::Feature {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name,
         qualified_name,
         ..
@@ -443,6 +466,7 @@ fn test_resolve_leading_separator() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Package".to_string(),
                 qualified_name: "Package".to_string(),
             },
@@ -464,6 +488,7 @@ fn test_resolve_trailing_separator() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Package".to_string(),
                 qualified_name: "Package".to_string(),
             },
@@ -485,6 +510,7 @@ fn test_resolve_multiple_consecutive_separators() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -498,6 +524,7 @@ fn test_resolve_multiple_consecutive_separators() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -520,6 +547,7 @@ fn test_resolve_definition_in_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "OuterPkg".to_string(),
                 qualified_name: "OuterPkg".to_string(),
             },
@@ -533,6 +561,7 @@ fn test_resolve_definition_in_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "InnerPkg".to_string(),
                 qualified_name: "OuterPkg::InnerPkg".to_string(),
             },
@@ -546,6 +575,7 @@ fn test_resolve_definition_in_nested_scopes() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "requirement".to_string(),
                 qualified_name: "OuterPkg::InnerPkg::requirement".to_string(),
                 kind: "Requirement".to_string(),
@@ -562,6 +592,7 @@ fn test_resolve_definition_in_nested_scopes() {
         kind,
         scope_id: _,
         source_file: None,
+        span: None, 
     }) = result
     else {
         panic!("Expected Definition symbol, got: {result:?}");
@@ -581,6 +612,7 @@ fn test_resolve_abstract_classifier() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "AbstractClass".to_string(),
                 qualified_name: "AbstractClass".to_string(),
                 kind: "Class".to_string(),
@@ -608,6 +640,7 @@ fn test_resolve_different_classifier_kinds() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyBehavior".to_string(),
                 qualified_name: "MyBehavior".to_string(),
                 kind: "Behavior".to_string(),
@@ -622,6 +655,7 @@ fn test_resolve_different_classifier_kinds() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyFunction".to_string(),
                 qualified_name: "MyFunction".to_string(),
                 kind: "Function".to_string(),
@@ -655,6 +689,7 @@ fn test_resolve_import_specific_member() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Base".to_string(),
                 qualified_name: "Base".to_string(),
             },
@@ -667,6 +702,7 @@ fn test_resolve_import_specific_member() {
             Symbol::Classifier {
                 scope_id: 1,
                 source_file: None,
+        span: None, 
                 name: "Vehicle".to_string(),
                 qualified_name: "Base::Vehicle".to_string(),
                 kind: "PartDef".to_string(),
@@ -693,6 +729,7 @@ fn test_resolve_import_wildcard() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Base".to_string(),
                 qualified_name: "Base".to_string(),
             },
@@ -705,6 +742,7 @@ fn test_resolve_import_wildcard() {
             Symbol::Classifier {
                 scope_id: 1,
                 source_file: None,
+        span: None, 
                 name: "Vehicle".to_string(),
                 qualified_name: "Base::Vehicle".to_string(),
                 kind: "PartDef".to_string(),
@@ -719,6 +757,7 @@ fn test_resolve_import_wildcard() {
             Symbol::Classifier {
                 scope_id: 1,
                 source_file: None,
+        span: None, 
                 name: "Engine".to_string(),
                 qualified_name: "Base::Engine".to_string(),
                 kind: "PartDef".to_string(),
@@ -734,6 +773,7 @@ fn test_resolve_import_wildcard() {
             Symbol::Classifier {
                 scope_id: 2,
                 source_file: None,
+        span: None, 
                 name: "Wheel".to_string(),
                 qualified_name: "Base::Vehicle::Wheel".to_string(),
                 kind: "PartDef".to_string(),
@@ -764,6 +804,7 @@ fn test_resolve_import_bare_wildcard() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "PackageA".to_string(),
                 qualified_name: "PackageA".to_string(),
             },
@@ -776,6 +817,7 @@ fn test_resolve_import_bare_wildcard() {
             Symbol::Package {
                 scope_id: 1,
                 source_file: None,
+        span: None, 
                 name: "PackageB".to_string(),
                 qualified_name: "PackageB".to_string(),
             },
@@ -789,6 +831,7 @@ fn test_resolve_import_bare_wildcard() {
             Symbol::Package {
                 scope_id: 2,
                 source_file: None,
+        span: None, 
                 name: "Nested".to_string(),
                 qualified_name: "PackageA::Nested".to_string(),
             },

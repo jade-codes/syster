@@ -14,6 +14,7 @@ fn test_insert_and_lookup() {
     let symbol = Symbol::Package {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name: "MyPackage".to_string(),
         qualified_name: "MyPackage".to_string(),
     };
@@ -32,6 +33,7 @@ fn test_duplicate_symbol_error() {
     let symbol = Symbol::Package {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name: "MyPackage".to_string(),
         qualified_name: "MyPackage".to_string(),
     };
@@ -50,6 +52,7 @@ fn test_scope_hierarchy() {
     let pkg_symbol = Symbol::Package {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name: "Root".to_string(),
         qualified_name: "Root".to_string(),
     };
@@ -59,6 +62,7 @@ fn test_scope_hierarchy() {
     let class_symbol = Symbol::Classifier {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name: "MyClass".to_string(),
         qualified_name: "Root::MyClass".to_string(),
         kind: "Class".to_string(),
@@ -82,6 +86,7 @@ fn test_all_symbols() {
     let pkg = Symbol::Package {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name: "Pkg".to_string(),
         qualified_name: "Pkg".to_string(),
     };
@@ -91,6 +96,7 @@ fn test_all_symbols() {
     let class = Symbol::Classifier {
         scope_id: 0,
         source_file: None,
+        span: None, 
         name: "Class".to_string(),
         qualified_name: "Pkg::Class".to_string(),
         kind: "Class".to_string(),
@@ -112,6 +118,7 @@ fn test_multiple_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Level0".to_string(),
                 qualified_name: "Level0".to_string(),
             },
@@ -125,6 +132,7 @@ fn test_multiple_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Level1".to_string(),
                 qualified_name: "Level0::Level1".to_string(),
             },
@@ -138,6 +146,7 @@ fn test_multiple_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "Level2".to_string(),
                 qualified_name: "Level0::Level1::Level2".to_string(),
             },
@@ -167,6 +176,7 @@ fn test_different_symbol_types() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyPackage".to_string(),
                 qualified_name: "MyPackage".to_string(),
             },
@@ -179,6 +189,7 @@ fn test_different_symbol_types() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyClass".to_string(),
                 qualified_name: "MyClass".to_string(),
                 kind: "Class".to_string(),
@@ -193,6 +204,7 @@ fn test_different_symbol_types() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyFeature".to_string(),
                 qualified_name: "MyClass::MyFeature".to_string(),
                 feature_type: Some("String".to_string()),
@@ -206,6 +218,7 @@ fn test_different_symbol_types() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
                 kind: "Part".to_string(),
@@ -219,6 +232,7 @@ fn test_different_symbol_types() {
             Symbol::Usage {
                 scope_id: 0,
                 source_file: None,
+        span: None, 
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),
                 kind: "Part".to_string(),
@@ -264,6 +278,7 @@ fn test_remove_symbols_from_file() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: Some("file1.sysml".to_string()),
+        span: None, 
                 name: "Pkg1".to_string(),
                 qualified_name: "Pkg1".to_string(),
             },
@@ -278,6 +293,7 @@ fn test_remove_symbols_from_file() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: Some("file2.sysml".to_string()),
+        span: None, 
                 name: "Pkg2".to_string(),
                 qualified_name: "Pkg2".to_string(),
             },
@@ -293,6 +309,7 @@ fn test_remove_symbols_from_file() {
             Symbol::Classifier {
                 scope_id: 1,
                 source_file: Some("file1.sysml".to_string()),
+        span: None, 
                 name: "Class1".to_string(),
                 qualified_name: "Pkg1::Class1".to_string(),
                 kind: "class".to_string(),

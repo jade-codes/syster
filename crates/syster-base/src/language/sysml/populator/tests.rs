@@ -28,6 +28,7 @@ fn test_populate_single_package() {
         elements: vec![Element::Package(Package {
             name: Some("TestPackage".to_string()),
             elements: vec![],
+            span: None,
         })],
     };
 
@@ -61,7 +62,9 @@ fn test_populate_nested_packages() {
             elements: vec![Element::Package(Package {
                 name: Some("Inner".to_string()),
                 elements: vec![],
+                span: None,
             })],
+            span: None,
         })],
     };
 
@@ -100,6 +103,7 @@ fn test_populate_definition() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             },
         )],
     };
@@ -132,6 +136,7 @@ fn test_populate_usage() {
 
             is_derived: false,
             is_readonly: false,
+            span: None,
         })],
     };
 
@@ -159,10 +164,12 @@ fn test_populate_duplicate_definition_error() {
             Element::Package(Package {
                 name: Some("Duplicate".to_string()),
                 elements: vec![],
+                span: None,
             }),
             Element::Package(Package {
                 name: Some("Duplicate".to_string()),
                 elements: vec![],
+                span: None,
             }),
         ],
     };
@@ -192,8 +199,10 @@ fn test_populate_definition_in_package() {
                     relationships: crate::language::sysml::syntax::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
+                    span: None,
                 },
             )],
+            span: None,
         })],
     };
 
@@ -224,6 +233,7 @@ fn test_populate_anonymous_package() {
         elements: vec![Element::Package(Package {
             name: None,
             elements: vec![],
+            span: None,
         })],
     };
 
@@ -246,6 +256,7 @@ fn test_populate_anonymous_definition() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             },
         )],
     };
@@ -269,6 +280,7 @@ fn test_populate_multiple_definitions() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
             Element::Definition(crate::language::sysml::syntax::Definition {
                 kind: DefinitionKind::Port,
@@ -277,6 +289,7 @@ fn test_populate_multiple_definitions() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
             Element::Usage(crate::language::sysml::syntax::Usage {
                 kind: UsageKind::Action,
@@ -286,6 +299,7 @@ fn test_populate_multiple_definitions() {
 
                 is_derived: false,
                 is_readonly: false,
+                span: None,
             }),
         ],
     };
@@ -319,10 +333,14 @@ fn test_populate_deeply_nested_structure() {
                             relationships: crate::language::sysml::syntax::Relationships::none(),
                             is_abstract: false,
                             is_variation: false,
+                            span: None,
                         },
                     )],
+                    span: None,
                 })],
+                span: None,
             })],
+            span: None,
         })],
     };
 
@@ -367,6 +385,7 @@ fn test_populate_all_definition_kinds() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             },
         ));
     }
@@ -404,6 +423,7 @@ fn test_populate_mixed_elements_in_package() {
                     relationships: crate::language::sysml::syntax::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
+                    span: None,
                 }),
                 Element::Usage(crate::language::sysml::syntax::Usage {
                     kind: UsageKind::Part,
@@ -413,12 +433,15 @@ fn test_populate_mixed_elements_in_package() {
 
                     is_derived: false,
                     is_readonly: false,
+                    span: None,
                 }),
                 Element::Package(Package {
                     name: Some("NestedPkg".to_string()),
                     elements: vec![],
+                    span: None,
                 }),
             ],
+            span: None,
         })],
     };
 
@@ -474,8 +497,10 @@ fn test_populate_sibling_packages() {
                         relationships: crate::language::sysml::syntax::Relationships::none(),
                         is_abstract: false,
                         is_variation: false,
+                        span: None,
                     },
                 )],
+                span: None,
             }),
             Element::Package(Package {
                 name: Some("Package2".to_string()),
@@ -487,8 +512,10 @@ fn test_populate_sibling_packages() {
                         relationships: crate::language::sysml::syntax::Relationships::none(),
                         is_abstract: false,
                         is_variation: false,
+                        span: None,
                     },
                 )],
+                span: None,
             }),
         ],
     };
@@ -534,6 +561,7 @@ fn test_populate_duplicate_in_nested_scope() {
                     relationships: crate::language::sysml::syntax::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
+                    span: None,
                 }),
                 Element::Definition(crate::language::sysml::syntax::Definition {
                     kind: DefinitionKind::Port,
@@ -542,8 +570,10 @@ fn test_populate_duplicate_in_nested_scope() {
                     relationships: crate::language::sysml::syntax::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
+                    span: None,
                 }),
             ],
+            span: None,
         })],
     };
 
@@ -573,8 +603,10 @@ fn test_populate_same_name_different_scopes() {
                         relationships: crate::language::sysml::syntax::Relationships::none(),
                         is_abstract: false,
                         is_variation: false,
+                        span: None,
                     },
                 )],
+                span: None,
             }),
             Element::Package(Package {
                 name: Some("Package2".to_string()),
@@ -586,8 +618,10 @@ fn test_populate_same_name_different_scopes() {
                         relationships: crate::language::sysml::syntax::Relationships::none(),
                         is_abstract: false,
                         is_variation: false,
+                        span: None,
                     },
                 )],
+                span: None,
             }),
         ],
     };
@@ -631,6 +665,7 @@ fn test_populate_all_usage_kinds() {
             relationships: crate::language::sysml::syntax::Relationships::none(),
             is_derived: false,
             is_readonly: false,
+            span: None,
         }));
     }
 
@@ -668,6 +703,7 @@ fn test_populate_complex_hierarchy() {
                         relationships: crate::language::sysml::syntax::Relationships::none(),
                         is_abstract: false,
                         is_variation: false,
+                        span: None,
                     }),
                     Element::Package(Package {
                         name: Some("Sub1".to_string()),
@@ -680,6 +716,7 @@ fn test_populate_complex_hierarchy() {
                                 ),
                                 is_derived: false,
                                 is_readonly: false,
+                                span: None,
                             }),
                             Element::Package(Package {
                                 name: Some("Sub2".to_string()),
@@ -692,16 +729,21 @@ fn test_populate_complex_hierarchy() {
                                             crate::language::sysml::syntax::Relationships::none(),
                                         is_abstract: false,
                                         is_variation: false,
+                                        span: None,
                                     },
                                 )],
+                                span: None,
                             }),
                         ],
+                        span: None,
                     }),
                     Element::Package(Package {
                         name: Some("Sub3".to_string()),
                         elements: vec![],
+                        span: None,
                     }),
                 ],
+                span: None,
             }),
             Element::Definition(crate::language::sysml::syntax::Definition {
                 kind: DefinitionKind::Port,
@@ -710,6 +752,7 @@ fn test_populate_complex_hierarchy() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
         ],
     };
@@ -772,6 +815,7 @@ fn test_populate_multiple_errors() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
             Element::Definition(crate::language::sysml::syntax::Definition {
                 kind: DefinitionKind::Part,
@@ -780,6 +824,7 @@ fn test_populate_multiple_errors() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
             Element::Definition(crate::language::sysml::syntax::Definition {
                 kind: DefinitionKind::Part,
@@ -788,6 +833,7 @@ fn test_populate_multiple_errors() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
             Element::Definition(crate::language::sysml::syntax::Definition {
                 kind: DefinitionKind::Part,
@@ -796,6 +842,7 @@ fn test_populate_multiple_errors() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
         ],
     };
@@ -820,12 +867,15 @@ fn test_populate_empty_package_hierarchy() {
                 Element::Package(Package {
                     name: Some("Empty2".to_string()),
                     elements: vec![],
+                    span: None,
                 }),
                 Element::Package(Package {
                     name: Some("Empty3".to_string()),
                     elements: vec![],
+                    span: None,
                 }),
             ],
+            span: None,
         })],
     };
 
@@ -870,6 +920,7 @@ fn test_populate_with_relationship_graph() {
             relationships: crate::language::sysml::syntax::Relationships::none(),
             is_abstract: false,
             is_variation: false,
+            span: None,
         })],
     };
 
@@ -899,6 +950,7 @@ fn test_populator_without_relationship_graph() {
             relationships: crate::language::sysml::syntax::Relationships::none(),
             is_abstract: false,
             is_variation: false,
+            span: None,
         })],
     };
 

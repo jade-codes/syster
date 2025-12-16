@@ -344,6 +344,7 @@ fn test_comment_without_locale() {
         content: "This is a comment".to_string(),
         about: vec![],
         locale: None,
+        span: None,
     };
     assert!(comment.locale.is_none());
     assert_eq!(comment.content, "This is a comment");
@@ -355,6 +356,7 @@ fn test_comment_with_locale() {
         content: "Ceci est un commentaire".to_string(),
         about: vec![],
         locale: Some("fr-FR".to_string()),
+        span: None,
     };
     assert_eq!(comment.locale, Some("fr-FR".to_string()));
     assert_eq!(comment.content, "Ceci est un commentaire");
@@ -366,8 +368,12 @@ fn test_documentation() {
         content: "Documentation text".to_string(),
         about: vec![],
         locale: Some("en-US".to_string()),
+        span: None,
     };
-    let doc = Documentation { comment };
+    let doc = Documentation {
+        comment,
+        span: None,
+    };
     assert_eq!(doc.comment.content, "Documentation text");
     assert_eq!(doc.comment.locale, Some("en-US".to_string()));
 }

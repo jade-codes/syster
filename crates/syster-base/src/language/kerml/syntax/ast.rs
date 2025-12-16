@@ -1,8 +1,18 @@
 use super::enums::{ClassifierKind, Element, FeatureDirection, ImportKind};
 use super::types::{Annotation, Classifier, Comment, Feature, Import, Package};
+use crate::core::Span;
 use crate::language::kerml::model::types::Documentation;
 use crate::parser::kerml::Rule;
 use from_pest::{ConversionError, FromPest, Void};
+
+/// Convert a Pest span to our Span type (0-indexed for LSP compatibility)
+fn pest_span_to_span(pest_span: pest::Span) -> Span {
+    let (start_line, start_col) = pest_span.start_pos().line_col();
+    let (end_line, end_col) = pest_span.end_pos().line_col();
+
+    // Pest is 1-indexed, convert to 0-indexed for LSP
+    Span::from_coords(start_line - 1, start_col - 1, end_line - 1, end_col - 1)
+}
 
 macro_rules! impl_from_pest {
     ($type:ty, $body:expr) => {
@@ -27,6 +37,7 @@ impl_from_pest!(Package, |pest| {
     if pair.as_rule() != Rule::package {
         return Err(ConversionError::NoMatch);
     }
+    let span = Some(pest_span_to_span(pair.as_span()));
     let mut name = None;
     for inner in pair.into_inner() {
         if matches!(
@@ -39,6 +50,7 @@ impl_from_pest!(Package, |pest| {
     Ok(Package {
         name,
         elements: Vec::new(),
+        span,
     })
 });
 
@@ -47,6 +59,7 @@ impl_from_pest!(Comment, |pest| {
     if pair.as_rule() != Rule::comment {
         return Err(ConversionError::NoMatch);
     }
+    let span = Some(pest_span_to_span(pair.as_span()));
     let content = pair
         .into_inner()
         .find(|p| p.as_rule() == Rule::textual_body)
@@ -56,6 +69,7 @@ impl_from_pest!(Comment, |pest| {
         content,
         about: Vec::new(),
         locale: None,
+        span,
     })
 });
 
@@ -64,20 +78,23 @@ impl_from_pest!(Documentation, |pest| {
     if pair.as_rule() != Rule::documentation {
         return Err(ConversionError::NoMatch);
     }
+    let span = Some(pest_span_to_span(pair.as_span()));
     let content = pair
         .into_inner()
         .find(|p| p.as_rule() == Rule::textual_body)
         .map(|p| p.as_str().to_string())
         .unwrap_or_default();
+    let comment_span = span;
     Ok(Documentation {
         comment: Comment {
             content,
             about: Vec::new(),
             locale: None,
+            span: comment_span,
         },
+        span: comment_span,
     })
 });
-
 impl_from_pest!(Classifier, |pest| {
     let pair = pest.next().ok_or(ConversionError::NoMatch)?;
     let kind = match pair.as_rule() {
@@ -93,6 +110,7 @@ impl_from_pest!(Classifier, |pest| {
         Rule::metaclass => ClassifierKind::Metaclass,
         _ => return Err(ConversionError::NoMatch),
     };
+    let span = Some(pest_span_to_span(pair.as_span()));
     let mut name = None;
     let mut is_abstract = false;
     for inner in pair.into_inner() {
@@ -109,6 +127,7 @@ impl_from_pest!(Classifier, |pest| {
         is_abstract,
         name,
         body: Vec::new(),
+        span,
     })
 });
 
@@ -117,6 +136,7 @@ impl_from_pest!(Feature, |pest| {
     if pair.as_rule() != Rule::feature {
         return Err(ConversionError::NoMatch);
     }
+    let span = Some(pest_span_to_span(pair.as_span()));
     let mut name = None;
     let mut direction = None;
     let mut is_readonly = false;
@@ -154,6 +174,7 @@ impl_from_pest!(Feature, |pest| {
         is_readonly,
         is_derived,
         body: Vec::new(),
+        span,
     })
 });
 
@@ -162,6 +183,7 @@ impl_from_pest!(Import, |pest| {
     if pair.as_rule() != Rule::import {
         return Err(ConversionError::NoMatch);
     }
+    let span = Some(pest_span_to_span(pair.as_span()));
     let mut path = String::new();
     let mut is_recursive = false;
     for inner in pair.into_inner() {
@@ -179,6 +201,7 @@ impl_from_pest!(Import, |pest| {
         path,
         is_recursive,
         kind: ImportKind::Normal,
+        span,
     })
 });
 
@@ -202,6 +225,7 @@ impl_from_pest!(Element, |pest| {
         }
         Rule::annotation => Element::Annotation(Annotation {
             reference: pair.as_str().to_string(),
+            span: Some(pest_span_to_span(pair.as_span())),
         }),
         Rule::import => Element::Import(Import::from_pest(&mut pair.into_inner())?),
         _ => return Err(ConversionError::NoMatch),

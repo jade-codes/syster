@@ -1,6 +1,7 @@
 use super::enums::{
     ClassifierKind, ClassifierMember, Element, FeatureDirection, FeatureMember, ImportKind,
 };
+use crate::core::Span;
 pub use crate::language::kerml::model::types::Comment;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,12 +13,14 @@ pub struct KerMLFile {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NamespaceDeclaration {
     pub name: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Package {
     pub name: Option<String>,
     pub elements: Vec<Element>,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,6 +29,7 @@ pub struct Classifier {
     pub is_abstract: bool,
     pub name: Option<String>,
     pub body: Vec<ClassifierMember>,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -35,6 +39,7 @@ pub struct Feature {
     pub is_readonly: bool,
     pub is_derived: bool,
     pub body: Vec<FeatureMember>,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,29 +47,35 @@ pub struct Import {
     pub path: String,
     pub is_recursive: bool,
     pub kind: ImportKind,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Annotation {
     pub reference: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Specialization {
     pub general: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Redefinition {
     pub redefined: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Subsetting {
     pub subset: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypingRelationship {
     pub typed: String,
+    pub span: Option<Span>,
 }

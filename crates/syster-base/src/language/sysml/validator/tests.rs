@@ -15,6 +15,7 @@ fn create_requirement(name: &str) -> Symbol {
         scope_id: 0,
         kind: SYSML_KIND_REQUIREMENT.to_string(),
         source_file: None,
+        span: None, 
     }
 }
 
@@ -25,6 +26,7 @@ fn create_action(name: &str) -> Symbol {
         scope_id: 0,
         kind: SYSML_KIND_ACTION.to_string(),
         source_file: None,
+        span: None, 
     }
 }
 
@@ -35,6 +37,7 @@ fn create_state(name: &str) -> Symbol {
         scope_id: 0,
         kind: SYSML_KIND_STATE.to_string(),
         source_file: None,
+        span: None, 
     }
 }
 
@@ -45,6 +48,7 @@ fn create_use_case(name: &str) -> Symbol {
         scope_id: 0,
         kind: SYSML_KIND_USE_CASE.to_string(),
         source_file: None,
+        span: None, 
     }
 }
 
@@ -55,6 +59,7 @@ fn create_part(name: &str) -> Symbol {
         scope_id: 0,
         kind: "Part".to_string(),
         source_file: None,
+        span: None, 
     }
 }
 

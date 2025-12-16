@@ -18,8 +18,10 @@ impl SysMLRelationshipValidator {
 
     fn validate_satisfy(&self, target: &Symbol) -> Result<(), SemanticError> {
         let is_requirement = match target {
-            Symbol::Definition { kind, .. } => kind == SYSML_KIND_REQUIREMENT,
-            Symbol::Usage { kind, .. } => kind == SYSML_KIND_REQUIREMENT,
+            Symbol::Definition {
+                span: None, kind, .. } => kind == SYSML_KIND_REQUIREMENT,
+            Symbol::Usage {
+                span: None, kind, .. } => kind == SYSML_KIND_REQUIREMENT,
             _ => false,
         };
 
@@ -33,7 +35,8 @@ impl SysMLRelationshipValidator {
     }
 
     fn validate_perform(&self, target: &Symbol) -> Result<(), SemanticError> {
-        if let Symbol::Definition { kind, .. } = target
+        if let Symbol::Definition {
+                span: None, kind, .. } = target
             && kind != SYSML_KIND_ACTION
         {
             return Err(SemanticError::invalid_type(format!(
@@ -46,7 +49,8 @@ impl SysMLRelationshipValidator {
     }
 
     fn validate_exhibit(&self, target: &Symbol) -> Result<(), SemanticError> {
-        if let Symbol::Definition { kind, .. } = target
+        if let Symbol::Definition {
+                span: None, kind, .. } = target
             && kind != SYSML_KIND_STATE
         {
             return Err(SemanticError::invalid_type(format!(
@@ -59,7 +63,8 @@ impl SysMLRelationshipValidator {
     }
 
     fn validate_include(&self, target: &Symbol) -> Result<(), SemanticError> {
-        if let Symbol::Definition { kind, .. } = target
+        if let Symbol::Definition {
+                span: None, kind, .. } = target
             && kind != SYSML_KIND_USE_CASE
         {
             return Err(SemanticError::invalid_type(format!(

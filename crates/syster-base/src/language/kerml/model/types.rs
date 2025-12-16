@@ -1,4 +1,5 @@
 use super::enums::{FeatureDirectionKind, VisibilityKind};
+use crate::core::Span;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
@@ -267,11 +268,13 @@ pub struct Comment {
     pub content: String,
     pub about: Vec<Annotation>,
     pub locale: Option<String>,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Documentation {
     pub comment: Comment,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

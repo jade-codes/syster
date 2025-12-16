@@ -1,14 +1,20 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use syster::core::constants::{KERML_EXT, SYSML_EXT};
 use syster::project::ParseError;
 use syster::semantic::Workspace;
-use tower_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
+use syster::semantic::symbol_table::Symbol;
+use tower_lsp::lsp_types::{
+    Diagnostic, DiagnosticSeverity, Hover, HoverContents, MarkedString, Position, Range, Url,
+};
 
 /// Backend manages the workspace state for the LSP server
 pub struct Backend {
     workspace: Workspace,
     /// Track parse errors for each file (keyed by file path)
     parse_errors: HashMap<PathBuf, Vec<ParseError>>,
+    /// Track document text for hover and other features (keyed by file path)
+    document_texts: HashMap<PathBuf, String>,
 }
 
 impl Backend {
@@ -16,6 +22,7 @@ impl Backend {
         Self {
             workspace: Workspace::new(),
             parse_errors: HashMap::new(),
+            document_texts: HashMap::new(),
         }
     }
 
@@ -27,26 +34,41 @@ impl Backend {
         &mut self.workspace
     }
 
-    /// Open a document and add it to the workspace
-    pub fn open_document(&mut self, uri: &Url, text: &str) -> Result<(), String> {
+    /// Parse and update a document in the workspace
+    ///
+    /// This is a helper method that handles:
+    /// - Storing document text
+    /// - Parsing the file
+    /// - Storing parse errors
+    /// - Updating the workspace
+    /// - Repopulating symbols
+    fn parse_and_update(&mut self, uri: &Url, text: &str, is_update: bool) -> Result<(), String> {
         let path = uri
             .to_file_path()
             .map_err(|_| format!("Invalid file URI: {}", uri))?;
 
+        // Store document text
+        self.document_texts.insert(path.clone(), text.to_string());
+
         // Parse the file based on extension
-        let parse_result = if path.extension().and_then(|s| s.to_str()) == Some("sysml") {
-            syster::project::file_loader::parse_with_result(text, &path)
-        } else if path.extension().and_then(|s| s.to_str()) == Some("kerml") {
-            return Err("KerML files not yet fully supported".to_string());
-        } else {
-            return Err(format!(
-                "Unsupported file extension: {:?}",
-                path.extension()
-            ));
+        let ext = path
+            .extension()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| "File has no extension".to_string())?;
+
+        let parse_result = match ext {
+            SYSML_EXT => syster::project::file_loader::parse_with_result(text, &path),
+            KERML_EXT => return Err("KerML files not yet fully supported".to_string()),
+            _ => return Err(format!("Unsupported file extension: {}", ext)),
         };
 
         // Store parse errors
         self.parse_errors.insert(path.clone(), parse_result.errors);
+
+        // If updating, remove old file first
+        if is_update {
+            self.workspace.remove_file(&path);
+        }
 
         // If parsing succeeded, add to workspace
         if let Some(file) = parse_result.content {
@@ -58,38 +80,14 @@ impl Backend {
         Ok(())
     }
 
+    /// Open a document and add it to the workspace
+    pub fn open_document(&mut self, uri: &Url, text: &str) -> Result<(), String> {
+        self.parse_and_update(uri, text, false)
+    }
+
     /// Update an open document with new content
     pub fn change_document(&mut self, uri: &Url, text: &str) -> Result<(), String> {
-        let path = uri
-            .to_file_path()
-            .map_err(|_| format!("Invalid file URI: {}", uri))?;
-
-        // Parse the updated file
-        let parse_result = if path.extension().and_then(|s| s.to_str()) == Some("sysml") {
-            syster::project::file_loader::parse_with_result(text, &path)
-        } else if path.extension().and_then(|s| s.to_str()) == Some("kerml") {
-            return Err("KerML files not yet fully supported".to_string());
-        } else {
-            return Err(format!(
-                "Unsupported file extension: {:?}",
-                path.extension()
-            ));
-        };
-
-        // Store parse errors
-        self.parse_errors.insert(path.clone(), parse_result.errors);
-
-        // Update in workspace (remove old first)
-        self.workspace.remove_file(&path);
-
-        // If parsing succeeded, add new version to workspace
-        if let Some(file) = parse_result.content {
-            self.workspace.add_file(path, file);
-            // Repopulate symbols - ignore semantic errors for now
-            let _ = self.workspace.populate_all();
-        }
-
-        Ok(())
+        self.parse_and_update(uri, text, true)
     }
 
     /// Close a document - optionally remove from workspace
@@ -133,210 +131,135 @@ impl Backend {
             })
             .unwrap_or_default()
     }
+
+    /// Get hover information for a symbol at the given position
+    ///
+    /// For now, this is a simple implementation that extracts a word at the cursor
+    /// and looks it up in the symbol table. A more sophisticated implementation would
+    /// parse the AST to find the exact symbol at the position.
+    pub fn get_hover(&self, uri: &Url, position: Position) -> Option<Hover> {
+        let path = uri.to_file_path().ok()?;
+
+        // Get document text
+        let text = self.document_texts.get(&path)?;
+
+        // Extract word at position
+        let word = extract_word_at_position(text, position)?;
+
+        // Look up symbol in workspace
+        let symbol = self.workspace.symbol_table().lookup(&word)?;
+
+        // Format hover content based on symbol type
+        let content = format_symbol_hover(symbol);
+
+        Some(Hover {
+            contents: HoverContents::Scalar(MarkedString::String(content)),
+            range: None,
+        })
+    }
+}
+
+/// Extract a word (identifier) at the given position from text
+/// TODO: Remove this once AST position tracking is implemented (task 8+9)
+/// This is a temporary workaround for hover - proper implementation will query AST directly
+fn extract_word_at_position(text: &str, position: Position) -> Option<String> {
+    let lines: Vec<&str> = text.lines().collect();
+    let line = lines.get(position.line as usize)?;
+    let col = position.character as usize;
+
+    if col >= line.len() {
+        return None;
+    }
+
+    // Find word boundaries
+    let chars: Vec<char> = line.chars().collect();
+
+    // Check if we're on a word character
+    if !chars[col].is_alphanumeric() && chars[col] != '_' {
+        return None;
+    }
+
+    // Find start of word
+    let mut start = col;
+    while start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
+        start -= 1;
+    }
+
+    // Find end of word
+    let mut end = col;
+    while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_') {
+        end += 1;
+    }
+
+    Some(chars[start..end].iter().collect())
+}
+
+/// Format hover content with consistent markdown styling
+/// TODO: Remove this once AST position tracking is implemented (task 8+9)
+/// Temporary helper for basic hover - will be replaced with rich contextual hover
+fn format_hover_content(syntax: &str, qualified_name: Option<&str>) -> String {
+    let mut result = format!("```sysml\n{}\n```", syntax);
+    if let Some(qname) = qualified_name {
+        result.push_str(&format!("\n\nQualified: `{}`", qname));
+    }
+    result
+}
+
+/// Format a symbol for hover display
+/// TODO: Remove this once AST position tracking is implemented (task 8+9)
+/// Temporary implementation - will be replaced with rich hover showing docs, signatures, relationships
+fn format_symbol_hover(symbol: &Symbol) -> String {
+    match symbol {
+        Symbol::Alias { name, target, .. } => {
+            format_hover_content(&format!("alias {} = {}", name, target), None)
+        }
+        Symbol::Package {
+            name,
+            qualified_name,
+            ..
+        } => format_hover_content(&format!("package {}", name), Some(qualified_name)),
+        Symbol::Classifier {
+            name,
+            qualified_name,
+            kind,
+            is_abstract,
+            ..
+        } => {
+            let prefix = if *is_abstract { "abstract " } else { "" };
+            format_hover_content(
+                &format!("{}{} {}", prefix, kind, name),
+                Some(qualified_name),
+            )
+        }
+        Symbol::Definition {
+            name,
+            qualified_name,
+            kind,
+            ..
+        } => format_hover_content(&format!("{} def {}", kind, name), Some(qualified_name)),
+        Symbol::Usage {
+            name,
+            qualified_name,
+            kind,
+            ..
+        } => format_hover_content(&format!("{} {}", kind, name), Some(qualified_name)),
+        Symbol::Feature {
+            name,
+            qualified_name,
+            feature_type,
+            ..
+        } => {
+            let type_str = feature_type
+                .as_ref()
+                .map(|t| format!(": {}", t))
+                .unwrap_or_default();
+            format_hover_content(
+                &format!("feature {}{}", name, type_str),
+                Some(qualified_name),
+            )
+        }
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_backend_creation() {
-        let backend = Backend::new();
-        assert_eq!(backend.workspace().file_count(), 0);
-    }
-
-    #[test]
-    fn test_backend_provides_workspace_access() {
-        let mut backend = Backend::new();
-
-        // Should be able to access workspace mutably
-        let workspace = backend.workspace_mut();
-        assert_eq!(workspace.file_count(), 0);
-
-        // Should be able to access workspace immutably
-        let workspace = backend.workspace();
-        assert_eq!(workspace.file_count(), 0);
-    }
-
-    #[test]
-    fn test_open_sysml_document() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = "part def Vehicle;";
-
-        backend.open_document(&uri, text).unwrap();
-
-        assert_eq!(backend.workspace().file_count(), 1);
-        assert!(backend.workspace().symbol_table().all_symbols().len() > 0);
-    }
-
-    #[test]
-    fn test_open_invalid_sysml() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = "invalid syntax !@#$%";
-
-        // Should succeed (errors are captured, not returned)
-        let result = backend.open_document(&uri, text);
-        assert!(result.is_ok());
-
-        // File should NOT be added to workspace (parse failed)
-        assert_eq!(backend.workspace().file_count(), 0);
-
-        // Should have diagnostics
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(!diagnostics.is_empty());
-        assert!(diagnostics[0].message.len() > 0);
-    }
-
-    #[test]
-    fn test_open_unsupported_extension() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.txt").unwrap();
-        let text = "some text";
-
-        let result = backend.open_document(&uri, text);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Unsupported file extension"));
-    }
-
-    #[test]
-    fn test_open_kerml_file() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.kerml").unwrap();
-        let text = "classifier Vehicle;";
-
-        let result = backend.open_document(&uri, text);
-        // KerML not yet supported
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("KerML"));
-    }
-
-    #[test]
-    fn test_change_document() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-
-        // Open initial document
-        backend.open_document(&uri, "part def Car;").unwrap();
-        assert_eq!(backend.workspace().file_count(), 1);
-        let initial_symbols = backend.workspace().symbol_table().all_symbols().len();
-
-        // Change document content
-        backend
-            .change_document(&uri, "part def Vehicle; part def Bike;")
-            .unwrap();
-
-        assert_eq!(backend.workspace().file_count(), 1);
-        let updated_symbols = backend.workspace().symbol_table().all_symbols().len();
-        assert!(updated_symbols > initial_symbols);
-    }
-
-    #[test]
-    fn test_change_document_with_error() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-
-        // Open valid document
-        backend.open_document(&uri, "part def Car;").unwrap();
-        assert_eq!(backend.workspace().file_count(), 1);
-
-        // Change to invalid content - should succeed but capture error
-        let result = backend.change_document(&uri, "invalid syntax !@#");
-        assert!(result.is_ok());
-
-        // File should be removed from workspace (parse failed)
-        assert_eq!(backend.workspace().file_count(), 0);
-
-        // Should have diagnostics
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(!diagnostics.is_empty());
-    }
-
-    #[test]
-    fn test_change_nonexistent_document() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-
-        // Try to change a document that was never opened
-        let result = backend.change_document(&uri, "part def Car;");
-        // Should succeed - change_document handles both open and update
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_close_document() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-
-        // Open and close document
-        backend.open_document(&uri, "part def Car;").unwrap();
-        backend.close_document(&uri).unwrap();
-
-        // Document should still be in workspace (we keep it for cross-file refs)
-        assert_eq!(backend.workspace().file_count(), 1);
-    }
-
-    #[test]
-    fn test_get_diagnostics_for_valid_file() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = "part def Vehicle;";
-
-        backend.open_document(&uri, text).unwrap();
-
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(
-            diagnostics.is_empty(),
-            "Valid file should have no diagnostics"
-        );
-    }
-
-    #[test]
-    fn test_get_diagnostics_for_parse_error() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = "part def invalid syntax";
-
-        backend.open_document(&uri, text).unwrap();
-
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(
-            !diagnostics.is_empty(),
-            "Should have parse error diagnostic"
-        );
-        assert_eq!(diagnostics[0].severity, Some(DiagnosticSeverity::ERROR));
-        assert!(diagnostics[0].message.len() > 0);
-    }
-
-    #[test]
-    fn test_get_diagnostics_clears_on_fix() {
-        let mut backend = Backend::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-
-        // Open with error
-        backend.open_document(&uri, "invalid syntax").unwrap();
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(!diagnostics.is_empty());
-
-        // Fix the error
-        backend.change_document(&uri, "part def Car;").unwrap();
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(
-            diagnostics.is_empty(),
-            "Diagnostics should be cleared after fix"
-        );
-    }
-
-    #[test]
-    fn test_get_diagnostics_for_nonexistent_file() {
-        let backend = Backend::new();
-        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
-
-        let diagnostics = backend.get_diagnostics(&uri);
-        assert!(
-            diagnostics.is_empty(),
-            "Nonexistent file should have no diagnostics"
-        );
-    }
-}
+mod tests;

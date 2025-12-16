@@ -330,6 +330,7 @@ fn test_ast_node_trait() {
     let pkg = Package {
         name: Some("TestPackage".to_string()),
         elements: vec![],
+        span: None,
     };
 
     assert_eq!(pkg.node_type(), "Package");
@@ -346,6 +347,7 @@ fn test_definition_traits() {
         relationships: crate::language::sysml::syntax::Relationships::none(),
         is_abstract: false,
         is_variation: false,
+        span: None,
     };
 
     assert_eq!(def.node_type(), "Definition");
@@ -375,6 +377,7 @@ fn test_visitor_pattern() {
             Element::Package(Package {
                 name: Some("TestPkg".to_string()),
                 elements: vec![],
+                span: None,
             }),
             Element::Definition(Definition {
                 kind: DefinitionKind::Part,
@@ -383,6 +386,7 @@ fn test_visitor_pattern() {
                 relationships: crate::language::sysml::syntax::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
+                span: None,
             }),
         ],
     };
@@ -669,6 +673,7 @@ fn test_element_is_package() {
     let element = Element::Package(Package {
         name: Some("Test".to_string()),
         elements: vec![],
+        span: None,
     });
 
     match element {
@@ -686,6 +691,7 @@ fn test_element_is_definition() {
         relationships: crate::language::sysml::syntax::Relationships::none(),
         is_abstract: false,
         is_variation: false,
+        span: None,
     });
 
     match element {
@@ -706,6 +712,7 @@ fn test_element_is_usage() {
         relationships: crate::language::sysml::syntax::Relationships::none(),
         is_derived: false,
         is_readonly: false,
+        span: None,
     });
 
     match element {
@@ -742,6 +749,7 @@ fn test_named_trait_for_definition() {
         relationships: crate::language::sysml::syntax::Relationships::none(),
         is_abstract: false,
         is_variation: false,
+        span: None,
     };
 
     assert_eq!(definition.name(), Some("TestDef"));
@@ -756,6 +764,7 @@ fn test_named_trait_for_usage() {
         relationships: crate::language::sysml::syntax::Relationships::none(),
         is_derived: false,
         is_readonly: false,
+        span: None,
     };
 
     assert_eq!(usage.name.as_deref(), Some("testUsage"));
@@ -766,6 +775,7 @@ fn test_named_trait_for_package() {
     let package = Package {
         name: Some("TestPackage".to_string()),
         elements: vec![],
+        span: None,
     };
 
     assert_eq!(package.name(), Some("TestPackage"));
@@ -780,6 +790,7 @@ fn test_named_trait_none() {
         relationships: crate::language::sysml::syntax::Relationships::none(),
         is_abstract: false,
         is_variation: false,
+        span: None,
     };
 
     assert_eq!(definition.name(), None);

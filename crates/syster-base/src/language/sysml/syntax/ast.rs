@@ -1,9 +1,20 @@
 use super::{
     enums::{DefinitionKind, DefinitionMember, Element, UsageKind},
-    types::{Comment, Definition, Import, Package, Relationships, SysMLFile, Usage},
+    types::{
+        Comment, Definition, Import, NamespaceDeclaration, Package, Relationships, SysMLFile, Usage,
+    },
 };
-use crate::{language::sysml::syntax::Alias, parser::sysml::Rule};
+use crate::{core::Span, language::sysml::syntax::Alias, parser::sysml::Rule};
 use from_pest::{ConversionError, FromPest, Void};
+
+/// Convert a Pest span to our Span type (0-indexed for LSP compatibility)
+fn pest_span_to_span(pest_span: pest::Span) -> Span {
+    let (start_line, start_col) = pest_span.start_pos().line_col();
+    let (end_line, end_col) = pest_span.end_pos().line_col();
+
+    // Pest is 1-indexed, convert to 0-indexed for LSP
+    Span::from_coords(start_line - 1, start_col - 1, end_line - 1, end_col - 1)
+}
 
 // Helper function to recursively extract usages from body items
 fn extract_usages_from_body<'a>(
@@ -33,11 +44,13 @@ fn extract_usages_from_body<'a>(
             let name = find_name(pair.clone().into_inner());
             let relationships = extract_relationships(pair);
             let (is_derived, is_readonly) = extract_property_flags(pair);
+            let span = Some(pest_span_to_span(pair.as_span()));
             body.push(DefinitionMember::Usage(Box::new(Usage {
                 kind,
                 name,
                 relationships,
                 body: vec![],
+                span,
                 is_derived,
                 is_readonly,
             })));
@@ -286,8 +299,12 @@ macro_rules! impl_from_pest {
 impl_from_pest!(Package, |pest| {
     let mut name = None;
     let mut elements = Vec::new();
+    let mut span = None;
 
     for pair in pest {
+        if span.is_none() {
+            span = Some(pest_span_to_span(pair.as_span()));
+        }
         match pair.as_rule() {
             Rule::package_declaration => {
                 name = pair
@@ -313,7 +330,11 @@ impl_from_pest!(Package, |pest| {
         }
     }
 
-    Ok(Package { name, elements })
+    Ok(Package {
+        name,
+        elements,
+        span,
+    })
 });
 
 impl_from_pest!(Definition, |pest| {
@@ -321,6 +342,7 @@ impl_from_pest!(Definition, |pest| {
     let kind = rule_to_definition_kind(pair.as_rule())?;
     let name = find_name(pair.clone().into_inner());
     let relationships = extract_relationships(&pair);
+    let span = Some(pest_span_to_span(pair.as_span()));
 
     // Parse body items - handle both definition_body and state_def_body
     let mut body = vec![];
@@ -342,6 +364,7 @@ impl_from_pest!(Definition, |pest| {
         name,
         relationships,
         body,
+        span,
         is_abstract: false,
         is_variation: false,
     })
@@ -352,12 +375,14 @@ impl_from_pest!(Usage, |pest| {
     let name = find_name(pair.clone().into_inner());
     let relationships = extract_relationships(&pair);
     let (is_derived, is_readonly) = extract_property_flags(&pair);
+    let span = Some(pest_span_to_span(pair.as_span()));
 
     Ok(Usage {
         kind,
         name,
         relationships,
         body: vec![],
+        span,
         is_derived,
         is_readonly,
     })
@@ -368,15 +393,20 @@ impl_from_pest!(Comment, |pest| {
         return Err(ConversionError::NoMatch);
     }
     let content = pair.as_str().to_string();
-    Ok(Comment { content })
+    let span = Some(pest_span_to_span(pair.as_span()));
+    Ok(Comment { content, span })
 });
 
 impl_from_pest!(Import, |pest| {
     // We receive the children of Rule::import (import_prefix, imported_reference, etc.)
     let mut is_recursive = false;
     let mut path = String::new();
+    let mut span = None;
 
     for pair in pest {
+        if span.is_none() {
+            span = Some(pest_span_to_span(pair.as_span()));
+        }
         if pair.as_rule() == Rule::imported_reference {
             path = pair.as_str().to_string();
             // Check for recursive marker
@@ -388,15 +418,23 @@ impl_from_pest!(Import, |pest| {
         }
     }
 
-    Ok(Import { path, is_recursive })
+    Ok(Import {
+        path,
+        is_recursive,
+        span,
+    })
 });
 
 impl_from_pest!(Alias, |pest| {
     // We receive the children of Rule::alias_member_element
     let mut name = None;
     let mut target = String::new();
+    let mut span = None;
 
     for pair in pest {
+        if span.is_none() {
+            span = Some(pest_span_to_span(pair.as_span()));
+        }
         match pair.as_rule() {
             Rule::identification => {
                 name = Some(pair.as_str().to_string());
@@ -408,7 +446,7 @@ impl_from_pest!(Alias, |pest| {
         }
     }
 
-    Ok(Alias { name, target })
+    Ok(Alias { name, target, span })
 });
 
 impl_from_pest!(Element, |pest| {
@@ -471,6 +509,7 @@ impl_from_pest!(Element, |pest| {
                 name,
                 relationships,
                 body,
+                span: Some(pest_span_to_span(pair.as_span())),
                 is_abstract: false,  // TODO: extract from definition_prefix
                 is_variation: false, // TODO: extract from definition_prefix
             })
@@ -494,6 +533,7 @@ impl_from_pest!(Element, |pest| {
                 name,
                 relationships,
                 body: vec![],
+                span: Some(pest_span_to_span(pair.as_span())),
                 is_derived,
                 is_readonly,
             })
@@ -507,6 +547,7 @@ impl_from_pest!(Element, |pest| {
 
 impl_from_pest!(SysMLFile, |pest| {
     let mut elements = Vec::new();
+    let mut namespace = None;
 
     let model_pair = pest.next().ok_or(ConversionError::NoMatch)?;
     if model_pair.as_rule() != Rule::model {
@@ -517,11 +558,24 @@ impl_from_pest!(SysMLFile, |pest| {
         if pair.as_rule() == Rule::namespace_element
             && let Ok(element) = Element::from_pest(&mut pair.into_inner())
         {
+            // Only set namespace for file-level package declarations (without braces)
+            // These have empty elements. Package blocks with braces have their children
+            // in Package.elements and are handled by visit_package()
+            if let Element::Package(ref pkg) = element
+                && namespace.is_none()
+                && pkg.elements.is_empty()
+                && let Some(ref name) = pkg.name
+            {
+                namespace = Some(NamespaceDeclaration {
+                    name: name.clone(),
+                    span: pkg.span,
+                });
+            }
             elements.push(element);
         }
     }
     Ok(SysMLFile {
-        namespace: None,
+        namespace,
         elements,
     })
 });

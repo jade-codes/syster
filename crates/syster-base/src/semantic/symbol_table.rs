@@ -79,12 +79,14 @@
 //!         qualified_name: "Automotive".to_string(),
 //!         scope_id: 0,
 //!         source_file: Some("auto.sysml".to_string()),
+//!         span: None,
 //!     },
 //! ).ok();
 //!
 //! // Lookup by name
 //! let symbol = table.lookup("Automotive");
 //! ```
+use crate::core::Span;
 use crate::core::events::EventEmitter;
 use crate::core::operation::{EventBus, OperationResult};
 use crate::semantic::events::SymbolTableEvent;
@@ -104,6 +106,7 @@ pub enum Symbol {
         qualified_name: String,
         scope_id: usize,
         source_file: Option<String>,
+        span: Option<Span>,
     },
     Classifier {
         name: String,
@@ -112,6 +115,7 @@ pub enum Symbol {
         is_abstract: bool,
         scope_id: usize,
         source_file: Option<String>,
+        span: Option<Span>,
     },
     Feature {
         name: String,
@@ -119,6 +123,7 @@ pub enum Symbol {
         feature_type: Option<String>,
         scope_id: usize,
         source_file: Option<String>,
+        span: Option<Span>,
     },
     Definition {
         name: String,
@@ -126,6 +131,7 @@ pub enum Symbol {
         kind: String,
         scope_id: usize,
         source_file: Option<String>,
+        span: Option<Span>,
     },
     Usage {
         name: String,
@@ -133,6 +139,7 @@ pub enum Symbol {
         kind: String,
         scope_id: usize,
         source_file: Option<String>,
+        span: Option<Span>,
     },
     Alias {
         name: String,
@@ -140,6 +147,7 @@ pub enum Symbol {
         target: String,
         scope_id: usize,
         source_file: Option<String>,
+        span: Option<Span>,
     },
 }
 
@@ -189,6 +197,18 @@ impl Symbol {
             | Symbol::Definition { source_file, .. }
             | Symbol::Usage { source_file, .. }
             | Symbol::Alias { source_file, .. } => source_file.as_deref(),
+        }
+    }
+
+    /// Returns the source span where this symbol was defined
+    pub fn span(&self) -> Option<Span> {
+        match self {
+            Symbol::Package { span, .. }
+            | Symbol::Classifier { span, .. }
+            | Symbol::Feature { span, .. }
+            | Symbol::Definition { span, .. }
+            | Symbol::Usage { span, .. }
+            | Symbol::Alias { span, .. } => *span,
         }
     }
 
