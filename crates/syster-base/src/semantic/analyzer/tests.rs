@@ -356,6 +356,7 @@ fn test_analyze_with_all_symbol_types() {
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),
                 kind: "Action".to_string(),
+                usage_type: None,
             },
         )
         .unwrap();
@@ -590,6 +591,7 @@ fn test_analyzer_with_different_usage_kinds() {
                     name: format!("Usage{}", idx),
                     qualified_name: format!("Usage{}", idx),
                     kind: (*kind).to_string(),
+                    usage_type: None,
                 },
             )
             .unwrap();
@@ -1401,6 +1403,7 @@ fn test_type_validation_usage_not_valid_type() {
                 name: "myUsage".to_string(),
                 qualified_name: "myUsage".to_string(),
                 kind: "Part".to_string(),
+                usage_type: None,
                 scope_id: 0,
                 source_file: None,
                 span: None,
@@ -1580,6 +1583,7 @@ fn test_relationship_validation_typing_undefined_target() {
                 name: "myPart".to_string(),
                 qualified_name: "myPart".to_string(),
                 kind: "Part".to_string(),
+                usage_type: None,
             },
         )
         .unwrap();
@@ -1808,6 +1812,7 @@ fn test_multiple_relationship_types_validation() {
                 name: "myVehicle".to_string(),
                 qualified_name: "myVehicle".to_string(),
                 kind: "Part".to_string(),
+                usage_type: None,
             },
         )
         .unwrap();

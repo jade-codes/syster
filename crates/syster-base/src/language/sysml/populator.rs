@@ -311,6 +311,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                 name: name.clone(),
                 qualified_name: qualified_name.clone(),
                 kind,
+                usage_type: usage.relationships.typed_by.clone(),
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: usage.span,

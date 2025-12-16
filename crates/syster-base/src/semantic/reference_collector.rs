@@ -11,12 +11,11 @@
 //!    - Add the symbol's span to the target's `references` list
 //! 3. Result: Each symbol knows all locations where it's referenced
 
-use crate::core::SymbolReference;
 use crate::language::sysml::populator::{
     REL_REDEFINITION, REL_REFERENCE_SUBSETTING, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
 };
 use crate::semantic::graph::RelationshipGraph;
-use crate::semantic::symbol_table::SymbolTable;
+use crate::semantic::symbol_table::{SymbolReference, SymbolTable};
 use std::collections::HashMap;
 
 pub struct ReferenceCollector<'a> {

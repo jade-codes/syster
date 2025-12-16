@@ -416,15 +416,7 @@ fn format_symbol_declaration(symbol: &Symbol) -> String {
     match symbol {
         Symbol::Alias { name, target, .. } => format!("alias {} for {}", name, target),
         Symbol::Package { name, .. } => format!("package {}", name),
-        Symbol::Classifier {
-            name,
-            kind,
-            is_abstract,
-            ..
-        } => {
-            let prefix = if *is_abstract { "abstract " } else { "" };
-            format!("{}{} {}", prefix, kind, name)
-        }
+        Symbol::Classifier { name, .. } => format!("classifier {}", name),
         Symbol::Definition { name, kind, .. } => format!("{} def {}", kind, name),
         Symbol::Usage { name, kind, .. } => format!("{} {}", kind, name),
         Symbol::Feature {

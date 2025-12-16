@@ -246,6 +246,7 @@ fn test_different_symbol_types() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
+                usage_type: None,
                 references: Vec::new(),
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),

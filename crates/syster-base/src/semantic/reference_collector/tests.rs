@@ -41,6 +41,7 @@ fn test_typing_relationship_reference() {
                 name: "myCar".to_string(),
                 qualified_name: "myCar".to_string(),
                 kind: "part".to_string(),
+                usage_type: None,
                 scope_id: 0,
                 source_file: Some("model.sysml".to_string()),
                 span: Some(Span {
@@ -393,6 +394,7 @@ fn test_reference_subsetting() {
                 name: "vehicle".to_string(),
                 qualified_name: "vehicle".to_string(),
                 kind: "ref".to_string(),
+                usage_type: None,
                 scope_id: 0,
                 source_file: Some("model.sysml".to_string()),
                 span: Some(Span {
@@ -415,6 +417,7 @@ fn test_reference_subsetting() {
                 name: "car".to_string(),
                 qualified_name: "car".to_string(),
                 kind: "ref".to_string(),
+                usage_type: None,
                 scope_id: 0,
                 source_file: Some("model.sysml".to_string()),
                 span: Some(Span {
@@ -521,6 +524,7 @@ fn test_symbol_without_span() {
                 name: "Source".to_string(),
                 qualified_name: "Source".to_string(),
                 kind: "part".to_string(),
+                usage_type: None,
                 scope_id: 0,
                 source_file: Some("model.sysml".to_string()),
                 span: None, // No span
@@ -600,6 +604,7 @@ fn test_mixed_relationships() {
                 name: "instance".to_string(),
                 qualified_name: "instance".to_string(),
                 kind: "part".to_string(),
+                usage_type: None,
                 scope_id: 0,
                 source_file: Some("model.sysml".to_string()),
                 span: Some(Span {

@@ -378,6 +378,7 @@ fn test_resolve_usage_symbol() {
                 name: "myPort".to_string(),
                 qualified_name: "System::myPort".to_string(),
                 kind: "Port".to_string(),
+                usage_type: None,
             },
         )
         .unwrap();
