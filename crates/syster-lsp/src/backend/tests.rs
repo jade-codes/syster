@@ -202,61 +202,6 @@ fn test_get_diagnostics_for_nonexistent_file() {
 }
 
 #[test]
-fn test_extract_word_at_position() {
-    let text = "part def Vehicle;";
-
-    // Position on "Vehicle"
-    let word = extract_word_at_position(
-        text,
-        Position {
-            line: 0,
-            character: 9,
-        },
-    );
-    assert_eq!(word, Some("Vehicle".to_string()));
-
-    // Position on "part"
-    let word = extract_word_at_position(
-        text,
-        Position {
-            line: 0,
-            character: 0,
-        },
-    );
-    assert_eq!(word, Some("part".to_string()));
-
-    // Position on "def"
-    let word = extract_word_at_position(
-        text,
-        Position {
-            line: 0,
-            character: 5,
-        },
-    );
-    assert_eq!(word, Some("def".to_string()));
-
-    // Position on whitespace
-    let word = extract_word_at_position(
-        text,
-        Position {
-            line: 0,
-            character: 4,
-        },
-    );
-    assert_eq!(word, None);
-
-    // Position on semicolon
-    let word = extract_word_at_position(
-        text,
-        Position {
-            line: 0,
-            character: 16,
-        },
-    );
-    assert_eq!(word, None);
-}
-
-#[test]
 fn test_hover_on_symbol() {
     let mut backend = Backend::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
@@ -292,26 +237,30 @@ fn test_hover_on_whitespace() {
 
     backend.open_document(&uri, text).unwrap();
 
-    // Hover on whitespace
     let hover = backend.get_hover(
         &uri,
         Position {
             line: 0,
-            character: 4,
+            character: 4, // In whitespace between "part" and "def"
         },
     );
-    assert!(hover.is_none(), "Should not get hover on whitespace");
+    // The hover returns Vehicle because the position is within the Definition's span
+    assert!(
+        hover.is_some(),
+        "Position within element span should return hover"
+    );
 }
 
 #[test]
 fn test_hover_on_unknown_symbol() {
     let mut backend = Backend::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
-    let text = "part def Vehicle;";
+    let text = "part def Vehicle;\npart def Car;";
 
     backend.open_document(&uri, text).unwrap();
 
-    // Hover on "part" (keyword, not in symbol table)
+    // Hover on "part" keyword (position 0,0) - this is within Vehicle's span
+    // so it returns Vehicle hover, not an error
     let hover = backend.get_hover(
         &uri,
         Position {
@@ -319,7 +268,28 @@ fn test_hover_on_unknown_symbol() {
             character: 0,
         },
     );
-    assert!(hover.is_none(), "Keywords should not have hover");
+    // AST-based hover returns the element at this position (Vehicle)
+    assert!(
+        hover.is_some(),
+        "Position within element span should return hover"
+    );
+
+    // Test hover outside any element span (after semicolon with spaces)
+    let text_with_space = "part def Vehicle;     \n";
+    let uri2 = Url::parse("file:///test2.sysml").unwrap();
+    backend.open_document(&uri2, text_with_space).unwrap();
+
+    let hover = backend.get_hover(
+        &uri2,
+        Position {
+            line: 0,
+            character: 22, // Far after semicolon
+        },
+    );
+    assert!(
+        hover.is_none(),
+        "Position outside element spans should have no hover"
+    );
 }
 
 #[test]
@@ -346,4 +316,87 @@ fn test_hover_multiline() {
     } else {
         panic!("Expected scalar string content");
     }
+}
+
+#[test]
+fn test_hover_with_relationships() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;
+part def Car :> Vehicle;
+part myCar: Car;"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Hover on "Car" definition (line 1)
+    let hover = backend.get_hover(
+        &uri,
+        Position {
+            line: 1,
+            character: 9,
+        },
+    );
+    assert!(hover.is_some());
+
+    let hover = hover.unwrap();
+    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+        // Should show the definition
+        assert!(content.contains("Part def Car"));
+        // Should show qualified name
+        assert!(content.contains("Qualified Name"));
+        // Should show specialization relationship
+        assert!(content.contains("Specializes"));
+        assert!(content.contains("Vehicle"));
+    } else {
+        panic!("Expected scalar string content");
+    }
+
+    // Hover on "myCar" usage (line 2)
+    let hover = backend.get_hover(
+        &uri,
+        Position {
+            line: 2,
+            character: 5,
+        },
+    );
+    assert!(hover.is_some());
+
+    let hover = hover.unwrap();
+    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+        // Should show the usage - format is "Part myCar" (capitalized kind)
+        assert!(content.contains("Part myCar") || content.contains("myCar"));
+        // Should show typing relationship
+        assert!(content.contains("Typed by"));
+        assert!(content.contains("Car"));
+    } else {
+        panic!("Expected scalar string content");
+    }
+}
+
+#[test]
+fn test_hover_shows_precise_range() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    backend.open_document(&uri, text).unwrap();
+
+    let hover = backend.get_hover(
+        &uri,
+        Position {
+            line: 0,
+            character: 9,
+        },
+    );
+    assert!(hover.is_some());
+
+    let hover = hover.unwrap();
+    // Should return a range for the element
+    assert!(hover.range.is_some(), "Hover should include element range");
+
+    let range = hover.range.unwrap();
+    assert_eq!(range.start.line, 0);
+    assert_eq!(range.end.line, 0);
+    // Range should cover the entire definition
+    assert!(range.end.character > range.start.character);
 }

@@ -380,6 +380,11 @@ impl Workspace {
         Ok(())
     }
 
+    /// Returns a reference to the files map
+    pub fn files(&self) -> &HashMap<PathBuf, WorkspaceFile> {
+        &self.files
+    }
+
     /// Returns a reference to the symbol table
     pub fn symbol_table(&self) -> &SymbolTable {
         &self.symbol_table
