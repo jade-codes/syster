@@ -80,6 +80,7 @@
 //!         scope_id: 0,
 //!         source_file: Some("auto.sysml".to_string()),
 //!         span: None,
+//!         references: Vec::new(),
 //!     },
 //! ).ok();
 //!
@@ -107,6 +108,7 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
+        references: Vec<Span>,
     },
     Classifier {
         name: String,
@@ -116,6 +118,7 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
+        references: Vec<Span>,
     },
     Feature {
         name: String,
@@ -124,6 +127,7 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
+        references: Vec<Span>,
     },
     Definition {
         name: String,
@@ -132,6 +136,7 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
+        references: Vec<Span>,
     },
     Usage {
         name: String,
@@ -140,6 +145,7 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
+        references: Vec<Span>,
     },
     Alias {
         name: String,
@@ -148,6 +154,7 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
+        references: Vec<Span>,
     },
 }
 
@@ -222,6 +229,30 @@ impl Symbol {
         match self {
             Symbol::Feature { feature_type, .. } => feature_type.as_deref(),
             _ => None,
+        }
+    }
+
+    /// Returns all reference locations for this symbol
+    pub fn references(&self) -> &[Span] {
+        match self {
+            Symbol::Package { references, .. }
+            | Symbol::Classifier { references, .. }
+            | Symbol::Feature { references, .. }
+            | Symbol::Definition { references, .. }
+            | Symbol::Usage { references, .. }
+            | Symbol::Alias { references, .. } => references,
+        }
+    }
+
+    /// Adds a reference location to this symbol (mutable access required)
+    pub fn add_reference(&mut self, span: Span) {
+        match self {
+            Symbol::Package { references, .. }
+            | Symbol::Classifier { references, .. }
+            | Symbol::Feature { references, .. }
+            | Symbol::Definition { references, .. }
+            | Symbol::Usage { references, .. }
+            | Symbol::Alias { references, .. } => references.push(span),
         }
     }
 }

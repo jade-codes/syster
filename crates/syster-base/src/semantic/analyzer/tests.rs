@@ -30,7 +30,8 @@ fn test_analyze_with_valid_symbols() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyPackage".to_string(),
                 qualified_name: "MyPackage".to_string(),
             },
@@ -109,7 +110,8 @@ fn test_analyzer_with_multiple_symbols() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Pkg".to_string(),
                 qualified_name: "Pkg".to_string(),
             },
@@ -122,7 +124,8 @@ fn test_analyzer_with_multiple_symbols() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyClass".to_string(),
                 qualified_name: "MyClass".to_string(),
                 kind: "Class".to_string(),
@@ -137,7 +140,8 @@ fn test_analyzer_with_multiple_symbols() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
                 kind: "Part".to_string(),
@@ -160,7 +164,8 @@ fn test_analyzer_with_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -174,7 +179,8 @@ fn test_analyzer_with_nested_scopes() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Child".to_string(),
                 qualified_name: "Root::Child".to_string(),
             },
@@ -188,7 +194,8 @@ fn test_analyzer_with_nested_scopes() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "GrandChild".to_string(),
                 qualified_name: "Root::Child::GrandChild".to_string(),
                 kind: "Class".to_string(),
@@ -211,7 +218,8 @@ fn test_context_resolver_access() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Test".to_string(),
                 qualified_name: "Test".to_string(),
             },
@@ -246,7 +254,8 @@ fn test_analyzer_symbol_table_access() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "NewSymbol".to_string(),
                 qualified_name: "NewSymbol".to_string(),
             },
@@ -266,7 +275,8 @@ fn test_analyze_with_all_symbol_types() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Pkg".to_string(),
                 qualified_name: "Pkg".to_string(),
             },
@@ -279,7 +289,8 @@ fn test_analyze_with_all_symbol_types() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyClass".to_string(),
                 qualified_name: "MyClass".to_string(),
                 kind: "Behavior".to_string(),
@@ -295,7 +306,8 @@ fn test_analyze_with_all_symbol_types() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Integer".to_string(),
                 qualified_name: "Integer".to_string(),
                 kind: "Part".to_string(),
@@ -309,7 +321,8 @@ fn test_analyze_with_all_symbol_types() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myFeature".to_string(),
                 qualified_name: "MyClass::myFeature".to_string(),
                 feature_type: Some("Integer".to_string()),
@@ -323,7 +336,8 @@ fn test_analyze_with_all_symbol_types() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
                 kind: "Requirement".to_string(),
@@ -337,7 +351,8 @@ fn test_analyze_with_all_symbol_types() {
             Symbol::Usage {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),
                 kind: "Action".to_string(),
@@ -385,7 +400,8 @@ fn test_analyzer_immutable_access() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Test".to_string(),
                 qualified_name: "Test".to_string(),
             },
@@ -406,7 +422,8 @@ fn test_analyze_idempotent() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Test".to_string(),
                 qualified_name: "Test".to_string(),
             },
@@ -443,7 +460,8 @@ fn test_analyzer_with_features() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "String".to_string(),
                 qualified_name: "String".to_string(),
                 kind: "Part".to_string(),
@@ -457,7 +475,8 @@ fn test_analyzer_with_features() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature1".to_string(),
                 qualified_name: "feature1".to_string(),
                 feature_type: None,
@@ -471,7 +490,8 @@ fn test_analyzer_with_features() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature2".to_string(),
                 qualified_name: "feature2".to_string(),
                 feature_type: Some("String".to_string()),
@@ -506,7 +526,8 @@ fn test_analyzer_with_different_classifier_kinds() {
                 Symbol::Classifier {
                     scope_id: 0,
                     source_file: None,
-        span: None, 
+                    span: None,
+                    references: Vec::new(),
                     name: format!("Classifier{}", idx),
                     qualified_name: format!("Classifier{}", idx),
                     kind: (*kind).to_string(),
@@ -535,7 +556,8 @@ fn test_analyzer_with_different_definition_kinds() {
                 Symbol::Definition {
                     scope_id: 0,
                     source_file: None,
-        span: None, 
+                    span: None,
+                    references: Vec::new(),
                     name: format!("Def{}", idx),
                     qualified_name: format!("Def{}", idx),
                     kind: (*kind).to_string(),
@@ -563,7 +585,8 @@ fn test_analyzer_with_different_usage_kinds() {
                 Symbol::Usage {
                     scope_id: 0,
                     source_file: None,
-        span: None, 
+                    span: None,
+                    references: Vec::new(),
                     name: format!("Usage{}", idx),
                     qualified_name: format!("Usage{}", idx),
                     kind: (*kind).to_string(),
@@ -587,7 +610,8 @@ fn test_context_with_qualified_name_resolution() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
             },
@@ -601,7 +625,8 @@ fn test_context_with_qualified_name_resolution() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "B".to_string(),
                 qualified_name: "A::B".to_string(),
             },
@@ -624,7 +649,8 @@ fn test_analyzer_with_abstract_classifiers() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Abstract1".to_string(),
                 qualified_name: "Abstract1".to_string(),
                 kind: "Class".to_string(),
@@ -639,7 +665,8 @@ fn test_analyzer_with_abstract_classifiers() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Concrete1".to_string(),
                 qualified_name: "Concrete1".to_string(),
                 kind: "Class".to_string(),
@@ -675,7 +702,8 @@ fn test_context_symbol_table_reference() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Test".to_string(),
                 qualified_name: "Test".to_string(),
             },
@@ -698,7 +726,8 @@ fn test_analyzer_with_deeply_nested_structure() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "L0".to_string(),
                 qualified_name: "L0".to_string(),
             },
@@ -724,7 +753,8 @@ fn test_analyzer_with_deeply_nested_structure() {
                 Symbol::Package {
                     scope_id: 0,
                     source_file: None,
-        span: None, 
+                    span: None,
+                    references: Vec::new(),
                     name: format!("L{}", i),
                     qualified_name: format!("{}::L{}", parent, i),
                 },
@@ -773,7 +803,8 @@ fn test_analyzer_table_mutation_after_creation() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Added".to_string(),
                 qualified_name: "Added".to_string(),
             },
@@ -797,7 +828,8 @@ fn test_type_validation_valid_type_reference() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
                 kind: "Part".to_string(),
@@ -812,7 +844,8 @@ fn test_type_validation_valid_type_reference() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myVehicle".to_string(),
                 qualified_name: "myVehicle".to_string(),
                 feature_type: Some("Vehicle".to_string()),
@@ -836,7 +869,8 @@ fn test_type_validation_undefined_type_reference() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myFeature".to_string(),
                 qualified_name: "myFeature".to_string(),
                 feature_type: Some("UndefinedType".to_string()),
@@ -867,7 +901,8 @@ fn test_type_validation_invalid_type_reference() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "NotAType".to_string(),
                 qualified_name: "NotAType".to_string(),
             },
@@ -881,7 +916,8 @@ fn test_type_validation_invalid_type_reference() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myFeature".to_string(),
                 qualified_name: "myFeature".to_string(),
                 feature_type: Some("NotAType".to_string()),
@@ -912,7 +948,8 @@ fn test_type_validation_classifier_as_type() {
             Symbol::Classifier {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyClassifier".to_string(),
                 qualified_name: "MyClassifier".to_string(),
                 kind: "Type".to_string(),
@@ -928,7 +965,8 @@ fn test_type_validation_classifier_as_type() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myFeature".to_string(),
                 qualified_name: "myFeature".to_string(),
                 feature_type: Some("MyClassifier".to_string()),
@@ -952,7 +990,8 @@ fn test_type_validation_multiple_features() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Type1".to_string(),
                 qualified_name: "Type1".to_string(),
                 kind: "Part".to_string(),
@@ -966,7 +1005,8 @@ fn test_type_validation_multiple_features() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Type2".to_string(),
                 qualified_name: "Type2".to_string(),
                 kind: "Port".to_string(),
@@ -981,7 +1021,8 @@ fn test_type_validation_multiple_features() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature1".to_string(),
                 qualified_name: "feature1".to_string(),
                 feature_type: Some("Type1".to_string()),
@@ -995,7 +1036,8 @@ fn test_type_validation_multiple_features() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature2".to_string(),
                 qualified_name: "feature2".to_string(),
                 feature_type: Some("Type2".to_string()),
@@ -1010,7 +1052,8 @@ fn test_type_validation_multiple_features() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature3".to_string(),
                 qualified_name: "feature3".to_string(),
                 feature_type: None,
@@ -1034,7 +1077,8 @@ fn test_type_validation_qualified_type_reference() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "SubType".to_string(),
                 qualified_name: "Package::SubType".to_string(),
                 kind: "Part".to_string(),
@@ -1049,7 +1093,8 @@ fn test_type_validation_qualified_type_reference() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myFeature".to_string(),
                 qualified_name: "myFeature".to_string(),
                 feature_type: Some("SubType".to_string()),
@@ -1073,7 +1118,8 @@ fn test_type_validation_multiple_errors() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature1".to_string(),
                 qualified_name: "feature1".to_string(),
                 feature_type: Some("Undefined1".to_string()),
@@ -1087,7 +1133,8 @@ fn test_type_validation_multiple_errors() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature2".to_string(),
                 qualified_name: "feature2".to_string(),
                 feature_type: Some("Undefined2".to_string()),
@@ -1114,7 +1161,8 @@ fn test_type_validation_mixed_errors() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "SomePackage".to_string(),
                 qualified_name: "SomePackage".to_string(),
             },
@@ -1128,7 +1176,8 @@ fn test_type_validation_mixed_errors() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature1".to_string(),
                 qualified_name: "feature1".to_string(),
                 feature_type: Some("UndefinedType".to_string()),
@@ -1143,7 +1192,8 @@ fn test_type_validation_mixed_errors() {
             Symbol::Feature {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "feature2".to_string(),
                 qualified_name: "feature2".to_string(),
                 feature_type: Some("SomePackage".to_string()),
@@ -1184,7 +1234,8 @@ fn test_type_validation_scope_aware_resolution() {
                 kind: "Part".to_string(),
                 scope_id: pkg1_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1199,7 +1250,8 @@ fn test_type_validation_scope_aware_resolution() {
                 feature_type: Some("Vehicle".to_string()),
                 scope_id: pkg1_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1220,7 +1272,8 @@ fn test_type_validation_scope_aware_resolution() {
                 kind: "Part".to_string(),
                 scope_id: pkg2_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1258,7 +1311,8 @@ fn test_type_validation_scope_aware_undefined() {
                 feature_type: Some("Vehicle".to_string()),
                 scope_id: pkg1_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1279,7 +1333,8 @@ fn test_type_validation_scope_aware_undefined() {
                 kind: "Part".to_string(),
                 scope_id: pkg2_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1318,7 +1373,8 @@ fn test_type_validation_feature_without_type() {
                 feature_type: None,
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1347,7 +1403,8 @@ fn test_type_validation_usage_not_valid_type() {
                 kind: "Part".to_string(),
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1362,7 +1419,8 @@ fn test_type_validation_usage_not_valid_type() {
                 feature_type: Some("myUsage".to_string()),
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1395,7 +1453,8 @@ fn test_type_validation_shadowing() {
                 kind: "Part".to_string(),
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1413,7 +1472,8 @@ fn test_type_validation_shadowing() {
                 kind: "Port".to_string(),
                 scope_id: nested_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1428,7 +1488,8 @@ fn test_type_validation_shadowing() {
                 feature_type: Some("Vehicle".to_string()),
                 scope_id: nested_scope,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1446,7 +1507,8 @@ fn test_type_validation_shadowing() {
                 feature_type: Some("Vehicle".to_string()),
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1472,7 +1534,8 @@ fn test_relationship_validation_undefined_target() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
                 kind: "Part".to_string(),
@@ -1512,7 +1575,8 @@ fn test_relationship_validation_typing_undefined_target() {
             Symbol::Usage {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myPart".to_string(),
                 qualified_name: "myPart".to_string(),
                 kind: "Part".to_string(),
@@ -1547,7 +1611,8 @@ fn test_circular_specialization_detection() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "A".to_string(),
                 qualified_name: "A".to_string(),
                 kind: "Part".to_string(),
@@ -1561,7 +1626,8 @@ fn test_circular_specialization_detection() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "B".to_string(),
                 qualified_name: "B".to_string(),
                 kind: "Part".to_string(),
@@ -1575,7 +1641,8 @@ fn test_circular_specialization_detection() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "C".to_string(),
                 qualified_name: "C".to_string(),
                 kind: "Part".to_string(),
@@ -1615,7 +1682,8 @@ fn test_self_specialization_detection() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
                 kind: "Part".to_string(),
@@ -1656,7 +1724,8 @@ fn test_valid_specialization_chain() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
                 kind: "Part".to_string(),
@@ -1670,7 +1739,8 @@ fn test_valid_specialization_chain() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Car".to_string(),
                 qualified_name: "Car".to_string(),
                 kind: "Part".to_string(),
@@ -1684,7 +1754,8 @@ fn test_valid_specialization_chain() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "SportsCar".to_string(),
                 qualified_name: "SportsCar".to_string(),
                 kind: "Part".to_string(),
@@ -1717,7 +1788,8 @@ fn test_multiple_relationship_types_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "VehicleDef".to_string(),
                 qualified_name: "VehicleDef".to_string(),
                 kind: "Part".to_string(),
@@ -1731,7 +1803,8 @@ fn test_multiple_relationship_types_validation() {
             Symbol::Usage {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "myVehicle".to_string(),
                 qualified_name: "myVehicle".to_string(),
                 kind: "Part".to_string(),
@@ -1773,7 +1846,8 @@ fn test_relationship_validation_with_qualified_names() {
             Symbol::Package {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicles".to_string(),
                 qualified_name: "Vehicles".to_string(),
             },
@@ -1789,7 +1863,8 @@ fn test_relationship_validation_with_qualified_names() {
             Symbol::Definition {
                 scope_id: 1,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Car".to_string(),
                 qualified_name: "Vehicles::Car".to_string(),
                 kind: "Part".to_string(),
@@ -1803,7 +1878,8 @@ fn test_relationship_validation_with_qualified_names() {
             Symbol::Definition {
                 scope_id: 1,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "SportsCar".to_string(),
                 qualified_name: "Vehicles::SportsCar".to_string(),
                 kind: "Part".to_string(),
@@ -1839,7 +1915,8 @@ fn test_satisfy_relationship_validation_valid() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "SafetyCase".to_string(),
                 qualified_name: "SafetyCase".to_string(),
                 kind: "Case".to_string(),
@@ -1854,7 +1931,8 @@ fn test_satisfy_relationship_validation_valid() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "SafetyReq".to_string(),
                 qualified_name: "SafetyReq".to_string(),
                 kind: "Requirement".to_string(),
@@ -1886,7 +1964,8 @@ fn test_satisfy_relationship_validation_invalid_target() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "MyCase".to_string(),
                 qualified_name: "MyCase".to_string(),
                 kind: "Case".to_string(),
@@ -1901,7 +1980,8 @@ fn test_satisfy_relationship_validation_invalid_target() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
                 kind: "Part".to_string(),
@@ -1938,7 +2018,8 @@ fn test_perform_relationship_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Robot".to_string(),
                 qualified_name: "Robot".to_string(),
                 kind: "Part".to_string(),
@@ -1953,7 +2034,8 @@ fn test_perform_relationship_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Move".to_string(),
                 qualified_name: "Move".to_string(),
                 kind: "Action".to_string(),
@@ -1985,7 +2067,8 @@ fn test_perform_relationship_invalid_target() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Robot".to_string(),
                 qualified_name: "Robot".to_string(),
                 kind: "Part".to_string(),
@@ -2000,7 +2083,8 @@ fn test_perform_relationship_invalid_target() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Tool".to_string(),
                 qualified_name: "Tool".to_string(),
                 kind: "Part".to_string(),
@@ -2037,7 +2121,8 @@ fn test_exhibit_relationship_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Vehicle".to_string(),
                 qualified_name: "Vehicle".to_string(),
                 kind: "Part".to_string(),
@@ -2052,7 +2137,8 @@ fn test_exhibit_relationship_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Moving".to_string(),
                 qualified_name: "Moving".to_string(),
                 kind: "State".to_string(),
@@ -2084,7 +2170,8 @@ fn test_include_relationship_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "ManageAccount".to_string(),
                 qualified_name: "ManageAccount".to_string(),
                 kind: "UseCase".to_string(),
@@ -2098,7 +2185,8 @@ fn test_include_relationship_validation() {
             Symbol::Definition {
                 scope_id: 0,
                 source_file: None,
-        span: None, 
+                span: None,
+                references: Vec::new(),
                 name: "Login".to_string(),
                 qualified_name: "Login".to_string(),
                 kind: "UseCase".to_string(),

@@ -91,7 +91,8 @@ fn test_symbol_enum_variants_documented() {
         qualified_name: "Test".to_string(),
         scope_id: 0,
         source_file: None,
-        span: None, 
+        span: None,
+    references: Vec::new(),
     };
 
     let classifier = Symbol::Classifier {
@@ -101,7 +102,8 @@ fn test_symbol_enum_variants_documented() {
         is_abstract: false,
         scope_id: 0,
         source_file: None,
-        span: None, 
+        span: None,
+    references: Vec::new(),
     };
 
     // Verify symbol variants can be matched
