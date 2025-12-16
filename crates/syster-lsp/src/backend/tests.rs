@@ -220,13 +220,12 @@ fn test_hover_on_symbol() {
     assert!(hover.is_some());
 
     let hover = hover.unwrap();
-    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
-        assert!(content.contains("Vehicle"));
-        // Symbol table stores "Part" (capitalized kind)
-        assert!(content.contains("Part def"));
-    } else {
+    let HoverContents::Scalar(MarkedString::String(content)) = hover.contents else {
         panic!("Expected scalar string content");
-    }
+    };
+    assert!(content.contains("Vehicle"));
+    // Symbol table stores "Part" (capitalized kind)
+    assert!(content.contains("Part def"));
 }
 
 #[test]
@@ -311,11 +310,10 @@ fn test_hover_multiline() {
     assert!(hover.is_some());
 
     let hover = hover.unwrap();
-    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
-        assert!(content.contains("Car"));
-    } else {
+    let HoverContents::Scalar(MarkedString::String(content)) = hover.contents else {
         panic!("Expected scalar string content");
-    }
+    };
+    assert!(content.contains("Car"));
 }
 
 #[test]
@@ -339,17 +337,16 @@ part myCar: Car;"#;
     assert!(hover.is_some());
 
     let hover = hover.unwrap();
-    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
-        // Should show the definition
-        assert!(content.contains("Part def Car"));
-        // Should show qualified name
-        assert!(content.contains("Qualified Name"));
-        // Should show specialization relationship
-        assert!(content.contains("Specializes"));
-        assert!(content.contains("Vehicle"));
-    } else {
+    let HoverContents::Scalar(MarkedString::String(content)) = hover.contents else {
         panic!("Expected scalar string content");
-    }
+    };
+    // Should show the definition
+    assert!(content.contains("Part def Car"));
+    // Should show qualified name
+    assert!(content.contains("Qualified Name"));
+    // Should show specialization relationship
+    assert!(content.contains("Specializes"));
+    assert!(content.contains("Vehicle"));
 
     // Hover on "myCar" usage (line 2)
     let hover = backend.get_hover(
@@ -362,15 +359,14 @@ part myCar: Car;"#;
     assert!(hover.is_some());
 
     let hover = hover.unwrap();
-    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
-        // Should show the usage - format is "Part myCar" (capitalized kind)
-        assert!(content.contains("Part myCar") || content.contains("myCar"));
-        // Should show typing relationship
-        assert!(content.contains("Typed by"));
-        assert!(content.contains("Car"));
-    } else {
+    let HoverContents::Scalar(MarkedString::String(content)) = hover.contents else {
         panic!("Expected scalar string content");
-    }
+    };
+    // Should show the usage - format is "Part myCar" (capitalized kind)
+    assert!(content.contains("Part myCar") || content.contains("myCar"));
+    // Should show typing relationship
+    assert!(content.contains("Typed by"));
+    assert!(content.contains("Car"));
 }
 
 #[test]
