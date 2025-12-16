@@ -796,14 +796,6 @@ fn test_collect_nested_tokens() {
 
 #[test]
 fn test_tokens_sorted_by_position() {
-    let mut def2 = Definition::new(
-        DefinitionKind::Part,
-        Some("Second".to_string()),
-        Relationships::default(),
-        vec![],
-    );
-    def2.span = Some(Span::new(Position::new(2, 0), Position::new(2, 6)));
-
     let mut def1 = Definition::new(
         DefinitionKind::Part,
         Some("First".to_string()),
@@ -812,15 +804,24 @@ fn test_tokens_sorted_by_position() {
     );
     def1.span = Some(Span::new(Position::new(1, 0), Position::new(1, 5)));
 
+    let mut def2 = Definition::new(
+        DefinitionKind::Part,
+        Some("Second".to_string()),
+        Relationships::default(),
+        vec![],
+    );
+    def2.span = Some(Span::new(Position::new(2, 0), Position::new(2, 6)));
+
     let sysml_file = SysMLFile {
         namespace: None,
-        elements: vec![Element::Definition(def2), Element::Definition(def1)],
+        // Elements should be in document order (AST order)
+        elements: vec![Element::Definition(def1), Element::Definition(def2)],
     };
     let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 
     assert_eq!(tokens.len(), 2);
-    assert_eq!(tokens[0].line, 1); // First comes first after sorting
+    assert_eq!(tokens[0].line, 1); // First comes first in document order
     assert_eq!(tokens[1].line, 2);
 }

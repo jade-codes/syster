@@ -748,3 +748,57 @@ package Auto {
     assert!(token_types.contains(&2)); // VARIABLE
     assert!(token_types.contains(&3)); // PROPERTY
 }
+
+#[test]
+fn test_code_completion_keywords() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "package Test {}\n";
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new("/test.sysml");
+    let position = Position::new(1, 0); // After the package
+
+    let tower_lsp::lsp_types::CompletionResponse::Array(items) =
+        server.get_completions(path, position)
+    else {
+        panic!("Expected completion array");
+    };
+
+    assert!(!items.is_empty());
+
+    // Should have keyword completions
+    let keywords: Vec<&str> = items
+        .iter()
+        .filter(|item| item.kind == Some(tower_lsp::lsp_types::CompletionItemKind::KEYWORD))
+        .map(|item| item.label.as_str())
+        .collect();
+
+    assert!(keywords.contains(&"part def"));
+    assert!(keywords.contains(&"part"));
+    assert!(keywords.contains(&"package"));
+}
+
+#[test]
+fn test_code_completion_file_types() {
+    // Test that keyword selection works for different file types
+    let sysml_keywords =
+        syster::keywords::get_keywords_for_file(std::path::Path::new("test.sysml"));
+    let kerml_keywords =
+        syster::keywords::get_keywords_for_file(std::path::Path::new("test.kerml"));
+
+    // SysML has domain-specific keywords
+    assert!(sysml_keywords.contains(&"part def"));
+    assert!(sysml_keywords.contains(&"requirement"));
+    assert!(sysml_keywords.contains(&"action"));
+
+    // KerML has foundation keywords
+    assert!(kerml_keywords.contains(&"classifier"));
+    assert!(kerml_keywords.contains(&"feature"));
+    assert!(kerml_keywords.contains(&"type"));
+
+    // They should be different
+    assert!(!kerml_keywords.contains(&"part def"));
+    assert!(!sysml_keywords.contains(&"classifier"));
+}

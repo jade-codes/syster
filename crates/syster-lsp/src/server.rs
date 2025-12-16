@@ -1,3 +1,4 @@
+mod completion;
 mod core;
 mod definition;
 mod diagnostics;

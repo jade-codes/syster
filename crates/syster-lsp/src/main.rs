@@ -22,6 +22,11 @@ impl LanguageServer for SysterLanguageServer {
                 definition_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 document_symbol_provider: Some(OneOf::Left(true)),
+                completion_provider: Some(CompletionOptions {
+                    resolve_provider: Some(false),
+                    trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
+                    ..Default::default()
+                }),
                 semantic_tokens_provider: Some(
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
@@ -178,6 +183,17 @@ impl LanguageServer for SysterLanguageServer {
 
         let server = self.server.lock().await;
         Ok(server.get_semantic_tokens(uri.as_str()))
+    }
+
+    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
+        let uri = params.text_document_position.text_document.uri;
+        let position = params.text_document_position.position;
+
+        let server = self.server.lock().await;
+        let path = std::path::Path::new(uri.path());
+        let response = server.get_completions(path, position);
+
+        Ok(Some(response))
     }
 
     async fn shutdown(&self) -> Result<()> {

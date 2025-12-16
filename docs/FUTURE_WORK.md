@@ -11,15 +11,16 @@
   - [x] Wire up `textDocument/documentSymbol` LSP handler
   - [x] Tests: flat file, nested packages, definitions with members
 
-### In Progress / Next Tasks
+- [x] **Task 13: Semantic Tokens** (Syntax highlighting) ✅
+  - [x] Add SemanticTokenCollector processor in semantic layer
+  - [x] Walk AST and classify tokens (Package → NAMESPACE, Definition → TYPE, Usage → PROPERTY, Alias → VARIABLE)
+  - [x] Return tokens in document order (AST traversal order)
+  - [x] Add LSP adapter for protocol conversion with delta encoding
+  - [x] Wire up `textDocument/semanticTokens/full` LSP handler
+  - [x] Tests: 6 unit tests (processor), 1 integration test (LSP)
+  - [x] Architecture: Processor pattern in semantic/processors/, thin LSP adapter
 
-- [ ] **Task 13: Semantic Tokens** (Syntax highlighting)
-  - [ ] Add `get_semantic_tokens()` method to Backend
-  - [ ] Walk AST and classify each token (keyword, type, variable, etc.)
-  - [ ] Use `extract_word_at_cursor()` pattern for precise token ranges
-  - [ ] Map to LSP semantic token types and modifiers
-  - [ ] Wire up `textDocument/semanticTokens/full` LSP handler
-  - [ ] Tests: keywords, types, variables, relationships
+### In Progress / Next Tasks
 
 - [ ] **Task 14: Code Completion**
   - [ ] Add `get_completions()` method to Backend
