@@ -20,6 +20,7 @@ impl LanguageServer for SysterLanguageServer {
                 )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 definition_provider: Some(OneOf::Left(true)),
+                references_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             },
             ..Default::default()
@@ -130,6 +131,15 @@ impl LanguageServer for SysterLanguageServer {
         let location = backend.get_definition(&uri, position);
 
         Ok(location.map(GotoDefinitionResponse::Scalar))
+    }
+
+    async fn references(&self, params: ReferenceParams) -> Result<Option<Vec<Location>>> {
+        let uri = params.text_document_position.text_document.uri;
+        let position = params.text_document_position.position;
+        let include_declaration = params.context.include_declaration;
+
+        let backend = self.backend.lock().await;
+        Ok(backend.get_references(&uri, position, include_declaration))
     }
 
     async fn shutdown(&self) -> Result<()> {

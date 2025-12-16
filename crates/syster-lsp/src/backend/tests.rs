@@ -484,3 +484,156 @@ fn test_goto_definition_nested_elements() {
     assert_eq!(location.uri, uri);
     assert_eq!(location.range.start.line, 1);
 }
+
+#[test]
+fn test_find_references_same_file() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Car;
+part myCar : Car;
+part yourCar : Car;"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Find references to "Car" from the definition (line 0)
+    let locations = backend.get_references(
+        &uri,
+        Position {
+            line: 0,
+            character: 10, // On "Car" in definition
+        },
+        true, // include declaration
+    );
+
+    assert!(locations.is_some(), "Should find references");
+    let locations = locations.unwrap();
+
+    // Should find: definition + 2 usages = 3 total
+    assert_eq!(locations.len(), 3, "Should find 3 references");
+
+    // All should be in the same file
+    for loc in &locations {
+        assert_eq!(loc.uri, uri);
+    }
+
+    // Check lines: 0 (definition), 1 (first usage), 2 (second usage)
+    let lines: Vec<u32> = locations.iter().map(|l| l.range.start.line).collect();
+    assert!(lines.contains(&0));
+    assert!(lines.contains(&1));
+    assert!(lines.contains(&2));
+}
+
+#[test]
+fn test_find_references_from_usage() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;
+part myVehicle : Vehicle;"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Find references from a usage (line 1, on "Vehicle" type reference)
+    let locations = backend.get_references(
+        &uri,
+        Position {
+            line: 1,
+            character: 18, // On "Vehicle" type reference
+        },
+        true,
+    );
+
+    assert!(locations.is_some(), "Should find references from usage");
+    let locations = locations.unwrap();
+
+    // Should find: definition + usage = 2 total
+    assert_eq!(locations.len(), 2);
+}
+
+#[test]
+fn test_find_references_exclude_declaration() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Engine;
+part myEngine : Engine;"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Find references excluding declaration
+    let locations = backend.get_references(
+        &uri,
+        Position {
+            line: 0,
+            character: 10,
+        },
+        false, // exclude declaration
+    );
+
+    assert!(locations.is_some());
+    let locations = locations.unwrap();
+
+    // Should only find usages, not the definition
+    assert_eq!(locations.len(), 1);
+    assert_eq!(locations[0].range.start.line, 1); // Only the usage on line 1
+}
+
+#[test]
+fn test_find_references_no_references() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def UnusedType;
+part myPart;"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Find references to UnusedType
+    let locations = backend.get_references(
+        &uri,
+        Position {
+            line: 0,
+            character: 10,
+        },
+        false, // exclude declaration
+    );
+
+    // Should return empty list (no usages)
+    assert!(locations.is_some());
+    let locations = locations.unwrap();
+    assert_eq!(locations.len(), 0);
+}
+
+#[test]
+fn test_find_references_nested_elements() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Auto {
+    part def Wheel;
+    part def Car {
+        part frontWheel : Wheel;
+        part rearWheel : Wheel;
+    }
+}"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Find references to "Wheel" (line 1)
+    let locations = backend.get_references(
+        &uri,
+        Position {
+            line: 1,
+            character: 14, // On "Wheel" in definition
+        },
+        true,
+    );
+
+    assert!(locations.is_some());
+    let locations = locations.unwrap();
+
+    // Should find: definition + 2 usages = 3 total
+    assert_eq!(locations.len(), 3);
+
+    // Verify lines
+    let lines: Vec<u32> = locations.iter().map(|l| l.range.start.line).collect();
+    assert!(lines.contains(&1)); // definition
+    assert!(lines.contains(&3)); // frontWheel
+    assert!(lines.contains(&4)); // rearWheel
+}
