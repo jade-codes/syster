@@ -1,3 +1,4 @@
+use crate::core::constants::*;
 use crate::core::visitor::AstVisitor;
 use crate::language::sysml::syntax::{
     Alias, Comment, Definition, Element, Import, NamespaceDeclaration, Package, SysMLFile, Usage,
@@ -5,22 +6,6 @@ use crate::language::sysml::syntax::{
 use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::types::SemanticError;
-
-// SysML relationship type constants
-pub const REL_SPECIALIZATION: &str = "specialization";
-pub const REL_REDEFINITION: &str = "redefinition";
-pub const REL_SUBSETTING: &str = "subsetting";
-pub const REL_TYPING: &str = "typing";
-pub const REL_REFERENCE_SUBSETTING: &str = "reference_subsetting";
-pub const REL_CROSS_SUBSETTING: &str = "cross_subsetting";
-
-// Domain-specific SysML relationships
-pub const REL_SATISFY: &str = "satisfy";
-pub const REL_PERFORM: &str = "perform";
-pub const REL_EXHIBIT: &str = "exhibit";
-pub const REL_INCLUDE: &str = "include";
-pub const REL_ASSERT: &str = "assert";
-pub const REL_VERIFY: &str = "verify";
 
 pub struct SymbolTablePopulator<'a> {
     symbol_table: &'a mut SymbolTable,

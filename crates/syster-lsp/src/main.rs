@@ -1,13 +1,13 @@
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
+use tower_lsp::{Client, LanguageServer, LspService, Server as TowerServer};
 
-mod backend;
-use backend::Backend;
+mod server;
+use server::LspServer;
 
 struct SysterLanguageServer {
     client: Client,
-    backend: std::sync::Arc<tokio::sync::Mutex<Backend>>,
+    server: std::sync::Arc<tokio::sync::Mutex<LspServer>>,
 }
 
 #[tower_lsp::async_trait]
@@ -37,15 +37,15 @@ impl LanguageServer for SysterLanguageServer {
         let uri = params.text_document.uri.clone();
         let text = params.text_document.text;
 
-        let mut backend = self.backend.lock().await;
-        match backend.open_document(&uri, &text) {
+        let mut server = self.server.lock().await;
+        match server.open_document(&uri, &text) {
             Ok(_) => {
                 self.client
                     .log_message(MessageType::INFO, format!("Opened document: {}", uri))
                     .await;
 
                 // Publish diagnostics
-                let diagnostics = backend.get_diagnostics(&uri);
+                let diagnostics = server.get_diagnostics(&uri);
                 self.client
                     .publish_diagnostics(uri, diagnostics, None)
                     .await;
@@ -66,15 +66,15 @@ impl LanguageServer for SysterLanguageServer {
 
         // We're using FULL sync, so there should be exactly one change with full content
         if let Some(change) = params.content_changes.into_iter().next() {
-            let mut backend = self.backend.lock().await;
-            match backend.change_document(&uri, &change.text) {
+            let mut server = self.server.lock().await;
+            match server.change_document(&uri, &change.text) {
                 Ok(_) => {
                     self.client
                         .log_message(MessageType::INFO, format!("Updated document: {}", uri))
                         .await;
 
                     // Publish diagnostics
-                    let diagnostics = backend.get_diagnostics(&uri);
+                    let diagnostics = server.get_diagnostics(&uri);
                     self.client
                         .publish_diagnostics(uri, diagnostics, None)
                         .await;
@@ -94,8 +94,8 @@ impl LanguageServer for SysterLanguageServer {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let uri = params.text_document.uri;
 
-        let mut backend = self.backend.lock().await;
-        match backend.close_document(&uri) {
+        let mut server = self.server.lock().await;
+        match server.close_document(&uri) {
             Ok(_) => {
                 self.client
                     .log_message(MessageType::INFO, format!("Closed document: {}", uri))
@@ -116,8 +116,8 @@ impl LanguageServer for SysterLanguageServer {
         let uri = params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
 
-        let backend = self.backend.lock().await;
-        Ok(backend.get_hover(&uri, position))
+        let server = self.server.lock().await;
+        Ok(server.get_hover(&uri, position))
     }
 
     async fn goto_definition(
@@ -127,8 +127,8 @@ impl LanguageServer for SysterLanguageServer {
         let uri = params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
 
-        let backend = self.backend.lock().await;
-        let location = backend.get_definition(&uri, position);
+        let server = self.server.lock().await;
+        let location = server.get_definition(&uri, position);
 
         Ok(location.map(GotoDefinitionResponse::Scalar))
     }
@@ -138,8 +138,8 @@ impl LanguageServer for SysterLanguageServer {
         let position = params.text_document_position.position;
         let include_declaration = params.context.include_declaration;
 
-        let backend = self.backend.lock().await;
-        Ok(backend.get_references(&uri, position, include_declaration))
+        let server = self.server.lock().await;
+        Ok(server.get_references(&uri, position, include_declaration))
     }
 
     async fn shutdown(&self) -> Result<()> {
@@ -156,7 +156,7 @@ async fn main() {
 
     let (service, socket) = LspService::new(|client| SysterLanguageServer {
         client,
-        backend: std::sync::Arc::new(tokio::sync::Mutex::new(Backend::new())),
+        server: std::sync::Arc::new(tokio::sync::Mutex::new(LspServer::new())),
     });
-    Server::new(stdin, stdout, socket).serve(service).await;
+    TowerServer::new(stdin, stdout, socket).serve(service).await;
 }

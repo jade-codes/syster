@@ -1,6 +1,7 @@
 //! Main relationship graph that aggregates different graph types
 
 use super::{OneToManyGraph, OneToOneGraph, SymmetricGraph};
+use crate::core::constants::relationship_label;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]
@@ -76,5 +77,46 @@ impl RelationshipGraph {
         types.sort();
         types.dedup();
         types
+    }
+
+    /// Get all relationships for a given element.
+    /// Returns a vector of (relationship_type, targets) pairs.
+    /// This automatically discovers all relationship types without requiring
+    /// the caller to know which types exist.
+    pub fn get_all_relationships(&self, element: &str) -> Vec<(String, Vec<String>)> {
+        self.one_to_many
+            .iter()
+            .filter_map(|(rel_type, graph)| {
+                graph
+                    .get_targets(element)
+                    .map(|targets| (rel_type.clone(), targets.to_vec()))
+            })
+            .chain(self.one_to_one.iter().filter_map(|(rel_type, graph)| {
+                graph
+                    .get_target(element)
+                    .map(|target| (rel_type.clone(), vec![target.clone()]))
+            }))
+            .chain(self.symmetric.iter().filter_map(|(rel_type, graph)| {
+                graph
+                    .get_related(element)
+                    .map(|related| (rel_type.clone(), related.to_vec()))
+            }))
+            .collect()
+    }
+
+    /// Get all relationships for a given element, formatted for display.
+    /// Returns a vector of human-readable relationship strings.
+    /// This automatically discovers all relationship types without requiring
+    /// the caller to know which types exist.
+    pub fn get_formatted_relationships(&self, element: &str) -> Vec<String> {
+        self.get_all_relationships(element)
+            .into_iter()
+            .flat_map(|(rel_type, targets)| {
+                let label = relationship_label(&rel_type).to_string();
+                targets
+                    .into_iter()
+                    .map(move |target| format!("{} `{}`", label, target))
+            })
+            .collect()
     }
 }

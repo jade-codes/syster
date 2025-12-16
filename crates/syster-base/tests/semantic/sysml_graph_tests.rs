@@ -2,13 +2,14 @@
 
 use from_pest::FromPest;
 use pest::Parser;
-use syster::language::sysml::SymbolTablePopulator;
-use syster::language::sysml::populator::{
+use syster::core::constants::{
     REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_REDEFINITION, REL_SATISFY, REL_SPECIALIZATION,
     REL_SUBSETTING, REL_TYPING,
 };
+use syster::language::sysml::SymbolTablePopulator;
 use syster::language::sysml::syntax::SysMLFile;
-use syster::parser::{SysMLParser, sysml::Rule};
+use syster::parser::SysMLParser;
+use syster::parser::sysml::Rule;
 use syster::semantic::RelationshipGraph;
 use syster::semantic::symbol_table::SymbolTable;
 

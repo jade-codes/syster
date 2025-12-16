@@ -3,10 +3,11 @@
 use from_pest::FromPest;
 use pest::Parser;
 use std::path::PathBuf;
+use syster::core::constants::REL_SPECIALIZATION;
 use syster::language::sysml::SymbolTablePopulator;
-use syster::language::sysml::populator::REL_SPECIALIZATION;
 use syster::language::sysml::syntax::SysMLFile;
-use syster::parser::{SysMLParser, sysml::Rule};
+use syster::parser::SysMLParser;
+use syster::parser::sysml::Rule;
 use syster::semantic::symbol_table::SymbolTable;
 use syster::semantic::{RelationshipGraph, Workspace};
 

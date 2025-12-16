@@ -1,60 +1,62 @@
-use super::*;
+use super::LspServer;
+use syster::core::constants::REL_TYPING;
+use tower_lsp::lsp_types::{DiagnosticSeverity, HoverContents, MarkedString, Position, Url};
 
 #[test]
-fn test_backend_creation() {
-    let backend = Backend::new();
-    assert_eq!(backend.workspace().file_count(), 0);
+fn test_server_creation() {
+    let server = LspServer::new();
+    assert_eq!(server.workspace().file_count(), 0);
 }
 
 #[test]
 fn test_open_sysml_document() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
-    assert_eq!(backend.workspace().file_count(), 1);
-    assert!(!backend.workspace().symbol_table().all_symbols().is_empty());
+    assert_eq!(server.workspace().file_count(), 1);
+    assert!(!server.workspace().symbol_table().all_symbols().is_empty());
 }
 
 #[test]
 fn test_open_invalid_sysml() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "invalid syntax !@#$%";
 
     // Should succeed (errors are captured, not returned)
-    let result = backend.open_document(&uri, text);
+    let result = server.open_document(&uri, text);
     assert!(result.is_ok());
 
     // File should NOT be added to workspace (parse failed)
-    assert_eq!(backend.workspace().file_count(), 0);
+    assert_eq!(server.workspace().file_count(), 0);
 
     // Should have diagnostics
-    let diagnostics = backend.get_diagnostics(&uri);
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(!diagnostics.is_empty());
     assert!(!diagnostics[0].message.is_empty());
 }
 
 #[test]
 fn test_open_unsupported_extension() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.txt").unwrap();
     let text = "some text";
 
-    let result = backend.open_document(&uri, text);
+    let result = server.open_document(&uri, text);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Unsupported file extension"));
 }
 
 #[test]
 fn test_open_kerml_file() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.kerml").unwrap();
     let text = "classifier Vehicle;";
 
-    let result = backend.open_document(&uri, text);
+    let result = server.open_document(&uri, text);
     // KerML not yet supported
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("KerML"));
@@ -62,78 +64,78 @@ fn test_open_kerml_file() {
 
 #[test]
 fn test_change_document() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
 
     // Open initial document
-    backend.open_document(&uri, "part def Car;").unwrap();
-    assert_eq!(backend.workspace().file_count(), 1);
-    let initial_symbols = backend.workspace().symbol_table().all_symbols().len();
+    server.open_document(&uri, "part def Car;").unwrap();
+    assert_eq!(server.workspace().file_count(), 1);
+    let initial_symbols = server.workspace().symbol_table().all_symbols().len();
 
     // Change document content
-    backend
+    server
         .change_document(&uri, "part def Vehicle; part def Bike;")
         .unwrap();
 
-    assert_eq!(backend.workspace().file_count(), 1);
-    let updated_symbols = backend.workspace().symbol_table().all_symbols().len();
+    assert_eq!(server.workspace().file_count(), 1);
+    let updated_symbols = server.workspace().symbol_table().all_symbols().len();
     assert!(updated_symbols > initial_symbols);
 }
 
 #[test]
 fn test_change_document_with_error() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
 
     // Open valid document
-    backend.open_document(&uri, "part def Car;").unwrap();
-    assert_eq!(backend.workspace().file_count(), 1);
+    server.open_document(&uri, "part def Car;").unwrap();
+    assert_eq!(server.workspace().file_count(), 1);
 
     // Change to invalid content - should succeed but capture error
-    let result = backend.change_document(&uri, "invalid syntax !@#");
+    let result = server.change_document(&uri, "invalid syntax !@#");
     assert!(result.is_ok());
 
     // File should be removed from workspace (parse failed)
-    assert_eq!(backend.workspace().file_count(), 0);
+    assert_eq!(server.workspace().file_count(), 0);
 
     // Should have diagnostics
-    let diagnostics = backend.get_diagnostics(&uri);
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(!diagnostics.is_empty());
 }
 
 #[test]
 fn test_change_nonexistent_document() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
 
     // Try to change a document that was never opened
-    let result = backend.change_document(&uri, "part def Car;");
+    let result = server.change_document(&uri, "part def Car;");
     // Should succeed - change_document handles both open and update
     assert!(result.is_ok());
 }
 
 #[test]
 fn test_close_document() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
 
     // Open and close document
-    backend.open_document(&uri, "part def Car;").unwrap();
-    backend.close_document(&uri).unwrap();
+    server.open_document(&uri, "part def Car;").unwrap();
+    server.close_document(&uri).unwrap();
 
     // Document should still be in workspace (we keep it for cross-file refs)
-    assert_eq!(backend.workspace().file_count(), 1);
+    assert_eq!(server.workspace().file_count(), 1);
 }
 
 #[test]
 fn test_get_diagnostics_for_valid_file() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
-    let diagnostics = backend.get_diagnostics(&uri);
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(
         diagnostics.is_empty(),
         "Valid file should have no diagnostics"
@@ -142,13 +144,13 @@ fn test_get_diagnostics_for_valid_file() {
 
 #[test]
 fn test_get_diagnostics_for_parse_error() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def invalid syntax";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
-    let diagnostics = backend.get_diagnostics(&uri);
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(
         !diagnostics.is_empty(),
         "Should have parse error diagnostic"
@@ -159,17 +161,17 @@ fn test_get_diagnostics_for_parse_error() {
 
 #[test]
 fn test_get_diagnostics_clears_on_fix() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
 
     // Open with error
-    backend.open_document(&uri, "invalid syntax").unwrap();
-    let diagnostics = backend.get_diagnostics(&uri);
+    server.open_document(&uri, "invalid syntax").unwrap();
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(!diagnostics.is_empty());
 
     // Fix the error
-    backend.change_document(&uri, "part def Car;").unwrap();
-    let diagnostics = backend.get_diagnostics(&uri);
+    server.change_document(&uri, "part def Car;").unwrap();
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(
         diagnostics.is_empty(),
         "Diagnostics should be cleared after fix"
@@ -178,10 +180,10 @@ fn test_get_diagnostics_clears_on_fix() {
 
 #[test]
 fn test_get_diagnostics_for_nonexistent_file() {
-    let backend = Backend::new();
+    let server = LspServer::new();
     let uri = Url::parse("file:///nonexistent.sysml").unwrap();
 
-    let diagnostics = backend.get_diagnostics(&uri);
+    let diagnostics = server.get_diagnostics(&uri);
     assert!(
         diagnostics.is_empty(),
         "Nonexistent file should have no diagnostics"
@@ -190,14 +192,14 @@ fn test_get_diagnostics_for_nonexistent_file() {
 
 #[test]
 fn test_hover_on_symbol() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Hover on "Vehicle"
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 0,
@@ -217,13 +219,13 @@ fn test_hover_on_symbol() {
 
 #[test]
 fn test_hover_on_whitespace() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 0,
@@ -239,15 +241,15 @@ fn test_hover_on_whitespace() {
 
 #[test]
 fn test_hover_on_unknown_symbol() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;\npart def Car;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Hover on "part" keyword (position 0,0) - this is within Vehicle's span
     // so it returns Vehicle hover, not an error
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 0,
@@ -263,9 +265,9 @@ fn test_hover_on_unknown_symbol() {
     // Test hover outside any element span (after semicolon with spaces)
     let text_with_space = "part def Vehicle;     \n";
     let uri2 = Url::parse("file:///test2.sysml").unwrap();
-    backend.open_document(&uri2, text_with_space).unwrap();
+    server.open_document(&uri2, text_with_space).unwrap();
 
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri2,
         Position {
             line: 0,
@@ -280,14 +282,14 @@ fn test_hover_on_unknown_symbol() {
 
 #[test]
 fn test_hover_multiline() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;\npart def Car;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Hover on "Car" on line 2
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 1,
@@ -305,16 +307,16 @@ fn test_hover_multiline() {
 
 #[test]
 fn test_hover_with_relationships() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"part def Vehicle;
 part def Car :> Vehicle;
 part myCar: Car;"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Hover on "Car" definition (line 1)
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 1,
@@ -336,7 +338,7 @@ part myCar: Car;"#;
     assert!(content.contains("Vehicle"));
 
     // Hover on "myCar" usage (line 2)
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 2,
@@ -358,13 +360,13 @@ part myCar: Car;"#;
 
 #[test]
 fn test_hover_shows_precise_range() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
-    let hover = backend.get_hover(
+    let hover = server.get_hover(
         &uri,
         Position {
             line: 0,
@@ -386,15 +388,15 @@ fn test_hover_shows_precise_range() {
 
 #[test]
 fn test_goto_definition_same_file() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"part def Car;
 part myCar : Car;"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Position on "Car" in the usage line (line 1, after the colon)
-    let location = backend.get_definition(
+    let location = server.get_definition(
         &uri,
         Position {
             line: 1,
@@ -414,14 +416,14 @@ part myCar : Car;"#;
 
 #[test]
 fn test_goto_definition_on_definition() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Vehicle;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Position on "Vehicle" in its own definition
-    let location = backend.get_definition(
+    let location = server.get_definition(
         &uri,
         Position {
             line: 0,
@@ -439,14 +441,14 @@ fn test_goto_definition_on_definition() {
 
 #[test]
 fn test_goto_definition_unknown_symbol() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = "part def Car;";
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Position in whitespace
-    let location = backend.get_definition(
+    let location = server.get_definition(
         &uri,
         Position {
             line: 0,
@@ -459,17 +461,17 @@ fn test_goto_definition_unknown_symbol() {
 
 #[test]
 fn test_goto_definition_nested_elements() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"package Automotive {
     part def Engine;
     part myEngine : Engine;
 }"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Position on "Engine" type reference in the usage (line 2)
-    let location = backend.get_definition(
+    let location = server.get_definition(
         &uri,
         Position {
             line: 2,
@@ -487,16 +489,16 @@ fn test_goto_definition_nested_elements() {
 
 #[test]
 fn test_find_references_same_file() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"part def Car;
 part myCar : Car;
 part yourCar : Car;"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Find references to "Car" from the definition (line 0)
-    let locations = backend.get_references(
+    let locations = server.get_references(
         &uri,
         Position {
             line: 0,
@@ -525,15 +527,15 @@ part yourCar : Car;"#;
 
 #[test]
 fn test_find_references_from_usage() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"part def Vehicle;
 part myVehicle : Vehicle;"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Find references from a usage (line 1, on "Vehicle" type reference)
-    let locations = backend.get_references(
+    let locations = server.get_references(
         &uri,
         Position {
             line: 1,
@@ -551,15 +553,15 @@ part myVehicle : Vehicle;"#;
 
 #[test]
 fn test_find_references_exclude_declaration() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"part def Engine;
 part myEngine : Engine;"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Find references excluding declaration
-    let locations = backend.get_references(
+    let locations = server.get_references(
         &uri,
         Position {
             line: 0,
@@ -578,15 +580,15 @@ part myEngine : Engine;"#;
 
 #[test]
 fn test_find_references_no_references() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"part def UnusedType;
 part myPart;"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Find references to UnusedType
-    let locations = backend.get_references(
+    let locations = server.get_references(
         &uri,
         Position {
             line: 0,
@@ -603,7 +605,7 @@ part myPart;"#;
 
 #[test]
 fn test_find_references_nested_elements() {
-    let mut backend = Backend::new();
+    let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"package Auto {
     part def Wheel;
@@ -613,10 +615,10 @@ fn test_find_references_nested_elements() {
     }
 }"#;
 
-    backend.open_document(&uri, text).unwrap();
+    server.open_document(&uri, text).unwrap();
 
     // Debug: check parsed AST
-    let file = backend
+    let file = server
         .workspace()
         .files()
         .get(&std::path::PathBuf::from("/test.sysml"));
@@ -626,7 +628,7 @@ fn test_find_references_nested_elements() {
     }
 
     // Find references to "Wheel" (line 1)
-    let locations = backend.get_references(
+    let locations = server.get_references(
         &uri,
         Position {
             line: 1,
@@ -645,7 +647,7 @@ fn test_find_references_nested_elements() {
     }
 
     // Debug: check the symbol
-    let symbol = backend.workspace().symbol_table().lookup("Auto::Wheel");
+    let symbol = server.workspace().symbol_table().lookup("Auto::Wheel");
     eprintln!(
         "Symbol lookup result: {:?}",
         symbol.map(|s| (s.qualified_name(), s.references().len()))
@@ -653,7 +655,7 @@ fn test_find_references_nested_elements() {
 
     // Debug: check all symbols
     eprintln!("All symbols in table:");
-    for (key, sym) in backend.workspace().symbol_table().all_symbols() {
+    for (key, sym) in server.workspace().symbol_table().all_symbols() {
         eprintln!(
             "  {} -> {} (refs: {})",
             key,
@@ -664,11 +666,11 @@ fn test_find_references_nested_elements() {
 
     // Debug: check relationship graph
     eprintln!("Typing relationships:");
-    for (key, _) in backend.workspace().symbol_table().all_symbols() {
-        if let Some(target) = backend
+    for (key, _) in server.workspace().symbol_table().all_symbols() {
+        if let Some(target) = server
             .workspace()
             .relationship_graph()
-            .get_one_to_one("typing", key)
+            .get_one_to_one(REL_TYPING, key)
         {
             eprintln!("  {} -> {}", key, target);
         }

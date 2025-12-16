@@ -11,7 +11,7 @@
 
 use std::path::PathBuf;
 use syster::language::sysml::syntax::SysMLFile;
-use syster::semantic::{Resolver, RelationshipGraph, SemanticAnalyzer, SymbolTable, Workspace};
+use syster::semantic::{RelationshipGraph, Resolver, SemanticAnalyzer, SymbolTable, Workspace};
 
 /// Verify that code examples in ARCHITECTURE.md compile and work
 #[test]

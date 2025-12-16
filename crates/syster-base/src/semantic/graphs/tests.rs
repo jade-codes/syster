@@ -243,3 +243,88 @@ fn test_dependencies_count() {
     graph.remove_file(&file_a);
     assert_eq!(graph.dependencies_count(), 1);
 }
+
+#[test]
+fn test_get_all_relationships() {
+    // Test that get_all_relationships automatically discovers all relationship types
+    let mut graph = RelationshipGraph::new();
+
+    // Add various relationship types
+    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
+    graph.add_one_to_many("specialization", "Car".to_string(), "Asset".to_string());
+    graph.add_one_to_many("subsetting", "Car".to_string(), "Equipment".to_string());
+    graph.add_one_to_one("typing", "Car".to_string(), "CarType".to_string());
+    graph.add_symmetric("disjoints", "Car".to_string(), "Truck".to_string());
+
+    // Get all relationships for "Car"
+    let all_rels = graph.get_all_relationships("Car");
+
+    // Should find 4 different relationship types
+    assert_eq!(all_rels.len(), 4);
+
+    // Check specialization (one-to-many with 2 targets)
+    let spec = all_rels
+        .iter()
+        .find(|(rel_type, _)| rel_type == "specialization")
+        .unwrap();
+    assert_eq!(spec.1.len(), 2);
+    assert!(spec.1.contains(&"Vehicle".to_string()));
+    assert!(spec.1.contains(&"Asset".to_string()));
+
+    // Check subsetting (one-to-many with 1 target)
+    let subset = all_rels
+        .iter()
+        .find(|(rel_type, _)| rel_type == "subsetting")
+        .unwrap();
+    assert_eq!(subset.1.len(), 1);
+    assert_eq!(subset.1[0], "Equipment");
+
+    // Check typing (one-to-one)
+    let typing = all_rels
+        .iter()
+        .find(|(rel_type, _)| rel_type == "typing")
+        .unwrap();
+    assert_eq!(typing.1.len(), 1);
+    assert_eq!(typing.1[0], "CarType");
+
+    // Check symmetric
+    let disjoints = all_rels
+        .iter()
+        .find(|(rel_type, _)| rel_type == "disjoints")
+        .unwrap();
+    assert_eq!(disjoints.1.len(), 1);
+    assert_eq!(disjoints.1[0], "Truck");
+}
+
+#[test]
+fn test_get_formatted_relationships() {
+    // Test that formatted relationships are human-readable
+    let mut graph = RelationshipGraph::new();
+
+    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
+    graph.add_one_to_many("redefinition", "Car".to_string(), "BaseCar".to_string());
+    graph.add_one_to_many("subsetting", "Car".to_string(), "Equipment".to_string());
+    graph.add_one_to_one("typing", "Car".to_string(), "CarType".to_string());
+
+    let formatted = graph.get_formatted_relationships("Car");
+
+    // Should have 4 formatted strings (one per relationship)
+    assert_eq!(formatted.len(), 4);
+
+    // Check formatting - should be human-readable with proper labels
+    assert!(formatted.iter().any(|s| s == "Specializes `Vehicle`"));
+    assert!(formatted.iter().any(|s| s == "Redefines `BaseCar`"));
+    assert!(formatted.iter().any(|s| s == "Subsets `Equipment`"));
+    assert!(formatted.iter().any(|s| s == "Typed by `CarType`"));
+}
+
+#[test]
+fn test_get_all_relationships_empty() {
+    // Test with an element that has no relationships
+    let graph = RelationshipGraph::new();
+    let all_rels = graph.get_all_relationships("NonExistent");
+    assert_eq!(all_rels.len(), 0);
+
+    let formatted = graph.get_formatted_relationships("NonExistent");
+    assert_eq!(formatted.len(), 0);
+}

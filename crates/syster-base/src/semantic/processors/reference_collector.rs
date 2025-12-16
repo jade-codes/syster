@@ -11,7 +11,7 @@
 //!    - Add the symbol's span to the target's `references` list
 //! 3. Result: Each symbol knows all locations where it's referenced
 
-use crate::language::sysml::populator::{
+use crate::core::constants::{
     REL_REDEFINITION, REL_REFERENCE_SUBSETTING, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
 };
 use crate::semantic::graphs::RelationshipGraph;
