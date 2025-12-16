@@ -2,179 +2,25 @@
 //!
 //! Manages multi-file SysML/KerML projects with shared symbol table and relationship graphs.
 //!
-//! ## Purpose
-//!
-//! A `Workspace` coordinates:
-//! - Multiple source files (`.sysml`, `.kerml`)
-//! - Shared symbol table (cross-file symbol resolution)
-//! - Shared relationship graphs (cross-file relationships)
-//! - Optional standard library loading
-//!
-//! ## Workflow
-//!
-//! ```text
-//! 1. Create workspace
-//! 2. Add files (parsed ASTs)
-//! 3. Populate all files → builds symbol table + graphs
-//! 4. Query the model
-//! ```
-//!
-//! ## Usage Example
-//!
-//! ```rust
-//! use syster::semantic::Workspace;
-//! use syster::language::sysml::syntax::SysMLFile;
-//! use std::path::PathBuf;
-//!
-//! let mut workspace = Workspace::new();
-//!
-//! // Enable automatic invalidation for LSP use
-//! workspace.enable_auto_invalidation();
-//!
-//! // Add files (with parsed content)
-//! let parsed_base = SysMLFile { namespace: None, elements: vec![] };
-//! let parsed_app = SysMLFile { namespace: None, elements: vec![] };
-//! workspace.add_file(PathBuf::from("base.sysml"), parsed_base);
-//! workspace.add_file(PathBuf::from("app.sysml"), parsed_app);
-//!
-//! // Populate symbol table and resolve imports
-//! workspace.populate_all().ok();
-//!
-//! // Update a file - dependents automatically invalidated
-//! let new_content = SysMLFile { namespace: None, elements: vec![] };
-//! workspace.update_file(&PathBuf::from("base.sysml"), new_content);
-//!
-//! // Query the model
-//! let symbol = workspace.symbol_table().lookup("App::myCar");
-//! ```
-//!
-//! ## Standard Library Support
-//!
-//! The workspace can optionally load the SysML standard library:
-//!
-//! ```rust
-//! use syster::semantic::Workspace;
-//!
-//! // Create workspace with stdlib
-//! let mut workspace = Workspace::with_stdlib();
-//!
-//! // Or mark stdlib as loaded after manual loading
-//! workspace.mark_stdlib_loaded();
-//!
-//! // Check if stdlib is available
-//! if workspace.has_stdlib() {
-//!     // Can reference stdlib types
-//! }
-//! ```
-//!
-//! The standard library includes:
-//! - `sysml.library/Kernel Libraries/` - Core KerML types
-//! - `sysml.library/Systems Library/` - SysML v2 types (Parts, Ports, etc.)
-//! - `sysml.library/Domain Libraries/` - Domain-specific libraries
-//!
-//! ## File Management
-//!
-//! Files are indexed by `PathBuf` and stored as `WorkspaceFile` entries:
-//!
-//! ```rust
-//! use std::path::PathBuf;
-//! use syster::language::sysml::syntax::SysMLFile;
-//!
-//! pub struct WorkspaceFile {
-//!     path: PathBuf,         // File path
-//!     content: SysMLFile,    // Parsed AST
-//! }
-//! ```
-//!
-//! ## Symbol Table Population
-//!
-//! `populate_all()` processes files in deterministic order (sorted by path):
-//!
-//! 1. For each file:
-//!    - Walk AST with `SymbolTablePopulator`
-//!    - Add symbols to shared symbol table
-//!    - Track relationships in shared graphs
-//! 2. Resolve imports (three-pass algorithm)
-//! 3. Validate semantic rules
-//!
-//! **Key invariant**: All symbols from all files visible in global symbol table.
-//!
-//! ## Cross-File References
-//!
-//! The workspace enables cross-file references via imports:
-//!
-//! **File: base.sysml**
-//! ```sysml
-//! package Base {
-//!     part def Vehicle;
-//! }
-//! ```
-//!
-//! **File: app.sysml**
-//! ```sysml
-//! package App {
-//!     import Base::*;
-//!     part myCar: Vehicle;  // References Base::Vehicle
-//! }
-//! ```
-//!
-//! After `populate_all()`, `Vehicle` is visible in `App` scope.
-//!
-//! ## Incremental Updates
-//!
-//! The workspace supports smart invalidation via an event system:
-//!
-//! ```rust
-//! use syster::semantic::Workspace;
-//! use syster::language::sysml::syntax::SysMLFile;
-//! use std::path::PathBuf;
-//!
-//! let mut workspace = Workspace::new();
-//! workspace.enable_auto_invalidation();
-//!
-//! let path = PathBuf::from("file.sysml");
-//! let content = SysMLFile { namespace: None, elements: vec![] };
-//! workspace.add_file(path.clone(), content);
-//!
-//! // When file changes, dependents are automatically marked
-//! let new_content = SysMLFile { namespace: None, elements: vec![] };
-//! workspace.update_file(&path, new_content);
-//!
-//! // Only re-populate files that need it
-//! let file_paths: Vec<_> = workspace.file_paths().cloned().collect();
-//! for file_path in file_paths {
-//!     if !workspace.get_file(&file_path).unwrap().is_populated() {
-//!         workspace.populate_file(&file_path).unwrap();
-//!     }
-//! }
-//! ```
-//!
-//! This enables efficient incremental analysis for LSP implementations where
-//! only changed files and their dependents need re-analysis.
-//!
-//! ## Performance Considerations
-//!
-//! - **File ordering**: Sorted by path for deterministic builds
-//! - **Parallel parsing**: Files can be parsed independently (not yet implemented)
-//! - **Symbol indexing**: Pre-computed indexes for fast lookup (partial implementation)
-//!
-//! See [Workspace Management](../../docs/SEMANTIC_ANALYSIS.md#workspace-management) for details.
+//! Coordinates multiple source files, cross-file symbol resolution, and incremental updates
+//! with automatic dependency invalidation for LSP implementations.
 
 use crate::core::events::EventEmitter;
 use crate::core::operation::{EventBus, OperationResult};
-use crate::language::sysml::SymbolTablePopulator;
 use crate::language::sysml::syntax::SysMLFile;
 use crate::semantic::dependency_graph::DependencyGraph;
 use crate::semantic::events::WorkspaceEvent;
 use crate::semantic::graph::RelationshipGraph;
 use crate::semantic::import_extractor::extract_imports;
-use crate::semantic::reference_collector::ReferenceCollector;
 use crate::semantic::symbol_table::SymbolTable;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
 mod file;
+mod populator;
+
 pub use file::WorkspaceFile;
+use populator::WorkspacePopulator;
 
 /// A workspace manages multiple SysML files with a shared symbol table and relationship graph
 pub struct Workspace {
@@ -240,9 +86,6 @@ impl Workspace {
     }
 
     /// Updates an existing file's content (for LSP document sync)
-    ///
-    /// Returns true if updated, false if file not found.
-    /// Emits a FileUpdated event for invalidation listeners.
     pub fn update_file(&mut self, path: &PathBuf, content: SysMLFile) -> bool {
         // Check if file exists first
         if !self.files.contains_key(path) {
@@ -273,9 +116,6 @@ impl Workspace {
     }
 
     /// Removes a file from the workspace
-    ///
-    /// Returns true if the file was found and removed, false otherwise.
-    /// Note: This does not remove symbols from the symbol table - use `repopulate_all()` after.
     pub fn remove_file(&mut self, path: &PathBuf) -> bool {
         let existed = self.files.remove(path).is_some();
         if existed {
@@ -291,104 +131,56 @@ impl Workspace {
         existed
     }
 
-    /// Populates the symbol table and relationship graph for all files in the workspace
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any file in the workspace fails to populate due to invalid syntax
-    /// or semantic errors in the SysML content.
+    /// Populates the symbol table and relationship graph for all files
     pub fn populate_all(&mut self) -> Result<(), String> {
-        // Sort files by path for deterministic ordering
-        let mut paths: Vec<_> = self.files.keys().cloned().collect();
-        paths.sort();
+        let mut populator = WorkspacePopulator::new(
+            &self.files,
+            &mut self.symbol_table,
+            &mut self.relationship_graph,
+        );
+        let populated_paths = populator.populate_all()?;
 
-        for path in paths {
-            self.populate_file(&path)?;
+        for path in populated_paths {
+            self.mark_file_populated(&path);
         }
-
-        // Collect references after all files are populated
-        let mut collector =
-            ReferenceCollector::new(&mut self.symbol_table, &self.relationship_graph);
-        collector.collect();
 
         Ok(())
     }
 
-    /// Populates only files that are marked as unpopulated (needing re-population)
-    ///
-    /// This is more efficient than `populate_all()` for incremental updates in LSP scenarios
-    /// where only a subset of files have been modified or invalidated.
-    ///
-    /// # Returns
-    ///
-    /// Returns the number of files that were repopulated.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any unpopulated file fails to populate due to invalid syntax
-    /// or semantic errors in the SysML content.
+    /// Populates only unpopulated files (for incremental updates)
     pub fn populate_affected(&mut self) -> Result<usize, String> {
-        // Collect unpopulated files (sorted for determinism)
-        let mut unpopulated: Vec<_> = self
-            .files
-            .keys()
-            .filter(|path| !self.files[*path].is_populated())
-            .cloned()
-            .collect();
-        unpopulated.sort();
+        let mut populator = WorkspacePopulator::new(
+            &self.files,
+            &mut self.symbol_table,
+            &mut self.relationship_graph,
+        );
+        let populated_paths = populator.populate_affected()?;
+        let count = populated_paths.len();
 
-        let count = unpopulated.len();
-
-        unpopulated
-            .into_iter()
-            .try_for_each(|path| self.populate_file(&path))?;
-
-        // Collect references after affected files are re-populated
-        let mut collector =
-            ReferenceCollector::new(&mut self.symbol_table, &self.relationship_graph);
-        collector.collect();
+        for path in populated_paths {
+            self.mark_file_populated(&path);
+        }
 
         Ok(count)
     }
 
-    /// Populates the symbol table and relationship graph for a specific file
-    ///
-    /// Incrementally removes old symbols from this file before re-populating.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the file is not found in the workspace or if the file fails
-    /// to populate due to invalid syntax or semantic errors in the SysML content.
+    /// Populates a specific file
     pub fn populate_file(&mut self, path: &PathBuf) -> Result<(), String> {
-        let file = self
-            .files
-            .get(path)
-            .ok_or_else(|| format!("File not found in workspace: {}", path.display()))?;
-
-        let file_path_str = path.to_string_lossy().to_string();
-
-        // Remove old symbols from this file
-        self.symbol_table.remove_symbols_from_file(&file_path_str);
-
-        // Set the current file context in the symbol table
-        self.symbol_table.set_current_file(Some(file_path_str));
-
-        // Populate the symbol table and relationship graph
-        let mut populator = SymbolTablePopulator::with_relationships(
+        let mut populator = WorkspacePopulator::new(
+            &self.files,
             &mut self.symbol_table,
             &mut self.relationship_graph,
         );
+        populator.populate_file(path)?;
+        self.mark_file_populated(path);
+        Ok(())
+    }
 
-        populator
-            .populate(file.content())
-            .map_err(|e| format!("Failed to populate {}: {:?}", path.display(), e))?;
-
-        // Mark file as populated
+    /// Marks a file as populated
+    fn mark_file_populated(&mut self, path: &PathBuf) {
         if let Some(file) = self.files.get_mut(path) {
             file.set_populated(true);
         }
-
-        Ok(())
     }
 
     /// Returns a reference to the files map
@@ -426,11 +218,6 @@ impl Workspace {
         self.files.keys()
     }
 
-    /// Checks if a file exists in the workspace
-    pub fn contains_file(&self, path: &PathBuf) -> bool {
-        self.files.contains_key(path)
-    }
-
     /// Returns a reference to the dependency graph
     pub fn dependency_graph(&self) -> &DependencyGraph {
         &self.dependency_graph
@@ -441,19 +228,12 @@ impl Workspace {
         &mut self.dependency_graph
     }
 
-    /// Returns the list of import paths for a file
-    pub fn get_file_imports(&self, path: &PathBuf) -> Vec<String> {
-        self.file_imports.get(path).cloned().unwrap_or_default()
-    }
-
     /// Returns the list of files that depend on the given file
     pub fn get_file_dependents(&self, path: &PathBuf) -> Vec<PathBuf> {
         self.dependency_graph.get_dependents(path)
     }
 
-    /// Enables automatic invalidation of dependent files when files are updated
-    ///
-    /// Recommended for LSP implementations where file changes trigger re-analysis.
+    /// Enables automatic invalidation when files are updated (for LSP)
     pub fn enable_auto_invalidation(&mut self) {
         self.events.subscribe(|event, workspace| {
             if let WorkspaceEvent::FileUpdated { path } = event {
@@ -469,7 +249,7 @@ impl Workspace {
     }
 
     /// Marks a file as unpopulated (needing re-population)
-    pub fn mark_file_unpopulated(&mut self, path: &PathBuf) {
+    fn mark_file_unpopulated(&mut self, path: &PathBuf) {
         if let Some(file) = self.files.get_mut(path) {
             file.set_populated(false);
         }

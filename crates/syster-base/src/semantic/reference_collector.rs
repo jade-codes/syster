@@ -37,24 +37,48 @@ impl<'a> ReferenceCollector<'a> {
 
     /// Collect all references and populate the references field in symbols
     pub fn collect(&mut self) {
-        let references_to_add = self.collect_references();
+        // Build name resolution map (key -> name) once
+        let symbol_names: HashMap<String, String> = self
+            .symbol_table
+            .all_symbols()
+            .into_iter()
+            .map(|(k, sym)| (k.clone(), sym.name().to_string()))
+            .collect();
 
-        for (target_name, refs) in references_to_add {
-            // Try to resolve the target name (might be unqualified like "Wheel")
-            // Collect keys first to avoid borrow conflicts
-            let all_symbols: Vec<(String, String)> = self
-                .symbol_table
-                .all_symbols()
-                .into_iter()
-                .map(|(k, sym)| (k.clone(), sym.name().to_string()))
-                .collect();
+        // Collect all references grouped by target
+        let references_by_target: HashMap<String, Vec<SymbolReference>> = self
+            .symbol_table
+            .all_symbols()
+            .into_iter()
+            .filter_map(|(_, symbol)| {
+                let span = symbol.span()?;
+                let file = symbol.source_file()?;
+                let reference = SymbolReference {
+                    file: file.to_string(),
+                    span: span.clone(),
+                };
+                Some((symbol.qualified_name().to_string(), reference))
+            })
+            .flat_map(|(qname, reference)| {
+                // Get all relationship targets for this symbol
+                self.get_all_targets(&qname)
+                    .into_iter()
+                    .map(move |target| (target, reference.clone()))
+            })
+            .fold(HashMap::new(), |mut acc, (target, reference)| {
+                acc.entry(target).or_default().push(reference);
+                acc
+            });
 
-            let symbol_key = all_symbols
+        // Apply references to symbols
+        for (target_name, refs) in references_by_target {
+            // Resolve target name (handle both qualified and simple names)
+            let key = symbol_names
                 .iter()
-                .find(|(k, name)| k == &target_name || name == &target_name)
+                .find(|(k, name)| *k == &target_name || *name == &target_name)
                 .map(|(k, _)| k.clone());
 
-            if let Some(key) = symbol_key {
+            if let Some(key) = key {
                 if let Some(symbol) = self.symbol_table.lookup_global_mut(&key) {
                     for reference in refs {
                         symbol.add_reference(reference);
@@ -62,37 +86,6 @@ impl<'a> ReferenceCollector<'a> {
                 }
             }
         }
-    }
-
-    /// Collect references by examining relationship graphs
-    fn collect_references(&self) -> HashMap<String, Vec<SymbolReference>> {
-        let mut references: HashMap<String, Vec<SymbolReference>> = HashMap::new();
-
-        for (key, symbol) in self.symbol_table.all_symbols() {
-            let Some(span) = symbol.span() else {
-                continue;
-            };
-
-            let Some(file) = symbol.source_file() else {
-                continue;
-            };
-
-            // Collect all relationship targets for this symbol
-            let targets = self.get_all_targets(symbol.qualified_name());
-
-            for target in targets {
-                references.entry(target).or_default().push(SymbolReference {
-                    file: file.to_string(),
-                    span: span.clone(),
-                });
-            }
-        }
-
-        eprintln!(
-            "ReferenceCollector: Collected {} unique targets",
-            references.len()
-        );
-        references
     }
 
     /// Get all relationship targets for a symbol
