@@ -19,6 +19,7 @@ impl LanguageServer for SysterLanguageServer {
                     TextDocumentSyncKind::FULL,
                 )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                definition_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             },
             ..Default::default()
@@ -116,6 +117,19 @@ impl LanguageServer for SysterLanguageServer {
 
         let backend = self.backend.lock().await;
         Ok(backend.get_hover(&uri, position))
+    }
+
+    async fn goto_definition(
+        &self,
+        params: GotoDefinitionParams,
+    ) -> Result<Option<GotoDefinitionResponse>> {
+        let uri = params.text_document_position_params.text_document.uri;
+        let position = params.text_document_position_params.position;
+
+        let backend = self.backend.lock().await;
+        let location = backend.get_definition(&uri, position);
+
+        Ok(location.map(GotoDefinitionResponse::Scalar))
     }
 
     async fn shutdown(&self) -> Result<()> {

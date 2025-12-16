@@ -7,19 +7,6 @@ fn test_backend_creation() {
 }
 
 #[test]
-fn test_backend_provides_workspace_access() {
-    let mut backend = Backend::new();
-
-    // Should be able to access workspace mutably
-    let workspace = backend.workspace_mut();
-    assert_eq!(workspace.file_count(), 0);
-
-    // Should be able to access workspace immutably
-    let workspace = backend.workspace();
-    assert_eq!(workspace.file_count(), 0);
-}
-
-#[test]
 fn test_open_sysml_document() {
     let mut backend = Backend::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
@@ -395,4 +382,105 @@ fn test_hover_shows_precise_range() {
     assert_eq!(range.end.line, 0);
     // Range should cover the entire definition
     assert!(range.end.character > range.start.character);
+}
+
+#[test]
+fn test_goto_definition_same_file() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Car;
+part myCar : Car;"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Position on "Car" in the usage line (line 1, after the colon)
+    let location = backend.get_definition(
+        &uri,
+        Position {
+            line: 1,
+            character: 14, // On "Car" type reference
+        },
+    );
+
+    assert!(location.is_some(), "Should find definition");
+    let location = location.unwrap();
+
+    // Should point to the definition on line 0
+    assert_eq!(location.uri, uri);
+    assert_eq!(location.range.start.line, 0);
+    // Range should cover the definition
+    assert!(location.range.end.character > location.range.start.character);
+}
+
+#[test]
+fn test_goto_definition_on_definition() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Position on "Vehicle" in its own definition
+    let location = backend.get_definition(
+        &uri,
+        Position {
+            line: 0,
+            character: 10,
+        },
+    );
+
+    assert!(location.is_some(), "Should find itself");
+    let location = location.unwrap();
+
+    // Should point to itself
+    assert_eq!(location.uri, uri);
+    assert_eq!(location.range.start.line, 0);
+}
+
+#[test]
+fn test_goto_definition_unknown_symbol() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Car;";
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Position in whitespace
+    let location = backend.get_definition(
+        &uri,
+        Position {
+            line: 0,
+            character: 0,
+        },
+    );
+
+    assert!(location.is_none(), "No symbol at position");
+}
+
+#[test]
+fn test_goto_definition_nested_elements() {
+    let mut backend = Backend::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Automotive {
+    part def Engine;
+    part myEngine : Engine;
+}"#;
+
+    backend.open_document(&uri, text).unwrap();
+
+    // Position on "Engine" type reference in the usage (line 2)
+    let location = backend.get_definition(
+        &uri,
+        Position {
+            line: 2,
+            character: 21, // On "Engine" type reference
+        },
+    );
+
+    assert!(location.is_some(), "Should find Engine definition");
+    let location = location.unwrap();
+
+    // Should point to the definition on line 1
+    assert_eq!(location.uri, uri);
+    assert_eq!(location.range.start.line, 1);
 }

@@ -2,7 +2,6 @@
 ///
 /// Stores the source location (line/column) of AST nodes for LSP features
 /// like hover, go-to-definition, and error reporting.
-
 /// A span representing a range in source code (0-indexed for LSP compatibility)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Span {

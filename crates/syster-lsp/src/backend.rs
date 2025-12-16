@@ -5,7 +5,8 @@ use syster::project::ParseError;
 use syster::semantic::Workspace;
 use syster::semantic::symbol_table::Symbol;
 use tower_lsp::lsp_types::{
-    Diagnostic, DiagnosticSeverity, Hover, HoverContents, MarkedString, Position, Range, Url,
+    Diagnostic, DiagnosticSeverity, Hover, HoverContents, Location, MarkedString, Position, Range,
+    Url,
 };
 
 /// Backend manages the workspace state for the LSP server
@@ -28,10 +29,6 @@ impl Backend {
 
     pub fn workspace(&self) -> &Workspace {
         &self.workspace
-    }
-
-    pub fn workspace_mut(&mut self) -> &mut Workspace {
-        &mut self.workspace
     }
 
     /// Parse and update a document in the workspace
@@ -158,6 +155,68 @@ impl Backend {
         })
     }
 
+    /// Get the definition location for a symbol at the given position
+    ///
+    /// This method:
+    /// 1. Finds the symbol at the cursor position using AST spans
+    /// 2. Looks up the symbol in the symbol table
+    /// 3. Returns the location where the symbol is defined
+    ///
+    /// If the cursor is on a type reference, this returns the definition of that type.
+    /// If the cursor is on a definition itself, this returns the location of that definition.
+    pub fn get_definition(&self, uri: &Url, position: Position) -> Option<Location> {
+        let path = uri.to_file_path().ok()?;
+
+        // Get document text to extract word at position
+        let text = self.document_texts.get(&path)?;
+
+        // Find symbol at position using AST spans (this gives us the containing element)
+        let (element_name, _hover_range) = self.find_symbol_at_position(&path, position)?;
+
+        // Extract the actual word under the cursor - this might be different from element_name
+        // if the cursor is on a type reference (e.g., ": Car" in "part myCar : Car")
+        let cursor_word = extract_word_at_cursor(text, position)?;
+
+        // Try to look up the word under cursor first (handles type references)
+        // Then fall back to the element name (handles hovering on the element itself)
+        let lookup_name = if cursor_word != element_name {
+            // Cursor is on something other than the element name (likely a type reference)
+            &cursor_word
+        } else {
+            // Cursor is on the element itself
+            &element_name
+        };
+
+        // Look up symbol in workspace
+        // Try qualified lookup first, then simple name lookup, then search all symbols
+        let symbol = self
+            .workspace
+            .symbol_table()
+            .lookup_qualified(lookup_name)
+            .or_else(|| self.workspace.symbol_table().lookup(lookup_name))
+            .or_else(|| {
+                // Fallback: search all symbols for matching simple name
+                self.workspace
+                    .symbol_table()
+                    .all_symbols()
+                    .into_iter()
+                    .find(|(_key, sym)| sym.name() == lookup_name)
+                    .map(|(_, sym)| sym)
+            })?;
+
+        // Get definition location from symbol
+        let source_file = symbol.source_file()?;
+        let span = symbol.span()?;
+
+        // Convert file path to URI
+        let def_uri = Url::from_file_path(source_file).ok()?;
+
+        Some(Location {
+            uri: def_uri,
+            range: span_to_lsp_range(&span),
+        })
+    }
+
     /// Find the symbol name and range at the given position by querying the AST
     fn find_symbol_at_position(
         &self,
@@ -184,6 +243,39 @@ impl Backend {
     }
 }
 
+/// Extract the word at the cursor position from the document text
+fn extract_word_at_cursor(text: &str, position: Position) -> Option<String> {
+    let lines: Vec<&str> = text.lines().collect();
+    let line = lines.get(position.line as usize)?;
+    let chars: Vec<char> = line.chars().collect();
+
+    let pos = position.character as usize;
+    if pos >= chars.len() {
+        return None;
+    }
+
+    // Find word boundaries - identifiers are alphanumeric + underscore
+    let is_word_char = |c: char| c.is_alphanumeric() || c == '_';
+
+    // Find start of word
+    let mut start = pos;
+    while start > 0 && is_word_char(chars[start - 1]) {
+        start -= 1;
+    }
+
+    // Find end of word
+    let mut end = pos;
+    while end < chars.len() && is_word_char(chars[end]) {
+        end += 1;
+    }
+
+    if start == end {
+        return None;
+    }
+
+    Some(chars[start..end].iter().collect())
+}
+
 /// Find an element at the given position in the AST
 fn find_element_at_position(
     element: &syster::language::sysml::syntax::Element,
@@ -193,34 +285,39 @@ fn find_element_at_position(
 
     match element {
         Element::Package(pkg) => {
-            if let (Some(name), Some(span)) = (&pkg.name, pkg.span)
-                && span.contains(position) {
-                    return Some((name.clone(), span));
-                }
-            // Check nested elements
+            // First, check nested elements (most specific match)
             for child in &pkg.elements {
                 if let Some(result) = find_element_at_position(child, position) {
                     return Some(result);
                 }
             }
+            // If no nested element matched, check if position is in package itself
+            if let (Some(name), Some(span)) = (&pkg.name, pkg.span)
+                && span.contains(position)
+            {
+                return Some((name.clone(), span));
+            }
         }
         Element::Definition(def) => {
             if let (Some(name), Some(span)) = (&def.name, def.span)
-                && span.contains(position) {
-                    return Some((name.clone(), span));
-                }
+                && span.contains(position)
+            {
+                return Some((name.clone(), span));
+            }
         }
         Element::Usage(usage) => {
             if let (Some(name), Some(span)) = (&usage.name, usage.span)
-                && span.contains(position) {
-                    return Some((name.clone(), span));
-                }
+                && span.contains(position)
+            {
+                return Some((name.clone(), span));
+            }
         }
         Element::Alias(alias) => {
             if let (Some(name), Some(span)) = (&alias.name, alias.span)
-                && span.contains(position) {
-                    return Some((name.clone(), span));
-                }
+                && span.contains(position)
+            {
+                return Some((name.clone(), span));
+            }
         }
         _ => {}
     }
@@ -264,12 +361,13 @@ fn format_rich_hover(symbol: &Symbol, workspace: &syster::semantic::Workspace) -
 
     // Relationships (using relationship graph)
     if let Some(relationships) = get_symbol_relationships(symbol, workspace)
-        && !relationships.is_empty() {
-            result.push_str("\n**Relationships:**\n");
-            for rel in relationships {
-                result.push_str(&format!("- {}\n", rel));
-            }
+        && !relationships.is_empty()
+    {
+        result.push_str("\n**Relationships:**\n");
+        for rel in relationships {
+            result.push_str(&format!("- {}\n", rel));
         }
+    }
 
     result
 }
