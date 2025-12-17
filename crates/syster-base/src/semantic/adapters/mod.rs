@@ -1,20 +1,34 @@
 //! # Semantic Adapters
 //!
-//! Adapters convert language-specific ASTs into the language-agnostic semantic model.
-//! Each source language (SysML, KerML) has its own adapter that knows how to extract
-//! symbols, relationships, and semantic information from that language's AST.
+//! Adapters form the **architectural boundary** between language-specific syntax and
+//! language-agnostic semantic analysis.
 //!
-//! This is the **only** place in the semantic layer that should import from syntax/sysml
-//! or syntax/kerml.
-
-//! # Semantic Adapters
+//! ## Architecture
 //!
-//! Adapters convert language-specific ASTs into the language-agnostic semantic model.
-//! Each source language (SysML, KerML) has its own adapter that knows how to extract
-//! symbols, relationships, and semantic information from that language's AST.
+//! ```text
+//! Syntax Layer (AST)
+//!      ↓
+//! Adapters (Language-Aware) ← YOU ARE HERE
+//!      ↓ (converts to SemanticRole)
+//! Semantic Layer (Language-Agnostic)
+//!      ↓
+//! Analysis & Validation
+//! ```
 //!
-//! This is the **only** place in the semantic layer that should import from syntax/sysml
-//! or syntax/kerml.
+//! ## Responsibilities
+//!
+//! - **Convert ASTs to Symbols**: Extract language-agnostic `Symbol` representations
+//! - **Map Semantic Roles**: Convert language kinds (e.g., `DefinitionKind::Requirement`)
+//!   to generic `SemanticRole` enum values
+//! - **Provide Validators**: Supply language-specific validation rules that work with semantic roles
+//!
+//! ## Important: This is the ONLY module that imports from syntax
+//!
+//! Only files in `semantic/adapters/` and `semantic/processors/` should import from
+//! `syntax::sysml` or `syntax::kerml`. All other semantic code must remain language-agnostic
+//! and work solely with `SemanticRole`, `Symbol`, and other semantic types.
+//!
+//! This boundary is enforced by architecture tests in `tests/architecture_tests.rs`.
 
 mod syntax_factory;
 mod sysml;

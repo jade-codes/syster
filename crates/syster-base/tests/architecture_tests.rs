@@ -341,3 +341,178 @@ fn test_show_architecture_violations_summary() {
         println!("  cargo test --test architecture_tests -- --ignored --nocapture");
     }
 }
+
+// ============================================================================
+// PHASE 6: Semantic Adapter Separation Tests
+// ============================================================================
+
+/// Checks that only files in `semantic/adapters/` and `semantic/processors/` import from `syntax::sysml` or `syntax::kerml`
+#[test]
+fn test_semantic_layer_only_adapters_import_syntax() {
+    let semantic_dir = Path::new("src/semantic");
+
+    let violations = find_syntax_import_violations(semantic_dir);
+
+    if !violations.is_empty() {
+        let violation_list: Vec<String> = violations
+            .iter()
+            .map(|(file, line)| format!("  - {}:{}", file.display(), line))
+            .collect();
+
+        panic!(
+            "\n❌ Architecture violation: {} file(s) in semantic/ (outside adapters/processors/) import from syntax layer:\n{}\n\n\
+            Only files in semantic/adapters/ and semantic/processors/ should import from syntax::sysml or syntax::kerml.\n\
+            Other semantic files should be language-agnostic.\n",
+            violations.len(),
+            violation_list.join("\n")
+        );
+    }
+
+    println!("✅ Architecture check passed: Only adapters and processors import from syntax layer");
+}
+/// Recursively finds Rust files that violate the architecture rule
+fn find_syntax_import_violations(dir: &Path) -> Vec<(std::path::PathBuf, usize)> {
+    let mut violations = Vec::new();
+    if !dir.exists() {
+        return violations;
+    }
+
+    visit_rust_files(dir, &mut |path| {
+        // Skip files in adapters or processors - they're allowed to import syntax
+        let is_allowed_dir = path.components().any(|c| {
+            let name = c.as_os_str();
+            name == "adapters" || name == "processors"
+        });
+
+        if is_allowed_dir {
+            return;
+        }
+
+        // Skip test files - they may need syntax layer for testing
+        if path.file_name().and_then(|n| n.to_str()) == Some("tests.rs") {
+            return;
+        }
+
+        // Check if this file imports from syntax layer
+        if let Ok(content) = fs::read_to_string(path) {
+            for (line_num, line) in content.lines().enumerate() {
+                if line.contains("use crate::syntax::sysml")
+                    || line.contains("use crate::syntax::kerml")
+                    || line.contains("from syntax::sysml")
+                    || line.contains("from syntax::kerml")
+                {
+                    violations.push((path.to_path_buf(), line_num + 1));
+                }
+            }
+        }
+    });
+    violations
+}
+
+/// Recursively visits all .rs files in a directory
+fn visit_rust_files<F>(dir: &Path, callback: &mut F)
+where
+    F: FnMut(&Path),
+{
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+
+            if path.is_dir() {
+                visit_rust_files(&path, callback);
+            } else if path.extension().and_then(|s| s.to_str()) == Some("rs") {
+                callback(&path);
+            }
+        }
+    }
+}
+
+#[test]
+fn test_validators_use_semantic_roles_not_strings() {
+    let validator_file = Path::new("src/semantic/adapters/sysml/validator.rs");
+
+    if !validator_file.exists() {
+        panic!("Validator file not found: {}", validator_file.display());
+    }
+
+    let content = fs::read_to_string(validator_file).expect("Failed to read validator file");
+
+    // Should use REL_* constants, not hard-coded strings
+    let hard_coded_patterns = [
+        r#""satisfy""#,
+        r#""perform""#,
+        r#""exhibit""#,
+        r#""include""#,
+    ];
+
+    let mut violations = Vec::new();
+    for (line_num, line) in content.lines().enumerate() {
+        // Skip comments
+        if line.trim().starts_with("//") {
+            continue;
+        }
+
+        for pattern in &hard_coded_patterns {
+            if line.contains(pattern) {
+                violations.push((line_num + 1, pattern, line.trim()));
+            }
+        }
+    }
+
+    if !violations.is_empty() {
+        let violation_list: Vec<String> = violations
+            .iter()
+            .map(|(line, pattern, code)| format!("  Line {}: {} in: {}", line, pattern, code))
+            .collect();
+
+        panic!(
+            "\n❌ Validator uses hard-coded relationship strings instead of constants:\n{}\n\n\
+            Use REL_SATISFY, REL_PERFORM, REL_EXHIBIT, REL_INCLUDE from core::constants\n",
+            violation_list.join("\n")
+        );
+    }
+
+    println!("✅ Validator uses constants from core::constants");
+}
+
+#[test]
+fn test_core_constants_defined() {
+    let constants_file = Path::new("src/core/constants.rs");
+
+    if !constants_file.exists() {
+        panic!("Constants file not found: {}", constants_file.display());
+    }
+
+    let content = fs::read_to_string(constants_file).expect("Failed to read constants file");
+
+    let required_constants = [
+        "pub const REL_SATISFY",
+        "pub const REL_PERFORM",
+        "pub const REL_EXHIBIT",
+        "pub const REL_INCLUDE",
+        "pub const ROLE_REQUIREMENT",
+        "pub const ROLE_ACTION",
+        "pub const ROLE_STATE",
+        "pub const ROLE_USE_CASE",
+    ];
+
+    let mut missing = Vec::new();
+    for constant in &required_constants {
+        if !content.contains(constant) {
+            missing.push(*constant);
+        }
+    }
+
+    if !missing.is_empty() {
+        panic!(
+            "\n❌ Missing required constants in core/constants.rs:\n{}\n",
+            missing
+                .iter()
+                .map(|c| format!("  - {}", c))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+    }
+
+    println!("✅ All required constants defined in core/constants.rs");
+}
