@@ -1,7 +1,8 @@
 use crate::semantic::workspace::{Workspace, populator::WorkspacePopulator};
+use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
-impl Workspace {
+impl Workspace<SyntaxFile> {
     /// Populates the symbol table and relationship graph for all files
     pub fn populate_all(&mut self) -> Result<(), String> {
         let mut populator = WorkspacePopulator::new(

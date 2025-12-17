@@ -2,22 +2,22 @@ use crate::core::events::EventEmitter;
 use crate::semantic::graphs::{DependencyGraph, RelationshipGraph};
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::types::WorkspaceEvent;
-use crate::semantic::workspace::WorkspaceFile;
+use crate::semantic::workspace::{ParsedFile, WorkspaceFile};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// A workspace manages multiple SysML files with a shared symbol table and relationship graph
-pub struct Workspace {
-    pub(super) files: HashMap<PathBuf, WorkspaceFile>,
+pub struct Workspace<T: ParsedFile> {
+    pub(super) files: HashMap<PathBuf, WorkspaceFile<T>>,
     pub(super) symbol_table: SymbolTable,
     pub(super) relationship_graph: RelationshipGraph,
     pub(super) dependency_graph: DependencyGraph,
     pub(super) file_imports: HashMap<PathBuf, Vec<String>>,
     pub(super) stdlib_loaded: bool,
-    pub events: EventEmitter<WorkspaceEvent, Workspace>,
+    pub events: EventEmitter<WorkspaceEvent, Workspace<T>>,
 }
 
-impl Workspace {
+impl<T: ParsedFile> Workspace<T> {
     /// Creates a new empty workspace
     pub fn new() -> Self {
         Self {
@@ -49,7 +49,7 @@ impl Workspace {
     }
 }
 
-impl Default for Workspace {
+impl<T: ParsedFile> Default for Workspace<T> {
     fn default() -> Self {
         Self::new()
     }

@@ -8,19 +8,26 @@ pub enum SyntaxFile {
     KerML(KerMLFile),
 }
 
+// Implement ParsedFile trait for semantic layer
+impl crate::semantic::ParsedFile for SyntaxFile {
+    fn extract_imports(&self) -> Vec<String> {
+        match self {
+            SyntaxFile::SysML(sysml_file) => crate::semantic::extract_imports(sysml_file),
+            SyntaxFile::KerML(_) => {
+                // TODO: Extract KerML imports when implemented
+                vec![]
+            }
+        }
+    }
+}
+
 impl SyntaxFile {
     /// Extracts import statements from the file
     ///
     /// Returns a vector of qualified import paths found in the file.
     /// For KerML files, returns an empty vector until KerML import extraction is implemented.
     pub fn extract_imports(&self) -> Vec<String> {
-        match self {
-            SyntaxFile::SysML(sysml_file) => crate::semantic::resolver::extract_imports(sysml_file),
-            SyntaxFile::KerML(_) => {
-                // TODO: Extract KerML imports when implemented
-                vec![]
-            }
-        }
+        crate::semantic::ParsedFile::extract_imports(self)
     }
 
     /// Returns a reference to the SysML file if this is a SysML file

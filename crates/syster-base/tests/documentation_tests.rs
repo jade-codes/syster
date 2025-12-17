@@ -11,6 +11,7 @@
 
 use std::path::PathBuf;
 use syster::semantic::{RelationshipGraph, Resolver, SemanticAnalyzer, SymbolTable, Workspace};
+use syster::syntax::SyntaxFile;
 use syster::syntax::sysml::ast::SysMLFile;
 
 /// Verify that code examples in ARCHITECTURE.md compile and work
@@ -21,7 +22,7 @@ fn test_architecture_examples_compile() {
     // If we remove it, this test will fail and remind us to update docs
 
     // For now, test with existing types
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     // This should work as documented
     assert!(
         !workspace.has_stdlib(),
@@ -32,7 +33,7 @@ fn test_architecture_examples_compile() {
 /// Verify workspace APIs documented in ARCHITECTURE.md exist
 #[test]
 fn test_workspace_api_exists() {
-    let workspace = Workspace::new();
+    let workspace = Workspace::<SyntaxFile>::new();
 
     // Verify APIs exist as documented and return correct types
     let symbol_table = workspace.symbol_table();
@@ -77,7 +78,7 @@ fn test_documented_modules_exist() {
     let _: RelationshipGraph;
     let _: Resolver;
     let _: SemanticAnalyzer;
-    let _: Workspace;
+    let _: Workspace<SyntaxFile>;
 }
 
 /// Verify documented Symbol enum variants exist

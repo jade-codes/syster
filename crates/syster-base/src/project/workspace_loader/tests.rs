@@ -3,6 +3,7 @@
 
 use super::WorkspaceLoader;
 use crate::semantic::Workspace;
+use crate::syntax::SyntaxFile;
 use std::fs;
 use tempfile::TempDir;
 
@@ -16,7 +17,7 @@ fn test_workspace_loader_creation() {
 #[test]
 fn test_load_missing_file() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let result = loader.load_file("/nonexistent/file.sysml", &mut workspace);
     assert!(result.is_err(), "Should fail when loading nonexistent file");
@@ -28,7 +29,7 @@ fn test_load_missing_file() {
 #[test]
 fn test_load_missing_directory() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let result = loader.load_directory("/nonexistent/directory", &mut workspace);
     assert!(
@@ -41,7 +42,7 @@ fn test_load_missing_directory() {
 #[test]
 fn test_load_valid_file() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create temporary file with valid SysML content
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -60,7 +61,7 @@ fn test_load_valid_file() {
 #[test]
 fn test_load_invalid_syntax() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create temporary file with invalid syntax
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -76,7 +77,7 @@ fn test_load_invalid_syntax() {
 #[test]
 fn test_load_unsupported_extension() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create temporary file with unsupported extension
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -91,7 +92,7 @@ fn test_load_unsupported_extension() {
 #[test]
 fn test_load_directory_with_multiple_files() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create temporary directory with multiple files
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -113,7 +114,7 @@ fn test_load_directory_with_multiple_files() {
 #[test]
 fn test_load_directory_recursive() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create nested directory structure
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -136,7 +137,7 @@ fn test_load_directory_recursive() {
 #[test]
 fn test_load_directory_filters_extensions() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create directory with mixed file types
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -157,7 +158,7 @@ fn test_load_directory_filters_extensions() {
 #[test]
 fn test_load_kerml_file_handled() {
     let loader = WorkspaceLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Create temporary KerML file
     let temp_dir = TempDir::new().expect("Failed to create temp directory");

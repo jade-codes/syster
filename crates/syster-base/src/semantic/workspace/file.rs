@@ -1,19 +1,18 @@
 //! Workspace file representation
 
-use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
 /// Represents a file in the workspace with its path and parsed content
 #[derive(Debug)]
-pub struct WorkspaceFile {
+pub struct WorkspaceFile<T> {
     path: PathBuf,
-    content: SyntaxFile,
+    content: T,
     version: u32,
     populated: bool,
 }
 
-impl WorkspaceFile {
-    pub fn new(path: PathBuf, content: SyntaxFile) -> Self {
+impl<T> WorkspaceFile<T> {
+    pub fn new(path: PathBuf, content: T) -> Self {
         Self {
             path,
             content,
@@ -26,7 +25,7 @@ impl WorkspaceFile {
         &self.path
     }
 
-    pub fn content(&self) -> &SyntaxFile {
+    pub fn content(&self) -> &T {
         &self.content
     }
 
@@ -42,7 +41,7 @@ impl WorkspaceFile {
         self.populated = populated;
     }
 
-    pub(super) fn update_content(&mut self, content: SyntaxFile) {
+    pub(super) fn update_content(&mut self, content: T) {
         self.content = content;
         self.version += 1;
         self.populated = false; // Need to re-populate after content change

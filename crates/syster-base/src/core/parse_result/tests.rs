@@ -1,15 +1,19 @@
 #![allow(clippy::unwrap_used)]
 
 use super::*;
-use crate::syntax::sysml::ast::SysMLFile;
+
+// Simple test struct to avoid depending on syntax layer
+#[derive(Debug)]
+struct TestData {
+    value: String,
+}
 
 #[test]
 fn test_parse_result_success() {
-    let file = SysMLFile {
-        namespace: None,
-        elements: vec![],
+    let data = TestData {
+        value: "test".to_string(),
     };
-    let result = ParseResult::success(file);
+    let result = ParseResult::success(data);
 
     assert!(result.is_ok());
     assert!(!result.has_errors());
@@ -20,7 +24,7 @@ fn test_parse_result_success() {
 #[test]
 fn test_parse_result_with_errors() {
     let error = ParseError::syntax_error("Test error", 5, 10);
-    let result: ParseResult<SysMLFile> = ParseResult::with_errors(vec![error]);
+    let result: ParseResult<TestData> = ParseResult::with_errors(vec![error]);
 
     assert!(!result.is_ok());
     assert!(result.has_errors());

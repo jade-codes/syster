@@ -6,19 +6,20 @@ use super::*;
 use crate::core::constants::REL_SPECIALIZATION;
 use crate::parser::SysMLParser;
 use crate::parser::sysml::Rule;
+use crate::syntax::SyntaxFile;
 use crate::syntax::sysml::ast::SysMLFile;
 use from_pest::FromPest;
 use pest::Parser;
 
 #[test]
 fn test_workspace_creation() {
-    let workspace = Workspace::new();
+    let workspace = Workspace::<SyntaxFile>::new();
     assert_eq!(workspace.file_count(), 0);
 }
 
 #[test]
 fn test_add_file() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
@@ -33,7 +34,7 @@ fn test_add_file() {
 
 #[test]
 fn test_populate_single_file() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
@@ -53,7 +54,7 @@ fn test_populate_single_file() {
 
 #[test]
 fn test_populate_multiple_files() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // File 1: Base definition
     let source1 = "part def Vehicle;";
@@ -96,7 +97,7 @@ fn test_populate_multiple_files() {
 #[test]
 fn test_update_file_content() {
     // TDD: Test LSP-style incremental updates
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Add initial file
     let source1 = "part def Vehicle;";
@@ -145,7 +146,7 @@ fn test_update_file_content() {
 #[test]
 fn test_remove_file() {
     // TDD: Test file removal for LSP didClose
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
@@ -173,7 +174,7 @@ fn test_remove_file() {
 #[test]
 fn test_get_file() {
     // TDD: Test getting file reference for LSP status checks
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let path = PathBuf::from("test.sysml");
 
@@ -195,7 +196,7 @@ fn test_get_file() {
 #[test]
 fn test_file_version_increments() {
     // TDD: Test that version increments on each update
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let path = PathBuf::from("test.sysml");
 
@@ -227,7 +228,7 @@ fn test_file_version_increments() {
 #[test]
 fn test_populated_flag_resets_on_update() {
     // TDD: Test that populated flag resets when content changes
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let path = PathBuf::from("test.sysml");
     let source = "part def Vehicle;";
@@ -264,14 +265,14 @@ fn test_populated_flag_resets_on_update() {
 #[test]
 fn test_dependency_graph_initialized() {
     // TDD: Workspace should have a dependency graph
-    let workspace = Workspace::new();
+    let workspace = Workspace::<SyntaxFile>::new();
     assert_eq!(workspace.dependency_graph().dependencies_count(), 0);
 }
 
 #[test]
 fn test_cross_file_dependency_tracking() {
     // TDD: Track dependencies between workspace files
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Base file defines Vehicle
     let base_source = r#"
@@ -310,7 +311,7 @@ fn test_cross_file_dependency_tracking() {
 #[test]
 fn test_update_file_clears_dependencies() {
     // TDD: When a file is updated, its old dependencies should be cleared
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let path = PathBuf::from("test.sysml");
 
@@ -340,7 +341,7 @@ fn test_update_file_clears_dependencies() {
 #[test]
 fn test_remove_file_clears_dependencies() {
     // TDD: When a file is removed, clean up its dependencies
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let path = PathBuf::from("test.sysml");
     let source = r#"
@@ -363,7 +364,7 @@ fn test_subscribe_to_file_added() {
     use crate::semantic::types::WorkspaceEvent;
     use std::sync::{Arc, Mutex};
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     let events_received = Arc::new(Mutex::new(Vec::new()));
     let events_clone = events_received.clone();
 
@@ -389,7 +390,7 @@ fn test_subscribe_to_file_updated() {
     use crate::semantic::types::WorkspaceEvent;
     use std::sync::{Arc, Mutex};
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     let path = PathBuf::from("test.sysml");
 
     // Add file first
@@ -424,7 +425,7 @@ fn test_subscribe_to_file_updated() {
 
 #[test]
 fn test_invalidate_on_update() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.enable_auto_invalidation();
 
     let path = PathBuf::from("test.sysml");
@@ -454,7 +455,7 @@ fn test_invalidate_on_update() {
 }
 #[test]
 fn test_invalidate_dependent_files() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.enable_auto_invalidation();
 
     let base_path = PathBuf::from("base.sysml");
@@ -503,7 +504,7 @@ fn test_invalidate_dependent_files() {
 
 #[test]
 fn test_invalidate_transitive_dependencies() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.enable_auto_invalidation();
 
     let a_path = PathBuf::from("a.sysml");
@@ -561,7 +562,7 @@ fn test_invalidate_transitive_dependencies() {
 
 #[test]
 fn test_circular_dependency_simple() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let a_path = PathBuf::from("a.sysml");
     let b_path = PathBuf::from("b.sysml");
@@ -605,7 +606,7 @@ fn test_circular_dependency_simple() {
 
 #[test]
 fn test_circular_dependency_complex() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let a_path = PathBuf::from("a.sysml");
     let b_path = PathBuf::from("b.sysml");
@@ -665,7 +666,7 @@ fn test_circular_dependency_complex() {
 
 #[test]
 fn test_no_circular_dependency_in_chain() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let a_path = PathBuf::from("a.sysml");
     let b_path = PathBuf::from("b.sysml");
@@ -722,7 +723,7 @@ fn test_no_circular_dependency_in_chain() {
 
 #[test]
 fn test_invalidation_with_circular_dependency() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.enable_auto_invalidation();
 
     let a_path = PathBuf::from("a.sysml");
@@ -772,7 +773,7 @@ fn test_invalidation_with_circular_dependency() {
 
 #[test]
 fn test_circular_dependency_self_reference() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let a_path = PathBuf::from("a.sysml");
 
@@ -800,7 +801,7 @@ fn test_circular_dependency_self_reference() {
 
 #[test]
 fn test_populate_affected_empty() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // No unpopulated files
     let count = workspace.populate_affected().unwrap();
@@ -809,7 +810,7 @@ fn test_populate_affected_empty() {
 
 #[test]
 fn test_populate_affected_single_file() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
@@ -835,7 +836,7 @@ fn test_populate_affected_single_file() {
 
 #[test]
 fn test_populate_affected_after_update() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.enable_auto_invalidation();
 
     let base_path = PathBuf::from("base.sysml");
@@ -891,7 +892,7 @@ fn test_populate_affected_after_update() {
 
 #[test]
 fn test_populate_affected_selective() {
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let a_path = PathBuf::from("a.sysml");
     let b_path = PathBuf::from("b.sysml");

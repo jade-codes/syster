@@ -11,6 +11,7 @@
 use std::path::PathBuf;
 use syster::core::Position;
 use syster::project::file_loader;
+use syster::syntax::SyntaxFile;
 use syster::syntax::sysml::ast::SysMLFile;
 
 /// Helper to parse SysML content and extract the SysMLFile
@@ -298,7 +299,7 @@ fn test_symbol_table_spans() {
 part def Vehicle;
 part myVehicle: Vehicle;"#;
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     let path = PathBuf::from("test.sysml");
 
     let file = parse_sysml(source);

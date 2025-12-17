@@ -13,7 +13,7 @@ use std::path::PathBuf;
 /// - File collection fails
 ///
 /// Note: Individual file parse failures are logged but do not cause the load to fail.
-pub fn load(stdlib_path: &PathBuf, workspace: &mut Workspace) -> Result<(), String> {
+pub fn load(stdlib_path: &PathBuf, workspace: &mut Workspace<SyntaxFile>) -> Result<(), String> {
     if !stdlib_path.exists() || !stdlib_path.is_dir() {
         return Ok(());
     }

@@ -1,7 +1,8 @@
 #![allow(clippy::unwrap_used)]
 
 use super::*;
-use crate::{project::parse_result::ErrorPosition, semantic::Severity};
+use crate::core::ErrorPosition;
+use crate::semantic::Severity;
 
 #[test]
 fn test_publish_no_errors() {

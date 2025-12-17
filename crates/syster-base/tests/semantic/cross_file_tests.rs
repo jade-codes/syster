@@ -9,6 +9,7 @@ use syster::parser::sysml::Rule;
 use syster::semantic::adapters::SysmlAdapter;
 use syster::semantic::symbol_table::SymbolTable;
 use syster::semantic::{RelationshipGraph, Workspace};
+use syster::syntax::SyntaxFile;
 use syster::syntax::sysml::ast::SysMLFile;
 
 #[test]
@@ -227,7 +228,7 @@ fn test_workspace_with_file_paths() {
     // Test a proper workspace setup where each file has an identifier
     // and we can track dependencies and provide better error messages
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // File 1: Base type
     let file1_source = "part def Vehicle;";

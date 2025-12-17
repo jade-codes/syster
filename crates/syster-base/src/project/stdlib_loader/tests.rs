@@ -4,6 +4,7 @@ use super::StdLibLoader;
 use crate::core::constants::SUPPORTED_EXTENSIONS;
 use crate::project::file_loader;
 use crate::semantic::Workspace;
+use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
 #[test]
@@ -18,7 +19,7 @@ fn test_stdlib_loader_creation() {
 #[test]
 fn test_load_missing_directory() {
     let loader = StdLibLoader::with_path(PathBuf::from("/nonexistent/path"));
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     let result = loader.load(&mut workspace);
     assert!(
@@ -39,7 +40,7 @@ fn test_load_actual_stdlib() {
         "sysml.library/ must exist for this test"
     );
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     let result = loader.load(&mut workspace);
 
     assert!(result.is_ok(), "Loading stdlib should succeed");
@@ -115,13 +116,13 @@ fn test_parallel_loading() {
         "sysml.library/ must exist for this test"
     );
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     // Load once
     let result1 = loader.load(&mut workspace);
     assert!(result1.is_ok());
 
     // Should be able to load multiple times (idempotent)
-    let mut workspace2 = Workspace::new();
+    let mut workspace2 = Workspace::<SyntaxFile>::new();
     let result2 = loader.load(&mut workspace2);
     assert!(result2.is_ok());
 }
@@ -134,7 +135,7 @@ fn test_files_added_to_workspace() {
         "sysml.library/ must exist for this test"
     );
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     let result = loader.load(&mut workspace);
     assert!(result.is_ok());
 
@@ -179,7 +180,7 @@ fn test_kerml_files_handled() {
 fn test_lazy_loader_does_not_load_immediately() {
     // TDD: Lazy loader should not load files until requested
     let _loader = StdLibLoader::lazy();
-    let workspace = Workspace::new();
+    let workspace = Workspace::<SyntaxFile>::new();
 
     // Should not have stdlib loaded yet
     assert!(!workspace.has_stdlib(), "Stdlib should not be loaded yet");
@@ -194,7 +195,7 @@ fn test_lazy_loader_does_not_load_immediately() {
 fn test_lazy_load_on_demand() {
     // TDD: First request should trigger loading
     let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     assert!(!workspace.has_stdlib(), "Should not be loaded initially");
 
@@ -215,7 +216,7 @@ fn test_lazy_load_on_demand() {
 fn test_lazy_load_only_once() {
     // TDD: Subsequent requests should not reload
     let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // First load
     loader.ensure_loaded(&mut workspace).unwrap();
@@ -234,7 +235,7 @@ fn test_lazy_load_only_once() {
 fn test_can_check_if_stdlib_loaded() {
     // TDD: Should be able to query if stdlib is loaded
     let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     assert!(!workspace.has_stdlib(), "Initially not loaded");
     assert!(!loader.is_loaded(), "Loader should report not loaded");
@@ -252,7 +253,7 @@ fn test_can_check_if_stdlib_loaded() {
 fn test_eager_load_still_works() {
     // TDD: Original eager loading should still work
     let loader = StdLibLoader::new();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Eager load immediately loads
     loader.load(&mut workspace).unwrap();
@@ -271,7 +272,7 @@ fn test_eager_load_still_works() {
 fn test_lazy_avoids_reloading() {
     // TDD: Lazy loader should not reload if stdlib already in workspace
     let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Manually mark stdlib as loaded (simulate pre-loaded state)
     workspace.mark_stdlib_loaded();

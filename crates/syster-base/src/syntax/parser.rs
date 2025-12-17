@@ -1,6 +1,5 @@
 use crate::core::constants::{KERML_EXT, SYSML_EXT};
-use crate::project::file_loader;
-use crate::project::{ParseError, ParseResult};
+use crate::core::{ParseError, ParseResult, get_extension, load_file, validate_extension};
 use crate::syntax::SyntaxFile;
 use crate::syntax::kerml::KerMLFile;
 use std::path::{Path, PathBuf};
@@ -14,8 +13,8 @@ use std::path::{Path, PathBuf};
 /// - The file has an invalid extension
 /// - The file fails to parse
 pub fn load_and_parse(path: &PathBuf) -> Result<SyntaxFile, String> {
-    let ext = file_loader::validate_extension(path)?;
-    let content = file_loader::load_file(path)?;
+    let ext = validate_extension(path)?;
+    let content = load_file(path)?;
 
     match ext {
         SYSML_EXT => {
@@ -38,7 +37,7 @@ pub fn load_and_parse(path: &PathBuf) -> Result<SyntaxFile, String> {
 /// - The file has an invalid extension
 /// - The content fails to parse
 pub fn parse_content(content: &str, path: &Path) -> Result<SyntaxFile, String> {
-    let ext = file_loader::validate_extension(path)?;
+    let ext = validate_extension(path)?;
 
     match ext {
         SYSML_EXT => {
@@ -58,7 +57,7 @@ pub fn parse_content(content: &str, path: &Path) -> Result<SyntaxFile, String> {
 ///
 /// Dispatches to the appropriate language parser based on file extension.
 pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SyntaxFile> {
-    let ext = match file_loader::get_extension(path) {
+    let ext = match get_extension(path) {
         Ok(e) => e,
         Err(e) => return ParseResult::with_errors(vec![e]),
     };

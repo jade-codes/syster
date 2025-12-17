@@ -8,19 +8,20 @@ use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::processors::ReferenceCollector;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::workspace::WorkspaceFile;
+use crate::syntax::SyntaxFile;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Populates files in the workspace
 pub struct WorkspacePopulator<'a> {
-    files: &'a HashMap<PathBuf, WorkspaceFile>,
+    files: &'a HashMap<PathBuf, WorkspaceFile<SyntaxFile>>,
     symbol_table: &'a mut SymbolTable,
     relationship_graph: &'a mut RelationshipGraph,
 }
 
 impl<'a> WorkspacePopulator<'a> {
     pub fn new(
-        files: &'a HashMap<PathBuf, WorkspaceFile>,
+        files: &'a HashMap<PathBuf, WorkspaceFile<SyntaxFile>>,
         symbol_table: &'a mut SymbolTable,
         relationship_graph: &'a mut RelationshipGraph,
     ) -> Self {
@@ -83,14 +84,14 @@ impl<'a> WorkspacePopulator<'a> {
     }
 
     /// Gets all file paths sorted for deterministic ordering
-    fn get_sorted_paths(files: &HashMap<PathBuf, WorkspaceFile>) -> Vec<PathBuf> {
+    fn get_sorted_paths(files: &HashMap<PathBuf, WorkspaceFile<SyntaxFile>>) -> Vec<PathBuf> {
         let mut paths: Vec<_> = files.keys().cloned().collect();
         paths.sort();
         paths
     }
 
     /// Gets unpopulated file paths sorted for deterministic ordering
-    fn get_unpopulated_paths(files: &HashMap<PathBuf, WorkspaceFile>) -> Vec<PathBuf> {
+    fn get_unpopulated_paths(files: &HashMap<PathBuf, WorkspaceFile<SyntaxFile>>) -> Vec<PathBuf> {
         let mut unpopulated: Vec<_> = files
             .keys()
             .filter(|path| !files[*path].is_populated())

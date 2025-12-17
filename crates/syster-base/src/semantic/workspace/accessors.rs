@@ -1,12 +1,12 @@
 use crate::semantic::graphs::{DependencyGraph, RelationshipGraph};
 use crate::semantic::symbol_table::SymbolTable;
-use crate::semantic::workspace::{Workspace, WorkspaceFile};
+use crate::semantic::workspace::{ParsedFile, Workspace, WorkspaceFile};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-impl Workspace {
+impl<T: ParsedFile> Workspace<T> {
     /// Returns a reference to the files map
-    pub fn files(&self) -> &HashMap<PathBuf, WorkspaceFile> {
+    pub fn files(&self) -> &HashMap<PathBuf, WorkspaceFile<T>> {
         &self.files
     }
 

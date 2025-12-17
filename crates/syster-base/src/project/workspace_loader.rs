@@ -1,4 +1,5 @@
 use crate::semantic::Workspace;
+use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
 use super::file_loader;
@@ -23,7 +24,7 @@ impl WorkspaceLoader {
     pub fn load_file<P: Into<PathBuf>>(
         &self,
         path: P,
-        workspace: &mut Workspace,
+        workspace: &mut Workspace<SyntaxFile>,
     ) -> Result<(), String> {
         let path = path.into();
         self.load_file_internal(&path, workspace)
@@ -40,7 +41,7 @@ impl WorkspaceLoader {
     pub fn load_directory<P: Into<PathBuf>>(
         &self,
         path: P,
-        workspace: &mut Workspace,
+        workspace: &mut Workspace<SyntaxFile>,
     ) -> Result<(), String> {
         let path = path.into();
         if !path.exists() || !path.is_dir() {
@@ -52,7 +53,7 @@ impl WorkspaceLoader {
     fn load_directory_recursive(
         &self,
         dir: &PathBuf,
-        workspace: &mut Workspace,
+        workspace: &mut Workspace<SyntaxFile>,
     ) -> Result<(), String> {
         let paths = file_loader::collect_file_paths(dir)?;
 
@@ -63,7 +64,11 @@ impl WorkspaceLoader {
         Ok(())
     }
 
-    fn load_file_internal(&self, path: &PathBuf, workspace: &mut Workspace) -> Result<(), String> {
+    fn load_file_internal(
+        &self,
+        path: &PathBuf,
+        workspace: &mut Workspace<SyntaxFile>,
+    ) -> Result<(), String> {
         let file = file_loader::load_and_parse(path)?;
         workspace.add_file(path.clone(), file);
         Ok(())

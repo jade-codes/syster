@@ -5,6 +5,7 @@ use pest::Parser;
 use std::path::PathBuf;
 use syster::parser::{SysMLParser, sysml::Rule};
 use syster::semantic::Workspace;
+use syster::syntax::SyntaxFile;
 use syster::syntax::sysml::ast::SysMLFile;
 
 #[test]
@@ -48,7 +49,7 @@ fn test_import_membership() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
         syster::syntax::SyntaxFile::SysML(file),
@@ -91,7 +92,7 @@ fn test_import_membership_with_namespace() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
         syster::syntax::SyntaxFile::SysML(file),
@@ -131,7 +132,7 @@ fn test_import_namespace() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
         syster::syntax::SyntaxFile::SysML(file),
@@ -168,7 +169,7 @@ fn test_cross_file_import() {
     let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
     let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("base.sysml"),
         syster::syntax::SyntaxFile::SysML(file1),
@@ -205,7 +206,7 @@ fn test_import_visibility() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
         syster::syntax::SyntaxFile::SysML(file),
@@ -242,7 +243,7 @@ fn test_recursive_import() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
         syster::syntax::SyntaxFile::SysML(file),
@@ -269,7 +270,7 @@ fn test_import_alias() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
         syster::syntax::SyntaxFile::SysML(file),
@@ -288,13 +289,13 @@ fn test_import_alias() {
 #[test]
 fn test_workspace_with_stdlib() {
     // Test that workspace can be created with standard library
-    let workspace_without = Workspace::new();
+    let workspace_without = Workspace::<SyntaxFile>::new();
     assert!(
         !workspace_without.has_stdlib(),
         "New workspace should not have stdlib loaded"
     );
 
-    let workspace_with = Workspace::with_stdlib();
+    let workspace_with = Workspace::<SyntaxFile>::with_stdlib();
     assert!(
         workspace_with.has_stdlib(),
         "Workspace created with_stdlib should have stdlib loaded"
@@ -304,7 +305,7 @@ fn test_workspace_with_stdlib() {
 #[test]
 fn test_stdlib_usage_pattern() {
     // Demonstrates the pattern for using stdlib in a real project
-    // In practice, you'd use Workspace::with_stdlib() to get standard types automatically
+    // In practice, you'd use Workspace::<SyntaxFile>::with_stdlib() to get standard types automatically
 
     let source = r#"
         package MyProject {
@@ -320,7 +321,7 @@ fn test_stdlib_usage_pattern() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     // For user projects, use with_stdlib()
-    let mut workspace = Workspace::with_stdlib();
+    let mut workspace = Workspace::<SyntaxFile>::with_stdlib();
     workspace.add_file(
         PathBuf::from("project.sysml"),
         syster::syntax::SyntaxFile::SysML(file),

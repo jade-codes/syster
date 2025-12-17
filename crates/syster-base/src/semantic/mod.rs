@@ -22,7 +22,10 @@ pub use types::{
     SemanticError, SemanticErrorKind, SemanticResult, SemanticRole, Severity, SymbolTableEvent,
     WorkspaceEvent,
 };
-pub use workspace::Workspace;
+pub use workspace::{ParsedFile, Workspace};
+
+// Type alias for the common case of Workspace<SyntaxFile>
+pub type SyntaxWorkspace = Workspace<crate::syntax::SyntaxFile>;
 
 pub type QualifiedName = String;
 pub type SimpleName = String;

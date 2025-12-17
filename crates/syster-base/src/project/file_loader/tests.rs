@@ -4,7 +4,7 @@ mod collection_tests;
 mod parsing_tests;
 
 use super::*;
-use crate::project::ParseErrorKind;
+use crate::core::ParseErrorKind;
 use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 

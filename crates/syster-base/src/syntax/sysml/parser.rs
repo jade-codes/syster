@@ -1,5 +1,4 @@
-use crate::project::file_loader;
-use crate::project::{ParseError, ParseResult};
+use crate::core::{ParseError, ParseResult, get_extension, load_file, validate_extension};
 use crate::syntax::sysml::ast::SysMLFile;
 use from_pest::FromPest;
 use pest::Parser;
@@ -15,8 +14,8 @@ use std::path::{Path, PathBuf};
 /// - The file fails to parse
 /// - AST construction fails
 pub fn load_and_parse(path: &PathBuf) -> Result<SysMLFile, String> {
-    file_loader::validate_extension(path)?;
-    let content = file_loader::load_file(path)?;
+    validate_extension(path)?;
+    let content = load_file(path)?;
     parse_content(&content, path)
 }
 
@@ -38,7 +37,7 @@ pub fn parse_content(content: &str, path: &Path) -> Result<SysMLFile, String> {
 /// Parses content and returns a ParseResult with detailed error information.
 /// This is the primary function for LSP usage - errors don't fail, they're captured.
 pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
-    if let Err(e) = file_loader::get_extension(path) {
+    if let Err(e) = get_extension(path) {
         return ParseResult::with_errors(vec![e]);
     }
 

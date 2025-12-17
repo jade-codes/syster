@@ -1,12 +1,11 @@
 use crate::core::operation::OperationResult;
 use crate::semantic::types::WorkspaceEvent;
-use crate::semantic::workspace::{Workspace, WorkspaceFile};
-use crate::syntax::SyntaxFile;
+use crate::semantic::workspace::{ParsedFile, Workspace, WorkspaceFile};
 use std::path::PathBuf;
 
-impl Workspace {
+impl<T: ParsedFile> Workspace<T> {
     /// Adds a file to the workspace
-    pub fn add_file(&mut self, path: PathBuf, content: SyntaxFile) {
+    pub fn add_file(&mut self, path: PathBuf, content: T) {
         let _ = {
             // Extract imports from the file
             let imports = content.extract_imports();
@@ -22,12 +21,12 @@ impl Workspace {
     }
 
     /// Gets a reference to a file in the workspace
-    pub fn get_file(&self, path: &PathBuf) -> Option<&WorkspaceFile> {
+    pub fn get_file(&self, path: &PathBuf) -> Option<&WorkspaceFile<T>> {
         self.files.get(path)
     }
 
     /// Updates an existing file's content (for LSP document sync)
-    pub fn update_file(&mut self, path: &PathBuf, content: SyntaxFile) -> bool {
+    pub fn update_file(&mut self, path: &PathBuf, content: T) -> bool {
         // Check if file exists first
         if !self.files.contains_key(path) {
             return false;

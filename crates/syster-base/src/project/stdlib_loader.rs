@@ -1,6 +1,7 @@
 mod loader;
 
 use crate::semantic::Workspace;
+use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
 /// Loads the standard library from /sysml.lib/ at startup
@@ -48,7 +49,7 @@ impl StdLibLoader {
     /// - File collection fails
     ///
     /// Note: Individual file parse failures are logged but do not cause the load to fail.
-    pub fn ensure_loaded(&mut self, workspace: &mut Workspace) -> Result<(), String> {
+    pub fn ensure_loaded(&mut self, workspace: &mut Workspace<SyntaxFile>) -> Result<(), String> {
         // Don't reload if already loaded
         if self.loaded || workspace.has_stdlib() {
             return Ok(());
@@ -68,7 +69,7 @@ impl StdLibLoader {
     /// - File collection fails
     ///
     /// Note: Individual file parse failures are logged but do not cause the load to fail.
-    pub fn load(&self, workspace: &mut Workspace) -> Result<(), String> {
+    pub fn load(&self, workspace: &mut Workspace<SyntaxFile>) -> Result<(), String> {
         loader::load(&self.stdlib_path, workspace)
     }
 }

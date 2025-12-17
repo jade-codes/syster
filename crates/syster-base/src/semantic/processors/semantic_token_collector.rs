@@ -1,5 +1,6 @@
 use crate::core::Span;
 use crate::semantic::workspace::WorkspaceFile;
+use crate::syntax::SyntaxFile;
 use crate::syntax::sysml::ast::Element;
 
 /// Represents a semantic token with its position and type
@@ -42,7 +43,7 @@ pub struct SemanticTokenCollector;
 
 impl SemanticTokenCollector {
     /// Collect semantic tokens from a workspace file
-    pub fn collect(workspace_file: &WorkspaceFile) -> Vec<SemanticToken> {
+    pub fn collect(workspace_file: &WorkspaceFile<SyntaxFile>) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
 
         // Only process SysML files for now

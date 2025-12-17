@@ -10,11 +10,13 @@ mod core;
 mod events;
 mod file;
 mod file_manager;
+mod parsed_file;
 mod population;
 mod populator;
 
 pub use core::Workspace;
 pub use file::WorkspaceFile;
+pub use parsed_file::ParsedFile;
 
 #[cfg(test)]
 #[path = "workspace/tests.rs"]

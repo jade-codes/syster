@@ -1,4 +1,5 @@
 use syster::semantic::symbol_table::Symbol;
+use syster::syntax::SyntaxFile;
 use tower_lsp::lsp_types::{Position, Range};
 
 /// Extract the word at the cursor position from the document text
@@ -64,7 +65,10 @@ pub fn span_to_lsp_range(span: &syster::core::Span) -> Range {
 }
 
 /// Format rich hover information with relationships and documentation
-pub fn format_rich_hover(symbol: &Symbol, workspace: &syster::semantic::Workspace) -> String {
+pub fn format_rich_hover(
+    symbol: &Symbol,
+    workspace: &syster::semantic::Workspace<SyntaxFile>,
+) -> String {
     let mut result = String::new();
 
     // Main declaration
@@ -119,7 +123,7 @@ fn format_symbol_declaration(symbol: &Symbol) -> String {
 /// Get relationships for a symbol from the workspace
 fn get_symbol_relationships(
     symbol: &Symbol,
-    workspace: &syster::semantic::Workspace,
+    workspace: &syster::semantic::Workspace<SyntaxFile>,
 ) -> Option<Vec<String>> {
     let qname = symbol.qualified_name();
     let graph = workspace.relationship_graph();
