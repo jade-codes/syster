@@ -44,10 +44,12 @@ impl SemanticTokenCollector {
     /// Collect semantic tokens from a workspace file
     pub fn collect(workspace_file: &WorkspaceFile) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
-        let sysml_file = workspace_file.content();
 
-        for element in &sysml_file.elements {
-            Self::collect_element_tokens(element, &mut tokens);
+        // Only process SysML files for now
+        if let crate::language::LanguageFile::SysML(sysml_file) = workspace_file.content() {
+            for element in &sysml_file.elements {
+                Self::collect_element_tokens(element, &mut tokens);
+            }
         }
 
         tokens

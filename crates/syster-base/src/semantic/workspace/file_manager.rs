@@ -1,16 +1,15 @@
 use crate::core::operation::OperationResult;
-use crate::language::sysml::syntax::SysMLFile;
-use crate::semantic::resolver::extract_imports;
+use crate::language::LanguageFile;
 use crate::semantic::types::WorkspaceEvent;
 use crate::semantic::workspace::{Workspace, WorkspaceFile};
 use std::path::PathBuf;
 
 impl Workspace {
     /// Adds a file to the workspace
-    pub fn add_file(&mut self, path: PathBuf, content: SysMLFile) {
+    pub fn add_file(&mut self, path: PathBuf, content: LanguageFile) {
         let _ = {
             // Extract imports from the file
-            let imports = extract_imports(&content);
+            let imports = content.extract_imports();
             self.file_imports.insert(path.clone(), imports);
 
             let file = WorkspaceFile::new(path.clone(), content);
@@ -28,7 +27,7 @@ impl Workspace {
     }
 
     /// Updates an existing file's content (for LSP document sync)
-    pub fn update_file(&mut self, path: &PathBuf, content: SysMLFile) -> bool {
+    pub fn update_file(&mut self, path: &PathBuf, content: LanguageFile) -> bool {
         // Check if file exists first
         if !self.files.contains_key(path) {
             return false;
@@ -47,7 +46,7 @@ impl Workspace {
             self.dependency_graph.remove_file(path);
 
             // Extract new imports
-            let imports = extract_imports(&content);
+            let imports = content.extract_imports();
             self.file_imports.insert(path.clone(), imports);
 
             file.update_content(content);

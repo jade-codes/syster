@@ -66,7 +66,10 @@ impl<'a> WorkspacePopulator<'a> {
 
         let file_path_str = path.to_string_lossy().to_string();
 
-        self.populate_file_content(&file_path_str, &content)?;
+        // Only populate SysML files for now
+        if let crate::language::LanguageFile::SysML(sysml_file) = &content {
+            self.populate_file_content(&file_path_str, sysml_file)?;
+        }
 
         Ok(())
     }

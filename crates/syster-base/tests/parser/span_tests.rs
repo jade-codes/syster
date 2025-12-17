@@ -10,14 +10,25 @@
 
 use std::path::PathBuf;
 use syster::core::Position;
+use syster::language::sysml::syntax::SysMLFile;
 use syster::project::file_loader;
+
+/// Helper to parse SysML content and extract the SysMLFile
+fn parse_sysml(source: &str) -> SysMLFile {
+    let path = PathBuf::from("test.sysml");
+    let parse_result = file_loader::parse_with_result(source, &path);
+    let language_file = parse_result.content.expect("Parse should succeed");
+    match language_file {
+        syster::language::LanguageFile::SysML(file) => file,
+        _ => panic!("Expected SysML file"),
+    }
+}
 
 #[test]
 fn test_package_span_single_line() {
     let source = "package MyPackage;";
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     // Check namespace declaration (package statement)
     let namespace = file.namespace.expect("Should have namespace");
@@ -33,9 +44,8 @@ fn test_package_span_single_line() {
 #[test]
 fn test_part_def_span() {
     let source = "part def Vehicle;";
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
@@ -51,9 +61,8 @@ fn test_part_def_span() {
 #[test]
 fn test_part_usage_span() {
     let source = "part myVehicle: Vehicle;";
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Usage(usage) = &file.elements[0] else {
         panic!("Expected Usage");
@@ -71,9 +80,8 @@ fn test_nested_definitions_span() {
     let source = r#"part def Vehicle {
     part engine: Engine;
 }"#;
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
@@ -99,9 +107,8 @@ fn test_comment_span() {
     let source = r#"package Test;
 doc /* This is a doc comment */
 part def Vehicle;"#;
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[1] else {
         panic!("Expected Definition");
@@ -116,9 +123,8 @@ part def Vehicle;"#;
 #[test]
 fn test_import_span() {
     let source = "import ScalarValues::*;";
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Import(import) = &file.elements[0] else {
         panic!("Expected Import");
@@ -135,12 +141,7 @@ fn test_import_span() {
 fn test_alias_span() {
     let source = r#"package Test;
 alias Real for ScalarValues::Real;"#;
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    if !parse_result.errors.is_empty() {
-        panic!("Parse errors: {:?}", parse_result.errors);
-    }
-    let file = parse_result.content.expect("Parse should succeed");
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Alias(alias) = &file.elements[1] else {
         panic!("Expected Alias");
@@ -159,9 +160,8 @@ fn test_multiple_elements_span() {
 
 part def Vehicle;
 part myVehicle: Vehicle;"#;
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let namespace_span = file
         .namespace
@@ -186,9 +186,8 @@ part myVehicle: Vehicle;"#;
 #[test]
 fn test_span_contains_position() {
     let source = "part def Vehicle;";
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
@@ -215,12 +214,7 @@ part def Vehicle {
 }
 
 part myVehicle: Vehicle;"#;
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    if !parse_result.errors.is_empty() {
-        panic!("Parse errors: {:?}", parse_result.errors);
-    }
-    let file = parse_result.content.expect("Parse should succeed");
+    let file = parse_sysml(source);
 
     // Namespace should have span
     assert!(
@@ -273,9 +267,8 @@ fn test_deeply_nested_span() {
     part engine: Engine;
     part transmission: Transmission;
 }"#;
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
@@ -304,12 +297,12 @@ fn test_symbol_table_spans() {
     let source = r#"package Test;
 part def Vehicle;
 part myVehicle: Vehicle;"#;
-    let path = PathBuf::from("test.sysml");
 
     let mut workspace = Workspace::new();
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
-    workspace.add_file(path.clone(), file);
+    let path = PathBuf::from("test.sysml");
+
+    let file = parse_sysml(source);
+    workspace.add_file(path.clone(), syster::language::LanguageFile::SysML(file));
 
     // Populate symbols
     let result = workspace.populate_all();
@@ -349,9 +342,8 @@ part myVehicle: Vehicle;"#;
 fn test_span_positions_are_zero_indexed() {
     // LSP uses 0-indexed positions, verify our spans match
     let source = "part def Vehicle;";
-    let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
-    let file = parse_result.content.expect("Parse should succeed");
+
+    let file = parse_sysml(source);
 
     let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");

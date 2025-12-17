@@ -1,4 +1,5 @@
 pub mod model;
+pub mod parser;
 pub mod populator;
 pub mod syntax;
 pub mod validator;

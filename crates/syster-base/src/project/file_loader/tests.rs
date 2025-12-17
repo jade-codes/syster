@@ -4,8 +4,17 @@ mod collection_tests;
 mod parsing_tests;
 
 use super::*;
+use crate::language::LanguageFile;
 use crate::project::ParseErrorKind;
 use std::path::PathBuf;
+
+/// Helper to extract SysMLFile from LanguageFile for testing
+fn unwrap_sysml(lang_file: LanguageFile) -> crate::language::sysml::syntax::SysMLFile {
+    match lang_file {
+        LanguageFile::SysML(file) => file,
+        LanguageFile::KerML(_) => panic!("Expected SysML file in test"),
+    }
+}
 
 #[test]
 fn test_parse_content_sysml() {
@@ -16,7 +25,7 @@ fn test_parse_content_sysml() {
     let result = parse_content(content, &path);
     assert!(result.is_ok(), "Should parse valid SysML content");
 
-    let file = result.unwrap();
+    let file = unwrap_sysml(result.unwrap());
     assert!(!file.elements.is_empty(), "Should have parsed elements");
 }
 
@@ -90,7 +99,7 @@ fn test_load_and_parse_uses_parse_content() {
     let result = load_and_parse(&file_path);
     assert!(result.is_ok(), "Should load and parse file from disk");
 
-    let file = result.unwrap();
+    let file = unwrap_sysml(result.unwrap());
     assert!(!file.elements.is_empty(), "Should have parsed elements");
 }
 
@@ -134,7 +143,8 @@ fn test_parse_with_result_success() {
     assert!(!result.has_errors());
     assert_eq!(result.errors.len(), 0);
     assert!(result.content.is_some());
-    assert!(!result.content.unwrap().elements.is_empty());
+    let file = unwrap_sysml(result.content.unwrap());
+    assert!(!file.elements.is_empty());
 }
 
 #[test]
@@ -205,5 +215,6 @@ fn test_empty_file_success() {
     let result = parse_with_result(content, &path);
 
     assert!(result.content.is_some());
-    assert_eq!(result.content.unwrap().elements.len(), 0);
+    let file = unwrap_sysml(result.content.unwrap());
+    assert_eq!(file.elements.len(), 0);
 }

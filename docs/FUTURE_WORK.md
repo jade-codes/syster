@@ -82,6 +82,14 @@
 - [ ] Property-based testing with proptest
 - [ ] Benchmark suite with criterion
 - [ ] 100% public API documentation coverage
+- [ ] **Test Organization & Separation of Concerns**
+  - Review test files for proper organization (unit vs integration vs end-to-end)
+  - Separate test helpers from test code (extract common test utilities)
+  - Move integration tests to tests/ directory where appropriate
+  - Ensure tests follow same modularization pattern as main code
+  - Create test fixtures/builders for complex test data setup
+  - Review workspace/tests.rs (934 lines) - consider splitting by feature area
+  - Extract common test patterns (e.g., unwrap_sysml helper, parse_sysml helper)
 
 ## Code Cleanup
 - [ ] Replace hardcoded strings in `language/sysml/populator.rs` with SYSML_KIND_* constants

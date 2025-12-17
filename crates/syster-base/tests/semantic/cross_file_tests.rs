@@ -245,9 +245,18 @@ fn test_workspace_with_file_paths() {
     let file3 = SysMLFile::from_pest(&mut pairs3).unwrap();
 
     // Add files to workspace
-    workspace.add_file(PathBuf::from("base/vehicle.sysml"), file1);
-    workspace.add_file(PathBuf::from("derived/car.sysml"), file2);
-    workspace.add_file(PathBuf::from("derived/sports_car.sysml"), file3);
+    workspace.add_file(
+        PathBuf::from("base/vehicle.sysml"),
+        syster::language::LanguageFile::SysML(file1),
+    );
+    workspace.add_file(
+        PathBuf::from("derived/car.sysml"),
+        syster::language::LanguageFile::SysML(file2),
+    );
+    workspace.add_file(
+        PathBuf::from("derived/sports_car.sysml"),
+        syster::language::LanguageFile::SysML(file3),
+    );
 
     // Verify file count
     assert_eq!(workspace.file_count(), 3);

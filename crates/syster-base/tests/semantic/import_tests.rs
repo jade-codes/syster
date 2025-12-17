@@ -49,7 +49,10 @@ fn test_import_membership() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("test.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("test.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -89,7 +92,10 @@ fn test_import_membership_with_namespace() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("test.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("test.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -126,7 +132,10 @@ fn test_import_namespace() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("test.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("test.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -160,8 +169,14 @@ fn test_cross_file_import() {
     let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("base.sysml"), file1);
-    workspace.add_file(PathBuf::from("derived.sysml"), file2);
+    workspace.add_file(
+        PathBuf::from("base.sysml"),
+        syster::language::LanguageFile::SysML(file1),
+    );
+    workspace.add_file(
+        PathBuf::from("derived.sysml"),
+        syster::language::LanguageFile::SysML(file2),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -191,7 +206,10 @@ fn test_import_visibility() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("test.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("test.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
 
@@ -225,7 +243,10 @@ fn test_recursive_import() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("test.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("test.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -249,7 +270,10 @@ fn test_import_alias() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut workspace = Workspace::new();
-    workspace.add_file(PathBuf::from("test.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("test.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -297,7 +321,10 @@ fn test_stdlib_usage_pattern() {
 
     // For user projects, use with_stdlib()
     let mut workspace = Workspace::with_stdlib();
-    workspace.add_file(PathBuf::from("project.sysml"), file);
+    workspace.add_file(
+        PathBuf::from("project.sysml"),
+        syster::language::LanguageFile::SysML(file),
+    );
 
     let result = workspace.populate_all();
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());

@@ -692,7 +692,10 @@ fn test_collect_package_tokens() {
         namespace: None,
         elements: vec![Element::Package(pkg)],
     };
-    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+    let workspace_file = WorkspaceFile::new(
+        PathBuf::from("test.sysml"),
+        crate::language::LanguageFile::SysML(sysml_file),
+    );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 
@@ -717,7 +720,10 @@ fn test_collect_definition_tokens() {
         namespace: None,
         elements: vec![Element::Definition(def)],
     };
-    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+    let workspace_file = WorkspaceFile::new(
+        PathBuf::from("test.sysml"),
+        crate::language::LanguageFile::SysML(sysml_file),
+    );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 
@@ -739,7 +745,10 @@ fn test_collect_usage_tokens() {
         namespace: None,
         elements: vec![Element::Usage(usage)],
     };
-    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+    let workspace_file = WorkspaceFile::new(
+        PathBuf::from("test.sysml"),
+        crate::language::LanguageFile::SysML(sysml_file),
+    );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 
@@ -758,7 +767,10 @@ fn test_collect_alias_tokens() {
         namespace: None,
         elements: vec![Element::Alias(alias)],
     };
-    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+    let workspace_file = WorkspaceFile::new(
+        PathBuf::from("test.sysml"),
+        crate::language::LanguageFile::SysML(sysml_file),
+    );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 
@@ -785,7 +797,10 @@ fn test_collect_nested_tokens() {
         namespace: None,
         elements: vec![Element::Package(pkg)],
     };
-    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+    let workspace_file = WorkspaceFile::new(
+        PathBuf::from("test.sysml"),
+        crate::language::LanguageFile::SysML(sysml_file),
+    );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 
@@ -817,7 +832,10 @@ fn test_tokens_sorted_by_position() {
         // Elements should be in document order (AST order)
         elements: vec![Element::Definition(def1), Element::Definition(def2)],
     };
-    let workspace_file = WorkspaceFile::new(PathBuf::from("test.sysml"), sysml_file);
+    let workspace_file = WorkspaceFile::new(
+        PathBuf::from("test.sysml"),
+        crate::language::LanguageFile::SysML(sysml_file),
+    );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
 

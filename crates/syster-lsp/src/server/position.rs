@@ -15,7 +15,12 @@ impl LspServer {
 
         // Get the SysML file from workspace
         let workspace_file = self.workspace.files().get(path)?;
-        let file = workspace_file.content();
+
+        // Only process SysML files for now
+        let file = match workspace_file.content() {
+            syster::language::LanguageFile::SysML(sysml_file) => sysml_file,
+            syster::language::LanguageFile::KerML(_) => return None,
+        };
 
         // Convert LSP position to our 0-indexed position
         let core_pos = CorePosition::new(position.line as usize, position.character as usize);

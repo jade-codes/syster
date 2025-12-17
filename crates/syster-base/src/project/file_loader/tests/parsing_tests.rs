@@ -1,9 +1,18 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::super::*;
+use crate::language::LanguageFile;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
+
+/// Helper to extract SysMLFile from LanguageFile for testing
+fn unwrap_sysml(lang_file: LanguageFile) -> crate::language::sysml::syntax::SysMLFile {
+    match lang_file {
+        LanguageFile::SysML(file) => file,
+        LanguageFile::KerML(_) => panic!("Expected SysML file in test"),
+    }
+}
 
 #[test]
 fn test_parse_content_whitespace_only() {
@@ -12,7 +21,7 @@ fn test_parse_content_whitespace_only() {
     let result = parse_content(content, &path);
 
     assert!(result.is_ok());
-    let file = result.unwrap();
+    let file = unwrap_sysml(result.unwrap());
     assert!(
         file.elements.is_empty(),
         "Whitespace-only file should be empty"
@@ -26,7 +35,7 @@ fn test_parse_content_comment_only() {
     let result = parse_content(content, &path);
 
     assert!(result.is_ok());
-    let file = result.unwrap();
+    let file = unwrap_sysml(result.unwrap());
     assert!(
         file.elements.is_empty(),
         "Comment-only file should be empty"
@@ -152,7 +161,7 @@ fn test_load_and_parse_empty_file() {
     let result = load_and_parse(&file_path);
 
     assert!(result.is_ok());
-    let file = result.unwrap();
+    let file = unwrap_sysml(result.unwrap());
     assert!(file.elements.is_empty());
 }
 
@@ -176,12 +185,21 @@ fn test_parse_content_kerml_placeholder() {
     let result = parse_content(content, &path);
 
     assert!(result.is_ok());
-    let file = result.unwrap();
-    // Currently returns empty file - this will change when KerML is implemented
-    assert!(
-        file.elements.is_empty(),
-        "KerML placeholder should return empty"
-    );
+    let lang_file = result.unwrap();
+
+    // Should return a KerML file
+    match lang_file {
+        LanguageFile::KerML(kerml_file) => {
+            // Currently returns empty file - this will change when KerML is implemented
+            assert!(
+                kerml_file.elements.is_empty(),
+                "KerML placeholder should return empty"
+            );
+        }
+        LanguageFile::SysML(_) => {
+            panic!("Expected KerML file, got SysML");
+        }
+    }
 }
 
 #[test]
