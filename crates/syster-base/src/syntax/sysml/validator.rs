@@ -2,12 +2,12 @@
 
 #![allow(clippy::result_large_err)]
 
-use crate::language::sysml::syntax::constants::{
-    SYSML_KIND_ACTION, SYSML_KIND_REQUIREMENT, SYSML_KIND_STATE, SYSML_KIND_USE_CASE,
-};
 use crate::semantic::processors::RelationshipValidator;
 use crate::semantic::symbol_table::Symbol;
 use crate::semantic::types::SemanticError;
+use crate::syntax::sysml::ast::constants::{
+    SYSML_KIND_ACTION, SYSML_KIND_REQUIREMENT, SYSML_KIND_STATE, SYSML_KIND_USE_CASE,
+};
 
 pub struct SysMLRelationshipValidator;
 

@@ -3,9 +3,9 @@
 use from_pest::FromPest;
 use pest::Parser;
 use std::path::PathBuf;
-use syster::language::sysml::syntax::SysMLFile;
 use syster::parser::{SysMLParser, sysml::Rule};
 use syster::semantic::Workspace;
+use syster::syntax::sysml::ast::SysMLFile;
 
 #[test]
 fn test_parse_import_statement() {
@@ -51,7 +51,7 @@ fn test_import_membership() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();
@@ -94,7 +94,7 @@ fn test_import_membership_with_namespace() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();
@@ -134,7 +134,7 @@ fn test_import_namespace() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();
@@ -171,11 +171,11 @@ fn test_cross_file_import() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("base.sysml"),
-        syster::language::LanguageFile::SysML(file1),
+        syster::syntax::SyntaxFile::SysML(file1),
     );
     workspace.add_file(
         PathBuf::from("derived.sysml"),
-        syster::language::LanguageFile::SysML(file2),
+        syster::syntax::SyntaxFile::SysML(file2),
     );
 
     let result = workspace.populate_all();
@@ -208,7 +208,7 @@ fn test_import_visibility() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();
@@ -245,7 +245,7 @@ fn test_recursive_import() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();
@@ -272,7 +272,7 @@ fn test_import_alias() {
     let mut workspace = Workspace::new();
     workspace.add_file(
         PathBuf::from("test.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();
@@ -323,7 +323,7 @@ fn test_stdlib_usage_pattern() {
     let mut workspace = Workspace::with_stdlib();
     workspace.add_file(
         PathBuf::from("project.sysml"),
-        syster::language::LanguageFile::SysML(file),
+        syster::syntax::SyntaxFile::SysML(file),
     );
 
     let result = workspace.populate_all();

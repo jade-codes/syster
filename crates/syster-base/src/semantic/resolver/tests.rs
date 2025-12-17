@@ -3,8 +3,8 @@
 
 use super::*;
 use crate::{
-    language::sysml::syntax::{Element, Import, SysMLFile},
     semantic::{SymbolTable, symbol_table::Symbol},
+    syntax::sysml::ast::{Element, Import, SysMLFile},
 };
 
 #[test]
@@ -990,7 +990,7 @@ fn test_extract_recursive_imports() {
 #[test]
 fn test_extract_imports_mixed_elements() {
     // TDD: Should extract imports even with other elements present
-    use crate::language::sysml::syntax::types::NamespaceDeclaration;
+    use crate::syntax::sysml::ast::types::NamespaceDeclaration;
 
     let file = SysMLFile {
         namespace: Some(NamespaceDeclaration {
@@ -1003,7 +1003,7 @@ fn test_extract_imports_mixed_elements() {
                 is_recursive: false,
                 span: None,
             }),
-            Element::Comment(crate::language::sysml::syntax::Comment {
+            Element::Comment(crate::syntax::sysml::ast::Comment {
                 content: "Some comment".to_string(),
                 span: None,
             }),

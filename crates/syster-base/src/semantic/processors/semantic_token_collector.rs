@@ -1,6 +1,6 @@
 use crate::core::Span;
-use crate::language::sysml::syntax::Element;
 use crate::semantic::workspace::WorkspaceFile;
+use crate::syntax::sysml::ast::Element;
 
 /// Represents a semantic token with its position and type
 #[derive(Debug, Clone, PartialEq)]
@@ -46,7 +46,7 @@ impl SemanticTokenCollector {
         let mut tokens = Vec::new();
 
         // Only process SysML files for now
-        if let crate::language::LanguageFile::SysML(sysml_file) = workspace_file.content() {
+        if let crate::syntax::SyntaxFile::SysML(sysml_file) = workspace_file.content() {
             for element in &sysml_file.elements {
                 Self::collect_element_tokens(element, &mut tokens);
             }

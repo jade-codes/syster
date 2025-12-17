@@ -4,15 +4,15 @@ mod collection_tests;
 mod parsing_tests;
 
 use super::*;
-use crate::language::LanguageFile;
 use crate::project::ParseErrorKind;
+use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
-/// Helper to extract SysMLFile from LanguageFile for testing
-fn unwrap_sysml(lang_file: LanguageFile) -> crate::language::sysml::syntax::SysMLFile {
+/// Helper to extract SysMLFile from SyntaxFile for testing
+fn unwrap_sysml(lang_file: SyntaxFile) -> crate::syntax::sysml::ast::SysMLFile {
     match lang_file {
-        LanguageFile::SysML(file) => file,
-        LanguageFile::KerML(_) => panic!("Expected SysML file in test"),
+        SyntaxFile::SysML(file) => file,
+        SyntaxFile::KerML(_) => panic!("Expected SysML file in test"),
     }
 }
 

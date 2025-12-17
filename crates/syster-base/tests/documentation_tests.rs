@@ -10,8 +10,8 @@
 #![allow(unused_mut)]
 
 use std::path::PathBuf;
-use syster::language::sysml::syntax::SysMLFile;
 use syster::semantic::{RelationshipGraph, Resolver, SemanticAnalyzer, SymbolTable, Workspace};
+use syster::syntax::sysml::ast::SysMLFile;
 
 /// Verify that code examples in ARCHITECTURE.md compile and work
 #[test]
@@ -163,7 +163,7 @@ fn test_three_phase_pipeline_terminology() {
     use syster::parser;
 
     // Phase 2: Syntax (verified by language module existing)
-    use syster::language;
+    use syster::syntax;
 
     // Phase 3: Semantic (verified by semantic module existing)
     use syster::semantic;

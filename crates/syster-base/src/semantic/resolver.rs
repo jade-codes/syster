@@ -4,7 +4,7 @@ mod name_resolver;
 pub use name_resolver::Resolver;
 
 // Re-export import utility functions
-pub fn extract_imports(file: &crate::language::sysml::syntax::SysMLFile) -> Vec<String> {
+pub fn extract_imports(file: &crate::syntax::sysml::ast::SysMLFile) -> Vec<String> {
     Resolver::extract_imports(file)
 }
 

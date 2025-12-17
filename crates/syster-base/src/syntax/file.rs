@@ -1,24 +1,22 @@
-use crate::language::kerml::KerMLFile;
-use crate::language::sysml::syntax::SysMLFile;
+use crate::syntax::kerml::KerMLFile;
+use crate::syntax::sysml::ast::SysMLFile;
 
-/// A parsed language file that can be either SysML or KerML
+/// A parsed syntax file that can be either SysML or KerML
 #[derive(Debug, Clone, PartialEq)]
-pub enum LanguageFile {
+pub enum SyntaxFile {
     SysML(SysMLFile),
     KerML(KerMLFile),
 }
 
-impl LanguageFile {
+impl SyntaxFile {
     /// Extracts import statements from the file
     ///
     /// Returns a vector of qualified import paths found in the file.
     /// For KerML files, returns an empty vector until KerML import extraction is implemented.
     pub fn extract_imports(&self) -> Vec<String> {
         match self {
-            LanguageFile::SysML(sysml_file) => {
-                crate::semantic::resolver::extract_imports(sysml_file)
-            }
-            LanguageFile::KerML(_) => {
+            SyntaxFile::SysML(sysml_file) => crate::semantic::resolver::extract_imports(sysml_file),
+            SyntaxFile::KerML(_) => {
                 // TODO: Extract KerML imports when implemented
                 vec![]
             }
@@ -28,16 +26,16 @@ impl LanguageFile {
     /// Returns a reference to the SysML file if this is a SysML file
     pub fn as_sysml(&self) -> Option<&SysMLFile> {
         match self {
-            LanguageFile::SysML(sysml_file) => Some(sysml_file),
-            LanguageFile::KerML(_) => None,
+            SyntaxFile::SysML(sysml_file) => Some(sysml_file),
+            SyntaxFile::KerML(_) => None,
         }
     }
 
     /// Returns a reference to the KerML file if this is a KerML file
     pub fn as_kerml(&self) -> Option<&KerMLFile> {
         match self {
-            LanguageFile::SysML(_) => None,
-            LanguageFile::KerML(kerml_file) => Some(kerml_file),
+            SyntaxFile::SysML(_) => None,
+            SyntaxFile::KerML(kerml_file) => Some(kerml_file),
         }
     }
 }

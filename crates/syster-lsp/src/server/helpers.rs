@@ -11,10 +11,10 @@ pub fn extract_word_at_cursor(text: &str, position: Position) -> Option<String> 
 
 /// Find an element at the given position in the AST
 pub fn find_element_at_position(
-    element: &syster::language::sysml::syntax::Element,
+    element: &syster::syntax::sysml::ast::Element,
     position: syster::core::Position,
 ) -> Option<(String, syster::core::Span)> {
-    use syster::language::sysml::syntax::Element;
+    use syster::syntax::sysml::ast::Element;
 
     match element {
         Element::Package(pkg) => {

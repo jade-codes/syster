@@ -5,6 +5,5 @@ pub mod operation;
 pub mod span;
 pub mod text_utils;
 pub mod traits;
-pub mod visitor;
 
 pub use span::*;

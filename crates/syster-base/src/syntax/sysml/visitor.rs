@@ -1,4 +1,4 @@
-use crate::language::sysml::syntax::{
+use super::ast::{
     Alias, Comment, Definition, Element, Import, NamespaceDeclaration, Package, SysMLFile, Usage,
 };
 

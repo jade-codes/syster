@@ -1,6 +1,6 @@
-use crate::language::sysml::syntax::{DefinitionKind, UsageKind};
 use crate::semantic::symbol_table::Symbol;
 use crate::semantic::types::SemanticError;
+use crate::syntax::sysml::ast::{DefinitionKind, UsageKind};
 
 use super::SymbolTablePopulator;
 

@@ -1,6 +1,6 @@
 use crate::{
-    language::sysml::syntax::{Element, SysMLFile},
     semantic::resolver::name_resolver::Resolver,
+    syntax::sysml::ast::{Element, SysMLFile},
 };
 
 impl<'a> Resolver<'a> {

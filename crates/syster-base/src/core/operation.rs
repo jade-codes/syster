@@ -74,7 +74,7 @@
 //! }
 //! ```
 
-use crate::core::events::Event;
+use super::events::Event;
 
 /// Result of an operation containing the value and an optional event to emit
 ///
@@ -145,7 +145,6 @@ pub trait EventBus<Ev: Event> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::events::Event;
 
     #[derive(Debug, Clone, PartialEq)]
     enum TestEvent {

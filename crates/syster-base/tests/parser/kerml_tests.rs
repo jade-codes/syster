@@ -3,9 +3,9 @@
 
 use pest::Parser;
 use rstest::rstest;
-use syster::language::kerml::enums::*;
-use syster::language::kerml::types::*;
 use syster::parser::KerMLParser;
+use syster::syntax::kerml::enums::*;
+use syster::syntax::kerml::types::*;
 
 #[test]
 fn test_parse_kerml_identifier() {

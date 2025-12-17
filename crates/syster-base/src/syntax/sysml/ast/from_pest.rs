@@ -4,7 +4,7 @@ use super::{
         Comment, Definition, Import, NamespaceDeclaration, Package, Relationships, SysMLFile, Usage,
     },
 };
-use crate::{core::Span, language::sysml::syntax::Alias, parser::sysml::Rule};
+use crate::{core::Span, parser::sysml::Rule, syntax::sysml::ast::Alias};
 use from_pest::{ConversionError, FromPest, Void};
 
 /// Convert a Pest span to our Span type (0-indexed for LSP compatibility)

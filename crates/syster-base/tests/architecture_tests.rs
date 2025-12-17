@@ -18,8 +18,8 @@
 //! - core → no imports (only std)
 //! - parser → only core
 //! - semantic → core, parser
-//! - project → core, parser, semantic, language
-//! - language → no inner imports (metadata only)
+//! - project → core, parser, semantic, syntax
+//! - syntax → core, parser (AST definitions only)
 //! - CLI/LSP → everything
 //! - No layer depends on CLI/LSP
 
@@ -113,7 +113,7 @@ fn check_directory(dir: &Path, allowed_modules: &[&str], layer_name: &str) -> Ve
 
         if path.is_dir() {
             violations.extend(check_directory(&path, allowed_modules, layer_name));
-        } else if path.extension().map_or(false, |ext| ext == "rs") {
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
             violations.extend(check_file_imports(&path, allowed_modules, layer_name));
         }
     }
@@ -122,7 +122,6 @@ fn check_directory(dir: &Path, allowed_modules: &[&str], layer_name: &str) -> Ve
 }
 
 #[test]
-#[ignore = "Core layer has visitor.rs importing from language layer - needs refactoring"]
 fn test_core_layer_has_no_dependencies() {
     // Core layer should only import from std, not from any other crate modules
     let violations = check_directory(
@@ -178,18 +177,18 @@ fn test_semantic_layer_only_depends_on_core_and_parser() {
 }
 
 #[test]
-#[ignore = "Language layer has 36 violations - needs refactoring to separate concerns"]
-fn test_language_layer_has_minimal_dependencies() {
-    // Language layer should only import from core and parser (no semantic, project, etc.)
-    let violations = check_directory(Path::new("src/language"), &["core", "parser"], "language");
+#[ignore = "Syntax layer has 39 violations - needs refactoring to separate concerns"]
+fn test_syntax_layer_has_minimal_dependencies() {
+    // Syntax layer should only import from core and parser (no semantic, project, etc.)
+    let violations = check_directory(Path::new("src/syntax"), &["core", "parser"], "syntax");
 
     if !violations.is_empty() {
-        eprintln!("\n❌ Language layer dependency violations found:");
+        eprintln!("\n❌ Syntax layer dependency violations found:");
         for v in &violations {
             eprintln!("{}", v);
         }
         panic!(
-            "\nLanguage layer should only depend on core and parser.\nFound {} violations.",
+            "\nSyntax layer should only depend on core and parser.\nFound {} violations.",
             violations.len()
         );
     }
@@ -198,10 +197,10 @@ fn test_language_layer_has_minimal_dependencies() {
 #[test]
 #[ignore = "Project layer has 6 violations - needs cleanup"]
 fn test_project_layer_dependencies() {
-    // Project layer can import from core, parser, semantic, and language
+    // Project layer can import from core, parser, semantic, and syntax
     let violations = check_directory(
         Path::new("src/project"),
-        &["core", "parser", "semantic", "language"],
+        &["core", "parser", "semantic", "syntax"],
         "project",
     );
 
@@ -211,7 +210,7 @@ fn test_project_layer_dependencies() {
             eprintln!("{}", v);
         }
         panic!(
-            "\nProject layer should only depend on core, parser, semantic, and language.\nFound {} violations.",
+            "\nProject layer should only depend on core, parser, semantic, and syntax.\nFound {} violations.",
             violations.len()
         );
     }
@@ -230,7 +229,7 @@ fn test_no_layer_depends_on_lsp() {
 
                 if path.is_dir() {
                     check_recursively(&path, violations);
-                } else if path.extension().map_or(false, |ext| ext == "rs") {
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
                     let content = fs::read_to_string(&path).unwrap_or_default();
 
                     for line in content.lines() {
@@ -273,7 +272,7 @@ fn test_no_layer_depends_on_cli() {
 
                 if path.is_dir() {
                     check_recursively(&path, violations);
-                } else if path.extension().map_or(false, |ext| ext == "rs") {
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
                     let content = fs::read_to_string(&path).unwrap_or_default();
 
                     for line in content.lines() {
@@ -313,10 +312,10 @@ fn test_show_architecture_violations_summary() {
         ("core", vec![], "src/core"),
         ("parser", vec!["core"], "src/parser"),
         ("semantic", vec!["core", "parser"], "src/semantic"),
-        ("language", vec!["core", "parser"], "src/language"),
+        ("syntax", vec!["core", "parser"], "src/syntax"),
         (
             "project",
-            vec!["core", "parser", "semantic", "language"],
+            vec!["core", "parser", "semantic", "syntax"],
             "src/project",
         ),
     ];

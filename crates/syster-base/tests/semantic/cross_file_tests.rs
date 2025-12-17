@@ -4,12 +4,12 @@ use from_pest::FromPest;
 use pest::Parser;
 use std::path::PathBuf;
 use syster::core::constants::REL_SPECIALIZATION;
-use syster::language::sysml::SymbolTablePopulator;
-use syster::language::sysml::syntax::SysMLFile;
 use syster::parser::SysMLParser;
 use syster::parser::sysml::Rule;
 use syster::semantic::symbol_table::SymbolTable;
 use syster::semantic::{RelationshipGraph, Workspace};
+use syster::syntax::sysml::SymbolTablePopulator;
+use syster::syntax::sysml::ast::SysMLFile;
 
 #[test]
 fn test_cross_file_specialization() {
@@ -247,15 +247,15 @@ fn test_workspace_with_file_paths() {
     // Add files to workspace
     workspace.add_file(
         PathBuf::from("base/vehicle.sysml"),
-        syster::language::LanguageFile::SysML(file1),
+        syster::syntax::SyntaxFile::SysML(file1),
     );
     workspace.add_file(
         PathBuf::from("derived/car.sysml"),
-        syster::language::LanguageFile::SysML(file2),
+        syster::syntax::SyntaxFile::SysML(file2),
     );
     workspace.add_file(
         PathBuf::from("derived/sports_car.sysml"),
-        syster::language::LanguageFile::SysML(file3),
+        syster::syntax::SyntaxFile::SysML(file3),
     );
 
     // Verify file count

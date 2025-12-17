@@ -2,8 +2,8 @@
 
 use from_pest::FromPest;
 use pest::Parser;
-use syster::language::sysml::syntax::{Definition, Usage};
 use syster::parser::{SysMLParser, sysml::Rule};
+use syster::syntax::sysml::ast::{Definition, Usage};
 
 #[test]
 fn test_parse_definition_with_specialization() {

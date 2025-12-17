@@ -10,4 +10,4 @@ pub use stdlib_loader::StdLibLoader;
 pub use workspace_loader::WorkspaceLoader;
 
 // Re-export language parsing convenience function
-pub use crate::language::parser::parse_with_result;
+pub use crate::syntax::parser::parse_with_result;

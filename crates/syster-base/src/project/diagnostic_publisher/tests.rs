@@ -6,7 +6,7 @@ use crate::{project::parse_result::ErrorPosition, semantic::Severity};
 #[test]
 fn test_publish_no_errors() {
     // TDD: Empty errors should produce no diagnostics
-    let result = ParseResult::success(crate::language::sysml::syntax::SysMLFile {
+    let result = ParseResult::success(crate::syntax::sysml::ast::SysMLFile {
         namespace: None,
         elements: vec![],
     });

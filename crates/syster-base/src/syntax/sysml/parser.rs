@@ -1,6 +1,6 @@
-use crate::language::sysml::syntax::SysMLFile;
 use crate::project::file_loader;
 use crate::project::{ParseError, ParseResult};
+use crate::syntax::sysml::ast::SysMLFile;
 use from_pest::FromPest;
 use pest::Parser;
 use std::path::{Path, PathBuf};

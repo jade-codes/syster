@@ -1,6 +1,6 @@
-use crate::language::LanguageFile;
 use crate::project::file_loader;
 use crate::semantic::Workspace;
+use crate::syntax::SyntaxFile;
 use rayon::prelude::*;
 use std::path::PathBuf;
 
@@ -45,6 +45,6 @@ pub fn load(stdlib_path: &PathBuf, workspace: &mut Workspace) -> Result<(), Stri
     Ok(())
 }
 
-fn parse_file(path: &PathBuf) -> Result<(PathBuf, LanguageFile), String> {
+fn parse_file(path: &PathBuf) -> Result<(PathBuf, SyntaxFile), String> {
     file_loader::load_and_parse(path).map(|file| (path.clone(), file))
 }

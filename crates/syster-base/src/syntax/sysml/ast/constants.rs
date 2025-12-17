@@ -16,7 +16,3 @@ pub const SYSML_KIND_USE_CASE: &str = "UseCase";
 pub const SYSML_KIND_VIEW: &str = "View";
 pub const SYSML_KIND_VIEWPOINT: &str = "Viewpoint";
 pub const SYSML_KIND_RENDERING: &str = "Rendering";
-
-#[cfg(test)]
-#[path = "constants/tests.rs"]
-mod tests;

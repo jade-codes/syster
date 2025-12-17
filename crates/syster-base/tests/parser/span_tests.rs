@@ -10,8 +10,8 @@
 
 use std::path::PathBuf;
 use syster::core::Position;
-use syster::language::sysml::syntax::SysMLFile;
 use syster::project::file_loader;
+use syster::syntax::sysml::ast::SysMLFile;
 
 /// Helper to parse SysML content and extract the SysMLFile
 fn parse_sysml(source: &str) -> SysMLFile {
@@ -19,7 +19,7 @@ fn parse_sysml(source: &str) -> SysMLFile {
     let parse_result = file_loader::parse_with_result(source, &path);
     let language_file = parse_result.content.expect("Parse should succeed");
     match language_file {
-        syster::language::LanguageFile::SysML(file) => file,
+        syster::syntax::SyntaxFile::SysML(file) => file,
         _ => panic!("Expected SysML file"),
     }
 }
@@ -47,7 +47,7 @@ fn test_part_def_span() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Definition should have span");
@@ -64,7 +64,7 @@ fn test_part_usage_span() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Usage(usage) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Usage(usage) = &file.elements[0] else {
         panic!("Expected Usage");
     };
     let span = usage.span.expect("Usage should have span");
@@ -83,7 +83,7 @@ fn test_nested_definitions_span() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Definition should have span");
@@ -91,7 +91,7 @@ fn test_nested_definitions_span() {
     assert_eq!(span.start.line, 0);
     assert_eq!(span.end.line, 2);
 
-    let syster::language::sysml::syntax::DefinitionMember::Usage(nested_usage) =
+    let syster::syntax::sysml::ast::DefinitionMember::Usage(nested_usage) =
         def.body.first().expect("Should have first member")
     else {
         panic!("Expected nested Usage");
@@ -110,7 +110,7 @@ part def Vehicle;"#;
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[1] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[1] else {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Definition should have span");
@@ -126,7 +126,7 @@ fn test_import_span() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Import(import) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Import(import) = &file.elements[0] else {
         panic!("Expected Import");
     };
     let span = import.span.expect("Import should have span");
@@ -143,7 +143,7 @@ fn test_alias_span() {
 alias Real for ScalarValues::Real;"#;
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Alias(alias) = &file.elements[1] else {
+    let syster::syntax::sysml::ast::Element::Alias(alias) = &file.elements[1] else {
         panic!("Expected Alias");
     };
     let span = alias.span.expect("Alias should have span");
@@ -170,13 +170,13 @@ part myVehicle: Vehicle;"#;
         .expect("Namespace should have span");
     assert_eq!(namespace_span.start.line, 0);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[1] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[1] else {
         panic!("Expected Definition at index 1");
     };
     let def_span = def.span.expect("Definition should have span");
     assert_eq!(def_span.start.line, 2);
 
-    let syster::language::sysml::syntax::Element::Usage(usage) = &file.elements[2] else {
+    let syster::syntax::sysml::ast::Element::Usage(usage) = &file.elements[2] else {
         panic!("Expected Usage at index 2");
     };
     let usage_span = usage.span.expect("Usage should have span");
@@ -189,7 +189,7 @@ fn test_span_contains_position() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Definition should have span");
@@ -225,31 +225,31 @@ part myVehicle: Vehicle;"#;
     // All elements should have span
     for element in &file.elements {
         match element {
-            syster::language::sysml::syntax::Element::Definition(def) => {
+            syster::syntax::sysml::ast::Element::Definition(def) => {
                 assert!(
                     def.span.is_some(),
                     "Definition '{:?}' missing span",
                     def.name
                 );
             }
-            syster::language::sysml::syntax::Element::Usage(usage) => {
+            syster::syntax::sysml::ast::Element::Usage(usage) => {
                 assert!(
                     usage.span.is_some(),
                     "Usage '{:?}' missing span",
                     usage.name
                 );
             }
-            syster::language::sysml::syntax::Element::Comment(comment) => {
+            syster::syntax::sysml::ast::Element::Comment(comment) => {
                 assert!(
                     comment.span.is_some(),
                     "Comment missing span: {}",
                     comment.content
                 );
             }
-            syster::language::sysml::syntax::Element::Import(import) => {
+            syster::syntax::sysml::ast::Element::Import(import) => {
                 assert!(import.span.is_some(), "Import missing span");
             }
-            syster::language::sysml::syntax::Element::Alias(alias) => {
+            syster::syntax::sysml::ast::Element::Alias(alias) => {
                 assert!(
                     alias.span.is_some(),
                     "Alias '{:?}' missing span",
@@ -270,7 +270,7 @@ fn test_deeply_nested_span() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Outer definition should have span");
@@ -279,10 +279,10 @@ fn test_deeply_nested_span() {
 
     for member in &def.body {
         match member {
-            syster::language::sysml::syntax::DefinitionMember::Usage(usage) => {
+            syster::syntax::sysml::ast::DefinitionMember::Usage(usage) => {
                 assert!(usage.span.is_some(), "Nested usage should have span");
             }
-            syster::language::sysml::syntax::DefinitionMember::Comment(comment) => {
+            syster::syntax::sysml::ast::DefinitionMember::Comment(comment) => {
                 assert!(comment.span.is_some(), "Nested comment should have span");
             }
         }
@@ -302,7 +302,7 @@ part myVehicle: Vehicle;"#;
     let path = PathBuf::from("test.sysml");
 
     let file = parse_sysml(source);
-    workspace.add_file(path.clone(), syster::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), syster::syntax::SyntaxFile::SysML(file));
 
     // Populate symbols
     let result = workspace.populate_all();
@@ -345,7 +345,7 @@ fn test_span_positions_are_zero_indexed() {
 
     let file = parse_sysml(source);
 
-    let syster::language::sysml::syntax::Element::Definition(def) = &file.elements[0] else {
+    let syster::syntax::sysml::ast::Element::Definition(def) = &file.elements[0] else {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Definition should have span");

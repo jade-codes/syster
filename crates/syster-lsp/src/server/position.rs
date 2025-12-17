@@ -18,8 +18,8 @@ impl LspServer {
 
         // Only process SysML files for now
         let file = match workspace_file.content() {
-            syster::language::LanguageFile::SysML(sysml_file) => sysml_file,
-            syster::language::LanguageFile::KerML(_) => return None,
+            syster::syntax::SyntaxFile::SysML(sysml_file) => sysml_file,
+            syster::syntax::SyntaxFile::KerML(_) => return None,
         };
 
         // Convert LSP position to our 0-indexed position

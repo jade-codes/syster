@@ -1,6 +1,6 @@
-use crate::core::visitor::AstVisitor;
-use crate::language::sysml::syntax::{Element, SysMLFile};
 use crate::semantic::types::SemanticError;
+use crate::syntax::sysml::ast::{Element, SysMLFile};
+use crate::syntax::sysml::visitor::AstVisitor;
 
 use super::SymbolTablePopulator;
 

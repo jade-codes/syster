@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 use super::*;
 use crate::core::constants::REL_SPECIALIZATION;
-use crate::language::sysml::syntax::SysMLFile;
 use crate::parser::SysMLParser;
 use crate::parser::sysml::Rule;
+use crate::syntax::sysml::ast::SysMLFile;
 use from_pest::FromPest;
 use pest::Parser;
 
@@ -25,7 +25,7 @@ fn test_add_file() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let path = PathBuf::from("vehicle.sysml");
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     assert_eq!(workspace.file_count(), 1);
     assert!(workspace.get_file(&path).is_some());
@@ -40,7 +40,7 @@ fn test_populate_single_file() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let path = PathBuf::from("vehicle.sysml");
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     let result = workspace.populate_file(&path);
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
@@ -67,11 +67,11 @@ fn test_populate_multiple_files() {
 
     workspace.add_file(
         PathBuf::from("vehicle.sysml"),
-        crate::language::LanguageFile::SysML(file1),
+        crate::syntax::SyntaxFile::SysML(file1),
     );
     workspace.add_file(
         PathBuf::from("car.sysml"),
-        crate::language::LanguageFile::SysML(file2),
+        crate::syntax::SyntaxFile::SysML(file2),
     );
 
     let result = workspace.populate_all();
@@ -104,7 +104,7 @@ fn test_update_file_content() {
     let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
 
     let path = PathBuf::from("test.sysml");
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file1));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file1));
     workspace.populate_file(&path).unwrap();
 
     // Verify initial content
@@ -121,7 +121,7 @@ fn test_update_file_content() {
     let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
     let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
 
-    let updated = workspace.update_file(&path, crate::language::LanguageFile::SysML(file2));
+    let updated = workspace.update_file(&path, crate::syntax::SyntaxFile::SysML(file2));
     assert!(updated, "File should be updated");
 
     // File version should increment
@@ -138,7 +138,7 @@ fn test_update_file_content() {
     let mut pairs3 = SysMLParser::parse(Rule::model, source3).unwrap();
     let file3 = SysMLFile::from_pest(&mut pairs3).unwrap();
 
-    let updated = workspace.update_file(&non_existent, crate::language::LanguageFile::SysML(file3));
+    let updated = workspace.update_file(&non_existent, crate::syntax::SyntaxFile::SysML(file3));
     assert!(!updated, "Updating non-existent file should return false");
 }
 
@@ -152,7 +152,7 @@ fn test_remove_file() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let path = PathBuf::from("test.sysml");
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     assert_eq!(workspace.file_count(), 1);
     assert!(workspace.get_file(&path).is_some());
@@ -184,7 +184,7 @@ fn test_get_file() {
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     // File should exist
     let workspace_file = workspace.get_file(&path);
@@ -203,7 +203,7 @@ fn test_file_version_increments() {
     let source1 = "part def V1;";
     let mut pairs1 = SysMLParser::parse(Rule::model, source1).unwrap();
     let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file1));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file1));
 
     assert_eq!(workspace.get_file(&path).unwrap().version(), 0);
 
@@ -212,7 +212,7 @@ fn test_file_version_increments() {
         let source = format!("part def V{};", i);
         let mut pairs = SysMLParser::parse(Rule::model, &source).unwrap();
         let file = SysMLFile::from_pest(&mut pairs).unwrap();
-        workspace.update_file(&path, crate::language::LanguageFile::SysML(file));
+        workspace.update_file(&path, crate::syntax::SyntaxFile::SysML(file));
 
         assert_eq!(
             workspace.get_file(&path).unwrap().version(),
@@ -234,7 +234,7 @@ fn test_populated_flag_resets_on_update() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
     assert!(
         !workspace.get_file(&path).unwrap().is_populated(),
         "New file should not be populated"
@@ -251,7 +251,7 @@ fn test_populated_flag_resets_on_update() {
     let source2 = "part def Car;";
     let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
     let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
-    workspace.update_file(&path, crate::language::LanguageFile::SysML(file2));
+    workspace.update_file(&path, crate::syntax::SyntaxFile::SysML(file2));
 
     assert!(
         !workspace.get_file(&path).unwrap().is_populated(),
@@ -284,7 +284,7 @@ fn test_cross_file_dependency_tracking() {
     let base_path = PathBuf::from("base.sysml");
     workspace.add_file(
         base_path.clone(),
-        crate::language::LanguageFile::SysML(base_file),
+        crate::syntax::SyntaxFile::SysML(base_file),
     );
 
     // App file imports Base
@@ -297,10 +297,7 @@ fn test_cross_file_dependency_tracking() {
     let mut pairs = SysMLParser::parse(Rule::model, app_source).unwrap();
     let app_file = SysMLFile::from_pest(&mut pairs).unwrap();
     let app_path = PathBuf::from("app.sysml");
-    workspace.add_file(
-        app_path.clone(),
-        crate::language::LanguageFile::SysML(app_file),
-    );
+    workspace.add_file(app_path.clone(), crate::syntax::SyntaxFile::SysML(app_file));
 
     // After populating, we should track that app depends on base
     workspace.populate_all().unwrap();
@@ -325,7 +322,7 @@ fn test_update_file_clears_dependencies() {
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source_v1).unwrap();
     let file_v1 = SysMLFile::from_pest(&mut pairs).unwrap();
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file_v1));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file_v1));
 
     // Update to only import C
     let source_v2 = r#"
@@ -334,7 +331,7 @@ fn test_update_file_clears_dependencies() {
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source_v2).unwrap();
     let file_v2 = SysMLFile::from_pest(&mut pairs).unwrap();
-    workspace.update_file(&path, crate::language::LanguageFile::SysML(file_v2));
+    workspace.update_file(&path, crate::syntax::SyntaxFile::SysML(file_v2));
 
     // File should still exist
     assert!(workspace.get_file(&path).is_some());
@@ -352,7 +349,7 @@ fn test_remove_file_clears_dependencies() {
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     // Remove the file
     workspace.remove_file(&path);
@@ -380,7 +377,7 @@ fn test_subscribe_to_file_added() {
         elements: vec![],
     };
 
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     let events = events_received.lock().unwrap();
     assert_eq!(events.len(), 1);
@@ -398,7 +395,7 @@ fn test_subscribe_to_file_updated() {
     // Add file first
     workspace.add_file(
         path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -414,7 +411,7 @@ fn test_subscribe_to_file_updated() {
     // Update the file
     workspace.update_file(
         &path,
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -433,7 +430,7 @@ fn test_invalidate_on_update() {
     let path = PathBuf::from("test.sysml");
     workspace.add_file(
         path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -446,7 +443,7 @@ fn test_invalidate_on_update() {
     // Update the file - should trigger invalidation
     workspace.update_file(
         &path,
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -464,7 +461,7 @@ fn test_invalidate_dependent_files() {
     let app_path = PathBuf::from("app.sysml"); // Add base file
     workspace.add_file(
         base_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -473,7 +470,7 @@ fn test_invalidate_dependent_files() {
     // Add app file
     workspace.add_file(
         app_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -493,7 +490,7 @@ fn test_invalidate_dependent_files() {
     // Update base - should invalidate app too
     workspace.update_file(
         &base_path,
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -514,21 +511,21 @@ fn test_invalidate_transitive_dependencies() {
     let c_path = PathBuf::from("c.sysml"); // Add files
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         b_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         c_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -550,7 +547,7 @@ fn test_invalidate_transitive_dependencies() {
     // Update C - should invalidate B and A
     workspace.update_file(
         &c_path,
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -572,14 +569,14 @@ fn test_circular_dependency_simple() {
     // Add files
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         b_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -617,21 +614,21 @@ fn test_circular_dependency_complex() {
     // Add files
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         b_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         c_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -677,21 +674,21 @@ fn test_no_circular_dependency_in_chain() {
     // Add files
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         b_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         c_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -734,14 +731,14 @@ fn test_invalidation_with_circular_dependency() {
     // Add files
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         b_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -762,7 +759,7 @@ fn test_invalidation_with_circular_dependency() {
     // Update one file - should invalidate both without infinite loop
     workspace.update_file(
         &a_path,
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -782,7 +779,7 @@ fn test_circular_dependency_self_reference() {
     // Add file
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -819,7 +816,7 @@ fn test_populate_affected_single_file() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let path = PathBuf::from("vehicle.sysml");
-    workspace.add_file(path.clone(), crate::language::LanguageFile::SysML(file));
+    workspace.add_file(path.clone(), crate::syntax::SyntaxFile::SysML(file));
 
     // File should be unpopulated
     assert!(!workspace.get_file(&path).unwrap().is_populated());
@@ -847,14 +844,14 @@ fn test_populate_affected_after_update() {
     // Add files
     workspace.add_file(
         base_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         app_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -873,7 +870,7 @@ fn test_populate_affected_after_update() {
     // Update base - invalidates both files
     workspace.update_file(
         &base_path,
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
@@ -903,21 +900,21 @@ fn test_populate_affected_selective() {
     // Add three files
     workspace.add_file(
         a_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         b_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),
     );
     workspace.add_file(
         c_path.clone(),
-        crate::language::LanguageFile::SysML(SysMLFile {
+        crate::syntax::SyntaxFile::SysML(SysMLFile {
             namespace: None,
             elements: vec![],
         }),

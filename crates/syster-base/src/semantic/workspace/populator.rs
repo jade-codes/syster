@@ -3,12 +3,12 @@
 //! Handles the population of files in a workspace - extracting symbols from
 //! ASTs and building the symbol table and relationship graph.
 
-use crate::language::sysml::SymbolTablePopulator;
-use crate::language::sysml::syntax::SysMLFile;
 use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::processors::ReferenceCollector;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::workspace::WorkspaceFile;
+use crate::syntax::sysml::SymbolTablePopulator;
+use crate::syntax::sysml::ast::SysMLFile;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -67,7 +67,7 @@ impl<'a> WorkspacePopulator<'a> {
         let file_path_str = path.to_string_lossy().to_string();
 
         // Only populate SysML files for now
-        if let crate::language::LanguageFile::SysML(sysml_file) = &content {
+        if let crate::syntax::SyntaxFile::SysML(sysml_file) = &content {
             self.populate_file_content(&file_path_str, sysml_file)?;
         }
 

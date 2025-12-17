@@ -3,13 +3,13 @@ use crate::core::constants::{
     REL_REDEFINITION, REL_REFERENCE_SUBSETTING, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
 };
 use crate::core::{Position, Span};
-use crate::language::sysml::syntax::{
-    Alias, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage, UsageKind,
-};
 use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::processors::{NoOpValidator, RelationshipValidator};
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::workspace::WorkspaceFile;
+use crate::syntax::sysml::ast::{
+    Alias, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage, UsageKind,
+};
 use std::path::PathBuf;
 
 #[test]
@@ -694,7 +694,7 @@ fn test_collect_package_tokens() {
     };
     let workspace_file = WorkspaceFile::new(
         PathBuf::from("test.sysml"),
-        crate::language::LanguageFile::SysML(sysml_file),
+        crate::syntax::SyntaxFile::SysML(sysml_file),
     );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
@@ -722,7 +722,7 @@ fn test_collect_definition_tokens() {
     };
     let workspace_file = WorkspaceFile::new(
         PathBuf::from("test.sysml"),
-        crate::language::LanguageFile::SysML(sysml_file),
+        crate::syntax::SyntaxFile::SysML(sysml_file),
     );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
@@ -747,7 +747,7 @@ fn test_collect_usage_tokens() {
     };
     let workspace_file = WorkspaceFile::new(
         PathBuf::from("test.sysml"),
-        crate::language::LanguageFile::SysML(sysml_file),
+        crate::syntax::SyntaxFile::SysML(sysml_file),
     );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
@@ -769,7 +769,7 @@ fn test_collect_alias_tokens() {
     };
     let workspace_file = WorkspaceFile::new(
         PathBuf::from("test.sysml"),
-        crate::language::LanguageFile::SysML(sysml_file),
+        crate::syntax::SyntaxFile::SysML(sysml_file),
     );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
@@ -799,7 +799,7 @@ fn test_collect_nested_tokens() {
     };
     let workspace_file = WorkspaceFile::new(
         PathBuf::from("test.sysml"),
-        crate::language::LanguageFile::SysML(sysml_file),
+        crate::syntax::SyntaxFile::SysML(sysml_file),
     );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);
@@ -834,7 +834,7 @@ fn test_tokens_sorted_by_position() {
     };
     let workspace_file = WorkspaceFile::new(
         PathBuf::from("test.sysml"),
-        crate::language::LanguageFile::SysML(sysml_file),
+        crate::syntax::SyntaxFile::SysML(sysml_file),
     );
 
     let tokens = SemanticTokenCollector::collect(&workspace_file);

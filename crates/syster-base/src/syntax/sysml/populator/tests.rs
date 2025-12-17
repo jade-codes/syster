@@ -2,10 +2,10 @@
 #![allow(clippy::panic)]
 
 use super::*;
-use crate::language::sysml::syntax::{
+use crate::semantic::symbol_table::Symbol;
+use crate::syntax::sysml::ast::{
     Definition, DefinitionKind, Element, Package, SysMLFile, UsageKind,
 };
-use crate::semantic::symbol_table::Symbol;
 
 #[test]
 fn test_populate_empty_file() {
@@ -98,17 +98,15 @@ fn test_populate_definition() {
 
     let file = SysMLFile {
         namespace: None,
-        elements: vec![Element::Definition(
-            crate::language::sysml::syntax::Definition {
-                kind: DefinitionKind::Part,
-                name: Some("MyPart".to_string()),
-                body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
-                is_abstract: false,
-                is_variation: false,
-                span: None,
-            },
-        )],
+        elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+            kind: DefinitionKind::Part,
+            name: Some("MyPart".to_string()),
+            body: vec![],
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
+            is_abstract: false,
+            is_variation: false,
+            span: None,
+        })],
     };
 
     let result = populator.populate(&file);
@@ -131,11 +129,11 @@ fn test_populate_usage() {
 
     let file = SysMLFile {
         namespace: None,
-        elements: vec![Element::Usage(crate::language::sysml::syntax::Usage {
+        elements: vec![Element::Usage(crate::syntax::sysml::ast::Usage {
             kind: UsageKind::Action,
             name: Some("myAction".to_string()),
             body: vec![],
-            relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
 
             is_derived: false,
             is_readonly: false,
@@ -194,17 +192,15 @@ fn test_populate_definition_in_package() {
         namespace: None,
         elements: vec![Element::Package(Package {
             name: Some("MyPackage".to_string()),
-            elements: vec![Element::Definition(
-                crate::language::sysml::syntax::Definition {
-                    kind: DefinitionKind::Part,
-                    name: Some("NestedPart".to_string()),
-                    body: vec![],
-                    relationships: crate::language::sysml::syntax::Relationships::none(),
-                    is_abstract: false,
-                    is_variation: false,
-                    span: None,
-                },
-            )],
+            elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+                kind: DefinitionKind::Part,
+                name: Some("NestedPart".to_string()),
+                body: vec![],
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
+                is_abstract: false,
+                is_variation: false,
+                span: None,
+            })],
             span: None,
         })],
     };
@@ -251,17 +247,15 @@ fn test_populate_anonymous_definition() {
 
     let file = SysMLFile {
         namespace: None,
-        elements: vec![Element::Definition(
-            crate::language::sysml::syntax::Definition {
-                kind: DefinitionKind::Part,
-                name: None,
-                body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
-                is_abstract: false,
-                is_variation: false,
-                span: None,
-            },
-        )],
+        elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+            kind: DefinitionKind::Part,
+            name: None,
+            body: vec![],
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
+            is_abstract: false,
+            is_variation: false,
+            span: None,
+        })],
     };
 
     let result = populator.populate(&file);
@@ -276,29 +270,29 @@ fn test_populate_multiple_definitions() {
     let file = SysMLFile {
         namespace: None,
         elements: vec![
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Part,
                 name: Some("Part1".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
             }),
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Port,
                 name: Some("Port1".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
             }),
-            Element::Usage(crate::language::sysml::syntax::Usage {
+            Element::Usage(crate::syntax::sysml::ast::Usage {
                 kind: UsageKind::Action,
                 name: Some("Action1".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
 
                 is_derived: false,
                 is_readonly: false,
@@ -328,17 +322,15 @@ fn test_populate_deeply_nested_structure() {
                 name: Some("L2".to_string()),
                 elements: vec![Element::Package(Package {
                     name: Some("L3".to_string()),
-                    elements: vec![Element::Definition(
-                        crate::language::sysml::syntax::Definition {
-                            kind: DefinitionKind::Part,
-                            name: Some("DeepPart".to_string()),
-                            body: vec![],
-                            relationships: crate::language::sysml::syntax::Relationships::none(),
-                            is_abstract: false,
-                            is_variation: false,
-                            span: None,
-                        },
-                    )],
+                    elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+                        kind: DefinitionKind::Part,
+                        name: Some("DeepPart".to_string()),
+                        body: vec![],
+                        relationships: crate::syntax::sysml::ast::Relationships::none(),
+                        is_abstract: false,
+                        is_variation: false,
+                        span: None,
+                    })],
                     span: None,
                 })],
                 span: None,
@@ -380,17 +372,15 @@ fn test_populate_all_definition_kinds() {
 
     let mut elements = vec![];
     for (kind, name) in kinds {
-        elements.push(Element::Definition(
-            crate::language::sysml::syntax::Definition {
-                kind,
-                name: Some(name.to_string()),
-                body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
-                is_abstract: false,
-                is_variation: false,
-                span: None,
-            },
-        ));
+        elements.push(Element::Definition(crate::syntax::sysml::ast::Definition {
+            kind,
+            name: Some(name.to_string()),
+            body: vec![],
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
+            is_abstract: false,
+            is_variation: false,
+            span: None,
+        }));
     }
 
     let file = SysMLFile {
@@ -419,20 +409,20 @@ fn test_populate_mixed_elements_in_package() {
         elements: vec![Element::Package(Package {
             name: Some("MixedPackage".to_string()),
             elements: vec![
-                Element::Definition(crate::language::sysml::syntax::Definition {
+                Element::Definition(crate::syntax::sysml::ast::Definition {
                     kind: DefinitionKind::Part,
                     name: Some("PartDef".to_string()),
                     body: vec![],
-                    relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
                     span: None,
                 }),
-                Element::Usage(crate::language::sysml::syntax::Usage {
+                Element::Usage(crate::syntax::sysml::ast::Usage {
                     kind: UsageKind::Part,
                     name: Some("partUsage".to_string()),
                     body: vec![],
-                    relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
 
                     is_derived: false,
                     is_readonly: false,
@@ -492,32 +482,28 @@ fn test_populate_sibling_packages() {
         elements: vec![
             Element::Package(Package {
                 name: Some("Package1".to_string()),
-                elements: vec![Element::Definition(
-                    crate::language::sysml::syntax::Definition {
-                        kind: DefinitionKind::Part,
-                        name: Some("Part1".to_string()),
-                        body: vec![],
-                        relationships: crate::language::sysml::syntax::Relationships::none(),
-                        is_abstract: false,
-                        is_variation: false,
-                        span: None,
-                    },
-                )],
+                elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+                    kind: DefinitionKind::Part,
+                    name: Some("Part1".to_string()),
+                    body: vec![],
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
+                    is_abstract: false,
+                    is_variation: false,
+                    span: None,
+                })],
                 span: None,
             }),
             Element::Package(Package {
                 name: Some("Package2".to_string()),
-                elements: vec![Element::Definition(
-                    crate::language::sysml::syntax::Definition {
-                        kind: DefinitionKind::Part,
-                        name: Some("Part2".to_string()),
-                        body: vec![],
-                        relationships: crate::language::sysml::syntax::Relationships::none(),
-                        is_abstract: false,
-                        is_variation: false,
-                        span: None,
-                    },
-                )],
+                elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+                    kind: DefinitionKind::Part,
+                    name: Some("Part2".to_string()),
+                    body: vec![],
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
+                    is_abstract: false,
+                    is_variation: false,
+                    span: None,
+                })],
                 span: None,
             }),
         ],
@@ -557,20 +543,20 @@ fn test_populate_duplicate_in_nested_scope() {
         elements: vec![Element::Package(Package {
             name: Some("Outer".to_string()),
             elements: vec![
-                Element::Definition(crate::language::sysml::syntax::Definition {
+                Element::Definition(crate::syntax::sysml::ast::Definition {
                     kind: DefinitionKind::Part,
                     name: Some("Duplicate".to_string()),
                     body: vec![],
-                    relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
                     span: None,
                 }),
-                Element::Definition(crate::language::sysml::syntax::Definition {
+                Element::Definition(crate::syntax::sysml::ast::Definition {
                     kind: DefinitionKind::Port,
                     name: Some("Duplicate".to_string()),
                     body: vec![],
-                    relationships: crate::language::sysml::syntax::Relationships::none(),
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
                     is_abstract: false,
                     is_variation: false,
                     span: None,
@@ -598,32 +584,28 @@ fn test_populate_same_name_different_scopes() {
         elements: vec![
             Element::Package(Package {
                 name: Some("Package1".to_string()),
-                elements: vec![Element::Definition(
-                    crate::language::sysml::syntax::Definition {
-                        kind: DefinitionKind::Part,
-                        name: Some("Common".to_string()),
-                        body: vec![],
-                        relationships: crate::language::sysml::syntax::Relationships::none(),
-                        is_abstract: false,
-                        is_variation: false,
-                        span: None,
-                    },
-                )],
+                elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+                    kind: DefinitionKind::Part,
+                    name: Some("Common".to_string()),
+                    body: vec![],
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
+                    is_abstract: false,
+                    is_variation: false,
+                    span: None,
+                })],
                 span: None,
             }),
             Element::Package(Package {
                 name: Some("Package2".to_string()),
-                elements: vec![Element::Definition(
-                    crate::language::sysml::syntax::Definition {
-                        kind: DefinitionKind::Part,
-                        name: Some("Common".to_string()),
-                        body: vec![],
-                        relationships: crate::language::sysml::syntax::Relationships::none(),
-                        is_abstract: false,
-                        is_variation: false,
-                        span: None,
-                    },
-                )],
+                elements: vec![Element::Definition(crate::syntax::sysml::ast::Definition {
+                    kind: DefinitionKind::Part,
+                    name: Some("Common".to_string()),
+                    body: vec![],
+                    relationships: crate::syntax::sysml::ast::Relationships::none(),
+                    is_abstract: false,
+                    is_variation: false,
+                    span: None,
+                })],
                 span: None,
             }),
         ],
@@ -661,11 +643,11 @@ fn test_populate_all_usage_kinds() {
 
     let mut elements = vec![];
     for (kind, name) in kinds {
-        elements.push(Element::Usage(crate::language::sysml::syntax::Usage {
+        elements.push(Element::Usage(crate::syntax::sysml::ast::Usage {
             kind,
             name: Some(name.to_string()),
             body: vec![],
-            relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
             is_derived: false,
             is_readonly: false,
             span: None,
@@ -699,11 +681,11 @@ fn test_populate_complex_hierarchy() {
             Element::Package(Package {
                 name: Some("Root".to_string()),
                 elements: vec![
-                    Element::Definition(crate::language::sysml::syntax::Definition {
+                    Element::Definition(crate::syntax::sysml::ast::Definition {
                         kind: DefinitionKind::Part,
                         name: Some("RootPart".to_string()),
                         body: vec![],
-                        relationships: crate::language::sysml::syntax::Relationships::none(),
+                        relationships: crate::syntax::sysml::ast::Relationships::none(),
                         is_abstract: false,
                         is_variation: false,
                         span: None,
@@ -711,12 +693,11 @@ fn test_populate_complex_hierarchy() {
                     Element::Package(Package {
                         name: Some("Sub1".to_string()),
                         elements: vec![
-                            Element::Usage(crate::language::sysml::syntax::Usage {
+                            Element::Usage(crate::syntax::sysml::ast::Usage {
                                 kind: UsageKind::Part,
                                 name: Some("sub1Usage".to_string()),
                                 body: vec![],
-                                relationships: crate::language::sysml::syntax::Relationships::none(
-                                ),
+                                relationships: crate::syntax::sysml::ast::Relationships::none(),
                                 is_derived: false,
                                 is_readonly: false,
                                 span: None,
@@ -724,12 +705,12 @@ fn test_populate_complex_hierarchy() {
                             Element::Package(Package {
                                 name: Some("Sub2".to_string()),
                                 elements: vec![Element::Definition(
-                                    crate::language::sysml::syntax::Definition {
+                                    crate::syntax::sysml::ast::Definition {
                                         kind: DefinitionKind::Action,
                                         name: Some("DeepAction".to_string()),
                                         body: vec![],
                                         relationships:
-                                            crate::language::sysml::syntax::Relationships::none(),
+                                            crate::syntax::sysml::ast::Relationships::none(),
                                         is_abstract: false,
                                         is_variation: false,
                                         span: None,
@@ -748,11 +729,11 @@ fn test_populate_complex_hierarchy() {
                 ],
                 span: None,
             }),
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Port,
                 name: Some("TopLevelPort".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
@@ -811,38 +792,38 @@ fn test_populate_multiple_errors() {
     let file = SysMLFile {
         namespace: None,
         elements: vec![
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Part,
                 name: Some("Dup1".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
             }),
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Part,
                 name: Some("Dup1".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
             }),
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Part,
                 name: Some("Dup2".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
             }),
-            Element::Definition(crate::language::sysml::syntax::Definition {
+            Element::Definition(crate::syntax::sysml::ast::Definition {
                 kind: DefinitionKind::Part,
                 name: Some("Dup2".to_string()),
                 body: vec![],
-                relationships: crate::language::sysml::syntax::Relationships::none(),
+                relationships: crate::syntax::sysml::ast::Relationships::none(),
                 is_abstract: false,
                 is_variation: false,
                 span: None,
@@ -920,7 +901,7 @@ fn test_populate_with_relationship_graph() {
             kind: DefinitionKind::Part,
             name: Some("Vehicle".to_string()),
             body: vec![],
-            relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
             is_abstract: false,
             is_variation: false,
             span: None,
@@ -950,7 +931,7 @@ fn test_populator_without_relationship_graph() {
             kind: DefinitionKind::Part,
             name: Some("Test".to_string()),
             body: vec![],
-            relationships: crate::language::sysml::syntax::Relationships::none(),
+            relationships: crate::syntax::sysml::ast::Relationships::none(),
             is_abstract: false,
             is_variation: false,
             span: None,

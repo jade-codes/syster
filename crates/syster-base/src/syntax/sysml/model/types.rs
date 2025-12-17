@@ -1,14 +1,14 @@
-use crate::language::kerml::model::types::{
+use crate::syntax::kerml::model::types::{
     ClassifierReference, Conjugation, FeatureMembership, FeatureTyping, Import,
     InvocationExpression, Membership, MembershipImport, NamespaceImport, OwningMembership,
     ParameterMembership,
 };
-use crate::language::kerml::model::{
+use crate::syntax::kerml::model::{
     AssociationStructure, Behavior, BindingConnector, BooleanExpression, Class, Classifier,
     Connector, DataType, Expression, Feature, Interaction, Invariant, ItemFlow, Metaclass,
     MetadataFeature, Predicate, Step, Structure, Succession, SuccessionItemFlow, SysMLFunction,
 };
-use crate::language::sysml::model::{
+use crate::syntax::sysml::model::{
     PortionKind, RequirementConstraintKind, StateSubactionKind, TransitionFeatureKind, TriggerKind,
 };
 

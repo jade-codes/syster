@@ -2,7 +2,7 @@ use super::enums::{
     ClassifierKind, ClassifierMember, Element, FeatureDirection, FeatureMember, ImportKind,
 };
 use crate::core::Span;
-pub use crate::language::kerml::model::types::Comment;
+pub use crate::syntax::kerml::model::types::Comment;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct KerMLFile {

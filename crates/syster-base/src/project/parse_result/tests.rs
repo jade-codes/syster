@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use super::*;
-use crate::language::sysml::syntax::SysMLFile;
+use crate::syntax::sysml::ast::SysMLFile;
 
 #[test]
 fn test_parse_result_success() {

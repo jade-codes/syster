@@ -3,10 +3,10 @@
 
 use super::*;
 use crate::{
-    language::kerml::Documentation,
     parser::kerml::{KerMLParser, Rule},
+    syntax::kerml::Documentation,
 };
-use from_pest::FromPest;
+use ::from_pest::FromPest;
 use pest::Parser;
 
 #[test]

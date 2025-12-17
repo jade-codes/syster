@@ -1,9 +1,9 @@
 use crate::core::constants::*;
-use crate::core::visitor::AstVisitor;
-use crate::language::sysml::syntax::{
+use crate::semantic::symbol_table::Symbol;
+use crate::syntax::sysml::ast::{
     Alias, Comment, Definition, Import, NamespaceDeclaration, Package, Usage,
 };
-use crate::semantic::symbol_table::Symbol;
+use crate::syntax::sysml::visitor::AstVisitor;
 
 use super::SymbolTablePopulator;
 
@@ -78,8 +78,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
                 // Extract domain relationships from nested usages in the body
                 // Note: include relationships are at the definition level, not in nested usages
                 for member in &definition.body {
-                    if let crate::language::sysml::syntax::enums::DefinitionMember::Usage(usage) =
-                        member
+                    if let crate::syntax::sysml::ast::enums::DefinitionMember::Usage(usage) = member
                     {
                         // Extract satisfy relationships
                         for target in &usage.relationships.satisfies {
@@ -113,9 +112,7 @@ impl<'a> AstVisitor for SymbolTablePopulator<'a> {
             // Visit nested members in the body (add them to symbol table)
             self.enter_namespace(name.clone());
             for member in &definition.body {
-                if let crate::language::sysml::syntax::enums::DefinitionMember::Usage(usage) =
-                    member
-                {
+                if let crate::syntax::sysml::ast::enums::DefinitionMember::Usage(usage) = member {
                     self.visit_usage(usage);
                 }
             }

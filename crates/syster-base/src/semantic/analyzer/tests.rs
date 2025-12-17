@@ -2,7 +2,7 @@
 #![allow(clippy::panic)]
 
 use super::*;
-use crate::language::sysml::validator::SysMLRelationshipValidator;
+use crate::syntax::sysml::validator::SysMLRelationshipValidator;
 use crate::semantic::RelationshipGraph;
 use crate::semantic::SemanticErrorKind;
 use crate::semantic::symbol_table::Symbol;

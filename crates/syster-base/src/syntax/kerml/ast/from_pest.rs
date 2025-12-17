@@ -1,8 +1,8 @@
 use super::enums::{ClassifierKind, Element, FeatureDirection, ImportKind};
 use super::types::{Annotation, Classifier, Comment, Feature, Import, Package};
 use crate::core::Span;
-use crate::language::kerml::model::types::Documentation;
 use crate::parser::kerml::Rule;
+use crate::syntax::kerml::model::types::Documentation;
 use from_pest::{ConversionError, FromPest, Void};
 
 /// Convert a Pest span to our Span type (0-indexed for LSP compatibility)

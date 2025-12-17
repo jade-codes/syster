@@ -1,16 +1,16 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::super::*;
-use crate::language::LanguageFile;
+use crate::syntax::SyntaxFile;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
 
-/// Helper to extract SysMLFile from LanguageFile for testing
-fn unwrap_sysml(lang_file: LanguageFile) -> crate::language::sysml::syntax::SysMLFile {
+/// Helper to extract SysMLFile from SyntaxFile for testing
+fn unwrap_sysml(lang_file: SyntaxFile) -> crate::syntax::sysml::ast::SysMLFile {
     match lang_file {
-        LanguageFile::SysML(file) => file,
-        LanguageFile::KerML(_) => panic!("Expected SysML file in test"),
+        SyntaxFile::SysML(file) => file,
+        SyntaxFile::KerML(_) => panic!("Expected SysML file in test"),
     }
 }
 
@@ -189,14 +189,14 @@ fn test_parse_content_kerml_placeholder() {
 
     // Should return a KerML file
     match lang_file {
-        LanguageFile::KerML(kerml_file) => {
+        SyntaxFile::KerML(kerml_file) => {
             // Currently returns empty file - this will change when KerML is implemented
             assert!(
                 kerml_file.elements.is_empty(),
                 "KerML placeholder should return empty"
             );
         }
-        LanguageFile::SysML(_) => {
+        SyntaxFile::SysML(_) => {
             panic!("Expected KerML file, got SysML");
         }
     }
