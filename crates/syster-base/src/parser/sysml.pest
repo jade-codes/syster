@@ -1682,9 +1682,14 @@ port_usage = {
 connector_end_member = { connector_end }
 
 connector_end = {
-    owned_cross_multiplicity_member?
-    ~ (identification ~ references_keyword)?
-    ~ owned_reference_subsetting
+    owned_cross_multiplicity_member? ~ connector_end_reference
+}
+
+connector_end_reference = {
+    owned_feature_chain
+    | identifier ~ references_keyword ~ (owned_feature_chain | feature_reference)
+    | quoted_name ~ references_keyword ~ (owned_feature_chain | feature_reference)
+    | feature_reference
 }
 
 owned_cross_multiplicity_member = { owned_cross_multiplicity }
@@ -2134,9 +2139,9 @@ multiplicity_range = {
     | bound
 }
 
-lower_bound = { number_literal | "*" }
-upper_bound = { number_literal | "*" }
-bound = { number_literal | "*" }
+lower_bound = { owned_expression | "*" }
+upper_bound = { owned_expression | "*" }
+bound = { owned_expression | "*" }
 
 number_literal = @{ ASCII_DIGIT+ }
 

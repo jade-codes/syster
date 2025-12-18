@@ -717,3 +717,77 @@ fn test_case_body_with_doc() {
         result.err()
     );
 }
+
+#[test]
+fn test_multiplicity_with_expression() {
+    let input = "[nCauses]";
+    let result = SysMLParser::parse(Rule::owned_multiplicity, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse multiplicity with expression: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_multiplicity_with_range_expressions() {
+    let input = "[0..size(items)]";
+    let result = SysMLParser::parse(Rule::owned_multiplicity, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse multiplicity with expression range: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_connector_end_with_multiplicity_and_chain() {
+    let input = "[nCauses] causes.startShot";
+    let result = SysMLParser::parse(Rule::connector_end, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse connector end with multiplicity and feature chain: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_connector_end_with_multiplicity_and_identifier() {
+    let input = "[1] endpoint";
+    let result = SysMLParser::parse(Rule::connector_end, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse connector end with multiplicity and identifier: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_connector_end_with_name_references() {
+    let input = "myEnd references source.port";
+    let result = SysMLParser::parse(Rule::connector_end, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse connector end with name and references: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_succession_with_multiplicity() {
+    let input = r#"succession causalOrdering first [nCauses] causes.startShot then [nEffects] effects {
+        doc /* test */
+    }"#;
+    let result = SysMLParser::parse(Rule::succession_as_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse succession with multiplicities: {:?}",
+        result.err()
+    );
+}
