@@ -424,7 +424,7 @@ base_expression = {
     | instantiation_expression
     | invocation_expression
     | feature_reference_expression
-    | "(" ~ sequence_expression ~ ")"
+    | "(" ~ sequence_expression? ~ ")"
 }
 
 instantiation_expression = {
@@ -1893,7 +1893,7 @@ constraint_body = {
 }
 
 constraint_body_part = {
-    visible_annotating_member* ~ owned_expression
+    definition_body_item* ~ (visible_annotating_member* ~ owned_expression)?
 }
 
 // Requirement Usage

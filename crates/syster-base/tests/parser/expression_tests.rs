@@ -1130,6 +1130,39 @@ fn test_attribute_with_short_name_typed_and_body() {
 }
 
 #[test]
+fn test_empty_tuple_expression() {
+    let result = SysMLParser::parse(Rule::owned_expression, "()");
+    assert!(
+        result.is_ok(),
+        "Failed to parse empty tuple expression: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_attribute_with_empty_tuple_value() {
+    let result = SysMLParser::parse(Rule::attribute_usage, "attribute :>> dimensions = ();");
+    assert!(
+        result.is_ok(),
+        "Failed to parse attribute with empty tuple value: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_with_in_parameter() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        "assert constraint c { in x = y; }",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint with in parameter: {:?}",
+        result.err()
+    );
+}
+
+#[test]
 fn test_qualified_name_with_unicode_theta_as_owned_expression() {
     let result = SysMLParser::parse(Rule::owned_expression, "isq.'Θ'");
     assert!(
