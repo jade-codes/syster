@@ -201,13 +201,17 @@ expression_body = {
 }
 
 expression_body_part = {
-    (parameter_binding ~ ";")+ ~ owned_expression
-    | (parameter_binding ~ ";")+
-    | owned_expression
+    visible_annotating_member* ~ (parameter_binding_with_terminator)+ ~ owned_expression
+    | visible_annotating_member* ~ (parameter_binding_with_terminator)+
+    | visible_annotating_member* ~ owned_expression
+}
+
+parameter_binding_with_terminator = {
+    parameter_binding ~ ";"?
 }
 
 parameter_binding = {
-    ("in" | "out" | "inout") ~ identifier ~ (":" ~ owned_feature_typing)?
+    ("in" | "out" | "inout") ~ "ref"? ~ identifier ~ (":" ~ owned_feature_typing)? ~ ("{" ~ visible_annotating_member* ~ "}")?
 }
 
 owned_expression_member = {
@@ -1311,6 +1315,7 @@ case_body_item = {
     | subject_member
     | actor_member
     | case_calculation_body_item
+    | visible_annotating_member
 }
 
 case_calculation_body_item = {

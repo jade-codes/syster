@@ -665,3 +665,55 @@ fn test_return_with_equality_expression() {
         result.err()
     );
 }
+
+#[test]
+fn test_expression_body_with_doc() {
+    let input = r#"{
+        doc
+        /*
+         * Some documentation
+         */
+        in x; eval(x)
+    }"#;
+    let result = SysMLParser::parse(Rule::expression_body, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse expression body with doc: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_expression_body_with_ref_parameter() {
+    let input = r#"{in ref a {
+        doc
+        /* The alternative */
+    }; 
+    a
+    }"#;
+    let result = SysMLParser::parse(Rule::expression_body, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse expression body with ref parameter: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_case_body_with_doc() {
+    let input = r#"{
+        doc
+        /*
+         * A TradeStudy documentation
+         */
+    }"#;
+    let result = SysMLParser::parse(Rule::case_body, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse case body with doc: {:?}",
+        result.err()
+    );
+}
