@@ -1206,6 +1206,156 @@ fn test_attribute_with_scientific_notation_value() {
 }
 
 #[test]
+fn test_function_call_simple() {
+    let result = SysMLParser::parse(Rule::owned_expression, "foo()");
+    assert!(
+        result.is_ok(),
+        "Failed to parse simple function call: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_invocation_expression_direct() {
+    let result = SysMLParser::parse(Rule::invocation_expression, "allTrue(x)");
+    assert!(
+        result.is_ok(),
+        "Failed to parse invocation expression directly: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_function_call_with_argument() {
+    let result = SysMLParser::parse(Rule::owned_expression, "allTrue(x)");
+    assert!(
+        result.is_ok(),
+        "Failed to parse function call with argument: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_function_call_with_dotted_argument() {
+    let result = SysMLParser::parse(
+        Rule::owned_expression,
+        "allTrue(derivedRequirements.result)",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse function call with dotted argument: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_implies_expression_with_function_call() {
+    let result = SysMLParser::parse(
+        Rule::owned_expression,
+        "originalRequirement.result implies allTrue(derivedRequirements.result)",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse implies expression with function call: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_with_simple_expression() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        "assert constraint c { x implies y }",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint with simple implies: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_with_function_on_right() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        "assert constraint c { x implies f() }",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint with function on right: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_allTrue_as_identifier() {
+    let result = SysMLParser::parse(Rule::identifier, "allTrue");
+    assert!(
+        result.is_ok(),
+        "Failed to parse 'allTrue' as identifier: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_with_actual_names() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        "assert constraint c { x implies all(y) }",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint with 'all' function: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_with_allTrue_function() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        "assert constraint c { x implies allTrue(y) }",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint with 'allTrue' function: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_without_doc() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        r#"assert constraint originalImpliesDerived {
+            originalRequirement.result implies allTrue(derivedRequirements.result)
+        }"#,
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint without doc: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_constraint_with_doc_and_expression() {
+    let result = SysMLParser::parse(
+        Rule::assert_constraint_usage,
+        r#"assert constraint originalImpliesDerived {
+            doc 
+            /* comment */
+            originalRequirement.result implies allTrue(derivedRequirements.result)
+        }"#,
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse constraint with doc and expression: {:?}",
+        result.err()
+    );
+}
+
+#[test]
 fn test_qualified_name_with_unicode_theta_as_owned_expression() {
     let result = SysMLParser::parse(Rule::owned_expression, "isq.'Θ'");
     assert!(

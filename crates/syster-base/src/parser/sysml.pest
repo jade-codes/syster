@@ -396,7 +396,7 @@ unary_operator = {
 
 // Extent Expressions
 extent_expression = {
-    "all" ~ type_result_member
+    "all" ~ !(ASCII_ALPHANUMERIC | "_") ~ type_result_member
     | primary_expression
 }
 
