@@ -1403,3 +1403,16 @@ fn test_interface_usage_with_nonunique() {
         result.err()
     );
 }
+
+#[test]
+fn test_flow_usage_with_nonunique() {
+    let result = SysMLParser::parse(
+        Rule::occurrence_usage_element,
+        "abstract flow flows: Flow[0..*] nonunique :> messages, flowTransfers { }",
+    );
+    assert!(
+        result.is_ok(),
+        "Failed to parse flow usage with nonunique: {:?}",
+        result.err()
+    );
+}

@@ -1816,7 +1816,17 @@ flow_redefinition = {
     feature_reference
 }
 
-flow_connection_usage = { "flow" ~ identifier ~ ";" }
+flow_connection_usage_keyword = { flow_keyword }
+
+flow_connection_usage = {
+    occurrence_usage_prefix ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body
+}
+
+flow_connection_usage_declaration = {
+    usage_declaration? ~ connector_keyword ~ connector_part
+    | usage_declaration
+}
+
 succession_flow_connection_usage = { "succession" ~ "flow" ~ identifier ~ ";" }
 
 // Action Usages
