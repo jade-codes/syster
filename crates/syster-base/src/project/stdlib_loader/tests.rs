@@ -139,18 +139,14 @@ fn test_files_added_to_workspace() {
     let result = loader.load(&mut workspace);
     assert!(result.is_ok());
 
-    // Verify files were added to workspace
     let file_count = workspace.file_paths().count();
-    // Current state: 27 files parse successfully out of 94 total (58 SysML + 36 KerML)
-    // Both SysML and KerML grammars are incomplete, causing 67 files to fail
-    // As grammar improves, this should approach 94
+
     assert!(
-        file_count >= 27,
-        "Expected at least 27 successfully parsed files, found {}",
+        file_count == 94,
+        "Expected 94 files in workspace after loading stdlib, found {}",
         file_count
     );
 
-    // Verify stdlib flag is set
     assert!(workspace.has_stdlib());
 }
 
@@ -169,19 +165,15 @@ fn test_kerml_files_handled() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("kerml"))
         .count();
 
-    // There are ~36 .kerml files in stdlib
     assert!(
         kerml_count == 36,
         "Expected 36 .kerml files, found {}",
         kerml_count
     );
-
-    // Note: KerML parsing not yet implemented, but files should be collected
 }
 
 #[test]
 fn test_lazy_loader_does_not_load_immediately() {
-    // TDD: Lazy loader should not load files until requested
     let _loader = StdLibLoader::lazy();
     let workspace = Workspace::<SyntaxFile>::new();
 
@@ -196,7 +188,6 @@ fn test_lazy_loader_does_not_load_immediately() {
 
 #[test]
 fn test_lazy_load_on_demand() {
-    // TDD: First request should trigger loading
     let mut loader = StdLibLoader::lazy();
     let mut workspace = Workspace::<SyntaxFile>::new();
 
@@ -217,7 +208,6 @@ fn test_lazy_load_on_demand() {
 
 #[test]
 fn test_lazy_load_only_once() {
-    // TDD: Subsequent requests should not reload
     let mut loader = StdLibLoader::lazy();
     let mut workspace = Workspace::<SyntaxFile>::new();
 
@@ -236,7 +226,6 @@ fn test_lazy_load_only_once() {
 
 #[test]
 fn test_can_check_if_stdlib_loaded() {
-    // TDD: Should be able to query if stdlib is loaded
     let mut loader = StdLibLoader::lazy();
     let mut workspace = Workspace::<SyntaxFile>::new();
 
@@ -254,7 +243,6 @@ fn test_can_check_if_stdlib_loaded() {
 
 #[test]
 fn test_eager_load_still_works() {
-    // TDD: Original eager loading should still work
     let loader = StdLibLoader::new();
     let mut workspace = Workspace::<SyntaxFile>::new();
 
@@ -273,7 +261,6 @@ fn test_eager_load_still_works() {
 
 #[test]
 fn test_lazy_avoids_reloading() {
-    // TDD: Lazy loader should not reload if stdlib already in workspace
     let mut loader = StdLibLoader::lazy();
     let mut workspace = Workspace::<SyntaxFile>::new();
 

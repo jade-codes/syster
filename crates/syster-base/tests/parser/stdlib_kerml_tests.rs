@@ -4,20 +4,10 @@ use rstest::rstest;
 use std::path::PathBuf;
 use syster::project::file_loader;
 
-/// Test that each KerML stdlib file can be parsed successfully
-///
-/// This test suite creates individual test cases for each KerML file in the standard library.
-/// When a file fails to parse, the test name clearly indicates which file has the issue.
-///
-/// NOTE: Many KerML stdlib files currently fail to parse due to incomplete grammar support.
-/// These tests are included to track progress on KerML parser implementation.
-
 #[rstest]
-// Kernel Data Type Library - Partially supported
 #[case("Kernel Libraries/Kernel Data Type Library/Collections.kerml")]
 #[case("Kernel Libraries/Kernel Data Type Library/ScalarValues.kerml")]
 #[case("Kernel Libraries/Kernel Data Type Library/VectorValues.kerml")]
-// Kernel Function Library - Most tests ignored due to parser limitations
 #[case("Kernel Libraries/Kernel Function Library/BaseFunctions.kerml")]
 #[case("Kernel Libraries/Kernel Function Library/BooleanFunctions.kerml")]
 #[case("Kernel Libraries/Kernel Function Library/CollectionFunctions.kerml")]
@@ -35,7 +25,6 @@ use syster::project::file_loader;
 #[case("Kernel Libraries/Kernel Function Library/StringFunctions.kerml")]
 #[case("Kernel Libraries/Kernel Function Library/TrigFunctions.kerml")]
 #[case("Kernel Libraries/Kernel Function Library/VectorFunctions.kerml")]
-// Kernel Semantic Library - Partially supported
 #[case("Kernel Libraries/Kernel Semantic Library/Base.kerml")]
 #[case("Kernel Libraries/Kernel Semantic Library/Clocks.kerml")]
 #[case("Kernel Libraries/Kernel Semantic Library/ControlPerformances.kerml")]

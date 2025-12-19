@@ -4,11 +4,6 @@ use rstest::rstest;
 use std::path::PathBuf;
 use syster::project::file_loader;
 
-/// Test that each SysML stdlib file can be parsed successfully
-///
-/// This test suite creates individual test cases for each SysML file in the standard library.
-/// When a file fails to parse, the test name clearly indicates which file has the issue.
-
 #[rstest]
 #[case("Domain Libraries/Analysis/AnalysisTooling.sysml")]
 #[case("Domain Libraries/Analysis/SampledFunctions.sysml")]

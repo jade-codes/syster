@@ -1574,7 +1574,7 @@ fn test_parse_feature_with_multiplicity_and_relationships(#[case] input: &str) {
 #[case("comment /* simple comment */")]
 #[case("comment myComment /* comment text */")]
 fn test_parse_comment_basic(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::comment, input).unwrap();
+    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, input).unwrap();
     let parsed = pairs.into_iter().next().unwrap();
     assert_eq!(parsed.as_str(), input);
 }
@@ -1583,7 +1583,7 @@ fn test_parse_comment_basic(#[case] input: &str) {
 #[case(r#"comment locale "en-US" /* comment text */"#)]
 #[case(r#"comment MyComment locale "fr-FR" /* texte */"#)]
 fn test_parse_comment_with_locale(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::comment, input).unwrap();
+    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, input).unwrap();
     let parsed = pairs.into_iter().next().unwrap();
     assert_eq!(parsed.as_str(), input);
 }
@@ -1592,7 +1592,7 @@ fn test_parse_comment_with_locale(#[case] input: &str) {
 #[case("comment about Foo /* about Foo */")]
 #[case("comment about Bar, Baz /* about multiple */")]
 fn test_parse_comment_with_about(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::comment, input).unwrap();
+    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, input).unwrap();
     let parsed = pairs.into_iter().next().unwrap();
     assert_eq!(parsed.as_str(), input);
 }
@@ -1982,7 +1982,7 @@ fn test_parse_feature_value_with_expression(#[case] input: &str) {
 #[rstest]
 #[case("doc /* This is documentation */")]
 #[case("doc /* Multi-line\n * documentation\n */")]
-#[case("doc /* Simple */ myId;")]
+#[case("doc /* Simple */")]
 fn test_parse_documentation(#[case] input: &str) {
     let pairs = KerMLParser::parse(syster::parser::kerml::Rule::documentation, input).unwrap();
     let parsed = pairs.into_iter().next().unwrap();
@@ -2328,6 +2328,16 @@ fn test_parse_invariant_with_doc_and_expression() {
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
 }
 
+// Test invariant with doc and expression body
+#[test]
+fn test_parse_invariant_with_expression() {
+    let input = r#"inv timeFlowConstraint {
+        snapshots->forAll{in s : Clock; TimeOf(s, thisClock) == s.currentTime}
+    }"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::invariant, input);
+    assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
+}
+
 // Test implies operator
 #[test]
 fn test_parse_implies_operator() {
@@ -2524,7 +2534,7 @@ fn test_parse_step_with_multiple_subsets() {
 #[test]
 fn test_parse_comment_with_multiple_about() {
     let input = "comment about StructuredSurface, StructuredCurve, StructuredPoint";
-    let result = KerMLParser::parse(syster::parser::kerml::Rule::comment, input);
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, input);
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
 }
 
@@ -2619,4 +2629,131 @@ fn test_parse_end_feature_with_relationships_before_feature() {
     let input = "end happensWhile [1..*] subsets timeCoincidentOccurrences feature thatOccurrence: Occurrence redefines longerOccurrence;";
     let result = KerMLParser::parse(syster::parser::kerml::Rule::end_feature, input);
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
+}
+
+// TEMPORARY DEBUG TESTS
+#[test]
+fn test_collect_args_with_in() {
+    let input = "{in s : Clock; TimeOf(s, thisClock) == s.currentTime}";
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::collect_operation_args, input);
+    assert!(
+        result.is_ok(),
+        "collect_operation_args failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_namespace_body_with_expression() {
+    let input = r#"{
+        snapshots->forAll{in s : Clock; TimeOf(s, thisClock) == s.currentTime}
+    }"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body, input);
+    assert!(result.is_ok(), "namespace_body failed: {:?}", result.err());
+}
+
+#[test]
+fn test_namespace_body_with_doc_and_expression() {
+    let input = r#"{
+        doc /* comment */
+        snapshots->forAll{in s : Clock; TimeOf(s, thisClock) == s.currentTime}
+    }"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body, input);
+    assert!(
+        result.is_ok(),
+        "namespace_body with doc failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_annotating_member_doc() {
+    let input = "doc /* comment */";
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::annotating_member, input);
+    assert!(
+        result.is_ok(),
+        "annotating_member failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_two_namespace_elements() {
+    let input = r#"doc /* comment */
+        x"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body_elements, input);
+    assert!(result.is_ok(), "two elements failed: {:?}", result.err());
+}
+
+#[test]
+fn test_doc_then_simple_expr() {
+    let input = r#"{
+        doc /* comment */
+        x
+    }"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body, input);
+    assert!(
+        result.is_ok(),
+        "doc then simple expr failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_doc_then_arrow_expr() {
+    let input = r#"{
+        doc /* comment */
+        x->y
+    }"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body, input);
+    assert!(
+        result.is_ok(),
+        "doc then arrow expr failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_namespace_body_element_expression() {
+    let input = "snapshots->forAll{in s : Clock; TimeOf(s, thisClock) == s.currentTime}";
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body_element, input);
+    assert!(
+        result.is_ok(),
+        "namespace_body_element failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_arrow_expr_as_element() {
+    let input = "x->y";
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body_element, input);
+    assert!(
+        result.is_ok(),
+        "arrow expr as element failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_arrow_expr_in_body_no_doc() {
+    let input = "{ x->y }";
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body, input);
+    assert!(
+        result.is_ok(),
+        "arrow expr in body no doc failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_elements_doc_then_arrow() {
+    let input = r#"doc /* comment */
+x->y"#;
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::namespace_body_elements, input);
+    assert!(
+        result.is_ok(),
+        "elements doc then arrow failed: {:?}",
+        result.err()
+    );
 }

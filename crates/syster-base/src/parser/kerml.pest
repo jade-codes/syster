@@ -2,10 +2,10 @@
 // This will be incrementally expanded following TDD
 
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
-COMMENT = _{ block_comment | line_comment }
+COMMENT = _{ line_comment }
 
 line_comment = { "//" ~ (!"\n" ~ ANY)* }
-block_comment = { "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+block_comment = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
 // Terminals
 
@@ -70,7 +70,7 @@ conjugates_token = @{ "~" | "conjugates" }
 // Enum Types
 visibility_kind = @{ "protected" | "private" | "public" }
 feature_direction_kind = @{ "inout" | "in" | "out" }
-unary_operator = @{ "+" | "-" | "not" | "~" }
+unary_operator = @{ "+" | "-" ~ !(">" | "->") | "not" | "~" }
 classification_test_operator = @{ "@@" | "hastype" | "istype" | "@" }
 equality_operator = @{ "!==" | "!=" | "===" | "==" }
 import_kind = @{ "::*::**" | "::**" | "::*" }
@@ -131,19 +131,15 @@ annotation = {
     element_reference
 }
 
-// Comment - can have 'about' annotations and locale
-comment = {
-    "comment" ~ block_comment? ~ identification? ~ ("about" ~ element_reference ~ ("," ~ element_reference)*)? ~ (";")?
-}
+comment_annotation = { "comment" ~ identification? ~ ("locale" ~ string_value)? ~ ("about" ~ element_reference ~ ("," ~ element_reference)*)? ~ (block_comment | ";")? }
 
-// Documentation
-documentation = {
-    "doc" ~ block_comment? ~ (identifier ~ ";")?
-}
+documentation = { 
+    "doc" ~ identification? ~ ("locale" ~ string_value)? ~ (block_comment | ";")? }
+
 
 // Textual representation with language
 textual_representation = {
-    "rep" ~ block_comment? ~ (identifier ~ ";")?
+    ("rep" ~ identification?)? ~ "language" ~ string_value ~ block_comment? ~ ";"?
 }
 
 // Owned Annotations
@@ -153,7 +149,7 @@ owned_annotation = {
 }
 
 annotating_element = {
-    comment
+    comment_annotation
     | documentation
     | textual_representation
     | metadata_feature
@@ -455,10 +451,12 @@ interaction = {
 // Feature extends Type
 feature = {
     prefix_metadata? ~
+    visibility_kind? ~
     feature_direction_kind? ~
     ("abstract"| "composite" | "portion" | "member" | readonly | derived | end_marker | variable_marker)* ~
     "feature" ~ "all"? ~ identification? ~
     feature_specialization_part? ~
+    ("ordered" | "nonunique")* ~
     feature_value? ~
     namespace_body
 }
@@ -631,20 +629,33 @@ expression = {
 item_flow = {
     ("abstract" | "composite" | "portion")? ~
     "flow" ~ (
-        "all"? ~ multiplicity_bounds? ~ identification? ~
+        "connector" ~ identification? ~
         feature_specialization_part? ~
         ("from" ~ connector_endpoint)? ~
         ("to" ~ connector_endpoint)? ~
         ("ordered" | "nonunique")* ~
         feature_value? ~
         end_feature_membership* ~
-        (namespace_body | feature_membership?)
+        (namespace_body | ";")
+        | identification ~ feature_specialization_part? ~
+          ("ordered" | "nonunique")* ~
+          feature_value? ~
+          end_feature_membership* ~
+          (namespace_body | ";")
     )
 }
 
 // SuccessionItemFlow extends ItemFlow and Succession
 succession_item_flow = {
-    "succession" ~ "flow" ~ item_flow
+    "succession" ~ "flow" ~ ("abstract" | "composite" | "portion")? ~
+    "flow" ~ "connector" ~ identification? ~
+    feature_specialization_part? ~
+    ("from" ~ connector_endpoint)? ~
+    ("to" ~ connector_endpoint)? ~
+    ("ordered" | "nonunique")* ~
+    feature_value? ~
+    end_feature_membership* ~
+    (namespace_body | ";")
 }
 
 // BooleanExpression extends Expression
@@ -719,6 +730,7 @@ disjoining = {
     "disjoint" ~ (
         element_reference ~ "from" ~ element_reference  // disjoint a.b from c.d
         | "from" ~ relationship                          // disjoint from X
+        | visibility_kind? ~ element_reference            // disjoint Type1 or disjoint private Type2
     )
 }
 
@@ -1068,11 +1080,15 @@ unary_expression = {
 
 // Collect Operator Expressions (-> for collection operations, . for feature chaining, # for indexing)
 collect_operator_expression = {
-    primary_expression ~ (("." ~ identifier) | ("->" ~ identifier ~ collect_operation_args?) | ("#" ~ "(" ~ operator_expression ~ ("," ~ operator_expression)* ~ ")"))*
+    primary_expression ~ (("." ~ identifier) | (arrow_operator ~ identifier ~ collect_operation_args?) | ("#" ~ "(" ~ operator_expression ~ ("," ~ operator_expression)* ~ ")"))*
 }
 
+arrow_operator = @{ "->" }
+
 collect_operation_args = {
-    "{" ~ parameter_membership* ~ operator_expression ~ "}"
+    "{" ~ "in" ~ name_identifier ~ feature_typing ~ ";" ~ operator_expression ~ "}"
+    | "{" ~ parameter_membership+ ~ operator_expression ~ "}"
+    | "{" ~ operator_expression ~ "}"
     | "(" ~ (operator_expression ~ ("," ~ operator_expression)*)? ~ ")"
     | operator_expression
 }
@@ -1258,6 +1274,7 @@ namespace_body_element = {
     | shorthand_feature_member
     | non_feature_member
     | relationship_member
+    | block_comment
     | operator_expression
 }
 

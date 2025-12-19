@@ -56,7 +56,7 @@ impl_from_pest!(Package, |pest| {
 
 impl_from_pest!(Comment, |pest| {
     let pair = pest.next().ok_or(ConversionError::NoMatch)?;
-    if pair.as_rule() != Rule::comment {
+    if pair.as_rule() != Rule::comment_annotation {
         return Err(ConversionError::NoMatch);
     }
     let span = Some(pest_span_to_span(pair.as_span()));
@@ -77,6 +77,15 @@ impl_from_pest!(Documentation, |pest| {
     let span = Some(pest_span_to_span(pair.as_span()));
     let content = pair.as_str().to_string();
     let comment_span = span;
+
+    // Debug: print what we parsed
+    eprintln!("Documentation parsed:");
+    eprintln!("  Full text: {:?}", content);
+    eprintln!("  Inner rules:");
+    for inner in pair.clone().into_inner() {
+        eprintln!("    {:?}: {:?}", inner.as_rule(), inner.as_str());
+    }
+
     Ok(Documentation {
         comment: Comment {
             content,
@@ -201,7 +210,7 @@ impl_from_pest!(Element, |pest| {
     let pair = pest.next().ok_or(ConversionError::NoMatch)?;
     Ok(match pair.as_rule() {
         Rule::package => Element::Package(Package::from_pest(&mut pair.into_inner())?),
-        Rule::comment => Element::Comment(Comment::from_pest(&mut pair.into_inner())?),
+        Rule::comment_annotation => Element::Comment(Comment::from_pest(&mut pair.into_inner())?),
         Rule::type_def
         | Rule::classifier
         | Rule::data_type

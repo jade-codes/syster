@@ -21,7 +21,7 @@ fn test_kerml_package_from_pest() {
 #[test]
 fn test_kerml_comment() {
     let input = "comment /* This is a test */";
-    let mut pairs = KerMLParser::parse(Rule::comment, input).unwrap();
+    let mut pairs = KerMLParser::parse(Rule::comment_annotation, input).unwrap();
     let comment = Comment::from_pest(&mut pairs).unwrap();
     assert!(comment.content.contains("This is a test"));
 }
@@ -31,7 +31,7 @@ fn test_kerml_doc() {
     let input = "doc /* This is a test */";
     let mut pairs = KerMLParser::parse(Rule::documentation, input).unwrap();
     let doc = Documentation::from_pest(&mut pairs).unwrap();
-    assert!(doc.comment.content.contains("This is a test"));
+    assert!(doc.comment.content.contains("/* This is a test */"));
 }
 
 #[test]
