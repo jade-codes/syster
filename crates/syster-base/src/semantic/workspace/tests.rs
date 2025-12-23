@@ -210,7 +210,7 @@ fn test_file_version_increments() {
 
     // Update multiple times
     for i in 1..=5 {
-        let source = format!("part def V{};", i);
+        let source = format!("part def V{i};");
         let mut pairs = SysMLParser::parse(Rule::model, &source).unwrap();
         let file = SysMLFile::from_pest(&mut pairs).unwrap();
         workspace.update_file(&path, crate::syntax::SyntaxFile::SysML(file));
@@ -218,9 +218,7 @@ fn test_file_version_increments() {
         assert_eq!(
             workspace.get_file(&path).unwrap().version(),
             i,
-            "Version should be {} after {} updates",
-            i,
-            i
+            "Version should be {i} after {i} updates"
         );
     }
 }

@@ -120,7 +120,7 @@ impl fmt::Display for SemanticRole {
             SemanticRole::Classifier => write!(f, "classifier"),
             SemanticRole::Feature => write!(f, "feature"),
             SemanticRole::Package => write!(f, "package"),
-            SemanticRole::Unknown(s) => write!(f, "{}", s),
+            SemanticRole::Unknown(s) => write!(f, "{s}"),
         }
     }
 }

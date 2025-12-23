@@ -143,8 +143,7 @@ fn test_files_added_to_workspace() {
 
     assert!(
         file_count == 94,
-        "Expected 94 files in workspace after loading stdlib, found {}",
-        file_count
+        "Expected 94 files in workspace after loading stdlib, found {file_count}"
     );
 
     assert!(workspace.has_stdlib());
@@ -167,8 +166,7 @@ fn test_kerml_files_handled() {
 
     assert!(
         kerml_count == 36,
-        "Expected 36 .kerml files, found {}",
-        kerml_count
+        "Expected 36 .kerml files, found {kerml_count}"
     );
 }
 

@@ -156,7 +156,7 @@ pub fn collect_layer_violations_with_skip(
 pub fn format_violation_list<T: std::fmt::Display>(items: &[T]) -> String {
     items
         .iter()
-        .map(|item| format!("  - {}", item))
+        .map(|item| format!("  - {item}"))
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -172,8 +172,8 @@ pub fn check_no_reverse_dependency(
     layer_name: &str,
 ) -> Vec<String> {
     let patterns = [
-        format!("use {}", forbidden_crate),
-        format!("use crate::{}", forbidden_crate),
+        format!("use {forbidden_crate}"),
+        format!("use crate::{forbidden_crate}"),
     ];
     let pattern_refs: Vec<&str> = patterns.iter().map(|s| s.as_str()).collect();
 
