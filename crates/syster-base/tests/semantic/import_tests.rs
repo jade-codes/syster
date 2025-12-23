@@ -3,10 +3,10 @@
 use from_pest::FromPest;
 use pest::Parser;
 use std::path::PathBuf;
-use syster::parser::{sysml::Rule, SysMLParser};
+use syster::parser::{SysMLParser, sysml::Rule};
 use syster::semantic::Workspace;
-use syster::syntax::sysml::ast::SysMLFile;
 use syster::syntax::SyntaxFile;
+use syster::syntax::sysml::ast::SysMLFile;
 
 #[test]
 fn test_parse_import_statement() {
