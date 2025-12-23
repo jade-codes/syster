@@ -131,10 +131,7 @@ fn test_hover_on_cross_file_symbol() {
             sysml_count += 1;
         }
     }
-    println!(
-        "✓ File breakdown: {} KerML files, {} SysML files",
-        kerml_count, sysml_count
-    );
+    println!("✓ File breakdown: {kerml_count} KerML files, {sysml_count} SysML files");
 
     // Check if ScalarValues.kerml is loaded
     let scalar_values_path = server
@@ -182,10 +179,7 @@ fn test_hover_on_cross_file_symbol() {
         .find_map(|(i, line)| line.find("ScalarValue").map(|pos| (i, pos)))
         .expect("Should find ScalarValue in file");
 
-    println!(
-        "✓ Found 'ScalarValue' at line {}, col {}",
-        line_index, col_index
-    );
+    println!("✓ Found 'ScalarValue' at line {line_index}, col {col_index}");
     println!("  Line content: {}", lines[line_index].trim());
 
     // Try to get hover at that position
@@ -207,7 +201,7 @@ fn test_hover_on_cross_file_symbol() {
             tower_lsp::lsp_types::MarkedString::String(content),
         ) = hover.contents
         {
-            println!("  Content: {}", content);
+            println!("  Content: {content}");
             assert!(
                 content.contains("ScalarValue"),
                 "Hover should mention ScalarValue"
@@ -228,10 +222,7 @@ fn test_hover_on_cross_file_symbol() {
             .map(|(_, s)| (s.name(), s.qualified_name(), s.span().is_some()))
             .collect();
 
-        println!(
-            "  Symbols matching 'ScalarValue': {:?}",
-            scalar_value_symbols
-        );
+        println!("  Symbols matching 'ScalarValue': {scalar_value_symbols:?}");
 
         panic!("Hover should work for cross-file symbol ScalarValue");
     }
@@ -299,9 +290,9 @@ fn test_stdlib_symbols_present() {
     for simple_name in test_symbols {
         let found = all_symbols.iter().any(|(_, s)| s.name() == simple_name);
         if found {
-            println!("✓ Found '{}' in symbol table", simple_name);
+            println!("✓ Found '{simple_name}' in symbol table");
         } else {
-            println!("✗ Missing '{}'", simple_name);
+            println!("✗ Missing '{simple_name}'");
         }
     }
 }
@@ -373,11 +364,10 @@ fn test_symbol_resolution_after_population() {
         // or if they're in nested scopes, but it should work for top-level symbols
         if resolved.is_none() {
             println!(
-                "⚠ Could not resolve '{}' by simple name (qualified: {})",
-                simple_name, qualified_name
+                "⚠ Could not resolve '{simple_name}' by simple name (qualified: {qualified_name})"
             );
         } else {
-            println!("✓ Resolved '{}' -> {}", simple_name, qualified_name);
+            println!("✓ Resolved '{simple_name}' -> {qualified_name}");
         }
     }
 }
@@ -473,7 +463,7 @@ package AnotherPackage {
         character: 18,
     };
     let package_result = server.find_symbol_at_position(&file2_path, hover_package);
-    println!("Hover on 'MyPackage': {:?}", package_result);
+    println!("Hover on 'MyPackage': {package_result:?}");
     assert!(package_result.is_some(), "Should find MyPackage");
 
     // Test hover on "MyPart" usage
@@ -483,7 +473,7 @@ package AnotherPackage {
     };
     let mypart_result = server.find_symbol_at_position(&file2_path, hover_mypart);
 
-    println!("Hover on 'MyPart': {:?}", mypart_result);
+    println!("Hover on 'MyPart': {mypart_result:?}");
     assert!(
         mypart_result.is_some(),
         "Hover should find MyPart via global search"

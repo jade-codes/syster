@@ -671,7 +671,7 @@ fn test_find_references_nested_elements() {
             .relationship_graph()
             .get_one_to_one(REL_TYPING, key)
         {
-            eprintln!("  {} -> {}", key, target);
+            eprintln!("  {key} -> {target}");
         }
     }
 
@@ -989,10 +989,7 @@ fn test_cross_file_stdlib_reference_resolution() {
         .files()
         .keys()
         .any(|p| p.to_string_lossy().contains("MeasurementReferences"));
-    eprintln!(
-        "  Has MeasurementReferences.sysml: {}",
-        has_measurement_refs
-    );
+    eprintln!("  Has MeasurementReferences.sysml: {has_measurement_refs}");
 
     // Check what symbols ARE in the symbol table from stdlib
     eprintln!("\n  First 10 stdlib symbols:");
@@ -1012,7 +1009,7 @@ fn test_cross_file_stdlib_reference_resolution() {
             Symbol::Usage { kind, .. } => kind.as_str(),
             Symbol::Alias { .. } => "Alias",
         };
-        eprintln!("    {}: {} ({})", i, name, symbol_type);
+        eprintln!("    {i}: {name} ({symbol_type})");
     }
 
     // Check specifically for attribute definitions
@@ -1024,11 +1021,11 @@ fn test_cross_file_stdlib_reference_resolution() {
         {
             attr_count += 1;
             if attr_count <= 5 {
-                eprintln!("    - {}", name);
+                eprintln!("    - {name}");
             }
         }
     }
-    eprintln!("  Total attribute definitions: {}", attr_count);
+    eprintln!("  Total attribute definitions: {attr_count}");
 
     // Open a file that references a stdlib type
     let uri = Url::parse("file:///test.sysml").unwrap();
@@ -1056,13 +1053,13 @@ fn test_cross_file_stdlib_reference_resolution() {
         .symbol_table()
         .lookup_qualified("MeasurementReferences::DimensionOneUnit")
     {
-        eprintln!("\nFound DimensionOneUnit: {:?}", symbol);
+        eprintln!("\nFound DimensionOneUnit: {symbol:?}");
     } else {
         eprintln!("\nDimensionOneUnit NOT found in symbol table");
         eprintln!("\nLooking for any MeasurementReferences symbols:");
         for (name, _) in server.workspace().symbol_table().all_symbols() {
             if name.contains("MeasurementReferences") {
-                eprintln!("  - {}", name);
+                eprintln!("  - {name}");
             }
         }
     }
@@ -1071,7 +1068,7 @@ fn test_cross_file_stdlib_reference_resolution() {
     let position = Position::new(4, 36);
     let definition = server.get_definition(&uri, position);
 
-    eprintln!("\nDefinition result: {:?}", definition);
+    eprintln!("\nDefinition result: {definition:?}");
 
     assert!(
         definition.is_some(),
@@ -1113,7 +1110,7 @@ fn test_stdlib_files_actually_load() {
     eprintln!("  Is dir: {}", stdlib_path.is_dir());
 
     let load_result = server.ensure_stdlib_loaded();
-    eprintln!("\nLoad result: {:?}", load_result);
+    eprintln!("\nLoad result: {load_result:?}");
 
     eprintln!("\nAfter stdlib load:");
     eprintln!("  Files: {}", server.workspace().file_count());
@@ -1163,7 +1160,7 @@ fn test_measurement_references_file_directly() {
         eprintln!("Parse FAILED!");
         eprintln!("Errors: {}", parse_result.errors.len());
         for (i, err) in parse_result.errors.iter().enumerate().take(5) {
-            eprintln!("  {}: {:?}", i, err);
+            eprintln!("  {i}: {err:?}");
         }
         panic!("Failed to parse MeasurementReferences.sysml");
     }
@@ -1200,7 +1197,7 @@ fn test_measurement_references_file_directly() {
             Symbol::Feature { .. } => "Feature",
             Symbol::Alias { .. } => "Alias",
         };
-        eprintln!("  {} ({})", name, sym_type);
+        eprintln!("  {name} ({sym_type})");
     }
 
     // Check for attribute definitions
@@ -1213,7 +1210,7 @@ fn test_measurement_references_file_directly() {
 
     eprintln!("\nAttribute definitions: {}", attr_defs.len());
     for name in attr_defs.iter().take(10) {
-        eprintln!("  - {}", name);
+        eprintln!("  - {name}");
     }
 
     assert!(!attr_defs.is_empty(), "Should have attribute definitions");
@@ -1223,7 +1220,7 @@ fn test_measurement_references_file_directly() {
         .iter()
         .any(|(name, _)| name.contains("DimensionOneUnit"));
 
-    eprintln!("\nHas DimensionOneUnit: {}", has_dimension_one);
+    eprintln!("\nHas DimensionOneUnit: {has_dimension_one}");
     assert!(has_dimension_one, "Should find DimensionOneUnit");
 }
 
@@ -1261,7 +1258,7 @@ fn test_dimension_one_unit_cross_file_resolution() {
         })
         .take(10)
         .collect();
-    eprintln!("Sample package names: {:?}", package_names);
+    eprintln!("Sample package names: {package_names:?}");
 
     // Check what symbols we actually have
     let measurement_refs_syms: Vec<_> = workspace
@@ -1271,17 +1268,14 @@ fn test_dimension_one_unit_cross_file_resolution() {
         .filter(|(name, _)| name.contains("MeasurementReferences") || name.contains("DimensionOne"))
         .map(|(name, _)| name.as_str())
         .collect();
-    eprintln!("MeasurementReferences symbols: {:?}", measurement_refs_syms);
+    eprintln!("MeasurementReferences symbols: {measurement_refs_syms:?}");
 
     // Check if MeasurementReferences.sysml file is in workspace
     let has_measurement_file = workspace
         .files()
         .keys()
         .any(|path| path.to_string_lossy().contains("MeasurementReferences"));
-    eprintln!(
-        "Has MeasurementReferences.sysml file: {}",
-        has_measurement_file
-    );
+    eprintln!("Has MeasurementReferences.sysml file: {has_measurement_file}");
 
     // Check parse errors for MeasurementReferences
     if let Some((_path, file)) = workspace
@@ -1294,8 +1288,7 @@ fn test_dimension_one_unit_cross_file_resolution() {
             syster::syntax::SyntaxFile::KerML(kerml) => ("KerML", kerml.elements.len()),
         };
         eprintln!(
-            "MeasurementReferences file type: {}, has {} top-level elements",
-            file_type, elem_count
+            "MeasurementReferences file type: {file_type}, has {elem_count} top-level elements"
         );
     }
 

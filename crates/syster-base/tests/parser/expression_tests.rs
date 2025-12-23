@@ -316,7 +316,7 @@ fn test_return_parameter_member_with_semicolon() {
             let consumed = pair.as_str();
             assert_eq!(consumed, "return : Anything[0..*] = fn.samples.domainValue");
         }
-        Err(e) => panic!("Failed to parse: {:?}", e),
+        Err(e) => panic!("Failed to parse: {e:?}"),
     }
 }
 
@@ -367,8 +367,7 @@ fn test_identifier_excludes_keywords(#[case] keyword: &str) {
     let result = SysMLParser::parse(Rule::identifier, keyword);
     assert!(
         result.is_err(),
-        "Keyword '{}' should not parse as identifier",
-        keyword
+        "Keyword '{keyword}' should not parse as identifier"
     );
 }
 
@@ -582,7 +581,7 @@ fn test_action_body_item_identifier() {
     let input = "a";
     let result = SysMLParser::parse(Rule::action_body_item, input);
 
-    println!("action_body_item('a') result: {:?}", result);
+    println!("action_body_item('a') result: {result:?}");
 }
 
 #[test]
@@ -591,7 +590,7 @@ fn test_calculation_body_item_identifier() {
     let input = "a";
     let result = SysMLParser::parse(Rule::calculation_body_item, input);
 
-    println!("calculation_body_item('a') result: {:?}", result);
+    println!("calculation_body_item('a') result: {result:?}");
 }
 
 #[test]

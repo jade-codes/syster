@@ -46,7 +46,7 @@ fn test_stdlib_package_with_types() {
     println!("\n=== Testing Standard Library Package with Type References ===");
     println!("Source:");
     for (i, line) in source.lines().enumerate() {
-        println!("  Line {}: '{}'", i, line);
+        println!("  Line {i}: '{line}'");
     }
 
     let syntax_file = parse_sysml(source);
@@ -65,7 +65,7 @@ fn test_stdlib_package_with_types() {
                 name, span.start.line, span.start.column, span.end.column
             );
         } else {
-            println!("  '{}': NO SPAN", name);
+            println!("  '{name}': NO SPAN");
         }
     }
 
@@ -104,7 +104,7 @@ fn test_stdlib_package_with_types() {
         .collect();
     println!("\n=== Package Token Verification ===");
     println!("Expected: 'AnalysisTooling'");
-    println!("Actual: '{}'", pkg_text);
+    println!("Actual: '{pkg_text}'");
     assert_eq!(
         pkg_text, "AnalysisTooling",
         "Package token should highlight 'AnalysisTooling'"
@@ -118,7 +118,7 @@ fn test_stdlib_package_with_types() {
             .skip(tok.column as usize)
             .take(tok.length as usize)
             .collect();
-        println!("\nMetadata def token: '{}'", text);
+        println!("\nMetadata def token: '{text}'");
         assert_eq!(text, "ToolExecution", "Should capture metadata def name");
     }
 
@@ -153,7 +153,7 @@ fn test_kerml_classifiers() {
     println!("\n=== Testing KerML Classifiers ===");
     println!("Source:");
     for (i, line) in source.lines().enumerate() {
-        println!("  Line {}: '{}'", i, line);
+        println!("  Line {i}: '{line}'");
     }
 
     let path = PathBuf::from("test.kerml");
@@ -164,7 +164,7 @@ fn test_kerml_classifiers() {
     symbol_table.set_current_file(Some("test.kerml".to_string()));
 
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
-    assert!(result.is_ok(), "Symbol population failed: {:?}", result);
+    assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     println!("\n=== Symbols Found ===");
     for (name, symbol) in symbol_table.all_symbols() {
@@ -174,7 +174,7 @@ fn test_kerml_classifiers() {
                 name, span.start.line, span.start.column, span.end.column
             );
         } else {
-            println!("  '{}': NO SPAN", name);
+            println!("  '{name}': NO SPAN");
         }
     }
 
@@ -243,7 +243,7 @@ fn test_attribute_definitions_and_usages() {
     println!("\n=== Testing Attributes ===");
     println!("Source:");
     for (i, line) in source.lines().enumerate() {
-        println!("  Line {}: '{}'", i, line);
+        println!("  Line {i}: '{line}'");
     }
 
     let syntax_file = parse_sysml(source);
@@ -252,7 +252,7 @@ fn test_attribute_definitions_and_usages() {
     symbol_table.set_current_file(Some("test.sysml".to_string()));
 
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
-    assert!(result.is_ok(), "Symbol population failed: {:?}", result);
+    assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     println!("\n=== Symbols Found ===");
     for (name, symbol) in symbol_table.all_symbols() {
@@ -262,7 +262,7 @@ fn test_attribute_definitions_and_usages() {
                 name, span.start.line, span.start.column, span.end.column
             );
         } else {
-            println!("  '{}': NO SPAN", name);
+            println!("  '{name}': NO SPAN");
         }
     }
 
@@ -306,7 +306,7 @@ fn test_attribute_definitions_and_usages() {
         .collect();
     println!("\n=== Attribute Token ===");
     println!("Expected: 'mass'");
-    println!("Actual: '{}'", mass_text);
+    println!("Actual: '{mass_text}'");
     assert_eq!(mass_text, "mass", "Attribute token should highlight 'mass'");
 }
 
@@ -321,7 +321,7 @@ fn test_semantic_token_text_extraction() {
 
     println!("\n=== Source Code ===");
     for (i, line) in source.lines().enumerate() {
-        println!("Line {}: '{}'", i, line);
+        println!("Line {i}: '{line}'");
     }
 
     // Parse the file
@@ -336,8 +336,7 @@ fn test_semantic_token_text_extraction() {
         populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
     assert!(
         populate_result.is_ok(),
-        "Symbol population failed: {:?}",
-        populate_result
+        "Symbol population failed: {populate_result:?}"
     );
 
     println!("\n=== Symbols Created ===");
@@ -353,7 +352,7 @@ fn test_semantic_token_text_extraction() {
                 span.end.column - span.start.column
             );
         } else {
-            println!("Symbol '{}': NO SPAN", name);
+            println!("Symbol '{name}': NO SPAN");
         }
     }
 
@@ -416,7 +415,7 @@ fn test_semantic_token_text_extraction() {
         .collect();
 
     println!("\n=== Verification ===");
-    println!("Package token text: '{}'", package_text);
+    println!("Package token text: '{package_text}'");
 
     // KNOWN ISSUE: The AST span for Package currently covers the entire package declaration,
     // not just the identifier. So for "standard library package QuantityTest",
@@ -444,7 +443,7 @@ fn test_semantic_token_text_extraction() {
             .take(def_token.length as usize)
             .collect();
 
-        println!("Definition token text: '{}'", def_text);
+        println!("Definition token text: '{def_text}'");
 
         // KNOWN ISSUE: Similar to packages, definition spans cover the entire declaration
         // rather than just the identifier

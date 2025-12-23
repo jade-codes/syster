@@ -20,7 +20,7 @@ fn test_parse_scalar_values_file() {
             println!("Namespace: {:?}", file.namespace);
             println!("Elements count: {}", file.elements.len());
             for (i, elem) in file.elements.iter().enumerate() {
-                println!("  Element {}: {:?}", i, elem);
+                println!("  Element {i}: {elem:?}");
 
                 // Check if it's a package with body elements
                 if let syster::syntax::kerml::ast::Element::Package(pkg) = elem {
@@ -30,7 +30,7 @@ fn test_parse_scalar_values_file() {
                         pkg.elements.len()
                     );
                     for (j, body_elem) in pkg.elements.iter().enumerate() {
-                        println!("      Body element {}: {:?}", j, body_elem);
+                        println!("      Body element {j}: {body_elem:?}");
                     }
                 }
             }
@@ -46,7 +46,7 @@ fn test_parse_scalar_values_file() {
             }
         }
         Err(e) => {
-            panic!("Failed to parse: {}", e);
+            panic!("Failed to parse: {e}");
         }
     }
 }

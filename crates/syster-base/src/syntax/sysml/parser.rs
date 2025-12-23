@@ -45,7 +45,7 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
         Ok(mut pairs) => match SysMLFile::from_pest(&mut pairs) {
             Ok(file) => ParseResult::success(file),
             Err(e) => {
-                let error = ParseError::ast_error(format!("{:?}", e), 0, 0);
+                let error = ParseError::ast_error(format!("{e:?}"), 0, 0);
                 ParseResult::with_errors(vec![error])
             }
         },

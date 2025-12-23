@@ -300,7 +300,7 @@ fn test_element_creation() {
         declared_short_name: None,
     };
     assert_eq!(
-        format!("{:?}", element),
+        format!("{element:?}"),
         "Element { declared_name: None, declared_short_name: None }"
     );
 }
@@ -308,7 +308,7 @@ fn test_element_creation() {
 #[test]
 fn test_annotation_creation() {
     let annotation = Annotation {};
-    assert!(format!("{:?}", annotation).contains("Annotation"));
+    assert!(format!("{annotation:?}").contains("Annotation"));
 }
 
 #[test]
@@ -448,7 +448,7 @@ fn test_inheritance_from_relationship() {
         target_chain: None,
     };
     let inheritance = Inheritance { relationship };
-    assert!(format!("{:?}", inheritance).contains("Inheritance"));
+    assert!(format!("{inheritance:?}").contains("Inheritance"));
 }
 
 #[test]
@@ -556,7 +556,7 @@ fn test_feature_reference() {
     let feature_ref = FeatureReference {
         type_reference: type_ref,
     };
-    assert!(format!("{:?}", feature_ref).contains("FeatureReference"));
+    assert!(format!("{feature_ref:?}").contains("FeatureReference"));
 }
 
 #[rstest]
@@ -2790,7 +2790,7 @@ fn test_parse_scalar_values_stdlib_file() {
     println!("Namespace: {:?}", file.namespace);
     println!("Elements count: {}", file.elements.len());
     for (i, elem) in file.elements.iter().enumerate() {
-        println!("  Element {}: {:?}", i, elem);
+        println!("  Element {i}: {elem:?}");
     }
 
     assert!(!file.elements.is_empty(), "File should have elements!");

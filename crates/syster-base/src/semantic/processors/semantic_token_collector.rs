@@ -220,7 +220,7 @@ impl SemanticTokenCollector {
 
     fn extract_type_refs_from_usage_member(
         member: &crate::syntax::sysml::ast::enums::UsageMember,
-        _tokens: &mut Vec<SemanticToken>,
+        _tokens: &mut [SemanticToken],
     ) {
         use crate::syntax::sysml::ast::enums::UsageMember;
 

@@ -28,11 +28,11 @@ impl<'a> Resolver<'a> {
         for part in parts.iter().skip(1) {
             match current_symbol {
                 Symbol::Package { qualified_name, .. } => {
-                    let next_name = format!("{}::{}", qualified_name, part);
+                    let next_name = format!("{qualified_name}::{part}");
                     current_symbol = self.find_in_scope(&next_name)?;
                 }
                 Symbol::Classifier { qualified_name, .. } => {
-                    let next_name = format!("{}::{}", qualified_name, part);
+                    let next_name = format!("{qualified_name}::{part}");
                     current_symbol = self.find_in_scope(&next_name)?;
                 }
                 _ => return None,

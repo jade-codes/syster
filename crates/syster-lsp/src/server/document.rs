@@ -17,7 +17,7 @@ impl LspServer {
 
         let path = uri
             .to_file_path()
-            .map_err(|_| format!("Invalid file URI: {}", uri))?;
+            .map_err(|_| format!("Invalid file URI: {uri}"))?;
 
         // Store document text
         self.document_texts.insert(path.clone(), text.to_string());
@@ -31,7 +31,7 @@ impl LspServer {
         let parse_result = match ext {
             SYSML_EXT => syster::project::file_loader::parse_with_result(text, &path),
             KERML_EXT => return Err("KerML files not yet fully supported".to_string()),
-            _ => return Err(format!("Unsupported file extension: {}", ext)),
+            _ => return Err(format!("Unsupported file extension: {ext}")),
         };
 
         // Store parse errors

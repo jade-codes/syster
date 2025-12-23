@@ -45,7 +45,7 @@ fn test_parse_content_comment_only() {
 #[test]
 fn test_parse_content_very_long_line() {
     let long_name = "A".repeat(1000);
-    let content = format!("part def {};", long_name);
+    let content = format!("part def {long_name};");
     let path = PathBuf::from("test.sysml");
     let result = parse_content(&content, &path);
 

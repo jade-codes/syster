@@ -135,7 +135,7 @@ fn test_show_architecture_violations_summary() {
         let violations = collect_layer_violations(Path::new(path), &allowed, layer_name);
 
         if violations.is_empty() {
-            println!("✅ {}: No violations", layer_name);
+            println!("✅ {layer_name}: No violations");
         } else {
             println!("❌ {}: {} violation(s)", layer_name, violations.len());
             total_violations += violations.len();
@@ -143,7 +143,7 @@ fn test_show_architecture_violations_summary() {
     }
 
     println!("\n==========================================");
-    println!("Total violations: {}", total_violations);
+    println!("Total violations: {total_violations}");
 
     if total_violations > 0 {
         println!("\nRun individual tests with --ignored to see details:");
@@ -152,8 +152,7 @@ fn test_show_architecture_violations_summary() {
 
     assert_eq!(
         total_violations, 0,
-        "Found {} architecture violations. Run with --nocapture to see details.",
-        total_violations
+        "Found {total_violations} architecture violations. Run with --nocapture to see details."
     );
 }
 
@@ -223,7 +222,7 @@ fn test_validators_use_semantic_roles_not_strings() {
         format_violation_list(
             &violations
                 .iter()
-                .map(|(line, pattern, code)| format!("Line {}: {} in: {}", line, pattern, code))
+                .map(|(line, pattern, code)| format!("Line {line}: {pattern} in: {code}"))
                 .collect::<Vec<_>>()
         )
     );

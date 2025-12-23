@@ -320,7 +320,7 @@ part myVehicle: Vehicle;"#;
 
     // Populate symbols
     let result = workspace.populate_all();
-    assert!(result.is_ok(), "Symbol population failed: {:?}", result);
+    assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     let symbol_table = workspace.symbol_table();
 
