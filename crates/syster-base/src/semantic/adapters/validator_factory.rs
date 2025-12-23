@@ -8,6 +8,7 @@ use crate::core::constants::{KERML_EXT, SYSML_EXT};
 use crate::semantic::analyzer::validation::RelationshipValidator;
 use std::sync::Arc;
 
+use super::kerml::validator::KermlValidator;
 use super::sysml::validator::SysmlValidator;
 
 /// Creates a validator based on a file extension.
@@ -29,11 +30,7 @@ use super::sysml::validator::SysmlValidator;
 pub fn create_validator(extension: &str) -> Arc<dyn RelationshipValidator> {
     match extension {
         SYSML_EXT => Arc::new(SysmlValidator::new()),
-        KERML_EXT => {
-            // TODO: Implement KerML validator
-            // For now, return a no-op validator
-            Arc::new(crate::semantic::analyzer::validation::NoOpValidator)
-        }
+        KERML_EXT => Arc::new(KermlValidator::new()),
         _ => {
             // For unknown extensions, return no-op validator
             Arc::new(crate::semantic::analyzer::validation::NoOpValidator)
