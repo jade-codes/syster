@@ -3,10 +3,32 @@
   "scopeName": "source.kerml",
   "fileTypes": ["kerml"],
   "patterns": [
+    { "include": "#keywords" },
+    { "include": "#operators" },
     { "include": "#comments" },
     { "include": "#strings" }
   ],
   "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.kerml",
+          "match": "\\b(package|import|private|public|protected|abstract|alias|readonly|derived|end|specializes|subsets|redefines|conjugates|typing|featured|chaining|inverting|about|true|false|standard|library)\\b"
+        },
+        {
+          "name": "storage.type.kerml",
+          "match": "\\b(classifier|class|datatype|struct|assoc|association|struct|behavior|function|predicate|expr|interaction|step|feature|type)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.relationship.kerml",
+          "match": "(::>|:>>|:>|=>)"
+        }
+      ]
+    },
     "comments": {
       "patterns": [
         {
