@@ -212,13 +212,11 @@ fn test_import_visibility() {
         syster::syntax::SyntaxFile::SysML(file),
     );
 
-    let result = workspace.populate_all();
+    workspace.populate_all().expect("Population should succeed");
 
     // With model-level imports, both should work
-    if result.is_ok() {
-        let y = workspace.symbol_table().lookup_qualified("B::y");
-        assert!(y.is_some(), "y should be defined in package B");
-    }
+    let y = workspace.symbol_table().lookup_qualified("B::y");
+    assert!(y.is_some(), "y should be defined in package B");
 }
 
 #[test]

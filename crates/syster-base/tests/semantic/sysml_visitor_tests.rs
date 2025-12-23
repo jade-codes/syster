@@ -278,11 +278,6 @@ fn test_inline_attribute_definitions_with_same_name_create_duplicates() {
 
     let result = adapter.populate(&file);
 
-    // Print any errors for debugging
-    if let Err(ref e) = result {
-        eprintln!("Errors: {e:?}");
-    }
-
     // Should succeed without duplicate symbol errors
     assert!(
         result.is_ok(),
