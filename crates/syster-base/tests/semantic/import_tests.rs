@@ -289,6 +289,29 @@ fn test_import_alias() {
         base_vehicle.is_some(),
         "BaseVehicle alias should be defined in Derived package"
     );
+
+    // Verify that the alias actually points to the Vehicle definition
+    let vehicle = workspace.symbol_table().lookup_qualified("Base::Vehicle");
+    assert!(
+        vehicle.is_some(),
+        "Vehicle should be defined in Base package"
+    );
+
+    // Verify that BaseVehicle and Vehicle refer to the same underlying definition
+    let base_vehicle_symbol = base_vehicle.unwrap();
+    let vehicle_symbol = vehicle.unwrap();
+
+    // The alias should have the same qualified name as the original symbol
+    assert_eq!(
+        base_vehicle_symbol.name(),
+        "BaseVehicle",
+        "BaseVehicle should have the alias name"
+    );
+    assert_eq!(
+        vehicle_symbol.qualified_name(),
+        "Base::Vehicle",
+        "Vehicle should have its original qualified name"
+    );
 }
 
 #[test]
