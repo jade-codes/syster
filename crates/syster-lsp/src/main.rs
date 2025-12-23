@@ -42,7 +42,7 @@ impl LanguageServer for SysterLanguageServer {
                 text_document_sync: Some(TextDocumentSyncCapability::Options(
                     TextDocumentSyncOptions {
                         open_close: Some(true),
-                        change: Some(TextDocumentSyncKind::FULL),
+                        change: Some(TextDocumentSyncKind::INCREMENTAL),
                         will_save: None,
                         will_save_wait_until: None,
                         save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
@@ -109,27 +109,30 @@ impl LanguageServer for SysterLanguageServer {
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let uri = params.text_document.uri.clone();
 
-        // We're using FULL sync, so there should be exactly one change with full content
-        if let Some(change) = params.content_changes.into_iter().next() {
-            let mut server = self.server.lock().await;
-            match server.change_document(&uri, &change.text) {
+        // Apply all changes incrementally
+        let mut server = self.server.lock().await;
+        for change in params.content_changes {
+            match server.apply_incremental_change(&uri, &change) {
                 Ok(_) => {
-                    // Publish diagnostics
-                    let diagnostics = server.get_diagnostics(&uri);
-                    self.client
-                        .publish_diagnostics(uri, diagnostics, None)
-                        .await;
+                    // Continue to next change
                 }
                 Err(e) => {
                     self.client
                         .log_message(
                             MessageType::ERROR,
-                            format!("Failed to update document {uri}: {e}"),
+                            format!("Failed to apply incremental change to {uri}: {e}"),
                         )
                         .await;
+                    return; // Stop processing on error
                 }
             }
         }
+
+        // Publish diagnostics after all changes applied
+        let diagnostics = server.get_diagnostics(&uri);
+        self.client
+            .publish_diagnostics(uri, diagnostics, None)
+            .await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {

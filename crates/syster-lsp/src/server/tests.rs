@@ -1493,3 +1493,210 @@ package TestPkg {
         "DimensionOneUnit should still be found after adding user file"
     );
 }
+
+// ============================================================================
+// Incremental Text Synchronization Tests (Issue #39)
+// ============================================================================
+
+#[test]
+fn test_incremental_insert_at_start() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document
+    let initial_text = "part def Vehicle;";
+    server.open_document(&uri, initial_text).unwrap();
+
+    // Insert text at start: "// Comment\n"
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 0),
+            end: Position::new(0, 0),
+        }),
+        range_length: None,
+        text: "// Comment\n".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Verify content is correct
+    let path = uri.to_file_path().unwrap();
+    let content = server.document_texts.get(&path).unwrap();
+    assert_eq!(content, "// Comment\npart def Vehicle;");
+
+    // Verify symbols still work
+    let symbols = server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
+}
+
+#[test]
+fn test_incremental_insert_in_middle() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document with two definitions
+    let initial_text = "part def Car;\npart def Bike;";
+    server.open_document(&uri, initial_text).unwrap();
+
+    // Insert new definition between them
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(1, 0),
+            end: Position::new(1, 0),
+        }),
+        range_length: None,
+        text: "part def Truck;\n".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Verify all three definitions exist
+    let symbols = server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Truck"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Bike"));
+}
+
+#[test]
+fn test_incremental_delete_range() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document
+    let initial_text = "part def Car;\npart def Bike;";
+    server.open_document(&uri, initial_text).unwrap();
+
+    // Delete "Bike" definition (entire second line)
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(1, 0),
+            end: Position::new(1, 15), // "part def Bike;" is 15 chars
+        }),
+        range_length: Some(15),
+        text: "".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Verify only Car exists
+    let symbols = server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(!symbols.iter().any(|(_, s)| s.name() == "Bike"));
+}
+
+#[test]
+fn test_incremental_replace_range() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document
+    let initial_text = "part def Car;";
+    server.open_document(&uri, initial_text).unwrap();
+
+    // Replace "Car" with "Vehicle"
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 9), // Start of "Car"
+            end: Position::new(0, 12),  // End of "Car"
+        }),
+        range_length: Some(3),
+        text: "Vehicle".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Verify Vehicle exists, Car doesn't
+    let symbols = server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
+    assert!(!symbols.iter().any(|(_, s)| s.name() == "Car"));
+}
+
+#[test]
+fn test_incremental_multiple_changes() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document
+    server.open_document(&uri, "part def Car;").unwrap();
+
+    // Apply multiple incremental changes
+    // Change 1: Add newline and new definition
+    let change1 = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 13),
+            end: Position::new(0, 13),
+        }),
+        range_length: None,
+        text: "\npart def Bike;".to_string(),
+    };
+    server.apply_incremental_change(&uri, &change1).unwrap();
+
+    // Change 2: Insert comment at start
+    let change2 = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 0),
+            end: Position::new(0, 0),
+        }),
+        range_length: None,
+        text: "// Vehicles\n".to_string(),
+    };
+    server.apply_incremental_change(&uri, &change2).unwrap();
+
+    // Verify both definitions exist
+    let symbols = server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Bike"));
+}
+
+#[test]
+fn test_incremental_multiline_insert() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document
+    server.open_document(&uri, "part def Car;").unwrap();
+
+    // Insert multi-line text
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 13),
+            end: Position::new(0, 13),
+        }),
+        range_length: None,
+        text: "\n\npart def Bike {\n    attribute weight : Real;\n}".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Verify both definitions and nested attribute exist
+    let symbols = server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Bike"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "weight"));
+}
+
+#[test]
+fn test_incremental_change_preserves_diagnostics() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open valid document
+    server.open_document(&uri, "part def Car;").unwrap();
+    assert!(server.get_diagnostics(&uri).is_empty());
+
+    // Make an incremental change that introduces an error
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 13),
+            end: Position::new(0, 13),
+        }),
+        range_length: None,
+        text: "\ninvalid syntax !@#".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Should have diagnostics now
+    let diagnostics = server.get_diagnostics(&uri);
+    assert!(!diagnostics.is_empty());
+}

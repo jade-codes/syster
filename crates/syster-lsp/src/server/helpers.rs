@@ -2,6 +2,87 @@ use syster::semantic::symbol_table::Symbol;
 use syster::syntax::SyntaxFile;
 use tower_lsp::lsp_types::{Position, Range};
 
+/// Convert a character offset in a line to UTF-16 code units
+///
+/// LSP uses UTF-16 code units for positions, so we need to convert from character offsets
+pub fn char_offset_to_utf16(line: &str, char_offset: usize) -> u32 {
+    line.chars()
+        .take(char_offset)
+        .map(|c| c.len_utf16())
+        .sum::<usize>() as u32
+}
+
+/// Convert character offset to byte offset within a line
+pub fn char_offset_to_byte(line: &str, char_offset: usize) -> usize {
+    line.chars().take(char_offset).map(|c| c.len_utf8()).sum()
+}
+
+/// Convert LSP Position to byte offset in text
+///
+/// Handles multi-line documents by calculating line offsets and character positions
+/// Note: Treats position.character as character count (not strict UTF-16 code units)
+pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, String> {
+    let lines: Vec<&str> = text.lines().collect();
+    let line_idx = pos.line as usize;
+    let char_offset = pos.character as usize;
+
+    if line_idx >= lines.len() {
+        return Err(format!(
+            "Line {} out of bounds (total lines: {})",
+            line_idx,
+            lines.len()
+        ));
+    }
+
+    // Calculate byte offset up to the start of the target line
+    let mut byte_offset = 0;
+    for (i, line) in lines.iter().enumerate() {
+        if i == line_idx {
+            break;
+        }
+        byte_offset += line.len() + 1; // +1 for newline
+    }
+
+    // Add character offset within the line converted to bytes
+    let line = lines[line_idx];
+    let line_byte_offset = char_offset_to_byte(line, char_offset);
+
+    Ok(byte_offset + line_byte_offset)
+}
+
+/// Apply a text edit to a string based on LSP range
+///
+/// Converts LSP Position (line, character) to byte offset and performs the edit
+pub fn apply_text_edit(text: &str, range: &Range, new_text: &str) -> Result<String, String> {
+    // Convert start and end positions to byte offsets
+    let start_byte = position_to_byte_offset(text, range.start)?;
+    let end_byte = position_to_byte_offset(text, range.end)?;
+
+    // Validate range
+    if start_byte > end_byte {
+        return Err(format!(
+            "Invalid range: start ({}) > end ({})",
+            start_byte, end_byte
+        ));
+    }
+
+    if end_byte > text.len() {
+        return Err(format!(
+            "Range end ({}) exceeds text length ({})",
+            end_byte,
+            text.len()
+        ));
+    }
+
+    // Build new text: prefix + new_text + suffix
+    let mut result = String::with_capacity(text.len() + new_text.len());
+    result.push_str(&text[..start_byte]);
+    result.push_str(new_text);
+    result.push_str(&text[end_byte..]);
+
+    Ok(result)
+}
+
 /// Extract the word at the cursor position from the document text
 pub fn extract_word_at_cursor(text: &str, position: Position) -> Option<String> {
     let lines: Vec<&str> = text.lines().collect();

@@ -1,6 +1,7 @@
 use super::LspServer;
+use super::helpers::apply_text_edit;
 use syster::core::constants::{KERML_EXT, SYSML_EXT};
-use tower_lsp::lsp_types::Url;
+use tower_lsp::lsp_types::{TextDocumentContentChangeEvent, Url};
 
 impl LspServer {
     /// Parse and update a document in the workspace
@@ -71,5 +72,38 @@ impl LspServer {
         // We don't remove from workspace to keep cross-file references working
         // In the future, might want to track "open" vs "workspace" files separately
         Ok(())
+    }
+
+    /// Apply an incremental text change to a document
+    ///
+    /// This method updates the document content based on LSP TextDocumentContentChangeEvent
+    /// and re-parses the file. Supports both ranged changes and full document updates.
+    pub fn apply_incremental_change(
+        &mut self,
+        uri: &Url,
+        change: &TextDocumentContentChangeEvent,
+    ) -> Result<(), String> {
+        let path = uri
+            .to_file_path()
+            .map_err(|_| format!("Invalid file URI: {uri}"))?;
+
+        // Get current document text
+        let current_text = self
+            .document_texts
+            .get(&path)
+            .ok_or_else(|| format!("Document not found: {uri}"))?
+            .clone();
+
+        // Apply the change
+        let new_text = if let Some(range) = &change.range {
+            // Incremental change with range
+            apply_text_edit(&current_text, range, &change.text)?
+        } else {
+            // Full document replacement (shouldn't happen with INCREMENTAL sync, but handle it)
+            change.text.clone()
+        };
+
+        // Re-parse and update with the new text
+        self.change_document(uri, &new_text)
     }
 }
