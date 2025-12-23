@@ -53,48 +53,43 @@ impl LspServer {
         flat_symbols: Vec<(String, DocumentSymbol)>,
     ) -> Vec<DocumentSymbol> {
         let mut symbol_map: HashMap<String, DocumentSymbol> = HashMap::new();
-        let mut root_symbols = Vec::new();
 
         // First, add all symbols to the map
         for (qualified_name, symbol) in flat_symbols {
             symbol_map.insert(qualified_name, symbol);
         }
 
-        // Sort by qualified name to ensure parents are processed before children
-        let mut sorted_names: Vec<String> = symbol_map.keys().cloned().collect();
-        sorted_names.sort();
+        // Get all names and sort by depth (MORE "::" first, so deepest children are processed first)
+        let mut all_names: Vec<String> = symbol_map.keys().cloned().collect();
+        all_names.sort_by(|a, b| {
+            let depth_a = a.matches("::").count();
+            let depth_b = b.matches("::").count();
+            depth_b.cmp(&depth_a) // Reverse order: deepest first
+        });
 
-        // Build the hierarchy
-        for qualified_name in sorted_names {
-            if let Some(symbol) = symbol_map.remove(&qualified_name) {
-                // Find parent by removing the last segment of qualified name
-                if let Some(last_separator) = qualified_name.rfind("::") {
-                    let parent_name = &qualified_name[..last_separator];
-                    
-                    // Try to add as child to parent
+        // Build hierarchy by moving children into parents, starting from deepest
+        for qualified_name in &all_names {
+            if let Some(last_separator) = qualified_name.rfind("::") {
+                let parent_name = &qualified_name[..last_separator];
+
+                // Check if parent exists and child hasn't been moved yet
+                if symbol_map.contains_key(parent_name) && symbol_map.contains_key(qualified_name) {
+                    // Remove child from map
+                    let child = symbol_map.remove(qualified_name).unwrap();
+
+                    // Add child to parent's children
                     if let Some(parent) = symbol_map.get_mut(parent_name) {
                         if let Some(ref mut children) = parent.children {
-                            children.push(symbol);
+                            children.push(child);
                         }
-                        // Re-insert parent
-                        let parent = symbol_map.remove(parent_name).unwrap();
-                        symbol_map.insert(parent_name.to_string(), parent);
-                    } else {
-                        // Parent not found, add to root
-                        root_symbols.push(symbol);
                     }
-                } else {
-                    // No parent (top-level symbol)
-                    root_symbols.push(symbol);
                 }
             }
         }
 
-        // Add any remaining symbols that weren't added as children
-        for (_, symbol) in symbol_map {
-            root_symbols.push(symbol);
-        }
-
+        // Remaining symbols in the map are root symbols
+        let mut root_symbols: Vec<DocumentSymbol> = symbol_map.into_values().collect();
+        root_symbols.sort_by(|a, b| a.name.cmp(&b.name));
         root_symbols
     }
 }
