@@ -85,7 +85,7 @@ impl LspServer {
             items.push(CompletionItem {
                 label: keyword.to_string(),
                 kind: Some(CompletionItemKind::KEYWORD),
-                detail: Some(format!("Keyword: {}", keyword)),
+                detail: Some(format!("Keyword: {keyword}")),
                 ..Default::default()
             });
         }
@@ -116,7 +116,7 @@ impl LspServer {
                     label: symbol.name().to_string(),
                     kind: Some(CompletionItemKind::CLASS),
                     detail: Some(qualified_name.clone()),
-                    documentation: Some(Documentation::String(format!("Type: {}", qualified_name))),
+                    documentation: Some(Documentation::String(format!("Type: {qualified_name}"))),
                     ..Default::default()
                 });
             }
@@ -150,7 +150,7 @@ impl LspServer {
             items.push(CompletionItem {
                 label: symbol.name().to_string(),
                 kind: Some(kind),
-                detail: Some(format!("{} {}", icon, qualified_name)),
+                detail: Some(format!("{icon} {qualified_name}")),
                 ..Default::default()
             });
         }

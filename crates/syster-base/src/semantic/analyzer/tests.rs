@@ -387,7 +387,7 @@ fn test_context_error_accumulation() {
     let mut context = AnalysisContext::new(&table, &graph);
 
     for i in 0..10 {
-        context.add_error(SemanticError::undefined_reference(format!("Symbol{}", i)));
+        context.add_error(SemanticError::undefined_reference(format!("Symbol{i}")));
     }
 
     assert_eq!(context.errors.len(), 10);
@@ -528,14 +528,14 @@ fn test_analyzer_with_different_classifier_kinds() {
     {
         table
             .insert(
-                format!("Classifier{}", idx),
+                format!("Classifier{idx}"),
                 Symbol::Classifier {
                     scope_id: 0,
                     source_file: None,
                     span: None,
                     references: Vec::new(),
-                    name: format!("Classifier{}", idx),
-                    qualified_name: format!("Classifier{}", idx),
+                    name: format!("Classifier{idx}"),
+                    qualified_name: format!("Classifier{idx}"),
                     kind: (*kind).to_string(),
                     is_abstract: false,
                 },
@@ -558,14 +558,14 @@ fn test_analyzer_with_different_definition_kinds() {
     {
         table
             .insert(
-                format!("Def{}", idx),
+                format!("Def{idx}"),
                 Symbol::Definition {
                     scope_id: 0,
                     source_file: None,
                     span: None,
                     references: Vec::new(),
-                    name: format!("Def{}", idx),
-                    qualified_name: format!("Def{}", idx),
+                    name: format!("Def{idx}"),
+                    qualified_name: format!("Def{idx}"),
                     kind: (*kind).to_string(),
                     semantic_role: None,
                 },
@@ -588,14 +588,14 @@ fn test_analyzer_with_different_usage_kinds() {
     {
         table
             .insert(
-                format!("Usage{}", idx),
+                format!("Usage{idx}"),
                 Symbol::Usage {
                     scope_id: 0,
                     source_file: None,
                     span: None,
                     references: Vec::new(),
-                    name: format!("Usage{}", idx),
-                    qualified_name: format!("Usage{}", idx),
+                    name: format!("Usage{idx}"),
+                    qualified_name: format!("Usage{idx}"),
                     kind: (*kind).to_string(),
                     usage_type: None,
                     semantic_role: None,
@@ -751,21 +751,21 @@ fn test_analyzer_with_deeply_nested_structure() {
             format!(
                 "L0::{}",
                 (1..i)
-                    .map(|j| format!("L{}", j))
+                    .map(|j| format!("L{j}"))
                     .collect::<Vec<_>>()
                     .join("::")
             )
         };
         table
             .insert(
-                format!("L{}", i),
+                format!("L{i}"),
                 Symbol::Package {
                     scope_id: 0,
                     source_file: None,
                     span: None,
                     references: Vec::new(),
-                    name: format!("L{}", i),
-                    qualified_name: format!("{}::L{}", parent, i),
+                    name: format!("L{i}"),
+                    qualified_name: format!("{parent}::L{i}"),
                 },
             )
             .unwrap();
@@ -1579,8 +1579,7 @@ fn test_relationship_validation_undefined_target() {
     assert!(!errors.is_empty());
     assert!(
         errors.iter().any(|e| matches!(&e.kind, SemanticErrorKind::UndefinedReference { name } if name.contains("NonExistent"))),
-        "Expected undefined reference error, got: {:?}",
-        errors
+        "Expected undefined reference error, got: {errors:?}"
     );
 }
 

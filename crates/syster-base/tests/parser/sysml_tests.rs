@@ -896,11 +896,11 @@ fn test_parse_cases_sysml_fragment() {
         }"#;
 
     println!("Input length: {}", input.len());
-    println!("Input:\n{}", input);
+    println!("Input:\n{input}");
 
     let result = SysMLParser::parse(Rule::case_definition, input);
     if let Err(e) = &result {
-        println!("Error: {:?}", e);
+        println!("Error: {e:?}");
     }
     assert!(
         result.is_ok(),
@@ -969,7 +969,7 @@ fn test_parse_case_body_with_objective() {
     println!("Testing case_body...");
     let result = SysMLParser::parse(Rule::case_body, input);
     if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
+        println!("ERROR: {e:?}");
     }
     assert!(
         result.is_ok(),
@@ -988,7 +988,7 @@ fn test_parse_objective_as_case_body_item() {
     println!("Testing case_body_item...");
     let result = SysMLParser::parse(Rule::case_body_item, input);
     if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
+        println!("ERROR: {e:?}");
     }
     assert!(
         result.is_ok(),
@@ -1002,10 +1002,10 @@ fn test_parse_minimal_case_body() {
     // Minimal test - no whitespace issues
     let input = "{objective obj{subject subj;}}";
 
-    println!("Testing minimal case_body: {}", input);
+    println!("Testing minimal case_body: {input}");
     let result = SysMLParser::parse(Rule::case_body, input);
     if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
+        println!("ERROR: {e:?}");
     }
     assert!(
         result.is_ok(),
@@ -1065,7 +1065,7 @@ fn test_parse_state_with_doc_comment() {
 
     let result = SysMLParser::parse(Rule::state_usage, input);
     if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
+        println!("ERROR: {e:?}");
     }
     assert!(
         result.is_ok(),
@@ -1087,7 +1087,7 @@ fn test_parse_constraint_with_doc_comment() {
 
     let result = SysMLParser::parse(Rule::assert_constraint_usage, input);
     if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
+        println!("ERROR: {e:?}");
     }
     assert!(
         result.is_ok(),
@@ -5920,7 +5920,7 @@ fn test_parse_attribute_def_from_stdlib() {
             "Should have correct name"
         );
     } else {
-        panic!("Expected Definition member, got {:?}", member);
+        panic!("Expected Definition member, got {member:?}");
     }
 }
 
@@ -5945,7 +5945,7 @@ fn test_parse_abstract_attribute_def() {
     if parse_result.content.is_none() {
         eprintln!("Parse failed!");
         for err in &parse_result.errors {
-            eprintln!("  Error: {:?}", err);
+            eprintln!("  Error: {err:?}");
         }
         panic!("Failed to parse abstract attribute def");
     }
@@ -5989,6 +5989,6 @@ fn test_parse_abstract_attribute_def() {
             "Should be marked as abstract - THIS IS THE BUG!"
         );
     } else {
-        panic!("Expected Definition member, got {:?}", member);
+        panic!("Expected Definition member, got {member:?}");
     }
 }

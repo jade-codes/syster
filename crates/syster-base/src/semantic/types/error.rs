@@ -90,7 +90,7 @@ impl SemanticError {
         let message = if name.is_empty() {
             SEMANTIC_DUPLICATE_DEFINITION_MSG.to_string()
         } else {
-            format!("{}: '{}'", SEMANTIC_DUPLICATE_DEFINITION_MSG, name)
+            format!("{SEMANTIC_DUPLICATE_DEFINITION_MSG}: '{name}'")
         };
         Self::new(
             SEMANTIC_DUPLICATE_DEFINITION,
@@ -106,7 +106,7 @@ impl SemanticError {
         let message = if name.is_empty() {
             SEMANTIC_UNDEFINED_REFERENCE_MSG.to_string()
         } else {
-            format!("{}: '{}'", SEMANTIC_UNDEFINED_REFERENCE_MSG, name)
+            format!("{SEMANTIC_UNDEFINED_REFERENCE_MSG}: '{name}'")
         };
         Self::new(
             SEMANTIC_UNDEFINED_REFERENCE,
@@ -117,8 +117,7 @@ impl SemanticError {
 
     pub fn type_mismatch(expected: String, found: String, context: String) -> Self {
         let message = format!(
-            "{}: expected '{}', found '{}' in {}",
-            SEMANTIC_TYPE_MISMATCH_MSG, expected, found, context
+            "{SEMANTIC_TYPE_MISMATCH_MSG}: expected '{expected}', found '{found}' in {context}"
         );
         Self::new(
             SEMANTIC_TYPE_MISMATCH,
@@ -135,7 +134,7 @@ impl SemanticError {
         let message = if type_name.is_empty() {
             SEMANTIC_INVALID_TYPE_MSG.to_string()
         } else {
-            format!("{}: '{}'", SEMANTIC_INVALID_TYPE_MSG, type_name)
+            format!("{SEMANTIC_INVALID_TYPE_MSG}: '{type_name}'")
         };
         Self::new(
             SEMANTIC_INVALID_TYPE,
@@ -170,12 +169,12 @@ impl fmt::Display for SemanticError {
         // Write location if available
         if let Some(loc) = &self.location {
             if let Some(file) = &loc.file {
-                write!(f, "{}:", file)?;
+                write!(f, "{file}:")?;
             }
             if let Some(line) = loc.line {
-                write!(f, "{}:", line)?;
+                write!(f, "{line}:")?;
                 if let Some(col) = loc.column {
-                    write!(f, "{}:", col)?;
+                    write!(f, "{col}:")?;
                 }
             }
             write!(f, " ")?;

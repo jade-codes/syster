@@ -26,7 +26,7 @@ pub fn validate_extension(path: &Path) -> Result<&str, String> {
     if SUPPORTED_EXTENSIONS.contains(&ext) {
         Ok(ext)
     } else {
-        Err(format!("Unsupported file extension: {}", ext))
+        Err(format!("Unsupported file extension: {ext}"))
     }
 }
 

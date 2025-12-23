@@ -99,7 +99,7 @@ impl LanguageServer for SysterLanguageServer {
                 self.client
                     .log_message(
                         MessageType::ERROR,
-                        format!("Failed to open document {}: {}", uri, e),
+                        format!("Failed to open document {uri}: {e}"),
                     )
                     .await;
             }
@@ -124,7 +124,7 @@ impl LanguageServer for SysterLanguageServer {
                     self.client
                         .log_message(
                             MessageType::ERROR,
-                            format!("Failed to update document {}: {}", uri, e),
+                            format!("Failed to update document {uri}: {e}"),
                         )
                         .await;
                 }
@@ -140,7 +140,7 @@ impl LanguageServer for SysterLanguageServer {
             self.client
                 .log_message(
                     MessageType::ERROR,
-                    format!("Failed to close document {}: {}", uri, e),
+                    format!("Failed to close document {uri}: {e}"),
                 )
                 .await;
         }

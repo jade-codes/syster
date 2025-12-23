@@ -197,7 +197,7 @@ mod tests {
         let mut context = TestContext::new();
 
         context.emitter.subscribe(|event, ctx| {
-            ctx.event_log.push(format!("Event received: {:?}", event));
+            ctx.event_log.push(format!("Event received: {event:?}"));
         });
 
         assert_eq!(context.emitter.listener_count(), 1);
@@ -250,8 +250,7 @@ mod tests {
 
         context.emitter.subscribe(|event, ctx| match event {
             TestEvent::ValueChanged { old, new } => {
-                ctx.event_log
-                    .push(format!("Changed from {} to {}", old, new));
+                ctx.event_log.push(format!("Changed from {old} to {new}"));
             }
             TestEvent::Reset => {
                 ctx.event_log.push("Reset".to_string());
