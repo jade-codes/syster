@@ -79,7 +79,7 @@ impl<'a> WorkspacePopulator<'a> {
 
         // Delegate to adapter factory - workspace doesn't know about specific languages
         adapters::populate_syntax_file(&content, self.symbol_table, self.relationship_graph)
-            .map_err(|errors| format!("Failed to populate {}: {:?}", file_path_str, errors))?;
+            .map_err(|errors| format!("Failed to populate {file_path_str}: {errors:?}"))?;
 
         Ok(())
     }

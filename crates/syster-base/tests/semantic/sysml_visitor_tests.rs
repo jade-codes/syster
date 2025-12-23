@@ -81,8 +81,7 @@ fn test_qualified_redefinition_does_not_create_duplicate_symbols() {
         .count();
     assert_eq!(
         shell_count, 1,
-        "Shell should be defined exactly once, got {} definitions",
-        shell_count
+        "Shell should be defined exactly once, got {shell_count} definitions"
     );
 }
 
@@ -191,13 +190,11 @@ fn test_comma_separated_redefinitions_do_not_create_duplicate_symbols() {
 
     assert_eq!(
         disc_count, 1,
-        "Disc should be defined exactly once, got {} definitions",
-        disc_count
+        "Disc should be defined exactly once, got {disc_count} definitions"
     );
     assert_eq!(
         circle_count, 1,
-        "Circle should be defined exactly once, got {} definitions",
-        circle_count
+        "Circle should be defined exactly once, got {circle_count} definitions"
     );
 }
 
@@ -248,8 +245,7 @@ fn test_attribute_reference_in_expression_not_treated_as_definition() {
 
     assert_eq!(
         radius_count, 1,
-        "radius should be defined exactly once at package level, got {} definitions",
-        radius_count
+        "radius should be defined exactly once at package level, got {radius_count} definitions"
     );
 }
 
@@ -281,11 +277,6 @@ fn test_inline_attribute_definitions_with_same_name_create_duplicates() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
-
-    // Print any errors for debugging
-    if let Err(ref e) = result {
-        eprintln!("Errors: {:?}", e);
-    }
 
     // Should succeed without duplicate symbol errors
     assert!(
@@ -335,8 +326,7 @@ fn test_radius_redefinition_in_multiple_items_no_duplicates() {
 
     assert_eq!(
         radius_count, 0,
-        "radius should not appear as a symbol (it's only redefined), got {} definitions",
-        radius_count
+        "radius should not appear as a symbol (it's only redefined), got {radius_count} definitions"
     );
 }
 
@@ -358,7 +348,7 @@ fn test_simple_redefinition_creates_no_new_symbol() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    eprintln!("AST: {:#?}", file);
+    eprintln!("AST: {file:#?}");
 
     let mut symbol_table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
@@ -375,7 +365,7 @@ fn test_simple_redefinition_creates_no_new_symbol() {
 
     eprintln!("Found {} radius symbols:", radius_symbols.len());
     for (name, symbol) in &radius_symbols {
-        eprintln!("  '{}': {:?}", name, symbol);
+        eprintln!("  '{name}': {symbol:?}");
     }
 
     assert!(
@@ -486,7 +476,7 @@ fn test_debug_symbol_table_contents() {
 
     println!("\n=== All symbols in table ===");
     for (qname, symbol) in symbol_table.all_symbols() {
-        println!("  '{}' -> {:?}", qname, symbol);
+        println!("  '{qname}' -> {symbol:?}");
     }
     println!("=== End of symbols ===\n");
 }
@@ -798,12 +788,12 @@ fn test_multiple_usages_of_same_type() {
     for name in ["car1", "car2", "car3"] {
         let symbol = symbol_table
             .lookup(name)
-            .unwrap_or_else(|| panic!("Should have '{}' symbol", name));
+            .unwrap_or_else(|| panic!("Should have '{name}' symbol"));
         match symbol {
             Symbol::Usage { usage_type, .. } => {
                 assert_eq!(usage_type.as_deref(), Some("Vehicle"));
             }
-            _ => panic!("Expected Usage symbol for {}", name),
+            _ => panic!("Expected Usage symbol for {name}"),
         }
 
         let typing = graph.get_one_to_one(REL_TYPING, name).unwrap();
@@ -842,7 +832,7 @@ fn test_alias_definition() {
         "Elements in file: {:?}",
         file.elements
             .iter()
-            .map(|e| format!("{:?}", e))
+            .map(|e| format!("{e:?}"))
             .collect::<Vec<_>>()
     );
 

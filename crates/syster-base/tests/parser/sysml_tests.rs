@@ -896,12 +896,9 @@ fn test_parse_cases_sysml_fragment() {
         }"#;
 
     println!("Input length: {}", input.len());
-    println!("Input:\n{}", input);
+    println!("Input:\n{input}");
 
     let result = SysMLParser::parse(Rule::case_definition, input);
-    if let Err(e) = &result {
-        println!("Error: {:?}", e);
-    }
     assert!(
         result.is_ok(),
         "Failed to parse Cases.sysml fragment: {:?}",
@@ -968,9 +965,6 @@ fn test_parse_case_body_with_objective() {
 
     println!("Testing case_body...");
     let result = SysMLParser::parse(Rule::case_body, input);
-    if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
-    }
     assert!(
         result.is_ok(),
         "Failed to parse case_body: {:?}",
@@ -987,9 +981,6 @@ fn test_parse_objective_as_case_body_item() {
 
     println!("Testing case_body_item...");
     let result = SysMLParser::parse(Rule::case_body_item, input);
-    if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
-    }
     assert!(
         result.is_ok(),
         "Failed to parse objective as case_body_item: {:?}",
@@ -1002,11 +993,8 @@ fn test_parse_minimal_case_body() {
     // Minimal test - no whitespace issues
     let input = "{objective obj{subject subj;}}";
 
-    println!("Testing minimal case_body: {}", input);
+    println!("Testing minimal case_body: {input}");
     let result = SysMLParser::parse(Rule::case_body, input);
-    if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
-    }
     assert!(
         result.is_ok(),
         "Failed to parse minimal case_body: {:?}",
@@ -1064,9 +1052,6 @@ fn test_parse_state_with_doc_comment() {
     }"#;
 
     let result = SysMLParser::parse(Rule::state_usage, input);
-    if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
-    }
     assert!(
         result.is_ok(),
         "Failed to parse state with doc comment: {:?}",
@@ -1086,9 +1071,6 @@ fn test_parse_constraint_with_doc_comment() {
     }"#;
 
     let result = SysMLParser::parse(Rule::assert_constraint_usage, input);
-    if let Err(e) = &result {
-        println!("ERROR: {:?}", e);
-    }
     assert!(
         result.is_ok(),
         "Failed to parse constraint with doc comment: {:?}",
@@ -5908,20 +5890,20 @@ fn test_parse_attribute_def_from_stdlib() {
 
     // Check the attribute def
     let member = &package.elements[0];
-    if let Element::Definition(def) = member {
-        assert_eq!(
-            def.kind,
-            DefinitionKind::Attribute,
-            "Should be Attribute definition"
-        );
-        assert_eq!(
-            def.name,
-            Some("DimensionOneUnit".to_string()),
-            "Should have correct name"
-        );
-    } else {
-        panic!("Expected Definition member, got {:?}", member);
-    }
+    let Element::Definition(def) = member else {
+        panic!("Expected Definition member, got {member:?}");
+    };
+
+    assert_eq!(
+        def.kind,
+        DefinitionKind::Attribute,
+        "Should be Attribute definition"
+    );
+    assert_eq!(
+        def.name,
+        Some("DimensionOneUnit".to_string()),
+        "Should have correct name"
+    );
 }
 
 #[test]
@@ -5942,26 +5924,22 @@ fn test_parse_abstract_attribute_def() {
     let path = PathBuf::from("test.sysml");
     let parse_result = file_loader::parse_with_result(input, &path);
 
-    if parse_result.content.is_none() {
-        eprintln!("Parse failed!");
-        for err in &parse_result.errors {
-            eprintln!("  Error: {:?}", err);
-        }
-        panic!("Failed to parse abstract attribute def");
-    }
+    assert!(
+        parse_result.content.is_some(),
+        "Parse should succeed. Errors: {:?}",
+        parse_result.errors
+    );
 
     let language_file = parse_result.content.expect("Parse should succeed");
-    let file = match language_file {
-        syster::syntax::SyntaxFile::SysML(f) => f,
-        _ => panic!("Expected SysML file"),
+    let syster::syntax::SyntaxFile::SysML(file) = language_file else {
+        panic!("Expected SysML file");
     };
 
     // Should have 1 element (the package)
     assert_eq!(file.elements.len(), 1, "Should have 1 package");
 
-    let package = match &file.elements[0] {
-        Element::Package(p) => p,
-        _ => panic!("Expected Package"),
+    let Element::Package(package) = &file.elements[0] else {
+        panic!("Expected Package, got {:?}", file.elements[0]);
     };
 
     // Package should have 1 member (the attribute def)
@@ -5969,26 +5947,26 @@ fn test_parse_abstract_attribute_def() {
 
     // Check the attribute def
     let member = &package.elements[0];
-    if let Element::Definition(def) = member {
-        eprintln!(
-            "Parsed definition: name={:?}, kind={:?}, is_abstract={}",
-            def.name, def.kind, def.is_abstract
-        );
-        assert_eq!(
-            def.kind,
-            DefinitionKind::Attribute,
-            "Should be Attribute definition"
-        );
-        assert_eq!(
-            def.name,
-            Some("ScalarMeasurementReference".to_string()),
-            "Should have correct name"
-        );
-        assert!(
-            def.is_abstract,
-            "Should be marked as abstract - THIS IS THE BUG!"
-        );
-    } else {
-        panic!("Expected Definition member, got {:?}", member);
-    }
+    let Element::Definition(def) = member else {
+        panic!("Expected Definition member, got {member:?}");
+    };
+
+    eprintln!(
+        "Parsed definition: name={:?}, kind={:?}, is_abstract={}",
+        def.name, def.kind, def.is_abstract
+    );
+    assert_eq!(
+        def.kind,
+        DefinitionKind::Attribute,
+        "Should be Attribute definition"
+    );
+    assert_eq!(
+        def.name,
+        Some("ScalarMeasurementReference".to_string()),
+        "Should have correct name"
+    );
+    assert!(
+        def.is_abstract,
+        "Should be marked as abstract - THIS IS THE BUG!"
+    );
 }

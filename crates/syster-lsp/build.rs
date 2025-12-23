@@ -25,7 +25,7 @@ fn main() {
 
         // Copy the directory
         if let Err(e) = copy_dir_all(stdlib_src, &stdlib_dest) {
-            eprintln!("Warning: Failed to copy stdlib: {}", e);
+            eprintln!("Warning: Failed to copy stdlib: {e}");
         }
     }
 

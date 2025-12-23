@@ -13,40 +13,37 @@ fn test_parse_scalar_values_file() {
 }"#;
 
     let path = Path::new("ScalarValues.kerml");
-    let result = parse_content(content, path);
+    let file = parse_content(content, path).expect("Should parse ScalarValues.kerml successfully");
 
-    match result {
-        Ok(file) => {
-            println!("Namespace: {:?}", file.namespace);
-            println!("Elements count: {}", file.elements.len());
-            for (i, elem) in file.elements.iter().enumerate() {
-                println!("  Element {}: {:?}", i, elem);
+    println!("Namespace: {:?}", file.namespace);
+    println!("Elements count: {}", file.elements.len());
+    for (i, elem) in file.elements.iter().enumerate() {
+        println!("  Element {i}: {elem:?}");
 
-                // Check if it's a package with body elements
-                if let syster::syntax::kerml::ast::Element::Package(pkg) = elem {
-                    println!(
-                        "    Package '{}' has {} body elements",
-                        pkg.name.as_ref().unwrap_or(&"unnamed".to_string()),
-                        pkg.elements.len()
-                    );
-                    for (j, body_elem) in pkg.elements.iter().enumerate() {
-                        println!("      Body element {}: {:?}", j, body_elem);
-                    }
-                }
+        // Check if it's a package with body elements
+        if let syster::syntax::kerml::ast::Element::Package(pkg) = elem {
+            println!(
+                "    Package '{}' has {} body elements",
+                pkg.name.as_ref().unwrap_or(&"unnamed".to_string()),
+                pkg.elements.len()
+            );
+            for (j, body_elem) in pkg.elements.iter().enumerate() {
+                println!("      Body element {j}: {body_elem:?}");
             }
-
-            assert!(!file.elements.is_empty(), "File should have elements");
-
-            // Check that the package has body elements (the datatypes)
-            if let syster::syntax::kerml::ast::Element::Package(pkg) = &file.elements[0] {
-                assert!(
-                    !pkg.elements.is_empty(),
-                    "Package should have body elements (datatypes, imports, etc.)"
-                );
-            }
-        }
-        Err(e) => {
-            panic!("Failed to parse: {}", e);
         }
     }
+
+    assert!(!file.elements.is_empty(), "File should have elements");
+
+    // Check that the package has body elements (the datatypes)
+    let syster::syntax::kerml::ast::Element::Package(pkg) = &file.elements[0] else {
+        panic!(
+            "First element should be a Package, got {:?}",
+            file.elements[0]
+        );
+    };
+    assert!(
+        !pkg.elements.is_empty(),
+        "Package should have body elements (datatypes, imports, etc.)"
+    );
 }

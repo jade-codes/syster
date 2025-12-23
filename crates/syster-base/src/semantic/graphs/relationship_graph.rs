@@ -115,7 +115,7 @@ impl RelationshipGraph {
                 let label = relationship_label(&rel_type).to_string();
                 targets
                     .into_iter()
-                    .map(move |target| format!("{} `{}`", label, target))
+                    .map(move |target| format!("{label} `{target}`"))
             })
             .collect()
     }

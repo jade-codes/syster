@@ -44,7 +44,7 @@ pub fn format_rich_hover(
 
     // Source file
     if let Some(file) = symbol.source_file() {
-        result.push_str(&format!("\n**Defined in:** `{}`\n", file));
+        result.push_str(&format!("\n**Defined in:** `{file}`\n"));
     }
 
     // Relationships (using relationship graph)
@@ -53,7 +53,7 @@ pub fn format_rich_hover(
     {
         result.push_str("\n**Relationships:**\n");
         for rel in relationships {
-            result.push_str(&format!("- {}\n", rel));
+            result.push_str(&format!("- {rel}\n"));
         }
     }
 
@@ -63,19 +63,19 @@ pub fn format_rich_hover(
 /// Format the symbol declaration
 fn format_symbol_declaration(symbol: &Symbol) -> String {
     match symbol {
-        Symbol::Alias { name, target, .. } => format!("alias {} for {}", name, target),
-        Symbol::Package { name, .. } => format!("package {}", name),
-        Symbol::Classifier { name, .. } => format!("classifier {}", name),
-        Symbol::Definition { name, kind, .. } => format!("{} def {}", kind, name),
-        Symbol::Usage { name, kind, .. } => format!("{} {}", kind, name),
+        Symbol::Alias { name, target, .. } => format!("alias {name} for {target}"),
+        Symbol::Package { name, .. } => format!("package {name}"),
+        Symbol::Classifier { name, .. } => format!("classifier {name}"),
+        Symbol::Definition { name, kind, .. } => format!("{kind} def {name}"),
+        Symbol::Usage { name, kind, .. } => format!("{kind} {name}"),
         Symbol::Feature {
             name, feature_type, ..
         } => {
             let type_str = feature_type
                 .as_ref()
-                .map(|t| format!(": {}", t))
+                .map(|t| format!(": {t}"))
                 .unwrap_or_default();
-            format!("feature {}{}", name, type_str)
+            format!("feature {name}{type_str}")
         }
     }
 }

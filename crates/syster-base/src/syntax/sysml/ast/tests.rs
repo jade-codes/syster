@@ -623,7 +623,7 @@ fn test_all_definition_kinds() {
     for (source, expected_kind, rule) in test_cases {
         let mut pairs = SysMLParser::parse(rule, source).unwrap();
         let definition = Definition::from_pest(&mut pairs).unwrap();
-        assert_eq!(definition.kind, expected_kind, "Failed for: {}", source);
+        assert_eq!(definition.kind, expected_kind, "Failed for: {source}");
         assert_eq!(definition.name, Some("Test".to_string()));
     }
 }
@@ -653,7 +653,7 @@ fn test_all_usage_kinds() {
     for (source, expected_kind, rule) in test_cases {
         let mut pairs = SysMLParser::parse(rule, source).unwrap();
         let usage = Usage::from_pest(&mut pairs).unwrap();
-        assert_eq!(usage.kind, expected_kind, "Failed for: {}", source);
+        assert_eq!(usage.kind, expected_kind, "Failed for: {source}");
         assert_eq!(usage.name, Some("test".to_string()));
     }
 }

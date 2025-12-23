@@ -1275,7 +1275,7 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("sysml.library/Systems Library/Views.sysml");
 
     if !stdlib_path.exists() {
-        println!("Skipping test - stdlib file not found at {:?}", stdlib_path);
+        println!("Skipping test - stdlib file not found at {stdlib_path:?}");
         return;
     }
 
@@ -1288,7 +1288,7 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
     symbol_table.set_current_file(Some(file_path.clone()));
 
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
-    println!("\n=== Populate result: {:?} ===", result);
+    println!("\n=== Populate result: {result:?} ===");
 
     // Check what symbols were created
     println!("\n=== Symbols from stdlib file ===");
@@ -1313,10 +1313,7 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
             }
         }
     }
-    println!(
-        "\n=== Total: {} symbols, {} with spans ===",
-        symbol_count, symbols_with_spans
-    );
+    println!("\n=== Total: {symbol_count} symbols, {symbols_with_spans} with spans ===");
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &file_path);
 
@@ -1487,21 +1484,21 @@ fn test_semantic_tokens_all_stdlib_files() {
         match tokens.len() {
             0 => {
                 files_with_zero_tokens.push(filename.to_string());
-                println!("❌ {} - 0 tokens", filename);
+                println!("❌ {filename} - 0 tokens");
             }
             1 => {
                 files_with_one_token.push(filename.to_string());
-                println!("⚠️  {} - 1 token", filename);
+                println!("⚠️  {filename} - 1 token");
             }
             n => {
                 files_with_good_tokens.push((filename.to_string(), n));
-                println!("✅ {} - {} tokens", filename, n);
+                println!("✅ {filename} - {n} tokens");
             }
         }
     }
 
     println!("\n=== Summary ===");
-    println!("Total files tested: {}", total_files);
+    println!("Total files tested: {total_files}");
     println!("Files with 0 tokens: {}", files_with_zero_tokens.len());
     println!("Files with 1 token: {}", files_with_one_token.len());
     println!("Files with 2+ tokens: {}", files_with_good_tokens.len());
@@ -1509,14 +1506,14 @@ fn test_semantic_tokens_all_stdlib_files() {
     if !files_with_zero_tokens.is_empty() {
         println!("\n0-token files:");
         for f in &files_with_zero_tokens {
-            println!("  - {}", f);
+            println!("  - {f}");
         }
     }
 
     if !files_with_one_token.is_empty() {
         println!("\n1-token files (suspicious):");
         for f in &files_with_one_token {
-            println!("  - {}", f);
+            println!("  - {f}");
         }
     }
 
@@ -1526,8 +1523,7 @@ fn test_semantic_tokens_all_stdlib_files() {
     let bad_files = files_with_zero_tokens.len() + files_with_one_token.len();
     if bad_files > total_files / 2 {
         panic!(
-            "MORE THAN HALF THE FILES ({}/{}) HAVE 0 OR 1 TOKENS - SOMETHING IS VERY WRONG!",
-            bad_files, total_files
+            "MORE THAN HALF THE FILES ({bad_files}/{total_files}) HAVE 0 OR 1 TOKENS - SOMETHING IS VERY WRONG!"
         );
     }
 }
@@ -1578,7 +1574,7 @@ fn test_allocation_definition_parsing() {
                     i, usage.name, usage.kind
                 );
             }
-            _ => println!("Element {}: {:?}", i, elem),
+            _ => println!("Element {i}: {elem:?}"),
         }
     }
 

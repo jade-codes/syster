@@ -20,7 +20,7 @@ fn collect_recursive(dir: &PathBuf, paths: &mut Vec<PathBuf>) -> Result<(), Stri
         .map_err(|e| format!("Failed to read directory {}: {}", dir.display(), e))?;
 
     for entry in entries {
-        let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
+        let entry = entry.map_err(|e| format!("Failed to read directory entry: {e}"))?;
         let path = entry.path();
 
         if path.is_dir() {

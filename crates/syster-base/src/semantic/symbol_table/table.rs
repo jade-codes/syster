@@ -62,8 +62,7 @@ impl SymbolTable {
             let scope = &mut self.scopes[self.current_scope];
             if scope.symbols.contains_key(&name) {
                 return OperationResult::failure(format!(
-                    "Symbol '{}' already defined in this scope",
-                    name
+                    "Symbol '{name}' already defined in this scope"
                 ))
                 .publish(self);
             }

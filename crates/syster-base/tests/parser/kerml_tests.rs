@@ -304,7 +304,7 @@ fn test_element_creation() {
         declared_short_name: None,
     };
     assert_eq!(
-        format!("{:?}", element),
+        format!("{element:?}"),
         "Element { declared_name: None, declared_short_name: None }"
     );
 }
@@ -312,7 +312,7 @@ fn test_element_creation() {
 #[test]
 fn test_annotation_creation() {
     let annotation = Annotation {};
-    assert!(format!("{:?}", annotation).contains("Annotation"));
+    assert!(format!("{annotation:?}").contains("Annotation"));
 }
 
 #[test]
@@ -452,7 +452,7 @@ fn test_inheritance_from_relationship() {
         target_chain: None,
     };
     let inheritance = Inheritance { relationship };
-    assert!(format!("{:?}", inheritance).contains("Inheritance"));
+    assert!(format!("{inheritance:?}").contains("Inheritance"));
 }
 
 #[test]
@@ -560,7 +560,7 @@ fn test_feature_reference() {
     let feature_ref = FeatureReference {
         type_reference: type_ref,
     };
-    assert!(format!("{:?}", feature_ref).contains("FeatureReference"));
+    assert!(format!("{feature_ref:?}").contains("FeatureReference"));
 }
 
 #[rstest]
@@ -2794,7 +2794,7 @@ fn test_parse_scalar_values_stdlib_file() {
     println!("Namespace: {:?}", file.namespace);
     println!("Elements count: {}", file.elements.len());
     for (i, elem) in file.elements.iter().enumerate() {
-        println!("  Element {}: {:?}", i, elem);
+        println!("  Element {i}: {elem:?}");
     }
 
     assert!(!file.elements.is_empty(), "File should have elements!");
@@ -2986,12 +2986,10 @@ fn test_parse_abstract_classifier_ast() {
 }
 
 #[test]
-#[ignore = "TODO: Parser not extracting readonly flag - needs investigation"]
 fn test_parse_readonly_feature_ast() {
     use from_pest::FromPest;
     use syster::syntax::kerml::ast::KerMLFile;
 
-    // Try with a different syntax - maybe feature needs to be in a package?
     let input = r#"
         package Test {
             readonly feature id : String;
@@ -3000,20 +2998,23 @@ fn test_parse_readonly_feature_ast() {
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
     let file = KerMLFile::from_pest(&mut pairs).unwrap();
 
-    // Find the feature in the package
-    assert!(!file.elements.is_empty());
-    if let AstElement::Package(pkg) = &file.elements[0] {
-        assert_eq!(pkg.elements.len(), 1);
-        match &pkg.elements[0] {
-            AstElement::Feature(f) => {
-                assert_eq!(f.name, Some("id".to_string()));
-                assert!(f.is_readonly, "Feature should be readonly");
-            }
-            _ => panic!("Expected Feature, got {:?}", pkg.elements[0]),
-        }
-    } else {
-        panic!("Expected Package");
-    }
+    // Extract the package and feature directly with assertions
+    assert_eq!(file.elements.len(), 1, "Should have exactly one package");
+    let AstElement::Package(pkg) = &file.elements[0] else {
+        panic!("Expected Package, got {:?}", file.elements[0]);
+    };
+
+    assert_eq!(
+        pkg.elements.len(),
+        1,
+        "Package should have exactly one feature"
+    );
+    let AstElement::Feature(f) = &pkg.elements[0] else {
+        panic!("Expected Feature, got {:?}", pkg.elements[0]);
+    };
+
+    assert_eq!(f.name, Some("id".to_string()));
+    assert!(f.is_readonly, "Feature should be readonly");
 }
 
 #[test]

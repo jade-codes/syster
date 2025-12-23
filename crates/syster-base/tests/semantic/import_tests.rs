@@ -212,13 +212,11 @@ fn test_import_visibility() {
         syster::syntax::SyntaxFile::SysML(file),
     );
 
-    let result = workspace.populate_all();
+    workspace.populate_all().expect("Population should succeed");
 
     // With model-level imports, both should work
-    if result.is_ok() {
-        let y = workspace.symbol_table().lookup_qualified("B::y");
-        assert!(y.is_some(), "y should be defined in package B");
-    }
+    let y = workspace.symbol_table().lookup_qualified("B::y");
+    assert!(y.is_some(), "y should be defined in package B");
 }
 
 #[test]
@@ -283,7 +281,14 @@ fn test_import_alias() {
     let car = workspace.symbol_table().lookup_qualified("Derived::Car");
     assert!(car.is_some(), "Car should be defined");
 
-    // TODO: Verify that BaseVehicle resolves to Vehicle
+    // Verify that BaseVehicle resolves to Vehicle
+    let base_vehicle = workspace
+        .symbol_table()
+        .lookup_qualified("Derived::BaseVehicle");
+    assert!(
+        base_vehicle.is_some(),
+        "BaseVehicle alias should be defined in Derived package"
+    );
 }
 
 #[test]
