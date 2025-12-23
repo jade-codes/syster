@@ -78,10 +78,10 @@ impl LspServer {
                     let child = symbol_map.remove(qualified_name).unwrap();
 
                     // Add child to parent's children
-                    if let Some(parent) = symbol_map.get_mut(parent_name) {
-                        if let Some(ref mut children) = parent.children {
-                            children.push(child);
-                        }
+                    if let Some(parent) = symbol_map.get_mut(parent_name)
+                        && let Some(ref mut children) = parent.children
+                    {
+                        children.push(child);
                     }
                 }
             }

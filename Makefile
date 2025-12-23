@@ -62,7 +62,7 @@ run-guidelines:
 	@echo "✓ Code formatted"
 	@echo ""
 	@echo "Step 2/4: Running linter..."
-	@cargo clippy --all-targets -- -D warnings
+	@cargo clippy --all-targets --all-features -- -D warnings
 	@echo "✓ Linting passed"
 	@echo ""
 	@echo "Step 3/4: Building project..."
