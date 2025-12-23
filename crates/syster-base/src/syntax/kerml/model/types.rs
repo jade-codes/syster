@@ -249,7 +249,8 @@ pub struct LibraryPackage {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Annotation {
-    // TODO: Add annotation properties
+    pub reference: String,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

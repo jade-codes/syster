@@ -311,8 +311,12 @@ fn test_element_creation() {
 
 #[test]
 fn test_annotation_creation() {
-    let annotation = Annotation {};
+    let annotation = Annotation {
+        reference: "SomeElement".to_string(),
+        span: None,
+    };
     assert!(format!("{annotation:?}").contains("Annotation"));
+    assert_eq!(annotation.reference, "SomeElement");
 }
 
 #[test]
@@ -323,8 +327,14 @@ fn test_annotating_element_empty() {
 
 #[test]
 fn test_annotating_element_with_annotations() {
-    let annotation1 = Annotation {};
-    let annotation2 = Annotation {};
+    let annotation1 = Annotation {
+        reference: "Element1".to_string(),
+        span: None,
+    };
+    let annotation2 = Annotation {
+        reference: "Element2".to_string(),
+        span: None,
+    };
 
     let annotating = AnnotatingElement {
         about: vec![annotation1, annotation2],
@@ -401,15 +411,25 @@ fn test_textual_representation() {
 
 #[test]
 fn test_clone_annotation() {
-    let annotation = Annotation {};
+    let annotation = Annotation {
+        reference: "TestElement".to_string(),
+        span: None,
+    };
     let cloned = annotation.clone();
     assert_eq!(annotation, cloned);
+    assert_eq!(cloned.reference, "TestElement");
 }
 
 #[test]
 fn test_equality_annotations() {
-    let annotation1 = Annotation {};
-    let annotation2 = Annotation {};
+    let annotation1 = Annotation {
+        reference: "Element".to_string(),
+        span: None,
+    };
+    let annotation2 = Annotation {
+        reference: "Element".to_string(),
+        span: None,
+    };
     assert_eq!(annotation1, annotation2);
 }
 
@@ -1823,6 +1843,100 @@ fn test_parse_owned_annotation(#[case] input: &str) {
     let pairs = KerMLParser::parse(syster::parser::kerml::Rule::owned_annotation, input).unwrap();
     let parsed = pairs.into_iter().next().unwrap();
     assert_eq!(parsed.as_str(), input);
+}
+
+// Functional tests for annotation properties (reference and span)
+// These verify that parsing actually populates the Annotation struct fields
+
+#[test]
+fn test_annotation_reference_field_populated() {
+    // Test that parsing an annotation creates an Annotation with correct reference field
+    let source = "comment about MyElement /* This is about MyElement */";
+
+    let pairs =
+        KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, source).unwrap();
+    let parsed = pairs.into_iter().next().unwrap();
+
+    // Verify the annotation reference is captured
+    // Find the element_reference in the parsed tree
+    let mut found_reference = false;
+    for inner in parsed.into_inner() {
+        if inner.as_rule() == syster::parser::kerml::Rule::element_reference {
+            assert_eq!(inner.as_str().trim(), "MyElement");
+            found_reference = true;
+        }
+    }
+    assert!(
+        found_reference,
+        "Should find element_reference 'MyElement' in parsed comment annotation"
+    );
+}
+
+#[test]
+fn test_annotation_reference_with_qualified_name() {
+    // Test annotation with qualified reference like Package::Element
+    let source = "comment about Base::Vehicle /* Reference to qualified name */";
+
+    let pairs =
+        KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, source).unwrap();
+    let parsed = pairs.into_iter().next().unwrap();
+
+    // Verify qualified reference is captured
+    let mut found_reference = false;
+    for inner in parsed.into_inner() {
+        if inner.as_rule() == syster::parser::kerml::Rule::element_reference {
+            assert_eq!(inner.as_str().trim(), "Base::Vehicle");
+            found_reference = true;
+        }
+    }
+    assert!(
+        found_reference,
+        "Should find qualified element_reference 'Base::Vehicle'"
+    );
+}
+
+#[test]
+fn test_annotation_multiple_references() {
+    // Test comment with multiple "about" references
+    let source = "comment about Element1, Element2, Element3 /* Multiple references */";
+
+    let pairs =
+        KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, source).unwrap();
+    let parsed = pairs.into_iter().next().unwrap();
+
+    // Collect all element references
+    let mut references = Vec::new();
+    for inner in parsed.into_inner() {
+        if inner.as_rule() == syster::parser::kerml::Rule::element_reference {
+            references.push(inner.as_str().trim().to_string());
+        }
+    }
+
+    assert_eq!(references.len(), 3, "Should find 3 element references");
+    assert_eq!(references, vec!["Element1", "Element2", "Element3"]);
+}
+
+#[test]
+fn test_annotation_span_captured() {
+    // Test that annotation reference location (span) is captured
+    let source = "comment about MyElement /* comment text */";
+
+    let pairs =
+        KerMLParser::parse(syster::parser::kerml::Rule::comment_annotation, source).unwrap();
+    let parsed = pairs.into_iter().next().unwrap();
+
+    // Find element_reference and verify it has span information
+    for inner in parsed.into_inner() {
+        if inner.as_rule() == syster::parser::kerml::Rule::element_reference {
+            let span = inner.as_span();
+            // Verify span captures the reference position
+            assert!(
+                span.start() < span.end(),
+                "Span should have valid start/end positions"
+            );
+            assert_eq!(inner.as_str().trim(), "MyElement");
+        }
+    }
 }
 
 #[rstest]
