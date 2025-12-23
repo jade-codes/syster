@@ -46,10 +46,12 @@ fn extract_classifier_members(pair: &Pair<Rule>, members: &mut Vec<ClassifierMem
         }
         Rule::import => {
             if let Some(path) = extract_import_path(pair) {
+                let is_recursive = detect_is_recursive(pair);
+                let kind = detect_import_kind(pair);
                 members.push(ClassifierMember::Import(Import {
                     path,
-                    is_recursive: false,      // TODO: detect recursive imports
-                    kind: ImportKind::Normal, // TODO: detect import kind
+                    is_recursive,
+                    kind,
                     span: Some(to_span(pair.as_span())),
                 }));
             }
@@ -167,6 +169,48 @@ fn extract_import_path(pair: &Pair<Rule>) -> Option<String> {
         }
     }
     None
+}
+
+/// Detect if an import is recursive by checking for "all" keyword or recursive import kinds
+fn detect_is_recursive(pair: &Pair<Rule>) -> bool {
+    for inner in pair.clone().into_inner() {
+        match inner.as_rule() {
+            Rule::import_all => return true,
+            Rule::import_kind => {
+                // Check for recursive import kinds: "::**" or "::*::**"
+                let kind_str = inner.as_str();
+                if kind_str.contains("**") {
+                    return true;
+                }
+            }
+            _ => {
+                if detect_is_recursive(&inner) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Detect import kind from the import_kind rule
+fn detect_import_kind(pair: &Pair<Rule>) -> ImportKind {
+    for inner in pair.clone().into_inner() {
+        if let Rule::import_kind = inner.as_rule() {
+            return match inner.as_str() {
+                "::*" => ImportKind::All,
+                "::**" => ImportKind::Recursive,
+                "::*::**" => ImportKind::All,
+                _ => ImportKind::Normal,
+            };
+        } else {
+            let kind = detect_import_kind(&inner);
+            if kind != ImportKind::Normal {
+                return kind;
+            }
+        }
+    }
+    ImportKind::Normal
 }
 
 // ============================================================================
