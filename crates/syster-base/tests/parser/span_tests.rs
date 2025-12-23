@@ -10,17 +10,17 @@
 
 use std::path::PathBuf;
 use syster::core::Position;
-use syster::project::file_loader;
 use syster::syntax::SyntaxFile;
+use syster::syntax::parser::parse_with_result;
 use syster::syntax::sysml::ast::SysMLFile;
 
 /// Helper to parse SysML content and extract the SysMLFile
 fn parse_sysml(source: &str) -> SysMLFile {
     let path = PathBuf::from("test.sysml");
-    let parse_result = file_loader::parse_with_result(source, &path);
+    let parse_result = parse_with_result(source, &path);
     let language_file = parse_result.content.expect("Parse should succeed");
     match language_file {
-        syster::syntax::SyntaxFile::SysML(file) => file,
+        SyntaxFile::SysML(file) => file,
         _ => panic!("Expected SysML file"),
     }
 }
@@ -35,11 +35,11 @@ fn test_package_span_single_line() {
     let namespace = file.namespace.expect("Should have namespace");
     let span = namespace.span.expect("Namespace should have span");
 
-    // "package MyPackage;" spans from (0,0) to (0,17)
+    // Span captures identifier "MyPackage" at columns 8-17
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.start.column, 0);
+    assert_eq!(span.start.column, 8);
     assert_eq!(span.end.line, 0);
-    assert!(span.end.column >= 10, "end column was {}", span.end.column);
+    assert_eq!(span.end.column, 17);
 }
 
 #[test]
@@ -53,10 +53,11 @@ fn test_part_def_span() {
     };
     let span = def.span.expect("Definition should have span");
 
+    // Span captures identifier "Vehicle" at columns 9-16
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.start.column, 0);
+    assert_eq!(span.start.column, 9);
     assert_eq!(span.end.line, 0);
-    assert_eq!(span.end.column, 17);
+    assert_eq!(span.end.column, 16);
 }
 
 #[test]
@@ -70,10 +71,11 @@ fn test_part_usage_span() {
     };
     let span = usage.span.expect("Usage should have span");
 
+    // Span captures identifier "myVehicle" at columns 5-14
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.start.column, 0);
+    assert_eq!(span.start.column, 5);
     assert_eq!(span.end.line, 0);
-    assert_eq!(span.end.column, 24);
+    assert_eq!(span.end.column, 14);
 }
 
 #[test]
@@ -89,8 +91,11 @@ fn test_nested_definitions_span() {
     };
     let span = def.span.expect("Definition should have span");
 
+    // Span captures identifier "Vehicle" at columns 9-16 on line 0
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.end.line, 2);
+    assert_eq!(span.start.column, 9);
+    assert_eq!(span.end.line, 0);
+    assert_eq!(span.end.column, 16);
 
     let syster::syntax::sysml::ast::DefinitionMember::Usage(nested_usage) =
         def.body.first().expect("Should have first member")
@@ -98,8 +103,11 @@ fn test_nested_definitions_span() {
         panic!("Expected nested Usage");
     };
     let nested_span = nested_usage.span.expect("Nested usage should have span");
+    // Span captures identifier "engine" at columns 9-15 on line 1
     assert_eq!(nested_span.start.line, 1);
+    assert_eq!(nested_span.start.column, 9);
     assert_eq!(nested_span.end.line, 1);
+    assert_eq!(nested_span.end.column, 15);
 }
 
 #[test]
@@ -116,10 +124,11 @@ part def Vehicle;"#;
     };
     let span = def.span.expect("Definition should have span");
 
+    // Span captures identifier "Vehicle" at columns 9-16 on line 2
     assert_eq!(span.start.line, 2);
-    assert_eq!(span.start.column, 0);
+    assert_eq!(span.start.column, 9);
     assert_eq!(span.end.line, 2);
-    assert_eq!(span.end.column, 17);
+    assert_eq!(span.end.column, 16);
 }
 #[test]
 fn test_import_span() {
@@ -132,10 +141,11 @@ fn test_import_span() {
     };
     let span = import.span.expect("Import should have span");
 
+    // Span captures import path "ScalarValues::*" at columns 7-22
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.start.column, 0);
+    assert_eq!(span.start.column, 7);
     assert_eq!(span.end.line, 0);
-    assert_eq!(span.end.column, 7);
+    assert_eq!(span.end.column, 22);
 }
 
 #[test]
@@ -275,8 +285,11 @@ fn test_deeply_nested_span() {
         panic!("Expected Definition");
     };
     let span = def.span.expect("Outer definition should have span");
+    // Span captures identifier "Car" at columns 9-12 on line 0
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.end.line, 3);
+    assert_eq!(span.start.column, 9);
+    assert_eq!(span.end.line, 0);
+    assert_eq!(span.end.column, 12);
 
     for member in &def.body {
         match member {
@@ -351,6 +364,9 @@ fn test_span_positions_are_zero_indexed() {
     };
     let span = def.span.expect("Definition should have span");
 
+    // Verify 0-indexed: identifier \"Vehicle\" at columns 9-16 on line 0
     assert_eq!(span.start.line, 0);
-    assert_eq!(span.start.column, 0);
+    assert_eq!(span.start.column, 9);
+    assert_eq!(span.end.line, 0);
+    assert_eq!(span.end.column, 16);
 }
