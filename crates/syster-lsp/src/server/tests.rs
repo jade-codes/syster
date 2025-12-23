@@ -700,11 +700,6 @@ part engine : Engine;
     let path = std::path::Path::new("/test.sysml");
     let symbols = server.get_document_symbols(path);
 
-    // Debug: print what symbols we got
-    for sym in &symbols {
-        eprintln!("Symbol: {} (kind: {:?})", sym.name, sym.kind);
-    }
-
     // Should have 3 symbols
     assert_eq!(symbols.len(), 3);
 
@@ -713,6 +708,160 @@ part engine : Engine;
     assert!(names.contains(&"Vehicle"));
     assert!(names.contains(&"Engine"));
     assert!(names.contains(&"engine"));
+}
+
+#[test]
+fn test_document_symbols_hierarchical() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Auto {
+    part def Vehicle {
+        part engine : Engine;
+        part wheel : Wheel;
+    }
+    part def Engine;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new("/test.sysml");
+    let symbols = server.get_document_symbols(path);
+
+    // Should have 1 root symbol (Auto package)
+    assert_eq!(symbols.len(), 1, "Expected 1 root symbol");
+
+    let auto = &symbols[0];
+    assert_eq!(auto.name, "Auto");
+    assert_eq!(auto.kind, tower_lsp::lsp_types::SymbolKind::NAMESPACE);
+
+    // Auto should have 2 children: Vehicle and Engine
+    let auto_children = auto.children.as_ref().expect("Auto should have children");
+    assert_eq!(auto_children.len(), 2, "Auto should have 2 children");
+
+    let child_names: Vec<&str> = auto_children.iter().map(|s| s.name.as_str()).collect();
+    assert!(child_names.contains(&"Vehicle"));
+    assert!(child_names.contains(&"Engine"));
+
+    // Find Vehicle and check its children
+    let vehicle = auto_children
+        .iter()
+        .find(|s| s.name == "Vehicle")
+        .expect("Vehicle not found");
+    let vehicle_children = vehicle
+        .children
+        .as_ref()
+        .expect("Vehicle should have children");
+    assert_eq!(vehicle_children.len(), 2, "Vehicle should have 2 children");
+
+    let vehicle_child_names: Vec<&str> = vehicle_children.iter().map(|s| s.name.as_str()).collect();
+    assert!(vehicle_child_names.contains(&"engine"));
+    assert!(vehicle_child_names.contains(&"wheel"));
+}
+
+#[test]
+fn test_document_symbols_deeply_nested() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Level1 {
+    package Level2 {
+        part def Level3 {
+            part level4 : Level4;
+        }
+    }
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new("/test.sysml");
+    let symbols = server.get_document_symbols(path);
+
+    // Should have 1 root symbol
+    assert_eq!(symbols.len(), 1);
+
+    let level1 = &symbols[0];
+    assert_eq!(level1.name, "Level1");
+
+    // Level1 -> Level2
+    let level1_children = level1
+        .children
+        .as_ref()
+        .expect("Level1 should have children");
+    assert_eq!(level1_children.len(), 1);
+    let level2 = &level1_children[0];
+    assert_eq!(level2.name, "Level2");
+
+    // Level2 -> Level3
+    let level2_children = level2
+        .children
+        .as_ref()
+        .expect("Level2 should have children");
+    assert_eq!(level2_children.len(), 1);
+    let level3 = &level2_children[0];
+    assert_eq!(level3.name, "Level3");
+
+    // Level3 -> level4
+    let level3_children = level3
+        .children
+        .as_ref()
+        .expect("Level3 should have children");
+    assert_eq!(level3_children.len(), 1);
+    let level4 = &level3_children[0];
+    assert_eq!(level4.name, "level4");
+}
+
+#[test]
+fn test_document_symbols_mixed_hierarchy() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    // Each package declaration creates its own scope
+    let text = r#"
+package Automotive {
+    part def Vehicle;
+}
+package Electronics {
+    part def Sensor;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new("/test.sysml");
+    let symbols = server.get_document_symbols(path);
+
+    // Should have 2 root symbols (Automotive and Electronics packages)
+    assert_eq!(symbols.len(), 2, "Expected 2 root packages");
+
+    let names: Vec<&str> = symbols.iter().map(|s| s.name.as_str()).collect();
+    assert!(names.contains(&"Automotive"));
+    assert!(names.contains(&"Electronics"));
+
+    // Automotive should have Vehicle as child
+    let automotive = symbols
+        .iter()
+        .find(|s| s.name == "Automotive")
+        .expect("Automotive not found");
+    let auto_children = automotive
+        .children
+        .as_ref()
+        .expect("Automotive should have children");
+    assert_eq!(auto_children.len(), 1);
+    assert_eq!(auto_children[0].name, "Vehicle");
+
+    // Electronics should have Sensor as child
+    let electronics = symbols
+        .iter()
+        .find(|s| s.name == "Electronics")
+        .expect("Electronics not found");
+    let elec_children = electronics
+        .children
+        .as_ref()
+        .expect("Electronics should have children");
+    assert_eq!(elec_children.len(), 1);
+    assert_eq!(elec_children[0].name, "Sensor");
 }
 
 #[test]
