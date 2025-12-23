@@ -57,7 +57,10 @@ pub fn has_flag(pair: &Pair<Rule>, flag: Rule) -> bool {
     if pair.as_rule() == Rule::feature_modifier {
         return pair.clone().into_inner().any(|p| has_flag(&p, flag));
     }
-    false
+    // Also check direct children for the flag (e.g., readonly directly under feature)
+    pair.clone()
+        .into_inner()
+        .any(|inner| inner.as_rule() == flag)
 }
 
 /// Extract readonly and derived flags from pairs

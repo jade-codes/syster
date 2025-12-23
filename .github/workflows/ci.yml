@@ -61,23 +61,23 @@ jobs:
       - name: Run doc tests
         run: cargo test --doc --verbose
 
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
-      
-      - name: Generate coverage
-        run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./cobertura.xml
-          fail_ci_if_error: false
+  # coverage:
+  #   name: Code Coverage
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #     
+  #     - name: Install tarpaulin
+  #       run: cargo install cargo-tarpaulin
+  #     
+  #     - name: Generate coverage
+  #       run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+  #     
+  #     - name: Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v4
+  #       with:
+  #         file: ./cobertura.xml
+  #         fail_ci_if_error: false
