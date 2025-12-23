@@ -299,3 +299,335 @@ fn test_kerml_visitor_handles_empty_package() {
 
     assert!(symbol_table.lookup("EmptyPackage").is_some());
 }
+
+// ============================================================
+// Tests for additional classifier kinds
+// ============================================================
+
+#[test]
+fn test_kerml_visitor_creates_class_symbol() {
+    let source = "class Vehicle;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("Vehicle").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "Class"),
+        _ => panic!("Expected Definition symbol with kind Class"),
+    }
+}
+
+#[test]
+fn test_kerml_visitor_creates_structure_symbol() {
+    let source = "struct Point;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("Point").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "Structure"),
+        _ => panic!("Expected Definition symbol with kind Structure"),
+    }
+}
+
+#[test]
+fn test_kerml_visitor_creates_behavior_symbol() {
+    let source = "behavior StartEngine;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("StartEngine").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "Behavior"),
+        _ => panic!("Expected Definition symbol with kind Behavior"),
+    }
+}
+
+#[test]
+fn test_kerml_visitor_creates_type_symbol() {
+    let source = "type Length;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("Length").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "Type"),
+        _ => panic!("Expected Definition symbol with kind Type"),
+    }
+}
+
+#[test]
+fn test_kerml_visitor_creates_association_symbol() {
+    let source = "assoc Ownership;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("Ownership").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "Association"),
+        _ => panic!("Expected Definition symbol with kind Association"),
+    }
+}
+
+#[test]
+fn test_kerml_visitor_creates_association_structure_symbol() {
+    let source = "assoc struct LinkStructure;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("LinkStructure").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "AssociationStructure"),
+        _ => panic!("Expected Definition symbol with kind AssociationStructure"),
+    }
+}
+
+#[test]
+fn test_kerml_visitor_creates_metaclass_symbol() {
+    let source = "metaclass MetaElement;";
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    let symbol = symbol_table.lookup("MetaElement").unwrap();
+    match symbol {
+        Symbol::Definition { kind, .. } => assert_eq!(kind, "Metaclass"),
+        _ => panic!("Expected Definition symbol with kind Metaclass"),
+    }
+}
+
+// ============================================================
+// Tests for feature members and relationship tracking
+// ============================================================
+
+#[test]
+fn test_kerml_visitor_handles_feature_subsetting() {
+    let source = r#"
+        feature velocity;
+        feature speed subsets velocity;
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // Verify feature was created
+    assert!(symbol_table.lookup("speed").is_some());
+
+    // Verify subsetting relationship was recorded
+    let relationships = graph.get_all_relationships("speed");
+    assert!(relationships.iter().any(|(rel_type, targets)| {
+        rel_type == "subsetting" && targets.contains(&"velocity".to_string())
+    }));
+}
+
+#[test]
+fn test_kerml_visitor_handles_multiple_feature_relationships() {
+    let source = r#"
+        feature baseCount;
+        feature measurement;
+        datatype Integer;
+        feature count : Integer redefines baseCount subsets measurement;
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // Verify feature was created
+    assert!(symbol_table.lookup("count").is_some());
+
+    // Verify all three relationships
+    let relationships = graph.get_all_relationships("count");
+    assert!(relationships.iter().any(|(rel_type, targets)| {
+        rel_type == "typing" && targets.contains(&"Integer".to_string())
+    }));
+    assert!(relationships.iter().any(|(rel_type, targets)| {
+        rel_type == "redefinition" && targets.contains(&"baseCount".to_string())
+    }));
+    assert!(relationships.iter().any(|(rel_type, targets)| {
+        rel_type == "subsetting" && targets.contains(&"measurement".to_string())
+    }));
+}
+
+// ============================================================
+// Tests for nested classifier members
+// ============================================================
+
+#[test]
+fn test_kerml_visitor_handles_classifier_with_features() {
+    let source = r#"
+        classifier Point {
+            feature x;
+            feature y;
+        }
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // Verify classifier was created
+    assert!(symbol_table.lookup("Point").is_some());
+
+    // Verify nested features were created
+    let all_symbols = symbol_table.all_symbols();
+    assert!(all_symbols.iter().any(|(name, symbol)| {
+        *name == "x" && matches!(symbol, Symbol::Feature { .. })
+    }));
+    assert!(all_symbols.iter().any(|(name, symbol)| {
+        *name == "y" && matches!(symbol, Symbol::Feature { .. })
+    }));
+}
+
+#[test]
+fn test_kerml_visitor_handles_classifier_specialization_member() {
+    let source = r#"
+        classifier Dog specializes Animal;
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // Verify classifier was created
+    assert!(symbol_table.lookup("Dog").is_some());
+
+    // Verify specialization relationship
+    let relationships = graph.get_all_relationships("Dog");
+    assert!(relationships.iter().any(|(rel_type, targets)| {
+        rel_type == "specialization" && targets.contains(&"Animal".to_string())
+    }));
+}
+
+// ============================================================
+// Tests for anonymous elements
+// ============================================================
+
+#[test]
+fn test_kerml_visitor_handles_anonymous_classifier() {
+    let source = r#"
+        package TestPackage {
+            classifier {
+                feature x;
+            }
+        }
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // Package should exist
+    assert!(symbol_table.lookup("TestPackage").is_some());
+
+    // Anonymous classifier shouldn't create a symbol, but its feature should
+    let all_symbols = symbol_table.all_symbols();
+    assert!(all_symbols.iter().any(|(name, symbol)| {
+        *name == "x" && matches!(symbol, Symbol::Feature { .. })
+    }));
+}
+
+#[test]
+fn test_kerml_visitor_handles_anonymous_feature() {
+    let source = r#"
+        classifier Vehicle {
+            feature;
+        }
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // Classifier should exist
+    assert!(symbol_table.lookup("Vehicle").is_some());
+
+    // Anonymous feature should not create a symbol
+    let all_symbols = symbol_table.all_symbols();
+    assert_eq!(all_symbols.len(), 1); // Only Vehicle
+}
+
+// ============================================================
+// Tests for complex nested structures
+// ============================================================
+
+#[test]
+fn test_kerml_visitor_handles_deeply_nested_classifiers() {
+    let source = r#"
+        package Level1 {
+            package Level2 {
+                classifier Level3 {
+                    feature deepFeature;
+                }
+            }
+        }
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    adapter.populate(&file).unwrap();
+
+    // All elements should be created
+    assert!(symbol_table.lookup("Level1").is_some());
+    
+    let all_symbols = symbol_table.all_symbols();
+    assert!(all_symbols.iter().any(|(name, _)| *name == "Level2"));
+    assert!(all_symbols.iter().any(|(name, _)| *name == "Level3"));
+    assert!(all_symbols.iter().any(|(name, _)| *name == "deepFeature"));
+}
