@@ -7,6 +7,15 @@ echo "Creating GitHub issues for missing LSP features..."
 echo "Make sure you have the GitHub CLI (gh) installed and authenticated"
 echo ""
 
+# Create labels first (ignore errors if they already exist)
+echo "Creating labels..."
+gh label create "lsp" --color "0E8A16" --description "Language Server Protocol features" 2>/dev/null || true
+gh label create "priority:high" --color "D93F0B" --description "High priority" 2>/dev/null || true
+gh label create "priority:medium" --color "FBCA04" --description "Medium priority" 2>/dev/null || true
+gh label create "priority:low" --color "0052CC" --description "Low priority" 2>/dev/null || true
+echo "Labels ready."
+echo ""
+
 # High Priority Issues
 gh issue create --title "feat(lsp): Implement incremental text synchronization" \
   --label "enhancement,lsp,priority:high" \
