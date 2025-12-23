@@ -70,9 +70,16 @@ impl LanguageServer for SysterLanguageServer {
                         },
                     ),
                 ),
+                workspace: Some(WorkspaceServerCapabilities {
+                    workspace_folders: None,
+                    file_operations: None,
+                }),
                 ..Default::default()
             },
-            ..Default::default()
+            server_info: Some(ServerInfo {
+                name: "SysML v2 Language Server".to_string(),
+                version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            }),
         })
     }
 
@@ -91,11 +98,17 @@ impl LanguageServer for SysterLanguageServer {
             Ok(_) => {
                 // Publish diagnostics
                 let diagnostics = server.get_diagnostics(&uri);
+                drop(server); // Release lock before async calls
+
                 self.client
-                    .publish_diagnostics(uri, diagnostics, None)
+                    .publish_diagnostics(uri.clone(), diagnostics, None)
                     .await;
+
+                // Request semantic token refresh for newly opened file
+                let _ = self.client.semantic_tokens_refresh().await;
             }
             Err(e) => {
+                drop(server);
                 self.client
                     .log_message(
                         MessageType::ERROR,
@@ -130,9 +143,15 @@ impl LanguageServer for SysterLanguageServer {
 
         // Publish diagnostics after all changes applied
         let diagnostics = server.get_diagnostics(&uri);
+        drop(server); // Release lock before async calls
+
         self.client
-            .publish_diagnostics(uri, diagnostics, None)
+            .publish_diagnostics(uri.clone(), diagnostics, None)
             .await;
+
+        // Request semantic token refresh so client re-requests updated tokens
+        // Note: This is async and non-blocking, client decides when to actually refresh
+        let _ = self.client.semantic_tokens_refresh().await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {

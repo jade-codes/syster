@@ -1700,3 +1700,216 @@ fn test_incremental_change_preserves_diagnostics() {
     let diagnostics = server.get_diagnostics(&uri);
     assert!(!diagnostics.is_empty());
 }
+
+#[test]
+fn test_incremental_change_updates_semantic_tokens() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document with a part definition
+    server.open_document(&uri, "part def Vehicle;").unwrap();
+
+    // Get initial semantic tokens
+    let initial_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
+        panic!("Expected SemanticTokens result");
+    };
+
+    // Should have tokens for "part", "def", and "Vehicle"
+    assert!(!initial.data.is_empty());
+    let initial_count = initial.data.len();
+
+    // Make an incremental change to add another part definition
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 17),
+            end: Position::new(0, 17),
+        }),
+        range_length: None,
+        text: "\npart def Car;".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Get updated semantic tokens
+    let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
+        panic!("Expected SemanticTokens result");
+    };
+
+    // Should have more tokens now (tokens for the new "part def Car")
+    assert!(updated.data.len() > initial_count);
+
+    // Verify the document content is correct
+    let expected = "part def Vehicle;\npart def Car;";
+    let actual = server.document_texts.values().next().unwrap();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_incremental_change_updates_references() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document with a definition and usage
+    server
+        .open_document(&uri, "part def Vehicle;\npart car : Vehicle;")
+        .unwrap();
+
+    // Find references to Vehicle - should find 2 (definition and usage)
+    let vehicle_pos = Position::new(0, 9); // Position on "Vehicle" in definition
+    let initial_refs = server.get_references(&uri, vehicle_pos, true).unwrap();
+    assert_eq!(initial_refs.len(), 2); // Definition + usage
+
+    // Make an incremental change to add another usage of Vehicle
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(1, 20),
+            end: Position::new(1, 20),
+        }),
+        range_length: None,
+        text: "\npart truck : Vehicle;".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Find references again - should now find 3 (definition + 2 usages)
+    let updated_refs = server.get_references(&uri, vehicle_pos, true).unwrap();
+    assert_eq!(updated_refs.len(), 3);
+
+    // Verify the document content is correct
+    let expected = "part def Vehicle;\npart car : Vehicle;\npart truck : Vehicle;";
+    let actual = server.document_texts.values().next().unwrap();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_open_document_provides_semantic_tokens() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///new_file.sysml").unwrap();
+
+    // Open a new document
+    server
+        .open_document(&uri, "part def Vehicle;\npart car : Vehicle;")
+        .unwrap();
+
+    // Should be able to get semantic tokens immediately
+    let tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(result) = tokens else {
+        panic!("Expected SemanticTokens result");
+    };
+
+    // Should have tokens for keywords and identifiers
+    assert!(!result.data.is_empty());
+}
+
+#[test]
+fn test_new_file_then_incremental_update() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///brand_new.sysml").unwrap();
+
+    // Open a brand new file
+    server.open_document(&uri, "part def Car;").unwrap();
+
+    // Verify initial state
+    let initial_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
+        panic!("Expected SemanticTokens result");
+    };
+    assert!(!initial.data.is_empty());
+
+    // Now make an incremental change
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 13),
+            end: Position::new(0, 13),
+        }),
+        range_length: None,
+        text: "\npart def Truck;".to_string(),
+    };
+
+    server.apply_incremental_change(&uri, &change).unwrap();
+
+    // Verify semantic tokens still work after update
+    let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
+        panic!("Expected SemanticTokens result");
+    };
+
+    // Should have more tokens now
+    assert!(updated.data.len() > initial.data.len());
+
+    // Verify hover still works
+    let hover_pos = Position::new(0, 9); // Position on "Car"
+    let hover_result = server.get_hover(&uri, hover_pos);
+    assert!(
+        hover_result.is_some(),
+        "Hover should work on new file after update"
+    );
+}
+
+#[test]
+fn test_incremental_change_on_unopened_file() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///never_opened.sysml").unwrap();
+
+    // File was never opened with did_open, but client sends an incremental change
+    // This can happen when creating a brand new file
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(0, 0),
+            end: Position::new(0, 0),
+        }),
+        range_length: None,
+        text: "part def NewPart;".to_string(),
+    };
+
+    // Should not error, should treat as opening the document
+    let result = server.apply_incremental_change(&uri, &change);
+    assert!(
+        result.is_ok(),
+        "Should handle incremental change on unopened file"
+    );
+
+    // Verify the document was added
+    let content = server.document_texts.values().next();
+    assert!(content.is_some());
+    assert_eq!(content.unwrap(), "part def NewPart;");
+
+    // Verify semantic tokens work
+    let tokens = server.get_semantic_tokens(uri.as_str());
+    assert!(
+        tokens.is_some(),
+        "Should have semantic tokens after first edit"
+    );
+}
+
+#[test]
+fn test_incremental_insert_at_end_of_document() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document with multiple lines
+    server
+        .open_document(&uri, "part def Car;\npart def Truck;")
+        .unwrap();
+
+    // Insert at the very end of the document (after last line)
+    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(tower_lsp::lsp_types::Range {
+            start: Position::new(1, 16), // End of line 1
+            end: Position::new(1, 16),
+        }),
+        range_length: None,
+        text: "\npart def Bike;".to_string(),
+    };
+
+    // Should not error
+    let result = server.apply_incremental_change(&uri, &change);
+    assert!(result.is_ok(), "Should handle insert at end of document");
+
+    // Verify content
+    let expected = "part def Car;\npart def Truck;\npart def Bike;";
+    let actual = server.document_texts.values().next().unwrap();
+    assert_eq!(actual, expected);
+}

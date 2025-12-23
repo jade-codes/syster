@@ -38,18 +38,30 @@ impl LspServer {
         // Store parse errors
         self.parse_errors.insert(path.clone(), parse_result.errors);
 
-        // If updating, remove old file first
-        if is_update {
-            self.workspace.remove_file(&path);
-        }
-
-        // If parsing succeeded, add to workspace
+        // If parsing succeeded, add or update in workspace
         if let Some(file) = parse_result.content {
-            self.workspace.add_file(path, file);
-            // Populate symbols - ignore semantic errors for now
-            let _ = self.workspace.populate_all();
+            if is_update && self.workspace.get_file(&path).is_some() {
+                // Fast path: update existing file without removing/re-adding
+                self.workspace.update_file(&path, file);
+            } else {
+                // New file: remove old if exists, then add
+                if is_update {
+                    self.workspace.remove_file(&path);
+                }
+                self.workspace.add_file(path.clone(), file);
+            }
+
+            // Only populate affected (unpopulated) files, not the entire workspace
+            // This is much faster than populate_all() which re-processes stdlib
+            let _ = self.workspace.populate_affected();
+
             // Sync document texts from workspace (for stdlib and imported files)
             self.sync_document_texts_from_workspace();
+        } else {
+            // Parse failed - remove file from workspace if it exists
+            if is_update {
+                self.workspace.remove_file(&path);
+            }
         }
 
         Ok(())
@@ -87,23 +99,29 @@ impl LspServer {
             .to_file_path()
             .map_err(|_| format!("Invalid file URI: {uri}"))?;
 
-        // Get current document text
-        let current_text = self
-            .document_texts
-            .get(&path)
-            .ok_or_else(|| format!("Document not found: {uri}"))?
-            .clone();
+        // Get current document text, or empty string if document not yet opened
+        let current_text = self.document_texts.get(&path).cloned().unwrap_or_default();
 
         // Apply the change
         let new_text = if let Some(range) = &change.range {
             // Incremental change with range
-            apply_text_edit(&current_text, range, &change.text)?
+            // If document is empty and this is the first edit, treat it as full replacement
+            if current_text.is_empty() {
+                change.text.clone()
+            } else {
+                apply_text_edit(&current_text, range, &change.text)?
+            }
         } else {
             // Full document replacement (shouldn't happen with INCREMENTAL sync, but handle it)
             change.text.clone()
         };
 
-        // Re-parse and update with the new text
-        self.change_document(uri, &new_text)
+        // If document wasn't opened yet, treat this as opening it
+        if !self.document_texts.contains_key(&path) {
+            self.open_document(uri, &new_text)
+        } else {
+            // Re-parse and update with the new text
+            self.change_document(uri, &new_text)
+        }
     }
 }

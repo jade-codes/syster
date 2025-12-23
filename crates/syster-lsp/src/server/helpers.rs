@@ -26,12 +26,18 @@ pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, Strin
     let line_idx = pos.line as usize;
     let char_offset = pos.character as usize;
 
-    if line_idx >= lines.len() {
+    // Allow line == lines.len() for end-of-document positions
+    if line_idx > lines.len() {
         return Err(format!(
             "Line {} out of bounds (total lines: {})",
             line_idx,
             lines.len()
         ));
+    }
+
+    // If at end of document (past last line), return total byte length
+    if line_idx == lines.len() {
+        return Ok(text.len());
     }
 
     // Calculate byte offset up to the start of the target line
