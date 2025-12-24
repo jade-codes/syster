@@ -278,3 +278,39 @@ fn test_kerml_inout_feature() {
     let feature = Feature::from_pest(&mut pairs).unwrap();
     assert_eq!(feature.direction, Some(FeatureDirection::InOut));
 }
+
+#[test]
+fn test_find_identifier_span_skips_feature_value() {
+    // Test that identifiers in feature_value expressions are not extracted as names
+    let input = "feature redefines dispatchScope default thisPerformance;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let (name, _span) = crate::syntax::kerml::ast::utils::find_identifier_span(pairs);
+
+    // Should find "dispatchScope" (the actual feature name), not "thisPerformance" (from the default value)
+    assert_eq!(name, Some("dispatchScope".to_string()));
+}
+
+#[test]
+fn test_find_identifier_span_skips_relationship_parts() {
+    // Test that identifiers in specialization/redefinition parts are skipped
+    let input = "feature myFeature specializes BaseFeature::someFeature;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let (name, _span) = crate::syntax::kerml::ast::utils::find_identifier_span(pairs);
+
+    // Should find "myFeature", not "BaseFeature" or "someFeature" from the specialization
+    assert_eq!(name, Some("myFeature".to_string()));
+}
+
+#[test]
+fn test_find_identifier_span_with_feature_typing() {
+    // Test that typed features work correctly
+    let input = "feature myFeature : MyType;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let (name, _span) = crate::syntax::kerml::ast::utils::find_identifier_span(pairs);
+
+    // Should find "myFeature", not "MyType" from the typing
+    assert_eq!(name, Some("myFeature".to_string()));
+}

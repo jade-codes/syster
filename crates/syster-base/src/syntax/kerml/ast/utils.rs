@@ -28,13 +28,14 @@ pub fn find_name<'a>(pairs: impl Iterator<Item = Pair<'a, Rule>>) -> Option<Stri
 }
 
 /// Recursively find identifier and return (name, span)
-/// Skips relationship parts to avoid extracting identifiers from redefinitions, subsettings, etc.
+/// Skips feature_value to avoid extracting identifiers from default value expressions
 pub fn find_identifier_span<'a>(
     pairs: impl Iterator<Item = Pair<'a, Rule>>,
 ) -> (Option<String>, Option<Span>) {
     for pair in pairs {
-        // Skip relationship parts - don't extract identifiers from within these
-        if is_relationship_part(&pair) {
+        // Only skip feature_value to avoid extracting identifiers from expressions
+        // like "default thisPerformance"
+        if pair.as_rule() == Rule::feature_value {
             continue;
         }
 
@@ -52,21 +53,6 @@ pub fn find_identifier_span<'a>(
         }
     }
     (None, None)
-}
-
-/// Check if a rule is a relationship part that should be skipped when extracting names
-fn is_relationship_part(pair: &Pair<Rule>) -> bool {
-    matches!(
-        pair.as_rule(),
-        Rule::feature_specialization_part
-            | Rule::feature_typing
-            | Rule::specialization
-            | Rule::redefinition
-            | Rule::subsetting
-            | Rule::type_featuring
-            | Rule::feature_relationship
-            | Rule::feature_value
-    )
 }
 
 /// Check if a pair has a specific flag (with recursion into modifiers)
