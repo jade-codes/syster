@@ -41,11 +41,11 @@ fn test_performances_kerml_no_duplicate_symbols() {
     let result = workspace.populate_affected();
 
     // Check for duplicate symbol errors
-    let has_duplicate_thisPerformance =
+    let has_duplicate_this_performance =
         result.is_err() && result.as_ref().err().unwrap().contains("thisPerformance");
 
     assert!(
-        !has_duplicate_thisPerformance,
+        !has_duplicate_this_performance,
         "Performances.kerml should not have duplicate 'thisPerformance' symbol. Error: {:?}",
         result.err()
     );
