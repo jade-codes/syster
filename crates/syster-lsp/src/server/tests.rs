@@ -1511,15 +1511,14 @@ package Outer {
     let position = Position::new(5, 23); // On "Vehicle" in "Inner::Vehicle"
     let edit = server.get_rename_edits(&uri, position, "Automobile");
 
-    if let Some(edit) = edit {
-        if let Some(changes) = edit.changes {
-            if let Some(edits) = changes.get(&uri) {
-                // Rename of qualified names should update all occurrences
-                // This may not be fully implemented yet
-                eprintln!("Rename edits for qualified name: {} edits", edits.len());
-                assert!(!edits.is_empty(), "Should have at least one edit");
-            }
-        }
+    if let Some(edit) = edit
+        && let Some(changes) = edit.changes
+        && let Some(edits) = changes.get(&uri)
+    {
+        // Rename of qualified names should update all occurrences
+        // This may not be fully implemented yet
+        eprintln!("Rename edits for qualified name: {} edits", edits.len());
+        assert!(!edits.is_empty(), "Should have at least one edit");
     } else {
         // Qualified name rename may not be implemented yet
         eprintln!("Note: Qualified name rename not yet supported");
