@@ -1165,3 +1165,44 @@ fn test_concern_and_requirement() {
         _ => panic!("Expected Definition symbol"),
     }
 }
+
+#[test]
+fn test_identifier_in_default_value_not_treated_as_definition() {
+    // Reproduces the issue from Performances.kerml where "thisPerformance" in a default value
+    // was incorrectly being treated as a feature definition
+    let source = r#"
+        package TestPkg {
+            action def Performance {
+                attribute redefines dispatchScope default thisPerformance;
+                attribute thisPerformance: Performance [1] default self;
+            }
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+
+    let result = adapter.populate(&file);
+
+    // Should not have duplicate symbol errors
+    assert!(
+        result.is_ok(),
+        "Should not have duplicate symbol errors, got: {:?}",
+        result.err()
+    );
+
+    // Should have exactly one "thisPerformance" symbol (the actual definition, not the reference)
+    let all_symbols = symbol_table.all_symbols();
+    let this_perf_count = all_symbols
+        .iter()
+        .filter(|(name, _)| *name == "thisPerformance")
+        .count();
+
+    assert_eq!(
+        this_perf_count, 1,
+        "Should have exactly one 'thisPerformance' definition, got {this_perf_count}"
+    );
+}

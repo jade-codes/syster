@@ -134,9 +134,19 @@ impl<'a> KermlAdapter<'a> {
             };
             self.insert_symbol(name.clone(), symbol);
 
+            // Enter namespace for named features to support nested scopes
+            // Features like steps, behaviors can contain nested elements
+            self.enter_namespace(name.clone());
+            // Don't exit here - let the caller manage lifecycle
+
             // Process feature members (typing, redefinition, subsetting)
             for member in &feature.body {
                 self.visit_feature_member(name, member);
+            }
+        } else {
+            // Anonymous feature - process members but don't create scope
+            for member in &feature.body {
+                self.visit_feature_member("", member);
             }
         }
     }
@@ -193,7 +203,13 @@ impl<'a> KermlAdapter<'a> {
                     self.exit_namespace();
                 }
             }
-            Element::Feature(feature) => self.visit_feature(feature),
+            Element::Feature(feature) => {
+                self.visit_feature(feature);
+                // Exit namespace if feature has a name (for steps, etc with nested elements)
+                if feature.name.is_some() {
+                    self.exit_namespace();
+                }
+            }
             Element::Import(_) | Element::Annotation(_) | Element::Comment(_) => {
                 // Skip for now
             }

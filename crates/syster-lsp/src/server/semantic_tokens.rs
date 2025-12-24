@@ -1,23 +1,10 @@
 use crate::server::core::LspServer;
+use crate::server::helpers::{char_offset_to_byte, char_offset_to_utf16};
 use syster::semantic::processors::SemanticTokenCollector;
 use tower_lsp::lsp_types::{
     SemanticToken as LspSemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensLegend,
     SemanticTokensResult,
 };
-
-/// Convert a character offset in a line to UTF-16 code units
-fn char_offset_to_utf16(line: &str, char_offset: usize) -> u32 {
-    // Take characters up to the offset
-    line.chars()
-        .take(char_offset)
-        .map(|c| c.len_utf16())
-        .sum::<usize>() as u32
-}
-
-/// Convert character offset to byte offset
-fn char_offset_to_byte(line: &str, char_offset: usize) -> usize {
-    line.chars().take(char_offset).map(|c| c.len_utf8()).sum()
-}
 
 impl LspServer {
     /// Get semantic tokens for a document

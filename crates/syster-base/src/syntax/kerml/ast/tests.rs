@@ -278,3 +278,92 @@ fn test_kerml_inout_feature() {
     let feature = Feature::from_pest(&mut pairs).unwrap();
     assert_eq!(feature.direction, Some(FeatureDirection::InOut));
 }
+
+#[test]
+fn test_find_identifier_span_skips_feature_value() {
+    // Test that identifiers in feature_value expressions are not extracted as names
+    // This is an ANONYMOUS feature (no name) that redefines dispatchScope with a default value
+    let input = "feature redefines dispatchScope default thisPerformance;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let (name, _span) = crate::syntax::kerml::ast::utils::find_identifier_span(pairs);
+
+    // Should return None since this is an anonymous feature (no identification)
+    // "dispatchScope" is in the redefinition clause, not the feature name
+    // "thisPerformance" is in the default value expression
+    assert_eq!(name, None);
+}
+
+#[test]
+fn test_find_identifier_span_skips_relationship_parts() {
+    // Test that identifiers in specialization/redefinition parts are skipped
+    let input = "feature myFeature specializes BaseFeature::someFeature;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let (name, _span) = crate::syntax::kerml::ast::utils::find_identifier_span(pairs);
+
+    // Should find "myFeature", not "BaseFeature" or "someFeature" from the specialization
+    assert_eq!(name, Some("myFeature".to_string()));
+}
+
+#[test]
+fn test_find_identifier_span_with_feature_typing() {
+    // Test that typed features work correctly
+    let input = "feature myFeature : MyType;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let (name, _span) = crate::syntax::kerml::ast::utils::find_identifier_span(pairs);
+
+    // Should find "myFeature", not "MyType" from the typing
+    assert_eq!(name, Some("myFeature".to_string()));
+}
+
+#[test]
+fn test_find_name_skips_feature_value() {
+    // Test that find_name correctly handles anonymous features with redefinitions
+    // This is an ANONYMOUS feature (no name) that redefines dispatchScope with a default value
+    let input = "feature redefines dispatchScope default thisPerformance;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let name = crate::syntax::kerml::ast::utils::find_name(pairs);
+
+    // Should return None since this is an anonymous feature (no identification)
+    // "dispatchScope" is in the redefinition clause, not the feature name
+    // "thisPerformance" is in the default value expression
+    assert_eq!(name, None);
+}
+
+#[test]
+fn test_find_name_fallback_when_no_identifier_span() {
+    // Test that find_name works as a fallback when identifier extraction fails
+    let input = "feature testFeature;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let name = crate::syntax::kerml::ast::utils::find_name(pairs);
+
+    assert_eq!(name, Some("testFeature".to_string()));
+}
+
+#[test]
+fn test_find_name_struct_with_qualified_specialization() {
+    // Test that struct names are extracted correctly even with qualified specializations
+    let input = "struct MyStruct specializes Base::Parent;";
+    let pairs = KerMLParser::parse(Rule::structure, input).unwrap();
+
+    let name = crate::syntax::kerml::ast::utils::find_name(pairs);
+
+    // Should find "MyStruct", not "Base" or "Parent" from the specialization
+    assert_eq!(name, Some("MyStruct".to_string()));
+}
+
+#[test]
+fn test_find_name_class_with_multiple_relationships() {
+    // Test class with multiple heritage relationships
+    let input = "class MyClass specializes Foo::Bar, Baz;";
+    let pairs = KerMLParser::parse(Rule::class, input).unwrap();
+
+    let name = crate::syntax::kerml::ast::utils::find_name(pairs);
+
+    // Should find "MyClass" only
+    assert_eq!(name, Some("MyClass".to_string()));
+}
