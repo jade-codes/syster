@@ -12,8 +12,14 @@ pub fn to_span(pest_span: pest::Span) -> Span {
 }
 
 /// Recursively find name in nested identification rules
+/// Skips feature_value to avoid extracting identifiers from default value expressions
 pub fn find_name<'a>(pairs: impl Iterator<Item = Pair<'a, Rule>>) -> Option<String> {
     for pair in pairs {
+        // Skip feature_value to avoid extracting identifiers from expressions
+        if pair.as_rule() == Rule::feature_value {
+            continue;
+        }
+
         if matches!(
             pair.as_rule(),
             Rule::identification | Rule::name | Rule::identifier

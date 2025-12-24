@@ -314,3 +314,26 @@ fn test_find_identifier_span_with_feature_typing() {
     // Should find "myFeature", not "MyType" from the typing
     assert_eq!(name, Some("myFeature".to_string()));
 }
+
+#[test]
+fn test_find_name_skips_feature_value() {
+    // Test that find_name also skips feature_value expressions
+    let input = "feature redefines dispatchScope default thisPerformance;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let name = crate::syntax::kerml::ast::utils::find_name(pairs);
+
+    // Should find "dispatchScope" (the redefined feature name), not "thisPerformance"
+    assert_eq!(name, Some("dispatchScope".to_string()));
+}
+
+#[test]
+fn test_find_name_fallback_when_no_identifier_span() {
+    // Test that find_name works as a fallback when identifier extraction fails
+    let input = "feature testFeature;";
+    let pairs = KerMLParser::parse(Rule::feature, input).unwrap();
+
+    let name = crate::syntax::kerml::ast::utils::find_name(pairs);
+
+    assert_eq!(name, Some("testFeature".to_string()));
+}
