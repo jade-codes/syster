@@ -299,3 +299,42 @@ fn test_kerml_visitor_handles_empty_package() {
 
     assert!(symbol_table.lookup("EmptyPackage").is_some());
 }
+
+#[test]
+fn test_kerml_identifier_in_feature_value_not_treated_as_definition() {
+    // Reproduces the issue from Performances.kerml where identifiers in feature_value expressions
+    // (like "default thisPerformance") were incorrectly being treated as feature definitions
+    let source = r#"
+        behavior Performance {
+            feature redefines dispatchScope default thisPerformance;
+            feature thisPerformance : Performance [1] default self;
+        }
+    "#;
+    let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
+    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+    let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
+
+    let result = adapter.populate(&file);
+
+    // Should not have duplicate symbol errors
+    assert!(
+        result.is_ok(),
+        "Should not have duplicate symbol errors, got: {:?}",
+        result.err()
+    );
+
+    // Should have exactly one "thisPerformance" symbol (the actual definition, not the reference)
+    let all_symbols = symbol_table.all_symbols();
+    let this_perf_count = all_symbols
+        .iter()
+        .filter(|(name, _)| *name == "thisPerformance")
+        .count();
+
+    assert_eq!(
+        this_perf_count, 1,
+        "Should have exactly one 'thisPerformance' definition, got {this_perf_count}"
+    );
+}
