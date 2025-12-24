@@ -1,0 +1,149 @@
+#![allow(clippy::unwrap_used)]
+
+use std::path::PathBuf;
+use syster::project::file_loader;
+use syster::semantic::Workspace;
+use syster::syntax::SyntaxFile;
+
+#[test]
+fn test_performances_kerml_no_duplicate_symbols() {
+    // Test that Performances.kerml loads without duplicate symbol errors
+    // This file has "feature redefines dispatchScope default thisPerformance;"
+    // where "thisPerformance" in the default clause should NOT be treated as a symbol definition
+    
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("sysml.library/Kernel Libraries/Kernel Semantic Library/Performances.kerml");
+    
+    if !stdlib_path.exists() {
+        panic!("Performances.kerml not found at {:?}", stdlib_path);
+    }
+
+    let content = std::fs::read_to_string(&stdlib_path)
+        .expect("Failed to read Performances.kerml");
+    
+    let parse_result = file_loader::parse_with_result(&content, &stdlib_path);
+    
+    // Should parse successfully
+    assert!(
+        parse_result.content.is_some(),
+        "Failed to parse Performances.kerml: {:?}",
+        parse_result.errors
+    );
+    
+    // Now try to populate it in a workspace
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    
+    if let SyntaxFile::KerML(kerml_file) = parse_result.content.unwrap() {
+        workspace.add_file(stdlib_path.clone(), SyntaxFile::KerML(kerml_file));
+    } else {
+        panic!("Expected KerML file");
+    }
+    
+    let result = workspace.populate_affected();
+    
+    // Check for duplicate symbol errors
+    let has_duplicate_thisPerformance = result.is_err() && 
+        result.as_ref().err().unwrap().contains("thisPerformance");
+    
+    assert!(
+        !has_duplicate_thisPerformance,
+        "Performances.kerml should not have duplicate 'thisPerformance' symbol. Error: {:?}",
+        result.err()
+    );
+    
+    // Verify thisPerformance exists exactly once
+    let symbols = workspace.symbol_table().all_symbols();
+    let this_perf_count = symbols
+        .iter()
+        .filter(|(name, _)| *name == "thisPerformance")
+        .count();
+    
+    assert_eq!(
+        this_perf_count, 1,
+        "Should have exactly one 'thisPerformance' definition, got {this_perf_count}"
+    );
+}
+
+#[test]
+fn test_observation_kerml_no_duplicate_symbols() {
+    // Test that Observation.kerml loads without duplicate "observations" symbol
+    
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml");
+    
+    if !stdlib_path.exists() {
+        panic!("Observation.kerml not found at {:?}", stdlib_path);
+    }
+
+    let content = std::fs::read_to_string(&stdlib_path)
+        .expect("Failed to read Observation.kerml");
+    
+    let parse_result = file_loader::parse_with_result(&content, &stdlib_path);
+    
+    assert!(
+        parse_result.content.is_some(),
+        "Failed to parse Observation.kerml: {:?}",
+        parse_result.errors
+    );
+    
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    
+    if let SyntaxFile::KerML(kerml_file) = parse_result.content.unwrap() {
+        workspace.add_file(stdlib_path.clone(), SyntaxFile::KerML(kerml_file));
+    } else {
+        panic!("Expected KerML file");
+    }
+    
+    let result = workspace.populate_affected();
+    
+    let has_duplicate_observations = result.is_err() && 
+        result.as_ref().err().unwrap().contains("observations");
+    
+    assert!(
+        !has_duplicate_observations,
+        "Observation.kerml should not have duplicate 'observations' symbol. Error: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_objects_kerml_no_duplicate_symbols() {
+    // Test that Objects.kerml loads without duplicate "StructuredSpaceObject" symbol
+    
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("sysml.library/Kernel Libraries/Kernel Semantic Library/Objects.kerml");
+    
+    if !stdlib_path.exists() {
+        panic!("Objects.kerml not found at {:?}", stdlib_path);
+    }
+
+    let content = std::fs::read_to_string(&stdlib_path)
+        .expect("Failed to read Objects.kerml");
+    
+    let parse_result = file_loader::parse_with_result(&content, &stdlib_path);
+    
+    assert!(
+        parse_result.content.is_some(),
+        "Failed to parse Objects.kerml: {:?}",
+        parse_result.errors
+    );
+    
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    
+    if let SyntaxFile::KerML(kerml_file) = parse_result.content.unwrap() {
+        workspace.add_file(stdlib_path.clone(), SyntaxFile::KerML(kerml_file));
+    } else {
+        panic!("Expected KerML file");
+    }
+    
+    let result = workspace.populate_affected();
+    
+    let has_duplicate_structured = result.is_err() && 
+        result.as_ref().err().unwrap().contains("StructuredSpaceObject");
+    
+    assert!(
+        !has_duplicate_structured,
+        "Objects.kerml should not have duplicate 'StructuredSpaceObject' symbol. Error: {:?}",
+        result.err()
+    );
+}
