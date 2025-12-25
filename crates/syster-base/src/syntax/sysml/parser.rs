@@ -1,4 +1,4 @@
-use crate::core::{ParseError, ParseResult, get_extension, load_file, validate_extension};
+use crate::core::{get_extension, load_file, validate_extension, ParseError, ParseResult};
 use crate::syntax::sysml::ast::SysMLFile;
 use from_pest::FromPest;
 use pest::Parser;
@@ -105,7 +105,7 @@ fn parse_valid_definitions(content: &str) -> Option<SysMLFile> {
 }
 
 fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element> {
-    use crate::parser::{SysMLParser, sysml::Rule};
+    use crate::parser::{sysml::Rule, SysMLParser};
     use crate::syntax::sysml::ast::{Definition, Element, Usage};
     use from_pest::FromPest;
 

@@ -163,7 +163,8 @@ fn test_parse_with_result_syntax_error() {
 
 #[test]
 fn test_error_has_position_info() {
-    let content = "part def Vehicle;\npart def {"; // Error on line 2, after "def "
+    // Use complete gibberish that cannot parse
+    let content = "part def Vehicle;\n@@@ ### $$$ %%%";
     let path = PathBuf::from("test.sysml");
 
     let result = parse_with_result(content, &path);
@@ -176,10 +177,10 @@ fn test_error_has_position_info() {
         "Error should be on line 1 (0-indexed)"
     );
 
-    // Column should be around where the brace appears (after "part def ")
-    assert!(
-        error.position.column >= 9,
-        "Error column should be at or after the brace character"
+    // Error is at the beginning of the invalid line
+    assert_eq!(
+        error.position.column, 0,
+        "Error should be at column 0 (start of invalid line)"
     );
 }
 

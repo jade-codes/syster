@@ -65,14 +65,20 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SyntaxFile> 
         SYSML_EXT => {
             let result = crate::syntax::sysml::parser::parse_with_result(content, path);
             match result.content {
-                Some(file) => ParseResult::success(SyntaxFile::SysML(file)),
+                Some(file) => ParseResult {
+                    content: Some(SyntaxFile::SysML(file)),
+                    errors: result.errors,
+                },
                 None => ParseResult::with_errors(result.errors),
             }
         }
         KERML_EXT => {
             let result = crate::syntax::kerml::parser::parse_with_result(content, path);
             match result.content {
-                Some(file) => ParseResult::success(SyntaxFile::KerML(file)),
+                Some(file) => ParseResult {
+                    content: Some(SyntaxFile::KerML(file)),
+                    errors: result.errors,
+                },
                 None => ParseResult::with_errors(result.errors),
             }
         }

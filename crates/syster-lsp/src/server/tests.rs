@@ -860,7 +860,7 @@ package Outer {
             .relationship_graph()
             .get_one_to_one_with_span("typing", name)
         {
-            eprintln!("  {} -> {} (span: {:?})", name, target, span);
+            eprintln!("  {name} -> {target} (span: {span:?})");
         }
     }
 
@@ -1313,18 +1313,16 @@ package Test {
             let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
 
             eprintln!("Completions returned: {} items", items.len());
-            eprintln!("Labels: {:?}", labels);
+            eprintln!("Labels: {labels:?}");
 
             // Should include both definition types as valid typing targets
             assert!(
                 labels.contains(&"Vehicle"),
-                "Should suggest 'Vehicle' as a type after colon. Got: {:?}",
-                labels
+                "Should suggest 'Vehicle' as a type after colon. Got: {labels:?}"
             );
             assert!(
                 labels.contains(&"Speed"),
-                "Should suggest 'Speed' as a type after colon. Got: {:?}",
-                labels
+                "Should suggest 'Speed' as a type after colon. Got: {labels:?}"
             );
         }
         _ => panic!("Expected completion array for type context"),

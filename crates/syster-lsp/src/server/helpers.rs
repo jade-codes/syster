@@ -67,8 +67,7 @@ pub fn apply_text_edit(text: &str, range: &Range, new_text: &str) -> Result<Stri
     // Validate range
     if start_byte > end_byte {
         return Err(format!(
-            "Invalid range: start ({}) > end ({})",
-            start_byte, end_byte
+            "Invalid range: start ({start_byte}) > end ({end_byte})"
         ));
     }
 

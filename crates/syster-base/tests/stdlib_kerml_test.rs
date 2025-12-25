@@ -15,7 +15,7 @@ fn test_performances_kerml_no_duplicate_symbols() {
         .join("sysml.library/Kernel Libraries/Kernel Semantic Library/Performances.kerml");
 
     if !stdlib_path.exists() {
-        panic!("Performances.kerml not found at {:?}", stdlib_path);
+        panic!("Performances.kerml not found at {stdlib_path:?}");
     }
 
     let content = std::fs::read_to_string(&stdlib_path).expect("Failed to read Performances.kerml");
@@ -71,7 +71,7 @@ fn test_observation_kerml_no_duplicate_symbols() {
         .join("sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml");
 
     if !stdlib_path.exists() {
-        panic!("Observation.kerml not found at {:?}", stdlib_path);
+        panic!("Observation.kerml not found at {stdlib_path:?}");
     }
 
     let content = std::fs::read_to_string(&stdlib_path).expect("Failed to read Observation.kerml");
@@ -112,7 +112,7 @@ fn test_objects_kerml_no_duplicate_symbols() {
         .join("sysml.library/Kernel Libraries/Kernel Semantic Library/Objects.kerml");
 
     if !stdlib_path.exists() {
-        panic!("Objects.kerml not found at {:?}", stdlib_path);
+        panic!("Objects.kerml not found at {stdlib_path:?}");
     }
 
     let content = std::fs::read_to_string(&stdlib_path).expect("Failed to read Objects.kerml");
@@ -159,7 +159,7 @@ fn test_measurement_references_sysml_no_duplicate_package() {
         .join("sysml.library/Domain Libraries/Quantities and Units/MeasurementReferences.sysml");
 
     if !stdlib_path.exists() {
-        panic!("MeasurementReferences.sysml not found at {:?}", stdlib_path);
+        panic!("MeasurementReferences.sysml not found at {stdlib_path:?}");
     }
 
     let content =
