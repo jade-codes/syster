@@ -1,6 +1,7 @@
 //! Main relationship graph that aggregates different graph types
 
 use super::{OneToManyGraph, OneToOneGraph, SymmetricGraph};
+use crate::core::Span;
 use crate::core::constants::relationship_label;
 use std::collections::HashMap;
 
@@ -16,17 +17,33 @@ impl RelationshipGraph {
         Self::default()
     }
 
-    pub fn add_one_to_many(&mut self, relationship_type: &str, source: String, target: String) {
+    pub fn add_one_to_many(
+        &mut self,
+        relationship_type: &str,
+        source: String,
+        target: String,
+        span: Option<Span>,
+    ) {
         self.one_to_many
             .entry(relationship_type.to_string())
             .or_default()
-            .add(source, target);
+            .add(source, target, span);
     }
 
-    pub fn get_one_to_many(&self, relationship_type: &str, source: &str) -> Option<&[String]> {
+    pub fn get_one_to_many(&self, relationship_type: &str, source: &str) -> Option<Vec<&String>> {
         self.one_to_many
             .get(relationship_type)
             .and_then(|g| g.get_targets(source))
+    }
+
+    pub fn get_one_to_many_with_spans(
+        &self,
+        relationship_type: &str,
+        source: &str,
+    ) -> Option<Vec<(&String, Option<&Span>)>> {
+        self.one_to_many
+            .get(relationship_type)
+            .and_then(|g| g.get_targets_with_spans(source))
     }
 
     pub fn get_one_to_many_sources(&self, relationship_type: &str, target: &str) -> Vec<&String> {
@@ -36,17 +53,33 @@ impl RelationshipGraph {
             .unwrap_or_default()
     }
 
-    pub fn add_one_to_one(&mut self, relationship_type: &str, source: String, target: String) {
+    pub fn add_one_to_one(
+        &mut self,
+        relationship_type: &str,
+        source: String,
+        target: String,
+        span: Option<Span>,
+    ) {
         self.one_to_one
             .entry(relationship_type.to_string())
             .or_default()
-            .add(source, target);
+            .add(source, target, span);
     }
 
     pub fn get_one_to_one(&self, relationship_type: &str, source: &str) -> Option<&String> {
         self.one_to_one
             .get(relationship_type)
             .and_then(|g| g.get_target(source))
+    }
+
+    pub fn get_one_to_one_with_span(
+        &self,
+        relationship_type: &str,
+        source: &str,
+    ) -> Option<(&String, Option<&Span>)> {
+        self.one_to_one
+            .get(relationship_type)
+            .and_then(|g| g.get_target_with_span(source))
     }
 
     pub fn add_symmetric(&mut self, relationship_type: &str, element1: String, element2: String) {
@@ -87,9 +120,12 @@ impl RelationshipGraph {
         self.one_to_many
             .iter()
             .filter_map(|(rel_type, graph)| {
-                graph
-                    .get_targets(element)
-                    .map(|targets| (rel_type.clone(), targets.to_vec()))
+                graph.get_targets(element).map(|targets| {
+                    (
+                        rel_type.clone(),
+                        targets.iter().map(|s| (*s).clone()).collect(),
+                    )
+                })
             })
             .chain(self.one_to_one.iter().filter_map(|(rel_type, graph)| {
                 graph
@@ -97,9 +133,12 @@ impl RelationshipGraph {
                     .map(|target| (rel_type.clone(), vec![target.clone()]))
             }))
             .chain(self.symmetric.iter().filter_map(|(rel_type, graph)| {
-                graph
-                    .get_related(element)
-                    .map(|related| (rel_type.clone(), related.to_vec()))
+                graph.get_related(element).map(|related| {
+                    (
+                        rel_type.clone(),
+                        related.iter().map(|s| (*s).clone()).collect(),
+                    )
+                })
             }))
             .collect()
     }

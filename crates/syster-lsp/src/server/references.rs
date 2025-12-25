@@ -1,5 +1,4 @@
 use super::LspServer;
-use super::helpers::extract_word_at_cursor;
 use tower_lsp::lsp_types::{Location, Position, Range, Url};
 
 impl LspServer {
@@ -14,29 +13,16 @@ impl LspServer {
         include_declaration: bool,
     ) -> Option<Vec<Location>> {
         let path = uri.to_file_path().ok()?;
-        let text = self.document_texts.get(&path)?;
-        let (element_name, _) = self.find_symbol_at_position(&path, position)?;
-        let cursor_word = extract_word_at_cursor(text, position)?;
-        let lookup_name = if cursor_word != element_name {
-            &cursor_word
-        } else {
-            &element_name
-        };
 
-        // Look up the symbol - references are already collected
+        // Find the symbol at this position using AST
+        let (element_qname, _) = self.find_symbol_at_position(&path, position)?;
+
+        // Look up the symbol - references are already collected by reference_collector
         let symbol = self
             .workspace
             .symbol_table()
-            .lookup_qualified(lookup_name)
-            .or_else(|| self.workspace.symbol_table().lookup(lookup_name))
-            .or_else(|| {
-                self.workspace
-                    .symbol_table()
-                    .all_symbols()
-                    .into_iter()
-                    .find(|(_key, sym)| sym.name() == lookup_name)
-                    .map(|(_, sym)| sym)
-            })?;
+            .lookup_qualified(&element_qname)
+            .or_else(|| self.workspace.symbol_table().lookup(&element_qname))?;
 
         // Convert references to LSP locations
         let mut locations: Vec<Location> = symbol
@@ -60,7 +46,13 @@ impl LspServer {
             .collect();
 
         if include_declaration && let Some(def) = self.get_definition(uri, position) {
+            eprintln!(
+                "DEBUG: Adding definition at {}:{}",
+                def.range.start.line, def.range.start.character
+            );
             locations.push(def);
+        } else if include_declaration {
+            eprintln!("DEBUG: include_declaration=true but get_definition returned None");
         }
 
         Some(locations)

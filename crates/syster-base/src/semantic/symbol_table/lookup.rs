@@ -76,19 +76,16 @@ impl SymbolTable {
         let namespace = import_path.trim_end_matches("::*").trim_end_matches("::**");
         let qualified = format!("{namespace}::{name}");
 
-        self.find_by_qualified(&qualified)
+        self.lookup_qualified(&qualified)
             .or_else(|| is_recursive.then(|| self.lookup_recursive_import(name, namespace))?)
     }
 
     fn lookup_member_import(&self, name: &str, import_path: &str) -> Option<&Symbol> {
-        (import_path.ends_with(&format!("::{name}")) || import_path == name)
-            .then(|| self.find_by_qualified(import_path))?
-    }
-
-    fn find_by_qualified(&self, qualified_name: &str) -> Option<&Symbol> {
-        self.scopes
-            .iter()
-            .find_map(|scope| scope.symbols.get(qualified_name))
+        if import_path.ends_with(&format!("::{name}")) || import_path == name {
+            self.lookup_qualified(import_path)
+        } else {
+            None
+        }
     }
 
     fn lookup_recursive_import(&self, name: &str, namespace: &str) -> Option<&Symbol> {

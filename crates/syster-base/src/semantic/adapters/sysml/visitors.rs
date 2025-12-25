@@ -64,22 +64,33 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             self.insert_symbol(name.clone(), symbol);
 
             if let Some(ref mut graph) = self.relationship_graph {
-                for target in &definition.relationships.specializes {
+                for spec in &definition.relationships.specializes {
                     graph.add_one_to_many(
                         REL_SPECIALIZATION,
                         qualified_name.clone(),
-                        target.clone(),
+                        spec.target.clone(),
+                        spec.span,
                     );
                 }
 
-                for target in &definition.relationships.redefines {
-                    graph.add_one_to_many(REL_REDEFINITION, qualified_name.clone(), target.clone());
+                for redef in &definition.relationships.redefines {
+                    graph.add_one_to_many(
+                        REL_REDEFINITION,
+                        qualified_name.clone(),
+                        redef.target.clone(),
+                        redef.span,
+                    );
                 }
 
                 // Extract top-level domain relationships (e.g., include in use case definitions)
                 // Note: exhibit/perform/satisfy are handled as nested usages below
-                for target in &definition.relationships.includes {
-                    graph.add_one_to_many(REL_INCLUDE, qualified_name.clone(), target.clone());
+                for include in &definition.relationships.includes {
+                    graph.add_one_to_many(
+                        REL_INCLUDE,
+                        qualified_name.clone(),
+                        include.target.clone(),
+                        include.span,
+                    );
                 }
 
                 // Extract domain relationships from nested usages in the body
@@ -87,35 +98,39 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                     if let crate::syntax::sysml::ast::enums::DefinitionMember::Usage(usage) = member
                     {
                         // Extract satisfy relationships
-                        for target in &usage.relationships.satisfies {
+                        for satisfy in &usage.relationships.satisfies {
                             graph.add_one_to_many(
                                 REL_SATISFY,
                                 qualified_name.clone(),
-                                target.clone(),
+                                satisfy.target.clone(),
+                                satisfy.span,
                             );
                         }
                         // Extract perform relationships
-                        for target in &usage.relationships.performs {
+                        for perform in &usage.relationships.performs {
                             graph.add_one_to_many(
                                 REL_PERFORM,
                                 qualified_name.clone(),
-                                target.clone(),
+                                perform.target.clone(),
+                                perform.span,
                             );
                         }
                         // Extract exhibit relationships
-                        for target in &usage.relationships.exhibits {
+                        for exhibit in &usage.relationships.exhibits {
                             graph.add_one_to_many(
                                 REL_EXHIBIT,
                                 qualified_name.clone(),
-                                target.clone(),
+                                exhibit.target.clone(),
+                                exhibit.span,
                             );
                         }
                         // Extract include relationships (from use case bodies)
-                        for target in &usage.relationships.includes {
+                        for include in &usage.relationships.includes {
                             graph.add_one_to_many(
                                 REL_INCLUDE,
                                 qualified_name.clone(),
-                                target.clone(),
+                                include.target.clone(),
+                                include.span,
                             );
                         }
                     }
@@ -158,31 +173,72 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
 
             if let Some(ref mut graph) = self.relationship_graph {
                 // Redefinitions (:>>)
-                for target in &usage.relationships.redefines {
-                    graph.add_one_to_many(REL_REDEFINITION, qualified_name.clone(), target.clone());
+                for rel in &usage.relationships.redefines {
+                    graph.add_one_to_many(
+                        REL_REDEFINITION,
+                        qualified_name.clone(),
+                        rel.target.clone(),
+                        rel.span,
+                    );
                 }
                 // Subsetting (:>)
-                for target in &usage.relationships.subsets {
-                    graph.add_one_to_many(REL_SUBSETTING, qualified_name.clone(), target.clone());
+                for subset in &usage.relationships.subsets {
+                    graph.add_one_to_many(
+                        REL_SUBSETTING,
+                        qualified_name.clone(),
+                        subset.target.clone(),
+                        subset.span,
+                    );
                 }
                 // Feature typing (:)
                 if let Some(ref target) = usage.relationships.typed_by {
-                    graph.add_one_to_one(REL_TYPING, qualified_name.clone(), target.clone());
+                    // Resolve target to fully qualified name using symbol table lookup
+                    let looked_up = self.symbol_table.lookup(target);
+                    eprintln!(
+                        "DEBUG: lookup('{}') = {:?}",
+                        target,
+                        looked_up.map(|s| s.qualified_name())
+                    );
+
+                    let resolved_target = self
+                        .symbol_table
+                        .lookup(target)
+                        .or_else(|| self.symbol_table.lookup_qualified(target))
+                        .map(|s| s.qualified_name().to_string())
+                        .unwrap_or_else(|| {
+                            // If lookup fails and target contains ::, try prepending current namespace
+                            if target.contains("::") {
+                                format!("{}::{}", self.current_namespace.join("::"), target)
+                            } else {
+                                target.clone()
+                            }
+                        });
+
+                    eprintln!("DEBUG: Resolved '{target}' -> '{resolved_target}'");
+
+                    graph.add_one_to_one(
+                        REL_TYPING,
+                        qualified_name.clone(),
+                        resolved_target,
+                        usage.relationships.typed_by_span,
+                    );
                 }
                 // References (::>)
-                for target in &usage.relationships.references {
+                for reference in &usage.relationships.references {
                     graph.add_one_to_many(
                         REL_REFERENCE_SUBSETTING,
                         qualified_name.clone(),
-                        target.clone(),
+                        reference.target.clone(),
+                        reference.span,
                     );
                 }
                 // Cross (=>)
-                for target in &usage.relationships.crosses {
+                for cross in &usage.relationships.crosses {
                     graph.add_one_to_many(
                         REL_CROSS_SUBSETTING,
                         qualified_name.clone(),
-                        target.clone(),
+                        cross.target.clone(),
+                        cross.span,
                     );
                 }
             }
@@ -205,8 +261,13 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
 
     fn visit_import(&mut self, import: &Import) {
         // Record the import in the current scope
-        self.symbol_table
-            .add_import(import.path.clone(), import.is_recursive);
+        let current_file = self.symbol_table.current_file().map(String::from);
+        self.symbol_table.add_import(
+            import.path.clone(),
+            import.is_recursive,
+            import.span,
+            current_file,
+        );
         // Note: We don't create semantic tokens for imports - let TextMate grammar handle keywords
     }
 

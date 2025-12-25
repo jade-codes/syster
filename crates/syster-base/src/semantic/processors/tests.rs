@@ -93,7 +93,7 @@ fn test_typing_relationship_reference() {
 
     // Create relationship graph with typing relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "myCar".to_string(), "Vehicle".to_string());
+    graph.add_one_to_one(REL_TYPING, "myCar".to_string(), "Vehicle".to_string(), None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -158,7 +158,12 @@ fn test_specialization_relationship_reference() {
 
     // Create specialization relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".to_string(), "Vehicle".to_string());
+    graph.add_one_to_many(
+        REL_SPECIALIZATION,
+        "Car".to_string(),
+        "Vehicle".to_string(),
+        None,
+    );
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -263,9 +268,9 @@ fn test_multiple_references_to_same_symbol() {
 
     // Create typing relationships
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "speed".to_string(), "Integer".to_string());
-    graph.add_one_to_one(REL_TYPING, "count".to_string(), "Integer".to_string());
-    graph.add_one_to_one(REL_TYPING, "index".to_string(), "Integer".to_string());
+    graph.add_one_to_one(REL_TYPING, "speed".to_string(), "Integer".to_string(), None);
+    graph.add_one_to_one(REL_TYPING, "count".to_string(), "Integer".to_string(), None);
+    graph.add_one_to_one(REL_TYPING, "index".to_string(), "Integer".to_string(), None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -339,6 +344,7 @@ fn test_redefinition_reference() {
         REL_REDEFINITION,
         "Car::mass".to_string(),
         "Vehicle::mass".to_string(),
+        None,
     );
 
     // Collect references
@@ -405,6 +411,7 @@ fn test_subsetting_reference() {
         REL_SUBSETTING,
         "engineParts".to_string(),
         "parts".to_string(),
+        None,
     );
 
     // Collect references
@@ -475,6 +482,7 @@ fn test_reference_subsetting() {
         REL_REFERENCE_SUBSETTING,
         "car".to_string(),
         "vehicle".to_string(),
+        None,
     );
 
     // Collect references
@@ -573,7 +581,7 @@ fn test_symbol_without_span() {
 
     // Create relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "Source".to_string(), "Target".to_string());
+    graph.add_one_to_one(REL_TYPING, "Source".to_string(), "Target".to_string(), None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -664,8 +672,9 @@ fn test_mixed_relationships() {
         REL_SPECIALIZATION,
         "Derived".to_string(),
         "Base".to_string(),
+        None,
     );
-    graph.add_one_to_one(REL_TYPING, "instance".to_string(), "Base".to_string());
+    graph.add_one_to_one(REL_TYPING, "instance".to_string(), "Base".to_string(), None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);

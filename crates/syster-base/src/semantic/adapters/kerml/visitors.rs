@@ -110,7 +110,12 @@ impl<'a> KermlAdapter<'a> {
                 if let Some(graph) = &mut self.relationship_graph
                     && let Some(current) = self.current_namespace.last()
                 {
-                    graph.add_one_to_one(REL_SPECIALIZATION, current.clone(), spec.general.clone());
+                    graph.add_one_to_one(
+                        REL_SPECIALIZATION,
+                        current.clone(),
+                        spec.general.clone(),
+                        spec.span,
+                    );
                 }
             }
             ClassifierMember::Comment(_) | ClassifierMember::Import(_) => {
@@ -149,6 +154,7 @@ impl<'a> KermlAdapter<'a> {
                         REL_TYPING,
                         feature_name.to_string(),
                         typing.typed.clone(),
+                        typing.span,
                     );
                 }
                 FeatureMember::Redefinition(redef) => {
@@ -156,6 +162,7 @@ impl<'a> KermlAdapter<'a> {
                         REL_REDEFINITION,
                         feature_name.to_string(),
                         redef.redefined.clone(),
+                        redef.span,
                     );
                 }
                 FeatureMember::Subsetting(subset) => {
@@ -163,6 +170,7 @@ impl<'a> KermlAdapter<'a> {
                         REL_SUBSETTING,
                         feature_name.to_string(),
                         subset.subset.clone(),
+                        subset.span,
                     );
                 }
                 FeatureMember::Comment(_) => {

@@ -7,20 +7,35 @@ use std::path::PathBuf;
 fn test_generic_one_to_many() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
-    graph.add_one_to_many("specialization", "Car".to_string(), "Asset".to_string());
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Vehicle".to_string(),
+        None,
+    );
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Asset".to_string(),
+        None,
+    );
 
     let targets = graph.get_one_to_many("specialization", "Car").unwrap();
     assert_eq!(targets.len(), 2);
-    assert!(targets.contains(&"Vehicle".to_string()));
-    assert!(targets.contains(&"Asset".to_string()));
+    assert!(targets.contains(&&"Vehicle".to_string()));
+    assert!(targets.contains(&&"Asset".to_string()));
 }
 
 #[test]
 fn test_generic_one_to_one() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_one("typing", "myFeature".to_string(), "MyType".to_string());
+    graph.add_one_to_one(
+        "typing",
+        "myFeature".to_string(),
+        "MyType".to_string(),
+        None,
+    );
 
     let target = graph.get_one_to_one("typing", "myFeature");
     assert_eq!(target, Some(&"MyType".to_string()));
@@ -41,13 +56,19 @@ fn test_generic_symmetric() {
 fn test_multiple_relationship_types() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Vehicle".to_string(),
+        None,
+    );
     graph.add_one_to_many(
         "redefinition",
         "Car::wheel".to_string(),
         "Vehicle::wheel".to_string(),
+        None,
     );
-    graph.add_one_to_one("typing", "myCar".to_string(), "Car".to_string());
+    graph.add_one_to_one("typing", "myCar".to_string(), "Car".to_string(), None);
 
     let types = graph.relationship_types();
     assert_eq!(types.len(), 3);
@@ -60,8 +81,18 @@ fn test_multiple_relationship_types() {
 fn test_transitive_path() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
-    graph.add_one_to_many("specialization", "Vehicle".to_string(), "Thing".to_string());
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Vehicle".to_string(),
+        None,
+    );
+    graph.add_one_to_many(
+        "specialization",
+        "Vehicle".to_string(),
+        "Thing".to_string(),
+        None,
+    );
 
     assert!(graph.has_transitive_path("specialization", "Car", "Thing"));
     assert!(!graph.has_transitive_path("specialization", "Thing", "Car"));
@@ -250,10 +281,25 @@ fn test_get_all_relationships() {
     let mut graph = RelationshipGraph::new();
 
     // Add various relationship types
-    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
-    graph.add_one_to_many("specialization", "Car".to_string(), "Asset".to_string());
-    graph.add_one_to_many("subsetting", "Car".to_string(), "Equipment".to_string());
-    graph.add_one_to_one("typing", "Car".to_string(), "CarType".to_string());
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Vehicle".to_string(),
+        None,
+    );
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Asset".to_string(),
+        None,
+    );
+    graph.add_one_to_many(
+        "subsetting",
+        "Car".to_string(),
+        "Equipment".to_string(),
+        None,
+    );
+    graph.add_one_to_one("typing", "Car".to_string(), "CarType".to_string(), None);
     graph.add_symmetric("disjoints", "Car".to_string(), "Truck".to_string());
 
     // Get all relationships for "Car"
@@ -301,10 +347,25 @@ fn test_get_formatted_relationships() {
     // Test that formatted relationships are human-readable
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many("specialization", "Car".to_string(), "Vehicle".to_string());
-    graph.add_one_to_many("redefinition", "Car".to_string(), "BaseCar".to_string());
-    graph.add_one_to_many("subsetting", "Car".to_string(), "Equipment".to_string());
-    graph.add_one_to_one("typing", "Car".to_string(), "CarType".to_string());
+    graph.add_one_to_many(
+        "specialization",
+        "Car".to_string(),
+        "Vehicle".to_string(),
+        None,
+    );
+    graph.add_one_to_many(
+        "redefinition",
+        "Car".to_string(),
+        "BaseCar".to_string(),
+        None,
+    );
+    graph.add_one_to_many(
+        "subsetting",
+        "Car".to_string(),
+        "Equipment".to_string(),
+        None,
+    );
+    graph.add_one_to_one("typing", "Car".to_string(), "CarType".to_string(), None);
 
     let formatted = graph.get_formatted_relationships("Car");
 

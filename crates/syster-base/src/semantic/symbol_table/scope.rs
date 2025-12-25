@@ -1,4 +1,5 @@
 use super::symbol::Symbol;
+use crate::core::Span;
 use std::collections::HashMap;
 
 /// Import declaration in a scope
@@ -7,6 +8,8 @@ pub struct Import {
     pub path: String,
     pub is_recursive: bool,
     pub is_namespace: bool,
+    pub span: Option<Span>,
+    pub file: Option<String>,
 }
 
 /// Represents a lexical scope in the symbol table

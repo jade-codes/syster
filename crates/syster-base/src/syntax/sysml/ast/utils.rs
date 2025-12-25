@@ -128,6 +128,14 @@ pub fn all_refs_from(pair: &Pair<Rule>) -> Vec<String> {
         .collect()
 }
 
+/// Extract all references with spans for relationship structs
+pub fn all_refs_with_spans_from(pair: &Pair<Rule>) -> Vec<(String, Option<crate::core::Span>)> {
+    pair.clone()
+        .into_inner()
+        .filter_map(|p| ref_with_span_from(&p).map(|(name, span)| (name, Some(span))))
+        .collect()
+}
+
 // ============================================================================
 // Name extraction
 // ============================================================================
@@ -340,21 +348,44 @@ fn extract_rels_recursive(pair: &Pair<Rule>, rel: &mut super::types::Relationshi
         Rule::subclassification_part => {
             for p in pair.clone().into_inner() {
                 if p.as_rule() == Rule::owned_subclassification {
-                    rel.specializes.extend(ref_from(&p));
+                    for (target, span) in all_refs_with_spans_from(&p) {
+                        rel.specializes
+                            .push(super::types::SpecializationRel { target, span });
+                    }
                 }
             }
         }
         Rule::redefinition_part => {
             for p in pair.clone().into_inner() {
                 if p.as_rule() == Rule::owned_subclassification {
-                    rel.redefines.extend(ref_from(&p));
+                    for (target, span) in all_refs_with_spans_from(&p) {
+                        rel.redefines
+                            .push(super::types::RedefinitionRel { target, span });
+                    }
                 }
             }
         }
-        Rule::satisfy_requirement_usage => rel.satisfies.extend(ref_from(pair)),
-        Rule::perform_action_usage => rel.performs.extend(ref_from(pair)),
-        Rule::exhibit_state_usage => rel.exhibits.extend(ref_from(pair)),
-        Rule::include_use_case_usage => rel.includes.extend(ref_from(pair)),
+        Rule::satisfy_requirement_usage => {
+            for (target, span) in all_refs_with_spans_from(pair) {
+                rel.satisfies
+                    .push(super::types::SatisfyRel { target, span });
+            }
+        }
+        Rule::perform_action_usage => {
+            for (target, span) in all_refs_with_spans_from(pair) {
+                rel.performs.push(super::types::PerformRel { target, span });
+            }
+        }
+        Rule::exhibit_state_usage => {
+            for (target, span) in all_refs_with_spans_from(pair) {
+                rel.exhibits.push(super::types::ExhibitRel { target, span });
+            }
+        }
+        Rule::include_use_case_usage => {
+            for (target, span) in all_refs_with_spans_from(pair) {
+                rel.includes.push(super::types::IncludeRel { target, span });
+            }
+        }
         Rule::feature_specialization => {
             for spec in pair.clone().into_inner() {
                 match spec.as_rule() {
@@ -366,10 +397,29 @@ fn extract_rels_recursive(pair: &Pair<Rule>, rel: &mut super::types::Relationshi
                             rel.typed_by = ref_from(&spec);
                         }
                     }
-                    Rule::subsettings => rel.subsets.extend(all_refs_from(&spec)),
-                    Rule::redefinitions => rel.redefines.extend(all_refs_from(&spec)),
-                    Rule::references => rel.references.extend(all_refs_from(&spec)),
-                    Rule::crosses => rel.crosses.extend(all_refs_from(&spec)),
+                    Rule::subsettings => {
+                        for (target, span) in all_refs_with_spans_from(&spec) {
+                            rel.subsets
+                                .push(super::types::SubsettingRel { target, span });
+                        }
+                    }
+                    Rule::redefinitions => {
+                        for (target, span) in all_refs_with_spans_from(&spec) {
+                            rel.redefines
+                                .push(super::types::RedefinitionRel { target, span });
+                        }
+                    }
+                    Rule::references => {
+                        for (target, span) in all_refs_with_spans_from(&spec) {
+                            rel.references
+                                .push(super::types::ReferenceRel { target, span });
+                        }
+                    }
+                    Rule::crosses => {
+                        for (target, span) in all_refs_with_spans_from(&spec) {
+                            rel.crosses.push(super::types::CrossRel { target, span });
+                        }
+                    }
                     _ => {}
                 }
             }

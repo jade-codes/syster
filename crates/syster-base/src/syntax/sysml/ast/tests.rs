@@ -413,7 +413,7 @@ fn test_definition_with_specialization() {
     assert_eq!(definition.kind, DefinitionKind::Part);
     assert_eq!(definition.name, Some("Car".to_string()));
     assert_eq!(definition.relationships.specializes.len(), 1);
-    assert_eq!(definition.relationships.specializes[0], "Vehicle");
+    assert_eq!(definition.relationships.specializes[0].target, "Vehicle");
 }
 
 #[test]
@@ -430,13 +430,15 @@ fn test_definition_with_multiple_specializations() {
         definition
             .relationships
             .specializes
-            .contains(&"Vehicle".to_string())
+            .iter()
+            .any(|s| s.target == "Vehicle")
     );
     assert!(
         definition
             .relationships
             .specializes
-            .contains(&"Machine".to_string())
+            .iter()
+            .any(|s| s.target == "Machine")
     );
 }
 
@@ -463,7 +465,7 @@ fn test_usage_with_subsetting() {
     assert_eq!(usage.name, Some("specialCar".to_string()));
     assert_eq!(usage.relationships.typed_by, Some("Car".to_string()));
     assert_eq!(usage.relationships.subsets.len(), 1);
-    assert_eq!(usage.relationships.subsets[0], "baseCar");
+    assert_eq!(usage.relationships.subsets[0].target, "baseCar");
 }
 
 #[test]
@@ -477,7 +479,7 @@ fn test_usage_with_redefinition() {
     assert_eq!(usage.name, Some("redefinedCar".to_string()));
     assert_eq!(usage.relationships.typed_by, Some("Car".to_string()));
     assert_eq!(usage.relationships.redefines.len(), 1);
-    assert_eq!(usage.relationships.redefines[0], "originalCar");
+    assert_eq!(usage.relationships.redefines[0].target, "originalCar");
 }
 
 #[test]
@@ -489,9 +491,27 @@ fn test_usage_with_multiple_subsettings() {
 
     assert_eq!(usage.kind, UsageKind::Part);
     assert_eq!(usage.relationships.subsets.len(), 3);
-    assert!(usage.relationships.subsets.contains(&"car1".to_string()));
-    assert!(usage.relationships.subsets.contains(&"car2".to_string()));
-    assert!(usage.relationships.subsets.contains(&"car3".to_string()));
+    assert!(
+        usage
+            .relationships
+            .subsets
+            .iter()
+            .any(|s| s.target == "car1")
+    );
+    assert!(
+        usage
+            .relationships
+            .subsets
+            .iter()
+            .any(|s| s.target == "car2")
+    );
+    assert!(
+        usage
+            .relationships
+            .subsets
+            .iter()
+            .any(|s| s.target == "car3")
+    );
 }
 
 #[test]
@@ -529,7 +549,7 @@ fn test_action_usage_with_relationships() {
     assert_eq!(usage.name, Some("myDrive".to_string()));
     assert_eq!(usage.relationships.typed_by, Some("Drive".to_string()));
     assert_eq!(usage.relationships.subsets.len(), 1);
-    assert_eq!(usage.relationships.subsets[0], "baseAction");
+    assert_eq!(usage.relationships.subsets[0].target, "baseAction");
 }
 
 #[test]
@@ -542,7 +562,7 @@ fn test_requirement_with_specialization() {
     assert_eq!(definition.kind, DefinitionKind::Requirement);
     assert_eq!(definition.name, Some("SafetyReq".to_string()));
     assert_eq!(definition.relationships.specializes.len(), 1);
-    assert_eq!(definition.relationships.specializes[0], "BaseReq");
+    assert_eq!(definition.relationships.specializes[0].target, "BaseReq");
 }
 
 #[test]
@@ -735,10 +755,22 @@ fn test_complex_usage_all_relationships() {
     assert_eq!(usage.name, Some("complexPart".to_string()));
     assert_eq!(usage.relationships.typed_by, Some("PartType".to_string()));
     assert_eq!(usage.relationships.subsets.len(), 2);
-    assert!(usage.relationships.subsets.contains(&"base1".to_string()));
-    assert!(usage.relationships.subsets.contains(&"base2".to_string()));
+    assert!(
+        usage
+            .relationships
+            .subsets
+            .iter()
+            .any(|s| s.target == "base1")
+    );
+    assert!(
+        usage
+            .relationships
+            .subsets
+            .iter()
+            .any(|s| s.target == "base2")
+    );
     assert_eq!(usage.relationships.redefines.len(), 1);
-    assert_eq!(usage.relationships.redefines[0], "redefined1");
+    assert_eq!(usage.relationships.redefines[0].target, "redefined1");
 }
 
 #[test]

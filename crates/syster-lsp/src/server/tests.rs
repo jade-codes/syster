@@ -838,6 +838,32 @@ package Outer {
 
     server.open_document(&uri, text).unwrap();
 
+    // Debug: print all symbols and their references
+    eprintln!("\nAll symbols:");
+    for (name, symbol) in server.workspace.symbol_table().all_symbols() {
+        eprintln!(
+            "  '{}' -> '{}' with {} refs",
+            name,
+            symbol.qualified_name(),
+            symbol.references().len()
+        );
+        for r in symbol.references() {
+            eprintln!("    Ref at {}:{}", r.span.start.line, r.span.start.column);
+        }
+    }
+
+    // Debug: check relationship graph
+    eprintln!("\nTyping relationships:");
+    for (name, _) in server.workspace.symbol_table().all_symbols() {
+        if let Some((target, span)) = server
+            .workspace
+            .relationship_graph()
+            .get_one_to_one_with_span("typing", name)
+        {
+            eprintln!("  {} -> {} (span: {:?})", name, target, span);
+        }
+    }
+
     // Find references using qualified name
     let position = Position::new(5, 23); // On "Vehicle" in "Inner::Vehicle"
     let locations = server
@@ -1268,6 +1294,16 @@ package Test {
 
     server.open_document(&uri, text).unwrap();
 
+    eprintln!(
+        "DEBUG: Workspace file count: {}",
+        server.workspace().file_count()
+    );
+    eprintln!(
+        "DEBUG: Symbol table size: {}",
+        server.workspace().symbol_table().all_symbols().len()
+    );
+    eprintln!("DEBUG: Parse errors: {:?}", server.get_diagnostics(&uri));
+
     // Position after colon - should suggest type symbols
     let position = Position::new(4, 15);
     let result = server.get_completions(std::path::Path::new("/test.sysml"), position);
@@ -1276,14 +1312,19 @@ package Test {
         tower_lsp::lsp_types::CompletionResponse::Array(items) => {
             let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
 
+            eprintln!("Completions returned: {} items", items.len());
+            eprintln!("Labels: {:?}", labels);
+
             // Should include both definition types as valid typing targets
             assert!(
                 labels.contains(&"Vehicle"),
-                "Should suggest 'Vehicle' as a type after colon"
+                "Should suggest 'Vehicle' as a type after colon. Got: {:?}",
+                labels
             );
             assert!(
                 labels.contains(&"Speed"),
-                "Should suggest 'Speed' as a type after colon"
+                "Should suggest 'Speed' as a type after colon. Got: {:?}",
+                labels
             );
         }
         _ => panic!("Expected completion array for type context"),

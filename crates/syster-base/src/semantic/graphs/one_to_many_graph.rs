@@ -1,10 +1,11 @@
 //! One-to-many directed graph (e.g., specialization, subsetting)
 
+use crate::core::Span;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Default)]
 pub struct OneToManyGraph {
-    relationships: HashMap<String, Vec<String>>,
+    relationships: HashMap<String, Vec<(String, Option<Span>)>>,
 }
 
 impl OneToManyGraph {
@@ -14,18 +15,31 @@ impl OneToManyGraph {
         }
     }
 
-    pub fn add(&mut self, source: String, target: String) {
-        self.relationships.entry(source).or_default().push(target);
+    pub fn add(&mut self, source: String, target: String, span: Option<Span>) {
+        self.relationships
+            .entry(source)
+            .or_default()
+            .push((target, span));
     }
 
-    pub fn get_targets(&self, source: &str) -> Option<&[String]> {
-        self.relationships.get(source).map(|v| v.as_slice())
+    pub fn get_targets(&self, source: &str) -> Option<Vec<&String>> {
+        self.relationships
+            .get(source)
+            .map(|v| v.iter().map(|(target, _)| target).collect())
+    }
+
+    pub fn get_targets_with_spans(&self, source: &str) -> Option<Vec<(&String, Option<&Span>)>> {
+        self.relationships.get(source).map(|v| {
+            v.iter()
+                .map(|(target, span)| (target, span.as_ref()))
+                .collect()
+        })
     }
 
     pub fn get_sources(&self, target: &str) -> Vec<&String> {
         self.relationships
             .iter()
-            .filter(|(_, targets)| targets.iter().any(|t| t == target))
+            .filter(|(_, targets)| targets.iter().any(|(t, _)| t == target))
             .map(|(source, _)| source)
             .collect()
     }

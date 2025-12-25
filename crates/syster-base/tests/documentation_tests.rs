@@ -128,14 +128,11 @@ fn test_relationship_graph_api_matches_docs() {
     let mut graph = OneToManyGraph::new();
 
     // These methods are documented - ensure they exist and work correctly
-    graph.add("Vehicle".to_string(), "Car".to_string());
+    graph.add("Vehicle".to_string(), "Car".to_string(), None);
 
     let targets = graph.get_targets("Vehicle");
-    assert_eq!(
-        targets,
-        Some(["Car".to_string()].as_slice()),
-        "Vehicle should have Car as target"
-    );
+    assert_eq!(targets.as_ref().map(|v| v.len()), Some(1));
+    assert!(targets.unwrap().contains(&&"Car".to_string()));
 
     let sources = graph.get_sources("Car");
     assert_eq!(

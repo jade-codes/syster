@@ -91,7 +91,8 @@ fn test_populate_multiple_files() {
     let specializes = workspace
         .relationship_graph()
         .get_one_to_many(REL_SPECIALIZATION, "Car");
-    assert_eq!(specializes, Some(&["Vehicle".to_string()][..]));
+    assert_eq!(specializes.as_ref().map(|v| v.len()), Some(1));
+    assert!(specializes.unwrap().contains(&&"Vehicle".to_string()));
 }
 
 #[test]

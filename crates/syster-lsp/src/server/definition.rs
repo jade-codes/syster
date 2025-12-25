@@ -1,5 +1,5 @@
 use super::LspServer;
-use super::helpers::{extract_word_at_cursor, span_to_lsp_range};
+use super::helpers::span_to_lsp_range;
 use tower_lsp::lsp_types::{Location, Position, Url};
 
 impl LspServer {
@@ -14,31 +14,14 @@ impl LspServer {
     /// If the cursor is on a definition itself, this returns the location of that definition.
     pub fn get_definition(&self, uri: &Url, position: Position) -> Option<Location> {
         let path = uri.to_file_path().ok()?;
-        let text = self.document_texts.get(&path)?;
         let (element_name, _hover_range) = self.find_symbol_at_position(&path, position)?;
-        let cursor_word = extract_word_at_cursor(text, position)?;
-        let lookup_name = if cursor_word != element_name {
-            &cursor_word
-        } else {
-            &element_name
-        };
 
         // Look up symbol in workspace
-        // Try qualified lookup first, then simple name lookup, then search all symbols
         let symbol = self
             .workspace
             .symbol_table()
-            .lookup_qualified(lookup_name)
-            .or_else(|| self.workspace.symbol_table().lookup(lookup_name))
-            .or_else(|| {
-                // Fallback: search all symbols for matching simple name
-                self.workspace
-                    .symbol_table()
-                    .all_symbols()
-                    .into_iter()
-                    .find(|(_key, sym)| sym.name() == lookup_name)
-                    .map(|(_, sym)| sym)
-            })?;
+            .lookup_qualified(&element_name)
+            .or_else(|| self.workspace.symbol_table().lookup(&element_name))?;
 
         // Get definition location from symbol
         let source_file = symbol.source_file()?;

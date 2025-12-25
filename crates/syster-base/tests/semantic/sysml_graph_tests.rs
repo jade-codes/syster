@@ -709,10 +709,9 @@ fn test_derived_keyword_with_subsetting() {
 
     // The derived requirement (with subsetting) should have the relationship
     let qualified_name = "Container::DerivedReq";
-    assert_eq!(
-        relationship_graph.get_one_to_many(REL_SUBSETTING, qualified_name),
-        Some(&["ParentReq".to_string()][..])
-    );
+    let subsets = relationship_graph.get_one_to_many(REL_SUBSETTING, qualified_name);
+    assert_eq!(subsets.as_ref().map(|v| v.len()), Some(1));
+    assert!(subsets.unwrap().contains(&&"ParentReq".to_string()));
 }
 
 #[test]
@@ -738,12 +737,11 @@ fn test_multiple_derived_requirements_in_body() {
     populator.populate(&file).unwrap();
 
     // Each derived requirement should have its subsetting relationship
-    assert_eq!(
-        relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq1"),
-        Some(&["Req1".to_string()][..])
-    );
-    assert_eq!(
-        relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq2"),
-        Some(&["Req2".to_string()][..])
-    );
+    let subsets1 = relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq1");
+    assert_eq!(subsets1.as_ref().map(|v| v.len()), Some(1));
+    assert!(subsets1.unwrap().contains(&&"Req1".to_string()));
+
+    let subsets2 = relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq2");
+    assert_eq!(subsets2.as_ref().map(|v| v.len()), Some(1));
+    assert!(subsets2.unwrap().contains(&&"Req2".to_string()));
 }

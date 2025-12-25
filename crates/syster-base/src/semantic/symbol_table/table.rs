@@ -78,13 +78,21 @@ impl SymbolTable {
         .publish(self)
     }
 
-    pub fn add_import(&mut self, path: String, is_recursive: bool) {
+    pub fn add_import(
+        &mut self,
+        path: String,
+        is_recursive: bool,
+        span: Option<crate::core::Span>,
+        file: Option<String>,
+    ) {
         let _ = {
             let is_namespace = path.ends_with("::*") || path.ends_with("::**");
             let import = Import {
                 path: path.clone(),
                 is_recursive,
                 is_namespace,
+                span,
+                file,
             };
             self.scopes[self.current_scope].imports.push(import);
 
@@ -96,6 +104,35 @@ impl SymbolTable {
 
     pub fn current_scope_id(&self) -> usize {
         self.current_scope
+    }
+
+    pub fn scope_count(&self) -> usize {
+        self.scopes.len()
+    }
+
+    pub fn get_scope_imports(&self, scope_id: usize) -> Vec<super::scope::Import> {
+        self.scopes
+            .get(scope_id)
+            .map(|scope| scope.imports.clone())
+            .unwrap_or_default()
+    }
+
+    /// Add references to a symbol identified by its qualified name
+    pub fn add_references_to_symbol(
+        &mut self,
+        qualified_name: &str,
+        references: Vec<super::symbol::SymbolReference>,
+    ) {
+        for scope in &mut self.scopes {
+            for symbol in scope.symbols.values_mut() {
+                if symbol.qualified_name() == qualified_name {
+                    for reference in references.clone() {
+                        symbol.add_reference(reference);
+                    }
+                    return;
+                }
+            }
+        }
     }
 }
 

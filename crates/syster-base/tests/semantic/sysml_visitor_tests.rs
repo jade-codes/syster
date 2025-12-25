@@ -496,9 +496,9 @@ fn test_multiple_specializations() {
         .get_one_to_many(REL_SPECIALIZATION, "ElectricCar")
         .unwrap();
     assert_eq!(specializations.len(), 3);
-    assert!(specializations.contains(&"Car".to_string()));
-    assert!(specializations.contains(&"Electric".to_string()));
-    assert!(specializations.contains(&"Vehicle".to_string()));
+    assert!(specializations.contains(&&"Car".to_string()));
+    assert!(specializations.contains(&&"Electric".to_string()));
+    assert!(specializations.contains(&&"Vehicle".to_string()));
 }
 
 #[test]
@@ -817,7 +817,7 @@ fn test_redefinition_relationship() {
     // Check if redefinition relationship is recorded
     let redefinitions = graph.get_one_to_many(REL_REDEFINITION, "SportsCar");
     assert!(
-        redefinitions.is_some() && redefinitions.unwrap().contains(&"Car".to_string()),
+        redefinitions.is_some() && redefinitions.unwrap().contains(&&"Car".to_string()),
         "Should record redefinition relationship"
     );
 }

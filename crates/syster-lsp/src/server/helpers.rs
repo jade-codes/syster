@@ -2,14 +2,6 @@ use syster::semantic::symbol_table::Symbol;
 use syster::syntax::SyntaxFile;
 use tower_lsp::lsp_types::{Position, Range};
 
-/// Extract the word at the cursor position from the document text
-pub fn extract_word_at_cursor(text: &str, position: Position) -> Option<String> {
-    let lines: Vec<&str> = text.lines().collect();
-    let line = lines.get(position.line as usize)?;
-
-    syster::core::text_utils::extract_word_at_cursor(line, position.character as usize)
-}
-
 /// Convert our Span to LSP Range
 pub fn span_to_lsp_range(span: &syster::core::Span) -> Range {
     Range {

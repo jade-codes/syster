@@ -36,11 +36,15 @@ pub fn parse_content(content: &str, path: &Path) -> Result<SysMLFile, String> {
 
 /// Parses content and returns a ParseResult with detailed error information.
 /// This is the primary function for LSP usage - errors don't fail, they're captured.
+///
+/// If full parse fails, we parse valid definitions individually to enable LSP features
+/// even with incomplete/invalid code present.
 pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
     if let Err(e) = get_extension(path) {
         return ParseResult::with_errors(vec![e]);
     }
 
+    // Try full parse first (fastest for valid files)
     match crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, content) {
         Ok(mut pairs) => match SysMLFile::from_pest(&mut pairs) {
             Ok(file) => ParseResult::success(file),
@@ -52,12 +56,101 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
         Err(parse_error) => {
             // Extract position from pest error
             let (line, col) = match parse_error.line_col {
-                pest::error::LineColLocation::Pos((l, c)) => (l - 1, c - 1), // Convert to 0-indexed
+                pest::error::LineColLocation::Pos((l, c)) => (l - 1, c - 1),
                 pest::error::LineColLocation::Span((l, c), _) => (l - 1, c - 1),
             };
 
             let error = ParseError::syntax_error(format!("{}", parse_error.variant), line, col);
-            ParseResult::with_errors(vec![error])
+
+            // Try to recover valid definitions
+            match parse_valid_definitions(content) {
+                Some(partial_file) => ParseResult {
+                    content: Some(partial_file),
+                    errors: vec![error],
+                },
+                None => ParseResult::with_errors(vec![error]),
+            }
         }
     }
+}
+
+/// Parse individual valid definitions from content, skipping invalid lines.
+/// This allows LSP to work with incomplete code.
+fn parse_valid_definitions(content: &str) -> Option<SysMLFile> {
+    use crate::syntax::sysml::ast::SysMLFile;
+
+    let mut elements = Vec::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        if trimmed.is_empty() || trimmed.starts_with("//") || !trimmed.ends_with(';') {
+            continue;
+        }
+
+        if let Some(element) = try_parse_as_element(trimmed) {
+            elements.push(element);
+        }
+    }
+
+    if elements.is_empty() {
+        None
+    } else {
+        Some(SysMLFile {
+            namespace: None,
+            namespaces: Vec::new(),
+            elements,
+        })
+    }
+}
+
+fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element> {
+    use crate::parser::{SysMLParser, sysml::Rule};
+    use crate::syntax::sysml::ast::{Definition, Element, Usage};
+    use from_pest::FromPest;
+
+    // Try as definition (any kind)
+    if line.contains(" def ") {
+        // Try all *_definition rules
+        for rule in [
+            Rule::part_definition,
+            Rule::attribute_definition,
+            Rule::action_definition,
+            Rule::item_definition,
+            Rule::port_definition,
+            Rule::connection_definition,
+            Rule::interface_definition,
+            Rule::allocation_definition,
+            Rule::state_definition,
+            Rule::requirement_definition,
+            Rule::enumeration_definition,
+            Rule::occurrence_definition,
+            Rule::calculation_definition,
+        ] {
+            if let Ok(mut pairs) = SysMLParser::parse(rule, line) {
+                if let Ok(def) = Definition::from_pest(&mut pairs) {
+                    return Some(Element::Definition(def));
+                }
+            }
+        }
+    }
+
+    // Try as usage (any kind)
+    if !line.contains(" def ") {
+        for rule in [
+            Rule::part_usage,
+            Rule::attribute_usage,
+            Rule::item_usage,
+            Rule::port_usage,
+            Rule::action_usage,
+        ] {
+            if let Ok(mut pairs) = SysMLParser::parse(rule, line) {
+                if let Ok(usage) = Usage::from_pest(&mut pairs) {
+                    return Some(Element::Usage(usage));
+                }
+            }
+        }
+    }
+
+    None
 }
