@@ -13,6 +13,17 @@ use syster::semantic::adapters::SysmlAdapter;
 use syster::semantic::symbol_table::SymbolTable;
 use syster::syntax::sysml::ast::SysMLFile;
 
+// Helper function to compare graph results with string literals
+fn assert_targets_eq(result: Option<Vec<&String>>, expected: &[&str]) {
+    match result {
+        Some(targets) => {
+            let target_strs: Vec<&str> = targets.iter().map(|s| s.as_str()).collect();
+            assert_eq!(target_strs, expected);
+        }
+        None => panic!("Expected Some({expected:?}), got None"),
+    }
+}
+
 #[test]
 fn test_end_to_end_relationship_population() {
     // Parse SysML with relationships
@@ -67,15 +78,15 @@ fn test_multiple_relationships() {
     );
 
     // vehicle2 :> vehicle1
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SUBSETTING, "vehicle2"),
-        Some(&["vehicle1".to_string()][..])
+        &["vehicle1"],
     );
 
     // vehicle3 :>> vehicle2
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_REDEFINITION, "vehicle3"),
-        Some(&["vehicle2".to_string()][..])
+        &["vehicle2"],
     );
 }
 
@@ -94,13 +105,13 @@ fn test_transitive_specialization() {
     populator.populate(&file).unwrap();
 
     // Direct relationships
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Vehicle"),
-        Some(&["Thing".to_string()][..])
+        &["Thing"],
     );
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Car"),
-        Some(&["Vehicle".to_string()][..])
+        &["Vehicle"],
     );
 
     // Transitive paths: Car has path to Vehicle and Thing
@@ -129,8 +140,8 @@ fn test_multiple_specializations() {
     assert!(c_specializes.is_some());
     let specializes = c_specializes.unwrap();
     assert_eq!(specializes.len(), 2);
-    assert!(specializes.contains(&"A".to_string()));
-    assert!(specializes.contains(&"B".to_string()));
+    assert!(specializes.iter().any(|s| s.as_str() == "A"));
+    assert!(specializes.iter().any(|s| s.as_str() == "B"));
 }
 
 #[test]
@@ -186,9 +197,9 @@ fn test_usage_typing_and_subsetting() {
     );
 
     // myVehicle subsets baseVehicle
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SUBSETTING, "myVehicle"),
-        Some(&["baseVehicle".to_string()][..])
+        &["baseVehicle"],
     );
 }
 
@@ -207,9 +218,9 @@ fn test_action_relationships() {
     populator.populate(&file).unwrap();
 
     // SpecializedAction specializes BaseAction
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "SpecializedAction"),
-        Some(&["BaseAction".to_string()][..])
+        &["BaseAction"],
     );
 
     // myAction is typed by SpecializedAction
@@ -233,9 +244,9 @@ fn test_requirement_relationships() {
 
     populator.populate(&file).unwrap();
 
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "DerivedReq"),
-        Some(&["BaseReq".to_string()][..])
+        &["BaseReq"],
     );
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myReq"),
@@ -288,8 +299,8 @@ fn test_multiple_subsettings() {
     assert!(subsets.is_some());
     let subsets = subsets.unwrap();
     assert_eq!(subsets.len(), 2);
-    assert!(subsets.contains(&"v1".to_string()));
-    assert!(subsets.contains(&"v2".to_string()));
+    assert!(subsets.iter().any(|s| s.as_str() == "v1"));
+    assert!(subsets.iter().any(|s| s.as_str() == "v2"));
 }
 
 #[test]
@@ -308,15 +319,15 @@ fn test_redefinition_chain() {
     populator.populate(&file).unwrap();
 
     // v2 redefines v1
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_REDEFINITION, "v2"),
-        Some(&["v1".to_string()][..])
+        &["v1"],
     );
 
     // v3 redefines v2
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_REDEFINITION, "v3"),
-        Some(&["v2".to_string()][..])
+        &["v2"],
     );
 
     // Check transitive redefinitions
@@ -349,17 +360,17 @@ fn test_mixed_definition_kinds() {
     populator.populate(&file).unwrap();
 
     // Verify all specializations
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Car"),
-        Some(&["Vehicle".to_string()][..])
+        &["Vehicle"],
     );
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Drive"),
-        Some(&["Move".to_string()][..])
+        &["Move"],
     );
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "CarSafetyReq"),
-        Some(&["SafetyReq".to_string()][..])
+        &["SafetyReq"],
     );
 }
 
@@ -410,7 +421,8 @@ fn test_satisfy_requirement_relationship() {
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
     assert!(satisfies.is_some(), "Expected satisfy relationship");
-    assert_eq!(satisfies.unwrap(), &["SafetyReq".to_string()][..]);
+    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| s.as_str()).collect();
+    assert_eq!(result, vec!["SafetyReq"]);
 }
 
 #[test]
@@ -434,7 +446,8 @@ fn test_satisfy_with_requirement_keyword() {
         satisfies.is_some(),
         "Expected satisfy relationship with requirement keyword"
     );
-    assert_eq!(satisfies.unwrap(), &["SafetyReq".to_string()][..]);
+    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| s.as_str()).collect();
+    assert_eq!(result, vec!["SafetyReq"]);
 }
 
 #[test]
@@ -458,7 +471,8 @@ fn test_perform_action_relationship() {
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
     assert!(performs.is_some(), "Expected perform relationship");
-    assert_eq!(performs.unwrap(), &["Move".to_string()][..]);
+    let result: Vec<&str> = performs.unwrap().iter().map(|s| s.as_str()).collect();
+    assert_eq!(result, vec!["Move"]);
 }
 
 #[test]
@@ -488,7 +502,8 @@ fn test_exhibit_state_relationship() {
     // Verify exhibit relationship
     let exhibits = relationship_graph.get_one_to_many(REL_EXHIBIT, "Vehicle");
     assert!(exhibits.is_some(), "Expected exhibit relationship");
-    assert_eq!(exhibits.unwrap(), &["Moving".to_string()][..]);
+    let result: Vec<&str> = exhibits.unwrap().iter().map(|s| s.as_str()).collect();
+    assert_eq!(result, vec!["Moving"]);
 }
 
 #[test]
@@ -512,7 +527,8 @@ fn test_include_use_case_relationship() {
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
     assert!(includes.is_some(), "Expected include relationship");
-    assert_eq!(includes.unwrap(), &["Login".to_string()][..]);
+    let result: Vec<&str> = includes.unwrap().iter().map(|s| s.as_str()).collect();
+    assert_eq!(result, vec!["Login"]);
 }
 
 #[test]
@@ -538,8 +554,8 @@ fn test_multiple_satisfy_relationships() {
     let satisfies = satisfies.unwrap();
     // Found satisfy relationships
     assert_eq!(satisfies.len(), 2);
-    assert!(satisfies.contains(&"Req1".to_string()));
-    assert!(satisfies.contains(&"Req2".to_string()));
+    assert!(satisfies.iter().any(|s| s.as_str() == "Req1"));
+    assert!(satisfies.iter().any(|s| s.as_str() == "Req2"));
 }
 
 #[test]
@@ -561,9 +577,9 @@ fn test_mixed_domain_and_structural_relationships() {
     populator.populate(&file).unwrap();
 
     // Verify structural relationship (specialization) works
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "SpecializedPart"),
-        Some(&["BasePart".to_string()][..])
+        &["BasePart"],
     );
 }
 
@@ -587,9 +603,9 @@ fn test_derive_requirement_relationship() {
     populator.populate(&file).unwrap();
 
     // DerivedReq specializes (derives from) Configuration
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "DerivedReq"),
-        Some(&["Configuration".to_string()][..])
+        &["Configuration"],
     );
 }
 
@@ -612,9 +628,9 @@ fn test_derive_requirement_keyword_syntax() {
     populator.populate(&file).unwrap();
 
     // DerivedReq specializes (derives from) Configuration
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "DerivedReq"),
-        Some(&["Configuration".to_string()][..])
+        &["Configuration"],
     );
 }
 
@@ -643,9 +659,9 @@ fn test_derived_requirement_in_body() {
     let qualified_name = "ContainerReq::Configuration";
 
     // Configuration subsets ParentReq (usages use subsetting, not specialization)
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SUBSETTING, qualified_name),
-        Some(&["ParentReq".to_string()][..])
+        &["ParentReq"],
     );
 }
 

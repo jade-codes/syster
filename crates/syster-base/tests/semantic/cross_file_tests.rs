@@ -1,5 +1,15 @@
 #![allow(clippy::unwrap_used)]
 
+fn assert_targets_eq(result: Option<Vec<&String>>, expected: &[&str]) {
+    match result {
+        Some(targets) => {
+            let target_strs: Vec<&str> = targets.iter().map(|s| s.as_str()).collect();
+            assert_eq!(target_strs, expected);
+        }
+        None => panic!("Expected Some({expected:?}), got None"),
+    }
+}
+
 use from_pest::FromPest;
 use pest::Parser;
 use std::path::PathBuf;
@@ -65,9 +75,9 @@ fn test_cross_file_specialization() {
     );
 
     // Verify the specialization relationship was created
-    assert_eq!(
+    assert_targets_eq(
         relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Car"),
-        Some(&["Vehicle".to_string()][..])
+        &["Vehicle"],
     );
 }
 
@@ -281,17 +291,17 @@ fn test_workspace_with_file_paths() {
     assert_eq!(sports_car.source_file(), Some("derived/sports_car.sysml"));
 
     // Verify relationships across files
-    assert_eq!(
+    assert_targets_eq(
         workspace
             .relationship_graph()
             .get_one_to_many(REL_SPECIALIZATION, "Car"),
-        Some(&["Vehicle".to_string()][..])
+        &["Vehicle"],
     );
-    assert_eq!(
+    assert_targets_eq(
         workspace
             .relationship_graph()
             .get_one_to_many(REL_SPECIALIZATION, "SportsCar"),
-        Some(&["Car".to_string()][..])
+        &["Car"],
     );
 
     // Verify transitive relationships
