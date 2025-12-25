@@ -970,3 +970,40 @@ fn test_populate_affected_selective() {
     assert!(workspace.get_file(&b_path).unwrap().is_populated());
     assert!(workspace.get_file(&c_path).unwrap().is_populated());
 }
+
+#[test]
+fn test_populate_affected_continues_on_error() {
+    // Test that populate_affected continues processing files even when one has an error
+    let mut workspace = Workspace::<SyntaxFile>::new();
+
+    // Add a file with a duplicate symbol error
+    let bad_file = r#"
+        part def Car;
+        part def Car;
+    "#;
+    let bad_path = PathBuf::from("bad.sysml");
+    let mut pairs = SysMLParser::parse(Rule::model, bad_file).unwrap();
+    let parsed_bad = SysMLFile::from_pest(&mut pairs).unwrap();
+    workspace.add_file(bad_path.clone(), SyntaxFile::SysML(parsed_bad));
+
+    // Add a valid file
+    let good_file = r#"
+        part def Truck;
+    "#;
+    let good_path = PathBuf::from("good.sysml");
+    let mut pairs = SysMLParser::parse(Rule::model, good_file).unwrap();
+    let parsed_good = SysMLFile::from_pest(&mut pairs).unwrap();
+    workspace.add_file(good_path.clone(), SyntaxFile::SysML(parsed_good));
+
+    // populate_affected should succeed even though one file has an error
+    let result = workspace.populate_affected();
+    assert!(
+        result.is_ok(),
+        "populate_affected should succeed even with errors in individual files"
+    );
+
+    // The good file should have been processed
+    let symbols = workspace.symbol_table().all_symbols();
+    let truck_exists = symbols.iter().any(|(name, _)| *name == "Truck");
+    assert!(truck_exists, "Valid file should have been processed");
+}

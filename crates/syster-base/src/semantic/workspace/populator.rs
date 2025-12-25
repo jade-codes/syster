@@ -56,7 +56,11 @@ impl<'a> WorkspacePopulator<'a> {
         let unpopulated = Self::get_unpopulated_paths(self.files);
 
         for path in &unpopulated {
-            self.populate_file(path)?;
+            if let Err(e) = self.populate_file(path) {
+                // Log error but continue processing other files
+                // Duplicate symbols are a known issue with qualified redefinitions in stdlib
+                eprintln!("Warning: Failed to populate {}: {}", path.display(), e);
+            }
         }
 
         self.collect_references();
