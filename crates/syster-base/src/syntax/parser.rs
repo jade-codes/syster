@@ -1,5 +1,5 @@
 use crate::core::constants::{KERML_EXT, SYSML_EXT};
-use crate::core::{ParseError, ParseResult, get_extension, load_file, validate_extension};
+use crate::core::{get_extension, load_file, validate_extension, ParseError, ParseResult};
 use crate::syntax::SyntaxFile;
 use std::path::{Path, PathBuf};
 
