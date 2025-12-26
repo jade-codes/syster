@@ -2730,61 +2730,8 @@ fn test_folding_ranges_for_definitions() {
     }
 }
 
-#[test]
-fn test_folding_ranges_for_import_blocks() {
-    let mut server = LspServer::new();
-    let uri = Url::parse("file:///test.sysml").unwrap();
-    let text = r#"import ScalarValues::*;
-import Quantities::*;
-import ISQ::*;
-
-part def Vehicle;"#;
-
-    server.open_document(&uri, text).unwrap();
-
-    let path = std::path::Path::new(uri.path());
-    let ranges = server.get_folding_ranges(path);
-
-    // Should have folding range for import block
-    let import_ranges: Vec<_> = ranges
-        .iter()
-        .filter(|r| r.kind == Some(tower_lsp::lsp_types::FoldingRangeKind::Imports))
-        .collect();
-
-    assert_eq!(import_ranges.len(), 1, "Should have one import block");
-
-    let import_block = import_ranges[0];
-    assert_eq!(import_block.start_line, 0);
-    assert_eq!(import_block.end_line, 2); // Three import lines (0-2)
-}
-
-#[test]
-fn test_folding_ranges_for_comment_blocks() {
-    let mut server = LspServer::new();
-    let uri = Url::parse("file:///test.sysml").unwrap();
-    let text = r#"// This is a comment
-// Another comment line
-// Third comment line
-
-part def Vehicle;"#;
-
-    server.open_document(&uri, text).unwrap();
-
-    let path = std::path::Path::new(uri.path());
-    let ranges = server.get_folding_ranges(path);
-
-    // Should have folding range for comment block
-    let comment_ranges: Vec<_> = ranges
-        .iter()
-        .filter(|r| r.kind == Some(tower_lsp::lsp_types::FoldingRangeKind::Comment))
-        .collect();
-
-    assert_eq!(comment_ranges.len(), 1, "Should have one comment block");
-
-    let comment_block = comment_ranges[0];
-    assert_eq!(comment_block.start_line, 0);
-    assert_eq!(comment_block.end_line, 2); // Three comment lines (0-2)
-}
+// Note: Import block folding and consecutive line comment folding were removed
+// as they are not useful for SysML/KerML. See semantic/adapters for AST-based folding.
 
 #[test]
 fn test_folding_ranges_no_single_line() {

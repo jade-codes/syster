@@ -1,3 +1,4 @@
+pub mod folding;
 mod helpers;
 mod population;
 pub mod validator;
