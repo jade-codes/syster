@@ -57,19 +57,23 @@ check: fmt-check lint test
 run-guidelines:
 	@echo "=== Running Complete Validation Pipeline ==="
 	@echo ""
-	@echo "Step 1/4: Formatting code..."
+	@echo "Step 1/5: Cleaning build artifacts..."
+	@cargo clean
+	@echo "✓ Clean complete"
+	@echo ""
+	@echo "Step 2/5: Formatting code..."
 	@cargo fmt
 	@echo "✓ Code formatted"
 	@echo ""
-	@echo "Step 2/4: Running linter..."
+	@echo "Step 3/5: Running linter..."
 	@cargo clippy --all-targets --all-features -- -D warnings
 	@echo "✓ Linting passed"
 	@echo ""
-	@echo "Step 3/4: Building project..."
+	@echo "Step 4/5: Building project..."
 	@cargo build
 	@echo "✓ Build successful"
 	@echo ""
-	@echo "Step 4/4: Running tests..."
+	@echo "Step 5/5: Running tests..."
 	@cargo test
 	@echo ""
 	@echo "=== ✓ All guidelines passed! ==="
