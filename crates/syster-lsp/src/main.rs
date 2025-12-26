@@ -60,6 +60,7 @@ impl LanguageServer for SysterLanguageServer {
                     trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
                     ..Default::default()
                 }),
+                folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
                 semantic_tokens_provider: Some(
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
@@ -249,6 +250,20 @@ impl LanguageServer for SysterLanguageServer {
 
         let server = self.server.lock().await;
         Ok(server.get_rename_edits(&uri, position, &new_name))
+    }
+
+    async fn folding_range(&self, params: FoldingRangeParams) -> Result<Option<Vec<FoldingRange>>> {
+        let uri = params.text_document.uri;
+
+        let server = self.server.lock().await;
+        let path = std::path::Path::new(uri.path());
+        let ranges = server.get_folding_ranges(path);
+
+        if ranges.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(ranges))
+        }
     }
 
     async fn shutdown(&self) -> Result<()> {

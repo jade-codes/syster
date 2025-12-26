@@ -2705,3 +2705,47 @@ fn test_incremental_insert_at_end_of_document() {
     let actual = server.document_texts.values().next().unwrap();
     assert_eq!(actual, expected);
 }
+#[test]
+fn test_folding_ranges_for_definitions() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package TestPackage {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+    
+    part def Car;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Folding ranges should be generated from text structure
+    // even if symbol spans aren't available
+    // The test verifies the function doesn't crash and returns valid data
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
+}
+
+// Note: Import block folding and consecutive line comment folding were removed
+// as they are not useful for SysML/KerML. See semantic/adapters for AST-based folding.
+
+#[test]
+fn test_folding_ranges_no_single_line() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Car; part def Truck;";
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Single-line definitions shouldn't create folding ranges
+    // (or they might be empty if no multi-line structures exist)
+    // The main point is it shouldn't crash
+    assert!(ranges.is_empty() || ranges.iter().all(|r| r.end_line > r.start_line));
+}

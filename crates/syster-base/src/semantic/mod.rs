@@ -11,6 +11,7 @@ pub mod symbol_table;
 pub mod types;
 pub mod workspace;
 
+pub use adapters::folding;
 pub use adapters::{SysmlAdapter, SysmlValidator, create_validator, populate_syntax_file};
 pub use analyzer::{AnalysisContext, NoOpValidator, RelationshipValidator, SemanticAnalyzer};
 pub use graphs::{DependencyGraph, RelationshipGraph};
@@ -20,9 +21,9 @@ pub use resolver::{
 };
 pub use symbol_table::SymbolTable;
 pub use types::{
-    DependencyEvent, Diagnostic, Location as DiagnosticLocation, Location, Position, Range,
-    SemanticError, SemanticErrorKind, SemanticResult, SemanticRole, Severity, SymbolTableEvent,
-    WorkspaceEvent,
+    DependencyEvent, Diagnostic, FoldableRange, FoldingKind, Location as DiagnosticLocation,
+    Location, Position, Range, SemanticError, SemanticErrorKind, SemanticResult, SemanticRole,
+    Severity, SymbolTableEvent, WorkspaceEvent,
 };
 pub use workspace::{ParsedFile, Workspace};
 
