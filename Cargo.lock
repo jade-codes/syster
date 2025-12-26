@@ -1171,6 +1171,7 @@ version = "0.1.0"
 dependencies = [
  "from-pest",
  "logos",
+ "once_cell",
  "pest",
  "pest-ast",
  "pest_derive",

@@ -22,9 +22,9 @@ pub fn format(source: &str, options: &FormatOptions) -> String {
 }
 
 /// Token with text and kind
-struct Token<'a> {
-    kind: SyntaxKind,
-    text: &'a str,
+pub(crate) struct Token<'a> {
+    pub kind: SyntaxKind,
+    pub text: &'a str,
 }
 
 /// Parse tokens into a CST (Concrete Syntax Tree)

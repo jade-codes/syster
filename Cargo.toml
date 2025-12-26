@@ -46,3 +46,32 @@ correctness = { level = "deny", priority = -1 }
 suspicious = { level = "deny", priority = -1 }
 complexity = { level = "deny", priority = -1 }
 perf = { level = "deny", priority = -1 }
+
+# ============================================================================
+# Build Optimization Profiles
+# ============================================================================
+
+# Dev profile: optimize for fast compile times
+[profile.dev]
+opt-level = 0
+debug = true
+incremental = true
+# More codegen units = faster compile, slower runtime (fine for dev)
+codegen-units = 256
+
+# Dev dependencies can be optimized (tests run faster)
+[profile.dev.package."*"]
+opt-level = 1
+
+# Test profile inherits from dev but can have overrides
+[profile.test]
+opt-level = 0
+debug = true
+incremental = true
+
+# Release profile: optimize for runtime performance
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
