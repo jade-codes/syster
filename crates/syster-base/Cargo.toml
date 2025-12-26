@@ -17,6 +17,8 @@ from-pest = "0.3"
 pest-ast = "0.3"
 rayon = "1.10"
 unicode-ident = "1.0"
+rowan = "0.16.1"
+logos = "0.16.0"
 
 [dev-dependencies]
 rstest = "0.23"
