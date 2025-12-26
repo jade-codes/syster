@@ -127,10 +127,10 @@ fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element
             Rule::occurrence_definition,
             Rule::calculation_definition,
         ] {
-            if let Ok(mut pairs) = SysMLParser::parse(rule, line) {
-                if let Ok(def) = Definition::from_pest(&mut pairs) {
-                    return Some(Element::Definition(def));
-                }
+            if let Ok(mut pairs) = SysMLParser::parse(rule, line)
+                && let Ok(def) = Definition::from_pest(&mut pairs)
+            {
+                return Some(Element::Definition(def));
             }
         }
     }
@@ -144,10 +144,10 @@ fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element
             Rule::port_usage,
             Rule::action_usage,
         ] {
-            if let Ok(mut pairs) = SysMLParser::parse(rule, line) {
-                if let Ok(usage) = Usage::from_pest(&mut pairs) {
-                    return Some(Element::Usage(usage));
-                }
+            if let Ok(mut pairs) = SysMLParser::parse(rule, line)
+                && let Ok(usage) = Usage::from_pest(&mut pairs)
+            {
+                return Some(Element::Usage(usage));
             }
         }
     }
