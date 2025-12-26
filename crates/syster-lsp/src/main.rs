@@ -54,7 +54,10 @@ impl LanguageServer for SysterLanguageServer {
                 definition_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 document_symbol_provider: Some(OneOf::Left(true)),
-                rename_provider: Some(OneOf::Left(true)),
+                rename_provider: Some(OneOf::Right(RenameOptions {
+                    prepare_provider: Some(true),
+                    work_done_progress_options: WorkDoneProgressOptions::default(),
+                })),
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
                     trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
@@ -250,6 +253,17 @@ impl LanguageServer for SysterLanguageServer {
 
         let server = self.server.lock().await;
         Ok(server.get_rename_edits(&uri, position, &new_name))
+    }
+
+    async fn prepare_rename(
+        &self,
+        params: TextDocumentPositionParams,
+    ) -> Result<Option<PrepareRenameResponse>> {
+        let uri = params.text_document.uri;
+        let position = params.position;
+
+        let server = self.server.lock().await;
+        Ok(server.prepare_rename(&uri, position))
     }
 
     async fn folding_range(&self, params: FoldingRangeParams) -> Result<Option<Vec<FoldingRange>>> {
