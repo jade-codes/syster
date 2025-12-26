@@ -1,8 +1,31 @@
 use super::LspServer;
 use std::collections::HashMap;
-use tower_lsp::lsp_types::{Position, Range, TextEdit, Url, WorkspaceEdit};
+use tower_lsp::lsp_types::{Position, PrepareRenameResponse, Range, TextEdit, Url, WorkspaceEdit};
 
 impl LspServer {
+    /// Prepare rename: validate that the symbol at the position can be renamed
+    /// Returns the range of the symbol and its current text, or None if rename is not valid
+    pub fn prepare_rename(&self, uri: &Url, position: Position) -> Option<PrepareRenameResponse> {
+        let path = uri.to_file_path().ok()?;
+        let (element_name, range) = self.find_symbol_at_position(&path, position)?;
+
+        // Look up the symbol to verify it exists and is renamable
+        let symbol = self
+            .workspace
+            .symbol_table()
+            .lookup_qualified(&element_name)
+            .or_else(|| self.workspace.symbol_table().lookup(&element_name))?;
+
+        // Get the simple name (last component) for display
+        let simple_name = symbol.name().to_string();
+
+        // Return the range where the rename will happen and the current text
+        Some(PrepareRenameResponse::RangeWithPlaceholder {
+            range,
+            placeholder: simple_name,
+        })
+    }
+
     /// Rename a symbol at the given position
     ///
     /// Finds all references to the symbol and generates a WorkspaceEdit

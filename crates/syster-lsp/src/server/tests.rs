@@ -1,7 +1,9 @@
 use super::LspServer;
 use syster::core::constants::REL_TYPING;
 use syster::semantic::symbol_table::Symbol;
-use tower_lsp::lsp_types::{DiagnosticSeverity, HoverContents, MarkedString, Position, Url};
+use tower_lsp::lsp_types::{
+    DiagnosticSeverity, HoverContents, MarkedString, Position, PrepareRenameResponse, Url,
+};
 
 #[test]
 fn test_server_creation() {
@@ -1810,6 +1812,98 @@ package Test {
         !bike_edited,
         "Must NOT edit 'Bike' definition when renaming 'Car'"
     );
+}
+
+#[test]
+fn test_prepare_rename_on_definition() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package TestPkg {
+    part def Vehicle;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    // Prepare rename on definition
+    let position = Position::new(2, 14); // On "Vehicle"
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should be able to rename symbol");
+    let response = result.unwrap();
+
+    match response {
+        PrepareRenameResponse::RangeWithPlaceholder { range, placeholder } => {
+            assert_eq!(placeholder, "Vehicle", "Placeholder should be symbol name");
+            assert_eq!(range.start.line, 2);
+        }
+        _ => panic!("Expected RangeWithPlaceholder response"),
+    }
+}
+
+#[test]
+fn test_prepare_rename_on_usage() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package TestPkg {
+    part def Car;
+    part myCar : Car;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    // Prepare rename on usage (the second "Car")
+    let position = Position::new(3, 18); // On "Car" in usage
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should be able to rename from usage");
+}
+
+#[test]
+fn test_prepare_rename_nonexistent_symbol() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package TestPkg {
+    part def Car;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    // Try to prepare rename on whitespace
+    let position = Position::new(0, 0); // Empty area
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_none(), "Should not be able to rename non-symbol");
+}
+
+#[test]
+fn test_prepare_rename_returns_correct_range() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def MyVeryLongPartName;"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let position = Position::new(0, 12); // In the middle of "MyVeryLongPartName"
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should find symbol");
+    let response = result.unwrap();
+
+    match response {
+        PrepareRenameResponse::RangeWithPlaceholder { range, placeholder } => {
+            assert_eq!(placeholder, "MyVeryLongPartName");
+            // Range should cover the entire symbol name
+            assert_eq!(range.start.character, 9); // Start of "MyVeryLongPartName"
+            assert_eq!(range.end.character, 27); // End of "MyVeryLongPartName"
+        }
+        _ => panic!("Expected RangeWithPlaceholder response"),
+    }
 }
 
 #[test]
