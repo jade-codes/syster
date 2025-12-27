@@ -5,10 +5,7 @@ use async_lsp::lsp_types::{
     InlayHint, InlayHintKind, InlayHintLabel, InlayHintParams, Position as LspPosition,
 };
 use syster::core::Position as BasePosition;
-use syster::semantic::adapters::inlay_hints::{
-    InlayHintKind as BaseInlayHintKind, extract_kerml_inlay_hints, extract_sysml_inlay_hints,
-};
-use syster::syntax::SyntaxFile;
+use syster::semantic::{InlayHintKind as BaseInlayHintKind, extract_inlay_hints};
 
 impl LspServer {
     /// Get inlay hints for a document
@@ -37,15 +34,12 @@ impl LspServer {
             },
         ));
 
-        // Extract hints using the appropriate adapter
-        let base_hints = match workspace_file.content() {
-            SyntaxFile::SysML(sysml_file) => {
-                extract_sysml_inlay_hints(sysml_file, self.workspace.symbol_table(), range)
-            }
-            SyntaxFile::KerML(kerml_file) => {
-                extract_kerml_inlay_hints(kerml_file, self.workspace.symbol_table(), range)
-            }
-        };
+        // Extract hints using the semantic layer
+        let base_hints = extract_inlay_hints(
+            workspace_file.content(),
+            self.workspace.symbol_table(),
+            range,
+        );
 
         // Convert base hints to LSP hints
         base_hints
