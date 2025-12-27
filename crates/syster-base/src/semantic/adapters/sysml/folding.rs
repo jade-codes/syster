@@ -24,27 +24,27 @@ pub fn extract_folding_ranges(file: &SysMLFile) -> Vec<FoldingSpan> {
     ranges
 }
 
+/// Try to push a folding span if present
+fn try_push(span: &Option<Span>, is_comment: bool, ranges: &mut Vec<FoldingSpan>) {
+    if let Some(span) = span {
+        ranges.push(FoldingSpan {
+            span: *span,
+            is_comment,
+        });
+    }
+}
+
 /// Recursively collect folding ranges from an element and its children
 fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
     match element {
         Element::Package(p) => {
-            if let Some(span) = &p.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
-            }
+            try_push(&p.span, false, ranges);
             for child in &p.elements {
                 collect_ranges(child, ranges);
             }
         }
         Element::Definition(d) => {
-            if let Some(span) = &d.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
-            }
+            try_push(&d.span, false, ranges);
             for member in &d.body {
                 match member {
                     DefinitionMember::Usage(u) => {
@@ -57,12 +57,7 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
             }
         }
         Element::Usage(u) => {
-            if let Some(span) = &u.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
-            }
+            try_push(&u.span, false, ranges);
             for member in &u.body {
                 match member {
                     UsageMember::Usage(u) => collect_ranges(&Element::Usage((**u).clone()), ranges),
@@ -70,14 +65,7 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
                 }
             }
         }
-        Element::Comment(c) => {
-            if let Some(span) = &c.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: true,
-                });
-            }
-        }
+        Element::Comment(c) => try_push(&c.span, true, ranges),
         Element::Import(_) | Element::Alias(_) => {}
     }
 }

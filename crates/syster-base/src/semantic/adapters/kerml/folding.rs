@@ -23,27 +23,27 @@ pub fn extract_folding_ranges(file: &KerMLFile) -> Vec<FoldingSpan> {
     ranges
 }
 
+/// Try to push a folding span if present
+fn try_push(span: &Option<Span>, is_comment: bool, ranges: &mut Vec<FoldingSpan>) {
+    if let Some(span) = span {
+        ranges.push(FoldingSpan {
+            span: *span,
+            is_comment,
+        });
+    }
+}
+
 /// Recursively collect folding ranges from an element and its children
 fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
     match element {
         Element::Package(p) => {
-            if let Some(span) = &p.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
-            }
+            try_push(&p.span, false, ranges);
             for child in &p.elements {
                 collect_ranges(child, ranges);
             }
         }
         Element::Classifier(c) => {
-            if let Some(span) = &c.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
-            }
+            try_push(&c.span, false, ranges);
             for member in &c.body {
                 match member {
                     ClassifierMember::Feature(f) => {
@@ -57,26 +57,14 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
             }
         }
         Element::Feature(f) => {
-            if let Some(span) = &f.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
-            }
+            try_push(&f.span, false, ranges);
             for member in &f.body {
                 if let FeatureMember::Comment(c) = member {
                     collect_ranges(&Element::Comment(c.clone()), ranges);
                 }
             }
         }
-        Element::Comment(c) => {
-            if let Some(span) = &c.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: true,
-                });
-            }
-        }
+        Element::Comment(c) => try_push(&c.span, true, ranges),
         Element::Import(_) | Element::Annotation(_) => {}
     }
 }
