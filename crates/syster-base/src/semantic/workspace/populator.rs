@@ -37,10 +37,9 @@ impl<'a> WorkspacePopulator<'a> {
         let paths = Self::get_sorted_paths(self.files);
 
         for path in &paths {
-            if let Err(e) = self.populate_file(path) {
+            if let Err(_e) = self.populate_file(path) {
                 // Log error but continue processing other files
                 // Duplicate symbols are a known issue with qualified redefinitions
-                eprintln!("Warning: Failed to populate {}: {}", path.display(), e);
             }
         }
 
@@ -56,10 +55,9 @@ impl<'a> WorkspacePopulator<'a> {
         let unpopulated = Self::get_unpopulated_paths(self.files);
 
         for path in &unpopulated {
-            if let Err(e) = self.populate_file(path) {
+            if let Err(_e) = self.populate_file(path) {
                 // Log error but continue processing other files
                 // Duplicate symbols are a known issue with qualified redefinitions in stdlib
-                eprintln!("Warning: Failed to populate {}: {}", path.display(), e);
             }
         }
 

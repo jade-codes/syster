@@ -1,6 +1,6 @@
 use super::LspServer;
+use async_lsp::lsp_types::{Position, Range};
 use std::path::PathBuf;
-use tower_lsp::lsp_types::{Position, Range};
 
 impl LspServer {
     /// Find the symbol and range at the given position by querying the AST

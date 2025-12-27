@@ -1,6 +1,6 @@
+use async_lsp::lsp_types::{Position, Range};
 use syster::semantic::symbol_table::Symbol;
 use syster::syntax::SyntaxFile;
-use tower_lsp::lsp_types::{Position, Range};
 
 /// Convert a character offset in a line to UTF-16 code units
 ///

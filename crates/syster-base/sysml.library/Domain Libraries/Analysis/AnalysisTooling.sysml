@@ -6,18 +6,19 @@ standard library package AnalysisTooling {
 	 */
 
 	private import ScalarValues::*;
-	
+
 	metadata def ToolExecution {
 		doc
 		/*
 		 * ToolExecution metadata identifies an external analysis tool to be
 		 * used to implement the annotated action.
 		 */
-	
+
 		attribute toolName : String;
 		attribute uri : String;
+
 	}
-	
+
 	metadata def ToolVariable {
 		doc
 		/*
@@ -27,8 +28,8 @@ standard library package AnalysisTooling {
 		 * variable in the tool that is to correspond to the annotated
 		 * feature.
 		 */
-	
+
 		attribute name : String;
 	}
-	
+
 }

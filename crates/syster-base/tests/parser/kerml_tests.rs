@@ -2885,15 +2885,9 @@ fn test_parse_scalar_values_stdlib_file() {
 }"#;
 
     let pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, content).unwrap();
-
-    println!("\n=== Parse Tree ===");
     for pair in pairs.clone() {
-        println!("Top-level Rule: {:?}", pair.as_rule());
         for inner in pair.into_inner() {
-            println!("  -> {:?}", inner.as_rule());
-            for inner2 in inner.into_inner() {
-                println!("    -> {:?}", inner2.as_rule());
-            }
+            for _inner2 in inner.into_inner() {}
         }
     }
 
@@ -2903,13 +2897,7 @@ fn test_parse_scalar_values_stdlib_file() {
 
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, content).unwrap();
     let file = KerMLFile::from_pest(&mut pairs).unwrap();
-
-    println!("\n=== KerMLFile ===");
-    println!("Namespace: {:?}", file.namespace);
-    println!("Elements count: {}", file.elements.len());
-    for (i, elem) in file.elements.iter().enumerate() {
-        println!("  Element {i}: {elem:?}");
-    }
+    for _elem in file.elements.iter() {}
 
     assert!(!file.elements.is_empty(), "File should have elements!");
 }

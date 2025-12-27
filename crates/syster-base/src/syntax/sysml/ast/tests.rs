@@ -882,3 +882,180 @@ fn test_case_kinds_all_map_to_use_case() {
     assert_eq!(SYSML_KIND_VERIFICATION_CASE, "UseCase");
     assert_eq!(SYSML_KIND_USE_CASE, "UseCase");
 }
+
+// ============================================================================
+// Parser tests (moved from parsers.rs)
+// ============================================================================
+
+#[test]
+fn test_metadata_def_with_attributes() {
+    use super::parsers::parse_definition;
+
+    let source = r#"metadata def ToolExecution {
+            attribute toolName : String;
+            attribute uri : String;
+        }"#;
+
+    let parsed = SysMLParser::parse(Rule::metadata_definition, source)
+        .expect("Should parse")
+        .next()
+        .expect("Should have pair");
+
+    let def = parse_definition(parsed).expect("Should convert to Definition");
+
+    assert_eq!(def.name, Some("ToolExecution".to_string()));
+    assert_eq!(
+        def.body.len(),
+        2,
+        "Definition should have 2 attribute members"
+    );
+
+    // Check first attribute
+    if let DefinitionMember::Usage(usage) = &def.body[0] {
+        assert_eq!(usage.name, Some("toolName".to_string()));
+        assert_eq!(usage.relationships.typed_by, Some("String".to_string()));
+        assert!(
+            usage.relationships.typed_by_span.is_some(),
+            "Should have span for type reference"
+        );
+    } else {
+        panic!("First member should be a Usage");
+    }
+
+    // Check second attribute
+    if let DefinitionMember::Usage(usage) = &def.body[1] {
+        assert_eq!(usage.name, Some("uri".to_string()));
+        assert_eq!(usage.relationships.typed_by, Some("String".to_string()));
+        assert!(
+            usage.relationships.typed_by_span.is_some(),
+            "Should have span for type reference"
+        );
+    } else {
+        panic!("Second member should be a Usage");
+    }
+}
+
+#[test]
+fn test_import_with_span() {
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let source = r#"package TestPkg {
+    private import ScalarValues::Real;
+    private import Quantities::*;
+}"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(source, &path).expect("Parse should succeed");
+
+    if let SyntaxFile::SysML(file) = syntax_file {
+        // Find the package
+        let pkg = file
+            .elements
+            .iter()
+            .find_map(|e| match e {
+                crate::syntax::sysml::ast::enums::Element::Package(p) => Some(p),
+                _ => None,
+            })
+            .expect("Should have package");
+
+        assert_eq!(pkg.name, Some("TestPkg".to_string()));
+
+        // Find imports
+        let imports: Vec<_> = pkg
+            .elements
+            .iter()
+            .filter_map(|e| match e {
+                crate::syntax::sysml::ast::enums::Element::Import(imp) => Some(imp),
+                _ => None,
+            })
+            .collect();
+
+        assert_eq!(imports.len(), 2, "Should have 2 imports");
+
+        // Check first import
+        assert_eq!(imports[0].path, "ScalarValues::Real");
+        assert!(
+            imports[0].span.is_some(),
+            "First import should have span for 'ScalarValues::Real'"
+        );
+        if let Some(span) = &imports[0].span {
+            // Span should point to "ScalarValues::Real" not the keywords
+            assert_eq!(span.start.line, 1);
+            assert!(
+                span.start.column >= 19,
+                "Should start after 'private import '"
+            );
+            assert!(span.end.column <= 37, "Should end at the path");
+        }
+
+        // Check second import
+        assert_eq!(imports[1].path, "Quantities::*");
+        assert!(
+            imports[1].span.is_some(),
+            "Second import should have span for 'Quantities::*'"
+        );
+        if let Some(span) = &imports[1].span {
+            // Span should point to "Quantities::*" not the keywords
+            assert_eq!(span.start.line, 2);
+            assert!(
+                span.start.column >= 19,
+                "Should start after 'private import '"
+            );
+        }
+    } else {
+        panic!("Expected SysML file");
+    }
+}
+
+#[test]
+fn test_attribute_usage_with_type_and_span() {
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let source = r#"attribute def SoundPressureLevelValue;
+attribute def SoundPressureLevelUnit;
+attribute def DimensionOneUnit;
+
+attribute soundPressureLevel: SoundPressureLevelValue[*] nonunique;
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(source, &path).expect("Parse should succeed");
+
+    if let SyntaxFile::SysML(file) = syntax_file {
+        // Find attribute usage (not definition)
+        let usage = file
+            .elements
+            .iter()
+            .find_map(|e| match e {
+                crate::syntax::sysml::ast::enums::Element::Usage(u)
+                    if u.name == Some("soundPressureLevel".to_string()) =>
+                {
+                    Some(u)
+                }
+                _ => None,
+            })
+            .expect("Should find soundPressureLevel attribute usage");
+
+        // Check it has a name span
+        assert!(
+            usage.span.is_some(),
+            "Attribute usage should have span for 'soundPressureLevel'"
+        );
+
+        // Check it has a type reference
+        assert_eq!(
+            usage.relationships.typed_by,
+            Some("SoundPressureLevelValue".to_string())
+        );
+        assert!(
+            usage.relationships.typed_by_span.is_some(),
+            "Should have span for type 'SoundPressureLevelValue'"
+        );
+    } else {
+        panic!("Expected SysML file");
+    }
+}

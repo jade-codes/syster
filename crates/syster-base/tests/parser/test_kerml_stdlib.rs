@@ -14,22 +14,10 @@ fn test_parse_scalar_values_file() {
 
     let path = Path::new("ScalarValues.kerml");
     let file = parse_content(content, path).expect("Should parse ScalarValues.kerml successfully");
-
-    println!("Namespace: {:?}", file.namespace);
-    println!("Elements count: {}", file.elements.len());
-    for (i, elem) in file.elements.iter().enumerate() {
-        println!("  Element {i}: {elem:?}");
-
+    for elem in file.elements.iter() {
         // Check if it's a package with body elements
         if let syster::syntax::kerml::ast::Element::Package(pkg) = elem {
-            println!(
-                "    Package '{}' has {} body elements",
-                pkg.name.as_ref().unwrap_or(&"unnamed".to_string()),
-                pkg.elements.len()
-            );
-            for (j, body_elem) in pkg.elements.iter().enumerate() {
-                println!("      Body element {j}: {body_elem:?}");
-            }
+            for _body_elem in pkg.elements.iter() {}
         }
     }
 

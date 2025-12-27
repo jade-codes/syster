@@ -1,6 +1,6 @@
 use super::LspServer;
 use super::helpers::format_rich_hover;
-use tower_lsp::lsp_types::{Hover, HoverContents, MarkedString, Position, Url};
+use async_lsp::lsp_types::{Hover, HoverContents, MarkedString, Position, Url};
 
 impl LspServer {
     /// Get hover information for a symbol at the given position

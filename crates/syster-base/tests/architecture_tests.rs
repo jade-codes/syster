@@ -114,9 +114,6 @@ fn test_no_layer_depends_on_cli() {
 /// Helper test to show current architecture state
 #[test]
 fn test_show_architecture_violations_summary() {
-    println!("\n📊 Architecture Layer Dependency Analysis\n");
-    println!("==========================================\n");
-
     let layers = vec![
         ("core", vec![], "src/core"),
         ("parser", vec!["core"], "src/parser"),
@@ -135,19 +132,9 @@ fn test_show_architecture_violations_summary() {
         let violations = collect_layer_violations(Path::new(path), &allowed, layer_name);
 
         if violations.is_empty() {
-            println!("✅ {layer_name}: No violations");
         } else {
-            println!("❌ {}: {} violation(s)", layer_name, violations.len());
             total_violations += violations.len();
         }
-    }
-
-    println!("\n==========================================");
-    println!("Total violations: {total_violations}");
-
-    if total_violations > 0 {
-        println!("\nRun individual tests with --ignored to see details:");
-        println!("  cargo test --test architecture_tests -- --ignored --nocapture");
     }
 
     assert_eq!(

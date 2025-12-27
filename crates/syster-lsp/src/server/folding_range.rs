@@ -3,10 +3,10 @@
 //! This module builds LSP FoldingRange types directly from the semantic adapters.
 
 use super::LspServer;
+use async_lsp::lsp_types::{FoldingRange, FoldingRangeKind};
 use std::path::Path;
 use syster::semantic::folding::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
 use syster::syntax::SyntaxFile;
-use tower_lsp::lsp_types::{FoldingRange, FoldingRangeKind};
 
 impl LspServer {
     /// Get all foldable regions in a document using the parsed AST

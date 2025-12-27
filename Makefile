@@ -54,29 +54,46 @@ lint:
 check: fmt-check lint test
 
 # Run complete validation pipeline (format, lint, build, test)
+# Optimized: clippy already builds, so we skip separate build step
 run-guidelines:
 	@echo "=== Running Complete Validation Pipeline ==="
 	@echo ""
-	@echo "Step 1/5: Cleaning build artifacts..."
-	@cargo clean
-	@echo "✓ Clean complete"
-	@echo ""
-	@echo "Step 2/5: Formatting code..."
+	@echo "Step 1/3: Formatting code..."
 	@cargo fmt
 	@echo "✓ Code formatted"
 	@echo ""
-	@echo "Step 3/5: Running linter..."
+	@echo "Step 2/3: Running linter (includes build)..."
 	@cargo clippy --all-targets --all-features -- -D warnings
 	@echo "✓ Linting passed"
 	@echo ""
-	@echo "Step 4/5: Building project..."
-	@cargo build
-	@echo "✓ Build successful"
-	@echo ""
-	@echo "Step 5/5: Running tests..."
-	@cargo test
+	@echo "Step 3/3: Running tests..."
+	@cargo test --lib -- --test-threads=4
+	@cargo test --test '*' -- --test-threads=4
+	@cargo test --doc
 	@echo ""
 	@echo "=== ✓ All guidelines passed! ==="
+
+# Fast check - just clippy + lib tests (skip integration/doc tests)
+run-guidelines-fast:
+	@echo "=== Fast Validation ==="
+	@cargo fmt
+	@cargo clippy --all-targets -- -D warnings
+	@cargo test --lib -- --test-threads=4
+	@echo "=== ✓ Fast check passed! ==="
+
+# Super fast - clippy + unit tests only (skip slow stdlib tests)
+run-guidelines-quick:
+	@echo "=== Quick Validation (skipping stdlib tests) ==="
+	@cargo fmt
+	@cargo clippy --all-targets -- -D warnings
+	@cargo test --lib -- --test-threads=4 --skip stdlib
+	@echo "=== ✓ Quick check passed! ==="
+
+# Full clean validation (use when you need a fresh build)
+run-guidelines-clean:
+	@echo "=== Running Complete Validation Pipeline (Clean) ==="
+	@cargo clean
+	@$(MAKE) run-guidelines
 
 # Watch for changes and rebuild
 watch:

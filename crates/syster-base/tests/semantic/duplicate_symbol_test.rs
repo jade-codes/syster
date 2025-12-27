@@ -44,16 +44,7 @@ fn test_duplicate_symbols_in_different_scopes_allowed() {
 
     // Both symbols should exist with their qualified names
     let symbols = workspace.symbol_table().all_symbols();
-
-    println!("Total symbols: {}", symbols.len());
-    for (key, sym) in symbols.iter().take(10) {
-        println!(
-            "  - key='{}', name='{}', qualified='{}'",
-            key,
-            sym.name(),
-            sym.qualified_name()
-        );
-    }
+    for (_key, _sym) in symbols.iter().take(10) {}
 
     // Check by qualified name in the symbol itself (not the key)
     let outer_req = symbols.iter().find(|(_, sym)| {

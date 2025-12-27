@@ -1,14 +1,14 @@
 //! Inlay hint support for the LSP server
 
 use super::LspServer;
+use async_lsp::lsp_types::{
+    InlayHint, InlayHintKind, InlayHintLabel, InlayHintParams, Position as LspPosition,
+};
 use syster::core::Position as BasePosition;
 use syster::semantic::adapters::inlay_hints::{
     InlayHintKind as BaseInlayHintKind, extract_kerml_inlay_hints, extract_sysml_inlay_hints,
 };
 use syster::syntax::SyntaxFile;
-use tower_lsp::lsp_types::{
-    InlayHint, InlayHintKind, InlayHintLabel, InlayHintParams, Position as LspPosition,
-};
 
 impl LspServer {
     /// Get inlay hints for a document

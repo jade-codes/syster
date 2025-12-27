@@ -895,9 +895,6 @@ fn test_parse_cases_sysml_fragment() {
                 }
         }"#;
 
-    println!("Input length: {}", input.len());
-    println!("Input:\n{input}");
-
     let result = SysMLParser::parse(Rule::case_definition, input);
     assert!(
         result.is_ok(),
@@ -944,8 +941,6 @@ fn test_parse_objective_member_in_case_body() {
     let input = r#"objective obj : RequirementCheck[1] {
         subject subj default Case::result;
     }"#;
-
-    println!("Testing objective_member...");
     let result = SysMLParser::parse(Rule::objective_member, input);
     assert!(
         result.is_ok(),
@@ -962,8 +957,6 @@ fn test_parse_case_body_with_objective() {
         subject subj default Case::result;
     }
 }"#;
-
-    println!("Testing case_body...");
     let result = SysMLParser::parse(Rule::case_body, input);
     assert!(
         result.is_ok(),
@@ -978,8 +971,6 @@ fn test_parse_objective_as_case_body_item() {
     let input = r#"objective obj : RequirementCheck[1] {
         subject subj default Case::result;
     }"#;
-
-    println!("Testing case_body_item...");
     let result = SysMLParser::parse(Rule::case_body_item, input);
     assert!(
         result.is_ok(),
@@ -992,8 +983,6 @@ fn test_parse_objective_as_case_body_item() {
 fn test_parse_minimal_case_body() {
     // Minimal test - no whitespace issues
     let input = "{objective obj{subject subj;}}";
-
-    println!("Testing minimal case_body: {input}");
     let result = SysMLParser::parse(Rule::case_body, input);
     assert!(
         result.is_ok(),
@@ -5950,11 +5939,6 @@ fn test_parse_abstract_attribute_def() {
     let Element::Definition(def) = member else {
         panic!("Expected Definition member, got {member:?}");
     };
-
-    eprintln!(
-        "Parsed definition: name={:?}, kind={:?}, is_abstract={}",
-        def.name, def.kind, def.is_abstract
-    );
     assert_eq!(
         def.kind,
         DefinitionKind::Attribute,

@@ -1,0 +1,36 @@
+# Cargo build configuration for faster builds
+# See: https://doc.rust-lang.org/cargo/reference/config.html
+
+[build]
+# Use all available CPU cores
+jobs = -1
+
+# Incremental compilation (default for dev, explicit here)
+incremental = true
+
+# Use sparse registry protocol (faster crate downloads)
+[registries.crates-io]
+protocol = "sparse"
+
+[target.x86_64-unknown-linux-gnu]
+# Use mold linker if available (much faster than default ld)
+# Install with: sudo apt install mold
+# linker = "clang"
+# rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# Alternative: use lld (faster than ld, widely available)
+# rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[env]
+# Faster regex compilation in dev
+REGEX_DISABLE_OPTIMIZATION = "1"
+
+[alias]
+# Quick test alias - lib tests only with parallel threads
+t = "test --lib -- --test-threads=4"
+# Quick check alias  
+c = "check --all-targets"
+# Quick clippy alias
+cl = "clippy --all-targets"
+# Fast guidelines check
+fg = ["fmt", "clippy --all-targets -- -D warnings", "test --lib -- --test-threads=4"]
