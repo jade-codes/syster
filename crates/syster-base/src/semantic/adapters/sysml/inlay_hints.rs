@@ -67,11 +67,9 @@ fn collect_usage_hints(
     hints: &mut Vec<InlayHint>,
 ) {
     // Check if usage is in the requested range
-    if let Some((start, end)) = range {
-        if let Some(span) = &usage.span {
-            if span.start < start || span.end > end {
-                return;
-            }
+    if let Some(((start, end), span)) = range.zip(usage.span.as_ref()) {
+        if span.start < start || span.end > end {
+            return;
         }
     }
 
@@ -91,25 +89,23 @@ fn collect_usage_hints(
                     _ => None,
                 };
 
-                if let Some(type_name) = type_name {
-                    if let Some(span) = &usage.span {
-                        // Position hint after the name
-                        let hint_pos = Position {
-                            line: span.start.line,
-                            column: span.start.column + name.len(),
-                        };
+                if let (Some(type_name), Some(span)) = (type_name, &usage.span) {
+                    // Position hint after the name
+                    let hint_pos = Position {
+                        line: span.start.line,
+                        column: span.start.column + name.len(),
+                    };
 
-                        hints.push(InlayHint {
-                            position: hint_pos,
-                            label: format!(
-                                ":
+                    hints.push(InlayHint {
+                        position: hint_pos,
+                        label: format!(
+                            ":
  {type_name}"
-                            ),
-                            kind: InlayHintKind::Type,
-                            padding_left: false,
-                            padding_right: true,
-                        });
-                    }
+                        ),
+                        kind: InlayHintKind::Type,
+                        padding_left: false,
+                        padding_right: true,
+                    });
                 }
             }
         }

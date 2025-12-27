@@ -48,11 +48,9 @@ fn collect_feature_hints(
     hints: &mut Vec<InlayHint>,
 ) {
     // Check if feature is in the requested range
-    if let Some((start, end)) = range {
-        if let Some(span) = &feature.span {
-            if span.start < start || span.end > end {
-                return;
-            }
+    if let Some(((start, end), span)) = range.zip(feature.span.as_ref()) {
+        if span.start < start || span.end > end {
+            return;
         }
     }
 
@@ -74,22 +72,20 @@ fn collect_feature_hints(
                     _ => None,
                 };
 
-                if let Some(type_name) = type_name {
-                    if let Some(span) = &feature.span {
-                        // Position hint after the name
-                        let hint_pos = Position {
-                            line: span.start.line,
-                            column: span.start.column + name.len(),
-                        };
+                if let (Some(type_name), Some(span)) = (type_name, &feature.span) {
+                    // Position hint after the name
+                    let hint_pos = Position {
+                        line: span.start.line,
+                        column: span.start.column + name.len(),
+                    };
 
-                        hints.push(InlayHint {
-                            position: hint_pos,
-                            label: format!(": {type_name}"),
-                            kind: InlayHintKind::Type,
-                            padding_left: false,
-                            padding_right: true,
-                        });
-                    }
+                    hints.push(InlayHint {
+                        position: hint_pos,
+                        label: format!(":  {type_name}"),
+                        kind: InlayHintKind::Type,
+                        padding_left: false,
+                        padding_right: true,
+                    });
                 }
             }
         }
