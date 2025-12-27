@@ -112,26 +112,22 @@ fn test_hover_on_cross_file_symbol() {
         .expect("Should load stdlib");
 
     // Debug: Check how many KerML vs SysML files
-    let mut kerml_count = 0;
-    let mut sysml_count = 0;
+    let mut _kerml_count = 0;
+    let mut _sysml_count = 0;
     for path in server.workspace().files().keys() {
         if path.extension().and_then(|e| e.to_str()) == Some("kerml") {
-            kerml_count += 1;
+            _kerml_count += 1;
         } else if path.extension().and_then(|e| e.to_str()) == Some("sysml") {
-            sysml_count += 1;
+            _sysml_count += 1;
         }
     }
 
     // Check if ScalarValues.kerml is loaded
-    let scalar_values_path = server
+    let _scalar_values_path = server
         .workspace()
         .files()
         .keys()
         .find(|p| p.to_string_lossy().contains("ScalarValues.kerml"));
-
-    if let Some(path) = scalar_values_path {
-    } else {
-    }
 
     // Find TradeStudies.sysml file
     let trade_studies_path = server
@@ -181,7 +177,7 @@ fn test_hover_on_cross_file_symbol() {
         }
     } else {
         // Debug: Check if ScalarValue exists in symbol table
-        let scalar_value_symbols: Vec<_> = server
+        let _scalar_value_symbols: Vec<_> = server
             .workspace()
             .symbol_table()
             .all_symbols()
@@ -228,7 +224,7 @@ fn test_stdlib_symbols_present() {
         .take(20)
         .collect();
 
-    for (_key, symbol) in packages {}
+    for (_key, _symbol) in packages {}
 
     // Show symbols containing "Case" to debug why Case isn't found
     let case_symbols: Vec<_> = all_symbols
@@ -237,16 +233,13 @@ fn test_stdlib_symbols_present() {
         .take(10)
         .collect();
 
-    for (key, symbol) in case_symbols {}
+    for (_key, _symbol) in case_symbols {}
 
     // Try finding some basic symbols that should be in SysML stdlib
     let test_symbols = vec!["Part", "Attribute", "Item"];
 
     for simple_name in test_symbols {
-        let found = all_symbols.iter().any(|(_, s)| s.name() == simple_name);
-        if found {
-        } else {
-        }
+        let _found = all_symbols.iter().any(|(_, s)| s.name() == simple_name);
     }
 }
 
@@ -307,15 +300,9 @@ fn test_symbol_resolution_after_population() {
     let resolver = server.resolver();
     let test_count = all_symbols.len().min(10);
 
-    for (qualified_name, symbol) in all_symbols.iter().take(test_count) {
+    for (_qualified_name, symbol) in all_symbols.iter().take(test_count) {
         let simple_name = symbol.name();
-        let resolved = resolver.resolve(simple_name);
-
-        // Note: Simple name resolution might not find all symbols if there are duplicates
-        // or if they're in nested scopes, but it should work for top-level symbols
-        if resolved.is_none() {
-        } else {
-        }
+        let _resolved = resolver.resolve(simple_name);
     }
 }
 
@@ -352,7 +339,7 @@ package AnotherPackage {
         .iter()
         .filter(|(key, _)| key.contains("My"))
         .collect();
-    for (key, symbol) in our_symbols {}
+    for (_key, _symbol) in our_symbols {}
 
     // Now try to resolve symbols
     let resolver = server.resolver();
@@ -366,7 +353,7 @@ package AnotherPackage {
     }
 
     // Should also find MyPort
-    let my_port = resolver.resolve("MyPort");
+    let _my_port = resolver.resolve("MyPort");
     // assert!(my_port.is_some(), "Should find MyPort symbol");
 
     // Resolver doesn't work - it only searches current scope

@@ -25,7 +25,7 @@ fn test_stdlib_calculation_symbol_loads() {
         workspace.symbol_table().all_symbols().len()
     );
 
-    let (key, sym) = calculation.unwrap();
+    let (_key, _sym) = calculation.unwrap();
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn test_stdlib_case_symbol_loads() {
         workspace.symbol_table().all_symbols().len()
     );
 
-    let (key, sym) = case.unwrap();
+    let (_key, _sym) = case.unwrap();
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn test_stdlib_symbol_count() {
     );
 
     // Print first 20 symbols for debugging
-    for (i, (key, sym)) in workspace.symbol_table().all_symbols().iter().enumerate() {
+    for (i, (_key, _sym)) in workspace.symbol_table().all_symbols().iter().enumerate() {
         if i >= 20 {
             break;
         }

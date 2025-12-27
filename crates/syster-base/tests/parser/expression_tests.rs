@@ -579,14 +579,14 @@ fn test_calculation_body_part_simple_expression() {
 fn test_action_body_item_identifier() {
     // This should fail or match as a usage
     let input = "a";
-    let result = SysMLParser::parse(Rule::action_body_item, input);
+    let _result = SysMLParser::parse(Rule::action_body_item, input);
 }
 
 #[test]
 fn test_calculation_body_item_identifier() {
     // This should fail or match as a usage
     let input = "a";
-    let result = SysMLParser::parse(Rule::calculation_body_item, input);
+    let _result = SysMLParser::parse(Rule::calculation_body_item, input);
 }
 
 #[test]

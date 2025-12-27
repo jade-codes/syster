@@ -14,10 +14,10 @@ fn test_parse_scalar_values_file() {
 
     let path = Path::new("ScalarValues.kerml");
     let file = parse_content(content, path).expect("Should parse ScalarValues.kerml successfully");
-    for (i, elem) in file.elements.iter().enumerate() {
+    for elem in file.elements.iter() {
         // Check if it's a package with body elements
         if let syster::syntax::kerml::ast::Element::Package(pkg) = elem {
-            for (j, body_elem) in pkg.elements.iter().enumerate() {}
+            for _body_elem in pkg.elements.iter() {}
         }
     }
 

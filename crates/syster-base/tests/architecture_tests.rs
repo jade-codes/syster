@@ -137,8 +137,6 @@ fn test_show_architecture_violations_summary() {
         }
     }
 
-    if total_violations > 0 {}
-
     assert_eq!(
         total_violations, 0,
         "Found {total_violations} architecture violations. Run with --nocapture to see details."

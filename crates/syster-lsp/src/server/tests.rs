@@ -623,7 +623,7 @@ fn test_find_references_nested_elements() {
         .workspace()
         .files()
         .get(&std::path::PathBuf::from("/test.sysml"));
-    if let Some(wf) = file {}
+    if let Some(_wf) = file {}
 
     // Find references to "Wheel" (line 1)
     let locations = server.get_references(
@@ -639,17 +639,17 @@ fn test_find_references_nested_elements() {
     let locations = locations.unwrap();
 
     // Debug: print what we found
-    for loc in &locations {}
+    for _loc in &locations {}
 
     // Debug: check the symbol
-    let symbol = server.workspace().symbol_table().lookup("Auto::Wheel");
+    let _symbol = server.workspace().symbol_table().lookup("Auto::Wheel");
 
     // Debug: check all symbols
-    for (key, sym) in server.workspace().symbol_table().all_symbols() {}
+    for (_key, _sym) in server.workspace().symbol_table().all_symbols() {}
 
     // Debug: check relationship graph
     for (key, _) in server.workspace().symbol_table().all_symbols() {
-        if let Some(target) = server
+        if let Some(_target) = server
             .workspace()
             .relationship_graph()
             .get_one_to_one(REL_TYPING, key)
@@ -820,13 +820,13 @@ package Outer {
     server.open_document(&uri, text).unwrap();
 
     // Debug: print all symbols and their references
-    for (name, symbol) in server.workspace.symbol_table().all_symbols() {
-        for r in symbol.references() {}
+    for (_name, symbol) in server.workspace.symbol_table().all_symbols() {
+        for _r in symbol.references() {}
     }
 
     // Debug: check relationship graph
     for (name, _) in server.workspace.symbol_table().all_symbols() {
-        if let Some((target, span)) = server
+        if let Some((_target, _span)) = server
             .workspace
             .relationship_graph()
             .get_one_to_one_with_span("typing", name)
@@ -1892,8 +1892,8 @@ fn test_cross_file_reference_resolution_basic() {
     server.open_document(&file2_uri, file2_text).unwrap();
 
     let all_syms = server.workspace().symbol_table().all_symbols();
-    for (name, sym) in all_syms.iter() {
-        let qualified = sym.qualified_name();
+    for (_name, sym) in all_syms.iter() {
+        let _qualified = sym.qualified_name();
     }
 
     // Check if BaseUnit is in the symbol table
@@ -1949,14 +1949,14 @@ fn test_cross_file_stdlib_reference_resolution() {
     server.ensure_workspace_loaded().unwrap();
 
     // Check if MeasurementReferences file is loaded
-    let has_measurement_refs = server
+    let _has_measurement_refs = server
         .workspace()
         .files()
         .keys()
         .any(|p| p.to_string_lossy().contains("MeasurementReferences"));
 
     // Check what symbols ARE in the symbol table from stdlib
-    for (i, (name, symbol)) in server
+    for (_i, (_name, symbol)) in server
         .workspace()
         .symbol_table()
         .all_symbols()
@@ -1964,7 +1964,7 @@ fn test_cross_file_stdlib_reference_resolution() {
         .enumerate()
         .take(10)
     {
-        let symbol_type = match symbol {
+        let _symbol_type = match symbol {
             Symbol::Package { .. } => "Package",
             Symbol::Classifier { .. } => "Classifier",
             Symbol::Feature { .. } => "Feature",
@@ -1976,7 +1976,7 @@ fn test_cross_file_stdlib_reference_resolution() {
 
     // Check specifically for attribute definitions
     let mut attr_count = 0;
-    for (name, symbol) in server.workspace().symbol_table().all_symbols() {
+    for (_name, symbol) in server.workspace().symbol_table().all_symbols() {
         if let Symbol::Definition { kind, .. } = symbol
             && kind == "Attribute"
         {
@@ -1999,10 +1999,11 @@ fn test_cross_file_stdlib_reference_resolution() {
     server.open_document(&uri, text).unwrap();
 
     // Check if DimensionOneUnit is in symbol table
-    if let Some(symbol) = server
+    if server
         .workspace()
         .symbol_table()
         .lookup_qualified("MeasurementReferences::DimensionOneUnit")
+        .is_some()
     {
     } else {
         for (name, _) in server.workspace().symbol_table().all_symbols() {
@@ -2046,10 +2047,10 @@ fn test_stdlib_files_actually_load() {
 
     let mut server = LspServer::with_config(true, Some(stdlib_path.clone()));
 
-    let load_result = server.ensure_workspace_loaded();
+    let _load_result = server.ensure_workspace_loaded();
 
     // Print some file paths
-    for (i, path) in server.workspace().files().keys().enumerate().take(5) {}
+    for (_i, _path) in server.workspace().files().keys().enumerate().take(5) {}
 
     assert!(
         server.workspace().file_count() > 0,
@@ -2079,7 +2080,7 @@ fn test_measurement_references_file_directly() {
     let parse_result = syster::project::file_loader::parse_with_result(&content, &file_path);
 
     if parse_result.content.is_none() {
-        for (i, err) in parse_result.errors.iter().enumerate().take(5) {}
+        for (_i, _err) in parse_result.errors.iter().enumerate().take(5) {}
         panic!("Failed to parse MeasurementReferences.sysml");
     }
 
@@ -2096,8 +2097,8 @@ fn test_measurement_references_file_directly() {
         syster::syntax::SyntaxFile::SysML(sysml_file),
     );
     let _ = workspace.populate_all();
-    for (name, symbol) in workspace.symbol_table().all_symbols() {
-        let sym_type = match symbol {
+    for (_name, symbol) in workspace.symbol_table().all_symbols() {
+        let _sym_type = match symbol {
             Symbol::Package { .. } => "Package",
             Symbol::Definition { kind, .. } => kind.as_str(),
             Symbol::Usage { kind, .. } => kind.as_str(),
@@ -2114,7 +2115,7 @@ fn test_measurement_references_file_directly() {
         .filter(|(_, sym)| matches!(sym, Symbol::Definition { kind, .. } if kind == "Attribute"))
         .map(|(name, _)| name)
         .collect();
-    for name in attr_defs.iter().take(10) {}
+    for _name in attr_defs.iter().take(10) {}
 
     assert!(!attr_defs.is_empty(), "Should have attribute definitions");
 
@@ -2139,7 +2140,7 @@ fn test_dimension_one_unit_cross_file_resolution() {
     let _populate_result = workspace.populate_all(); // Ignore errors, we want to test what DID load
 
     // Sample some package names from stdlib
-    let package_names: Vec<_> = workspace
+    let _package_names: Vec<_> = workspace
         .symbol_table()
         .all_symbols()
         .iter()
@@ -2154,7 +2155,7 @@ fn test_dimension_one_unit_cross_file_resolution() {
         .collect();
 
     // Check what symbols we actually have
-    let measurement_refs_syms: Vec<_> = workspace
+    let _measurement_refs_syms: Vec<_> = workspace
         .symbol_table()
         .all_symbols()
         .iter()
@@ -2163,7 +2164,7 @@ fn test_dimension_one_unit_cross_file_resolution() {
         .collect();
 
     // Check if MeasurementReferences.sysml file is in workspace
-    let has_measurement_file = workspace
+    let _has_measurement_file = workspace
         .files()
         .keys()
         .any(|path| path.to_string_lossy().contains("MeasurementReferences"));
@@ -2174,7 +2175,7 @@ fn test_dimension_one_unit_cross_file_resolution() {
         .iter()
         .find(|(p, _)| p.to_string_lossy().contains("MeasurementReferences"))
     {
-        let (file_type, elem_count) = match file.content() {
+        let (_file_type, _elem_count) = match file.content() {
             syster::syntax::SyntaxFile::SysML(sysml) => ("SysML", sysml.elements.len()),
             syster::syntax::SyntaxFile::KerML(kerml) => ("KerML", kerml.elements.len()),
         };

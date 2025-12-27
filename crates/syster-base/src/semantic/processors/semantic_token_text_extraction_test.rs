@@ -96,8 +96,6 @@ fn test_kerml_classifiers() {
     class MyClass;
     feature myFeature;
 }"#;
-    for (i, line) in source.lines().enumerate() {}
-
     let path = PathBuf::from("test.kerml");
     let syntax_file = parse_content(source, &path).expect("Parse should succeed");
 
@@ -107,22 +105,9 @@ fn test_kerml_classifiers() {
 
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
-    for (name, symbol) in symbol_table.all_symbols() {
-        if let Some(span) = symbol.span() {
-        } else {
-        }
-    }
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.kerml");
     let lines: Vec<&str> = source.lines().collect();
-    for (i, token) in tokens.iter().enumerate() {
-        let line_text = lines.get(token.line as usize).unwrap_or(&"");
-        let text: String = line_text
-            .chars()
-            .skip(token.column as usize)
-            .take(token.length as usize)
-            .collect();
-    }
 
     // Should have tokens for package and classifiers (features may not be in symbol table yet)
     assert!(
@@ -168,8 +153,6 @@ fn test_attribute_definitions_and_usages() {
     
     part myVehicle : Vehicle;
 }"#;
-    for (i, line) in source.lines().enumerate() {}
-
     let syntax_file = parse_sysml(source);
     let mut symbol_table = SymbolTable::new();
     let mut relationship_graph = RelationshipGraph::new();
@@ -177,22 +160,9 @@ fn test_attribute_definitions_and_usages() {
 
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
-    for (name, symbol) in symbol_table.all_symbols() {
-        if let Some(span) = symbol.span() {
-        } else {
-        }
-    }
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
     let lines: Vec<&str> = source.lines().collect();
-    for (i, token) in tokens.iter().enumerate() {
-        let line_text = lines.get(token.line as usize).unwrap_or(&"");
-        let text: String = line_text
-            .chars()
-            .skip(token.column as usize)
-            .take(token.length as usize)
-            .collect();
-    }
 
     // We should have tokens for: TestPackage, Vehicle (def), mass (attribute usage), myVehicle (part usage)
     assert!(
@@ -226,8 +196,6 @@ fn test_semantic_token_text_extraction() {
     attribute def ScalarQuantityValue;
     part vehicle: Vehicle;
 }"#;
-    for (i, line) in source.lines().enumerate() {}
-
     // Parse the file
     let syntax_file = parse_sysml(source);
 
@@ -242,11 +210,6 @@ fn test_semantic_token_text_extraction() {
         populate_result.is_ok(),
         "Symbol population failed: {populate_result:?}"
     );
-    for (name, symbol) in symbol_table.all_symbols() {
-        if let Some(span) = symbol.span() {
-        } else {
-        }
-    }
 
     // Collect semantic tokens
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");

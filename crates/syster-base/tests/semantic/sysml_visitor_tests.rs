@@ -360,7 +360,7 @@ fn test_simple_redefinition_creates_no_new_symbol() {
         .iter()
         .filter(|(name, _)| *name == "radius")
         .collect();
-    for (name, symbol) in &radius_symbols {}
+    for (_name, _symbol) in &radius_symbols {}
 
     assert!(
         result.is_ok(),
@@ -467,7 +467,7 @@ fn test_debug_symbol_table_contents() {
     let mut graph = RelationshipGraph::new();
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-    for (qname, symbol) in symbol_table.all_symbols() {}
+    for (_qname, _symbol) in symbol_table.all_symbols() {}
 }
 
 #[test]

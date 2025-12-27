@@ -2887,7 +2887,7 @@ fn test_parse_scalar_values_stdlib_file() {
     let pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, content).unwrap();
     for pair in pairs.clone() {
         for inner in pair.into_inner() {
-            for inner2 in inner.into_inner() {}
+            for _inner2 in inner.into_inner() {}
         }
     }
 
@@ -2897,7 +2897,7 @@ fn test_parse_scalar_values_stdlib_file() {
 
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, content).unwrap();
     let file = KerMLFile::from_pest(&mut pairs).unwrap();
-    for (i, elem) in file.elements.iter().enumerate() {}
+    for _elem in file.elements.iter() {}
 
     assert!(!file.elements.is_empty(), "File should have elements!");
 }

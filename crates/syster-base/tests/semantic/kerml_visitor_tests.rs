@@ -265,13 +265,13 @@ fn test_kerml_visitor_handles_multiple_packages() {
     "#;
     let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
     let file = KerMLFile::from_pest(&mut pairs).unwrap();
-    for (i, e) in file.elements.iter().enumerate() {}
+    for _e in file.elements.iter() {}
 
     let mut symbol_table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-    for (name, _) in symbol_table.all_symbols() {}
+    for (_name, _) in symbol_table.all_symbols() {}
 
     assert!(symbol_table.lookup("Package1").is_some());
     assert!(symbol_table.lookup("Package2").is_some());

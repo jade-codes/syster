@@ -292,7 +292,7 @@ attribute soundPressureLevel: SoundPressureLevelValue[*] nonunique;
                 usage.span.is_some(),
                 "Attribute usage should have span for 'soundPressureLevel'"
             );
-            if let Some(span) = &usage.span {}
+            if let Some(_span) = &usage.span {}
 
             // Check it has a type reference
             assert_eq!(
@@ -303,7 +303,7 @@ attribute soundPressureLevel: SoundPressureLevelValue[*] nonunique;
                 usage.relationships.typed_by_span.is_some(),
                 "Should have span for type 'SoundPressureLevelValue'"
             );
-            if let Some(span) = &usage.relationships.typed_by_span {}
+            if let Some(_span) = &usage.relationships.typed_by_span {}
         } else {
             panic!("Expected SysML file");
         }
