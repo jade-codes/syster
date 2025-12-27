@@ -10,7 +10,6 @@ use async_lsp::tracing::TracingLayer;
 use async_lsp::{ClientSocket, LanguageClient, LanguageServer, ResponseError};
 use futures::future::BoxFuture;
 use serde_json::Value;
-use tokio_util::sync::CancellationToken;
 use tower::ServiceBuilder;
 use tracing::{Level, info};
 
@@ -70,13 +69,18 @@ impl LanguageServer for ServerState {
                     definition_provider: Some(OneOf::Left(true)),
                     references_provider: Some(OneOf::Left(true)),
                     document_symbol_provider: Some(OneOf::Left(true)),
-                    rename_provider: Some(OneOf::Left(true)),
+                    rename_provider: Some(OneOf::Right(RenameOptions {
+                        prepare_provider: Some(true),
+                        work_done_progress_options: WorkDoneProgressOptions::default(),
+                    })),
                     document_formatting_provider: Some(OneOf::Left(true)),
                     completion_provider: Some(CompletionOptions {
                         resolve_provider: Some(false),
                         trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
                         ..Default::default()
                     }),
+                    folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
+                    selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
                     semantic_tokens_provider: Some(
                         SemanticTokensServerCapabilities::SemanticTokensOptions(
                             SemanticTokensOptions {
@@ -200,7 +204,7 @@ impl LanguageServer for ServerState {
             .to_file_path()
             .ok()
             .and_then(|path| self.server.get_document_cancel_token(&path))
-            .unwrap_or_else(CancellationToken::new);
+            .unwrap_or_default();
         let cancel_token_for_select = cancel_token.clone();
 
         Box::pin(async move {
@@ -226,6 +230,47 @@ impl LanguageServer for ServerState {
             info!("formatting: done for {}", uri);
             Ok(result)
         })
+    }
+
+    fn prepare_rename(
+        &mut self,
+        params: TextDocumentPositionParams,
+    ) -> BoxFuture<'static, Result<Option<PrepareRenameResponse>, Self::Error>> {
+        let uri = params.text_document.uri;
+        let position = params.position;
+        let result = self.server.prepare_rename(&uri, position);
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn folding_range(
+        &mut self,
+        params: FoldingRangeParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<FoldingRange>>, Self::Error>> {
+        let uri = params.text_document.uri;
+        let path = std::path::Path::new(uri.path());
+        let ranges = self.server.get_folding_ranges(path);
+        let result = if ranges.is_empty() {
+            None
+        } else {
+            Some(ranges)
+        };
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn selection_range(
+        &mut self,
+        params: SelectionRangeParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<SelectionRange>>, Self::Error>> {
+        let uri = params.text_document.uri;
+        let positions = params.positions;
+        let path = std::path::Path::new(uri.path());
+        let ranges = self.server.get_selection_ranges(path, positions);
+        let result = if ranges.is_empty() {
+            None
+        } else {
+            Some(ranges)
+        };
+        Box::pin(async move { Ok(result) })
     }
 
     // Notification handlers - these are called synchronously in async-lsp!

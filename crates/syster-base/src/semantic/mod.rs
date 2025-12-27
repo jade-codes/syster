@@ -2,6 +2,7 @@
 //!
 //! This module provides semantic analysis for SysML v2 and KerML models, transforming
 //! parsed ASTs into a queryable semantic model with cross-file symbol resolution.
+
 pub mod adapters;
 pub mod analyzer;
 pub mod graphs;
@@ -11,6 +12,8 @@ pub mod symbol_table;
 pub mod types;
 pub mod workspace;
 
+pub use adapters::folding;
+pub use adapters::selection;
 pub use adapters::{SysmlAdapter, SysmlValidator, create_validator, populate_syntax_file};
 pub use analyzer::{AnalysisContext, NoOpValidator, RelationshipValidator, SemanticAnalyzer};
 pub use graphs::{DependencyGraph, RelationshipGraph};

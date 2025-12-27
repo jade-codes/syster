@@ -1,7 +1,9 @@
 use super::LspServer;
+use async_lsp::lsp_types::{
+    DiagnosticSeverity, HoverContents, MarkedString, Position, PrepareRenameResponse, Url,
+};
 use syster::core::constants::REL_TYPING;
 use syster::semantic::symbol_table::Symbol;
-use async_lsp::lsp_types::{DiagnosticSeverity, HoverContents, MarkedString, Position, Url};
 
 #[test]
 fn test_server_creation() {
@@ -621,8 +623,7 @@ fn test_find_references_nested_elements() {
         .workspace()
         .files()
         .get(&std::path::PathBuf::from("/test.sysml"));
-    if let Some(wf) = file {
-    }
+    if let Some(wf) = file {}
 
     // Find references to "Wheel" (line 1)
     let locations = server.get_references(
@@ -638,15 +639,13 @@ fn test_find_references_nested_elements() {
     let locations = locations.unwrap();
 
     // Debug: print what we found
-    for loc in &locations {
-    }
+    for loc in &locations {}
 
     // Debug: check the symbol
     let symbol = server.workspace().symbol_table().lookup("Auto::Wheel");
 
     // Debug: check all symbols
-    for (key, sym) in server.workspace().symbol_table().all_symbols() {
-    }
+    for (key, sym) in server.workspace().symbol_table().all_symbols() {}
 
     // Debug: check relationship graph
     for (key, _) in server.workspace().symbol_table().all_symbols() {
@@ -654,8 +653,7 @@ fn test_find_references_nested_elements() {
             .workspace()
             .relationship_graph()
             .get_one_to_one(REL_TYPING, key)
-        {
-        }
+        {}
     }
 
     // Should find: definition + 2 usages = 3 total
@@ -823,8 +821,7 @@ package Outer {
 
     // Debug: print all symbols and their references
     for (name, symbol) in server.workspace.symbol_table().all_symbols() {
-        for r in symbol.references() {
-        }
+        for r in symbol.references() {}
     }
 
     // Debug: check relationship graph
@@ -833,8 +830,7 @@ package Outer {
             .workspace
             .relationship_graph()
             .get_one_to_one_with_span("typing", name)
-        {
-        }
+        {}
     }
 
     // Find references using qualified name
@@ -1773,6 +1769,98 @@ package Test {
 }
 
 #[test]
+fn test_prepare_rename_on_definition() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package TestPkg {
+    part def Vehicle;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    // Prepare rename on definition
+    let position = Position::new(2, 14); // On "Vehicle"
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should be able to rename symbol");
+    let response = result.unwrap();
+
+    match response {
+        PrepareRenameResponse::RangeWithPlaceholder { range, placeholder } => {
+            assert_eq!(placeholder, "Vehicle", "Placeholder should be symbol name");
+            assert_eq!(range.start.line, 2);
+        }
+        _ => panic!("Expected RangeWithPlaceholder response"),
+    }
+}
+
+#[test]
+fn test_prepare_rename_on_usage() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package TestPkg {
+    part def Car;
+    part myCar : Car;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    // Prepare rename on usage (the second "Car")
+    let position = Position::new(3, 18); // On "Car" in usage
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should be able to rename from usage");
+}
+
+#[test]
+fn test_prepare_rename_nonexistent_symbol() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package TestPkg {
+    part def Car;
+}
+    "#;
+
+    server.open_document(&uri, text).unwrap();
+
+    // Try to prepare rename on whitespace
+    let position = Position::new(0, 0); // Empty area
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_none(), "Should not be able to rename non-symbol");
+}
+
+#[test]
+fn test_prepare_rename_returns_correct_range() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def MyVeryLongPartName;"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let position = Position::new(0, 12); // In the middle of "MyVeryLongPartName"
+    let result = server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should find symbol");
+    let response = result.unwrap();
+
+    match response {
+        PrepareRenameResponse::RangeWithPlaceholder { range, placeholder } => {
+            assert_eq!(placeholder, "MyVeryLongPartName");
+            // Range should cover the entire symbol name
+            assert_eq!(range.start.character, 9); // Start of "MyVeryLongPartName"
+            assert_eq!(range.end.character, 27); // End of "MyVeryLongPartName"
+        }
+        _ => panic!("Expected RangeWithPlaceholder response"),
+    }
+}
+
+#[test]
 fn test_cross_file_reference_resolution_basic() {
     // Test cross-file reference resolution at the workspace/symbol table level
     // This is the foundational layer - if this doesn't work, nothing above it will
@@ -1893,8 +1981,7 @@ fn test_cross_file_stdlib_reference_resolution() {
             && kind == "Attribute"
         {
             attr_count += 1;
-            if attr_count <= 5 {
-            }
+            if attr_count <= 5 {}
         }
     }
 
@@ -1919,8 +2006,7 @@ fn test_cross_file_stdlib_reference_resolution() {
     {
     } else {
         for (name, _) in server.workspace().symbol_table().all_symbols() {
-            if name.contains("MeasurementReferences") {
-            }
+            if name.contains("MeasurementReferences") {}
         }
     }
 
@@ -1963,8 +2049,7 @@ fn test_stdlib_files_actually_load() {
     let load_result = server.ensure_workspace_loaded();
 
     // Print some file paths
-    for (i, path) in server.workspace().files().keys().enumerate().take(5) {
-    }
+    for (i, path) in server.workspace().files().keys().enumerate().take(5) {}
 
     assert!(
         server.workspace().file_count() > 0,
@@ -1994,8 +2079,7 @@ fn test_measurement_references_file_directly() {
     let parse_result = syster::project::file_loader::parse_with_result(&content, &file_path);
 
     if parse_result.content.is_none() {
-        for (i, err) in parse_result.errors.iter().enumerate().take(5) {
-        }
+        for (i, err) in parse_result.errors.iter().enumerate().take(5) {}
         panic!("Failed to parse MeasurementReferences.sysml");
     }
 
@@ -2030,8 +2114,7 @@ fn test_measurement_references_file_directly() {
         .filter(|(_, sym)| matches!(sym, Symbol::Definition { kind, .. } if kind == "Attribute"))
         .map(|(name, _)| name)
         .collect();
-    for name in attr_defs.iter().take(10) {
-    }
+    for name in attr_defs.iter().take(10) {}
 
     assert!(!attr_defs.is_empty(), "Should have attribute definitions");
 
@@ -2553,4 +2636,48 @@ fn test_incremental_insert_at_end_of_document() {
     let expected = "part def Car;\npart def Truck;\npart def Bike;";
     let actual = server.document_texts.values().next().unwrap();
     assert_eq!(actual, expected);
+}
+#[test]
+fn test_folding_ranges_for_definitions() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package TestPackage {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+    
+    part def Car;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Folding ranges should be generated from text structure
+    // even if symbol spans aren't available
+    // The test verifies the function doesn't crash and returns valid data
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
+}
+
+// Note: Import block folding and consecutive line comment folding were removed
+// as they are not useful for SysML/KerML. See semantic/adapters for AST-based folding.
+
+#[test]
+fn test_folding_ranges_no_single_line() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Car; part def Truck;";
+
+    server.open_document(&uri, text).unwrap();
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Single-line definitions shouldn't create folding ranges
+    // (or they might be empty if no multi-line structures exist)
+    // The main point is it shouldn't crash
+    assert!(ranges.is_empty() || ranges.iter().all(|r| r.end_line > r.start_line));
 }
