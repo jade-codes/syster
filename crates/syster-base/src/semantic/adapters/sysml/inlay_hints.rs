@@ -67,10 +67,10 @@ fn collect_usage_hints(
     hints: &mut Vec<InlayHint>,
 ) {
     // Check if usage is in the requested range
-    if let Some(((start, end), span)) = range.zip(usage.span.as_ref()) {
-        if span.start < start || span.end > end {
-            return;
-        }
+    if let Some(((start, end), span)) = range.zip(usage.span.as_ref())
+        && (span.start < start || span.end > end)
+    {
+        return;
     }
 
     // Add type hint if usage has no explicit type
