@@ -589,8 +589,7 @@ fn test_format_idempotent_single_line() {
         let second = format(&first, &FormatOptions::default());
         assert_eq!(
             first, second,
-            "Formatting should be idempotent for: {}\nFirst:  |{}|\nSecond: |{}|",
-            source, first, second
+            "Formatting should be idempotent for: {source}\nFirst:  |{first}|\nSecond: |{second}|"
         );
     }
 }
@@ -608,8 +607,7 @@ fn test_format_idempotent_multiline() {
         let second = format(&first, &FormatOptions::default());
         assert_eq!(
             first, second,
-            "Formatting should be idempotent for multiline:\n{}\nFirst:\n{}\nSecond:\n{}",
-            source, first, second
+            "Formatting should be idempotent for multiline:\n{source}\nFirst:\n{first}\nSecond:\n{second}"
         );
     }
 }

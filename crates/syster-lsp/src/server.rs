@@ -8,6 +8,7 @@ mod folding_range;
 pub mod formatting;
 mod helpers;
 mod hover;
+mod inlay_hints;
 mod position;
 mod references;
 mod rename;

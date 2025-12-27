@@ -30,7 +30,7 @@
 //!
 //! This boundary is enforced by architecture tests in `tests/architecture_tests.rs`.
 
-mod kerml;
+pub mod kerml;
 pub mod kerml_adapter;
 pub mod syntax_factory;
 mod sysml;
@@ -57,6 +57,12 @@ pub mod folding {
 pub mod selection {
     pub use super::kerml::selection::find_selection_spans as find_kerml_selection_spans;
     pub use super::sysml::selection::find_selection_spans as find_sysml_selection_spans;
+}
+
+// Re-export inlay hints adapter functions (implementation details)
+pub mod inlay_hints {
+    pub use super::kerml::inlay_hints::extract_inlay_hints as extract_kerml_inlay_hints;
+    pub use super::sysml::inlay_hints::extract_inlay_hints as extract_sysml_inlay_hints;
 }
 
 #[cfg(test)]

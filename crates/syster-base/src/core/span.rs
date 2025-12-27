@@ -17,7 +17,7 @@ pub struct SymbolReference {
 }
 
 /// A position in source code (0-indexed)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
     pub line: usize,
     pub column: usize,
