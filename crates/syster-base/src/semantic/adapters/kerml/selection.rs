@@ -45,49 +45,31 @@ fn range_size(span: &Span) -> usize {
     lines * 100 + cols
 }
 
+/// Try to push a span if it contains the position
+fn try_push_span(span: &Option<Span>, position: Position, spans: &mut Vec<Span>) -> bool {
+    if let Some(span) = span
+        && span.contains(position)
+    {
+        spans.push(*span);
+        return true;
+    }
+    false
+}
+
 /// Recursively collect all spans that contain the position
 fn collect_containing_spans(element: &Element, position: Position, spans: &mut Vec<Span>) -> bool {
     match element {
         Element::Package(p) => collect_package_spans(p, position, spans),
         Element::Classifier(c) => collect_classifier_spans(c, position, spans),
         Element::Feature(f) => collect_feature_spans(f, position, spans),
-        Element::Comment(c) => {
-            if let Some(span) = &c.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
-            false
-        }
-        Element::Import(i) => {
-            if let Some(span) = &i.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
-            false
-        }
-        Element::Annotation(a) => {
-            if let Some(span) = &a.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
-            false
-        }
+        Element::Comment(c) => try_push_span(&c.span, position, spans),
+        Element::Import(i) => try_push_span(&i.span, position, spans),
+        Element::Annotation(a) => try_push_span(&a.span, position, spans),
     }
 }
 
 fn collect_package_spans(package: &Package, position: Position, spans: &mut Vec<Span>) -> bool {
-    if let Some(span) = &package.span {
-        if !span.contains(position) {
-            return false;
-        }
-        spans.push(*span);
-    } else {
+    if !try_push_span(&package.span, position, spans) {
         return false;
     }
 
@@ -105,12 +87,7 @@ fn collect_classifier_spans(
     position: Position,
     spans: &mut Vec<Span>,
 ) -> bool {
-    if let Some(span) = &classifier.span {
-        if !span.contains(position) {
-            return false;
-        }
-        spans.push(*span);
-    } else {
+    if !try_push_span(&classifier.span, position, spans) {
         return false;
     }
 
@@ -122,11 +99,8 @@ fn collect_classifier_spans(
                 }
             }
             ClassifierMember::Comment(c) => {
-                if let Some(span) = &c.span {
-                    if span.contains(position) {
-                        spans.push(*span);
-                        return true;
-                    }
+                if try_push_span(&c.span, position, spans) {
+                    return true;
                 }
             }
             _ => {}
@@ -137,23 +111,15 @@ fn collect_classifier_spans(
 }
 
 fn collect_feature_spans(feature: &Feature, position: Position, spans: &mut Vec<Span>) -> bool {
-    if let Some(span) = &feature.span {
-        if !span.contains(position) {
-            return false;
-        }
-        spans.push(*span);
-    } else {
+    if !try_push_span(&feature.span, position, spans) {
         return false;
     }
 
     for member in &feature.body {
-        if let FeatureMember::Comment(c) = member {
-            if let Some(span) = &c.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
+        if let FeatureMember::Comment(c) = member
+            && try_push_span(&c.span, position, spans)
+        {
+            return true;
         }
     }
 

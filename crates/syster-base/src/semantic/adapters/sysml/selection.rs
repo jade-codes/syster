@@ -46,49 +46,31 @@ fn range_size(span: &Span) -> usize {
     lines * 100 + cols
 }
 
+/// Try to push a span if it contains the position
+fn try_push_span(span: &Option<Span>, position: Position, spans: &mut Vec<Span>) -> bool {
+    if let Some(span) = span
+        && span.contains(position)
+    {
+        spans.push(*span);
+        return true;
+    }
+    false
+}
+
 /// Recursively collect all spans that contain the position
 fn collect_containing_spans(element: &Element, position: Position, spans: &mut Vec<Span>) -> bool {
     match element {
         Element::Package(p) => collect_package_spans(p, position, spans),
         Element::Definition(d) => collect_definition_spans(d, position, spans),
         Element::Usage(u) => collect_usage_spans(u, position, spans),
-        Element::Comment(c) => {
-            if let Some(span) = &c.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
-            false
-        }
-        Element::Import(i) => {
-            if let Some(span) = &i.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
-            false
-        }
-        Element::Alias(a) => {
-            if let Some(span) = &a.span {
-                if span.contains(position) {
-                    spans.push(*span);
-                    return true;
-                }
-            }
-            false
-        }
+        Element::Comment(c) => try_push_span(&c.span, position, spans),
+        Element::Import(i) => try_push_span(&i.span, position, spans),
+        Element::Alias(a) => try_push_span(&a.span, position, spans),
     }
 }
 
 fn collect_package_spans(package: &Package, position: Position, spans: &mut Vec<Span>) -> bool {
-    if let Some(span) = &package.span {
-        if !span.contains(position) {
-            return false;
-        }
-        spans.push(*span);
-    } else {
+    if !try_push_span(&package.span, position, spans) {
         return false;
     }
 
@@ -102,12 +84,7 @@ fn collect_package_spans(package: &Package, position: Position, spans: &mut Vec<
 }
 
 fn collect_definition_spans(def: &Definition, position: Position, spans: &mut Vec<Span>) -> bool {
-    if let Some(span) = &def.span {
-        if !span.contains(position) {
-            return false;
-        }
-        spans.push(*span);
-    } else {
+    if !try_push_span(&def.span, position, spans) {
         return false;
     }
 
@@ -119,11 +96,8 @@ fn collect_definition_spans(def: &Definition, position: Position, spans: &mut Ve
                 }
             }
             DefinitionMember::Comment(c) => {
-                if let Some(span) = &c.span {
-                    if span.contains(position) {
-                        spans.push(*span);
-                        return true;
-                    }
+                if try_push_span(&c.span, position, spans) {
+                    return true;
                 }
             }
         }
@@ -133,12 +107,7 @@ fn collect_definition_spans(def: &Definition, position: Position, spans: &mut Ve
 }
 
 fn collect_usage_spans(usage: &Usage, position: Position, spans: &mut Vec<Span>) -> bool {
-    if let Some(span) = &usage.span {
-        if !span.contains(position) {
-            return false;
-        }
-        spans.push(*span);
-    } else {
+    if !try_push_span(&usage.span, position, spans) {
         return false;
     }
 
@@ -150,11 +119,8 @@ fn collect_usage_spans(usage: &Usage, position: Position, spans: &mut Vec<Span>)
                 }
             }
             UsageMember::Comment(c) => {
-                if let Some(span) = &c.span {
-                    if span.contains(position) {
-                        spans.push(*span);
-                        return true;
-                    }
+                if try_push_span(&c.span, position, spans) {
+                    return true;
                 }
             }
         }
