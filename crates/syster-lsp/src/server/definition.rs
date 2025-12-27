@@ -1,6 +1,6 @@
 use super::LspServer;
 use super::helpers::span_to_lsp_range;
-use tower_lsp::lsp_types::{Location, Position, Url};
+use async_lsp::lsp_types::{Location, Position, Url};
 
 impl LspServer {
     /// Get the definition location for a symbol at the given position

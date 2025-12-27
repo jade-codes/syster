@@ -193,13 +193,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 // Feature typing (:)
                 if let Some(ref target) = usage.relationships.typed_by {
                     // Resolve target to fully qualified name using symbol table lookup
-                    let looked_up = self.symbol_table.lookup(target);
-                    eprintln!(
-                        "DEBUG: lookup('{}') = {:?}",
-                        target,
-                        looked_up.map(|s| s.qualified_name())
-                    );
-
                     let resolved_target = self
                         .symbol_table
                         .lookup(target)
@@ -213,8 +206,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                                 target.clone()
                             }
                         });
-
-                    eprintln!("DEBUG: Resolved '{target}' -> '{resolved_target}'");
 
                     graph.add_one_to_one(
                         REL_TYPING,

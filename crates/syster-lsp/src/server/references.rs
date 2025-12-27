@@ -1,5 +1,5 @@
 use super::LspServer;
-use tower_lsp::lsp_types::{Location, Position, Range, Url};
+use async_lsp::lsp_types::{Location, Position, Range, Url};
 
 impl LspServer {
     /// Find all references to a symbol at the given position
@@ -46,13 +46,7 @@ impl LspServer {
             .collect();
 
         if include_declaration && let Some(def) = self.get_definition(uri, position) {
-            eprintln!(
-                "DEBUG: Adding definition at {}:{}",
-                def.range.start.line, def.range.start.character
-            );
             locations.push(def);
-        } else if include_declaration {
-            eprintln!("DEBUG: include_declaration=true but get_definition returned None");
         }
 
         Some(locations)

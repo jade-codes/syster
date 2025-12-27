@@ -1,7 +1,7 @@
 use super::LspServer;
 use syster::core::constants::REL_TYPING;
 use syster::semantic::symbol_table::Symbol;
-use tower_lsp::lsp_types::{DiagnosticSeverity, HoverContents, MarkedString, Position, Url};
+use async_lsp::lsp_types::{DiagnosticSeverity, HoverContents, MarkedString, Position, Url};
 
 #[test]
 fn test_server_creation() {
@@ -622,8 +622,6 @@ fn test_find_references_nested_elements() {
         .files()
         .get(&std::path::PathBuf::from("/test.sysml"));
     if let Some(wf) = file {
-        eprintln!("Parsed AST:");
-        eprintln!("{:#?}", wf.content());
     }
 
     // Find references to "Wheel" (line 1)
@@ -640,38 +638,23 @@ fn test_find_references_nested_elements() {
     let locations = locations.unwrap();
 
     // Debug: print what we found
-    eprintln!("Found {} locations:", locations.len());
     for loc in &locations {
-        eprintln!("  Line {}: {:?}", loc.range.start.line, loc.uri);
     }
 
     // Debug: check the symbol
     let symbol = server.workspace().symbol_table().lookup("Auto::Wheel");
-    eprintln!(
-        "Symbol lookup result: {:?}",
-        symbol.map(|s| (s.qualified_name(), s.references().len()))
-    );
 
     // Debug: check all symbols
-    eprintln!("All symbols in table:");
     for (key, sym) in server.workspace().symbol_table().all_symbols() {
-        eprintln!(
-            "  {} -> {} (refs: {})",
-            key,
-            sym.qualified_name(),
-            sym.references().len()
-        );
     }
 
     // Debug: check relationship graph
-    eprintln!("Typing relationships:");
     for (key, _) in server.workspace().symbol_table().all_symbols() {
         if let Some(target) = server
             .workspace()
             .relationship_graph()
             .get_one_to_one(REL_TYPING, key)
         {
-            eprintln!("  {key} -> {target}");
         }
     }
 
@@ -839,28 +822,18 @@ package Outer {
     server.open_document(&uri, text).unwrap();
 
     // Debug: print all symbols and their references
-    eprintln!("\nAll symbols:");
     for (name, symbol) in server.workspace.symbol_table().all_symbols() {
-        eprintln!(
-            "  '{}' -> '{}' with {} refs",
-            name,
-            symbol.qualified_name(),
-            symbol.references().len()
-        );
         for r in symbol.references() {
-            eprintln!("    Ref at {}:{}", r.span.start.line, r.span.start.column);
         }
     }
 
     // Debug: check relationship graph
-    eprintln!("\nTyping relationships:");
     for (name, _) in server.workspace.symbol_table().all_symbols() {
         if let Some((target, span)) = server
             .workspace
             .relationship_graph()
             .get_one_to_one_with_span("typing", name)
         {
-            eprintln!("  {name} -> {target} (span: {span:?})");
         }
     }
 
@@ -1062,7 +1035,7 @@ package Auto {
 
     let auto = &symbols[0];
     assert_eq!(auto.name, "Auto");
-    assert_eq!(auto.kind, tower_lsp::lsp_types::SymbolKind::NAMESPACE);
+    assert_eq!(auto.kind, async_lsp::lsp_types::SymbolKind::NAMESPACE);
 
     // Auto should have 2 children: Vehicle and Engine
     let auto_children = auto.children.as_ref().expect("Auto should have children");
@@ -1206,7 +1179,7 @@ package Auto {
 
     server.open_document(&uri, text).unwrap();
 
-    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(tokens) =
+    let async_lsp::lsp_types::SemanticTokensResult::Tokens(tokens) =
         server.get_semantic_tokens(uri.as_str()).unwrap()
     else {
         panic!("Expected SemanticTokens result");
@@ -1236,7 +1209,7 @@ fn test_code_completion_keywords() {
     let path = std::path::Path::new("/test.sysml");
     let position = Position::new(1, 0); // After the package
 
-    let tower_lsp::lsp_types::CompletionResponse::Array(items) =
+    let async_lsp::lsp_types::CompletionResponse::Array(items) =
         server.get_completions(path, position)
     else {
         panic!("Expected completion array");
@@ -1247,7 +1220,7 @@ fn test_code_completion_keywords() {
     // Should have keyword completions
     let keywords: Vec<&str> = items
         .iter()
-        .filter(|item| item.kind == Some(tower_lsp::lsp_types::CompletionItemKind::KEYWORD))
+        .filter(|item| item.kind == Some(async_lsp::lsp_types::CompletionItemKind::KEYWORD))
         .map(|item| item.label.as_str())
         .collect();
 
@@ -1294,26 +1267,13 @@ package Test {
 
     server.open_document(&uri, text).unwrap();
 
-    eprintln!(
-        "DEBUG: Workspace file count: {}",
-        server.workspace().file_count()
-    );
-    eprintln!(
-        "DEBUG: Symbol table size: {}",
-        server.workspace().symbol_table().all_symbols().len()
-    );
-    eprintln!("DEBUG: Parse errors: {:?}", server.get_diagnostics(&uri));
-
     // Position after colon - should suggest type symbols
     let position = Position::new(4, 15);
     let result = server.get_completions(std::path::Path::new("/test.sysml"), position);
 
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(items) => {
+        async_lsp::lsp_types::CompletionResponse::Array(items) => {
             let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
-
-            eprintln!("Completions returned: {} items", items.len());
-            eprintln!("Labels: {labels:?}");
 
             // Should include both definition types as valid typing targets
             assert!(
@@ -1356,7 +1316,7 @@ package Usage {
     let result = server.get_completions(std::path::Path::new("/usage.sysml"), position);
 
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(items) => {
+        async_lsp::lsp_types::CompletionResponse::Array(items) => {
             let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
 
             assert!(
@@ -1390,7 +1350,7 @@ package Outer {
     let result = server.get_completions(std::path::Path::new("/test.sysml"), position);
 
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(items) => {
+        async_lsp::lsp_types::CompletionResponse::Array(items) => {
             let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
 
             // Should see both inner and outer types
@@ -1426,7 +1386,7 @@ package Test {
     let result = server.get_completions(std::path::Path::new("/test.sysml"), position);
 
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(items) => {
+        async_lsp::lsp_types::CompletionResponse::Array(items) => {
             let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
 
             // Should suggest compatible types for specialization
@@ -1461,7 +1421,7 @@ package Test {
 
     // At minimum, should return a response (even if empty for now)
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(_items) => {
+        async_lsp::lsp_types::CompletionResponse::Array(_items) => {
             // Member access completion is complex,
             // but we should at least handle the request without crashing
         }
@@ -1483,7 +1443,7 @@ fn test_completion_empty_file() {
     let result = server.get_completions(std::path::Path::new("/test.sysml"), position);
 
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(items) => {
+        async_lsp::lsp_types::CompletionResponse::Array(items) => {
             assert!(
                 !items.is_empty(),
                 "Should provide top-level keywords in empty file"
@@ -1512,8 +1472,8 @@ fn test_completion_handles_invalid_position() {
 
     // Should handle gracefully without crashing
     match result {
-        tower_lsp::lsp_types::CompletionResponse::Array(_)
-        | tower_lsp::lsp_types::CompletionResponse::List(_) => {
+        async_lsp::lsp_types::CompletionResponse::Array(_)
+        | async_lsp::lsp_types::CompletionResponse::List(_) => {
             // Either response type is acceptable as long as it doesn't crash
         }
     }
@@ -1843,17 +1803,9 @@ fn test_cross_file_reference_resolution_basic() {
     server.open_document(&file1_uri, file1_text).unwrap();
     server.open_document(&file2_uri, file2_text).unwrap();
 
-    eprintln!("Workspace file count: {}", server.workspace().file_count());
-    eprintln!(
-        "Total symbols: {}",
-        server.workspace().symbol_table().all_symbols().len()
-    );
-
     let all_syms = server.workspace().symbol_table().all_symbols();
-    eprintln!("\nAll symbols:");
     for (name, sym) in all_syms.iter() {
         let qualified = sym.qualified_name();
-        eprintln!("  {} -> {} (qualified: {})", name, sym.name(), qualified);
     }
 
     // Check if BaseUnit is in the symbol table
@@ -1861,10 +1813,6 @@ fn test_cross_file_reference_resolution_basic() {
 
     let by_simple = symbol_table.lookup("BaseUnit");
     let by_qualified = symbol_table.lookup_qualified("BasePackage::BaseUnit");
-
-    eprintln!("\nLookup BaseUnit:");
-    eprintln!("  Simple name: {:?}", by_simple.is_some());
-    eprintln!("  Qualified: {:?}", by_qualified.is_some());
 
     assert!(
         by_simple.is_some() || by_qualified.is_some(),
@@ -1875,11 +1823,6 @@ fn test_cross_file_reference_resolution_basic() {
     // Position should be on "BaseUnit" in ":> BaseUnit"
     let position = Position::new(4, 40); // Approximate position of BaseUnit after :>
     let definition = server.get_definition(&file2_uri, position);
-
-    eprintln!(
-        "\nDefinition lookup result: {:?}",
-        definition.as_ref().map(|d| d.uri.path())
-    );
 
     assert!(
         definition.is_some(),
@@ -1915,14 +1858,7 @@ fn test_cross_file_stdlib_reference_resolution() {
     let mut server = LspServer::with_config(true, Some(stdlib_path));
 
     // Load stdlib
-    server.ensure_stdlib_loaded().unwrap();
-
-    eprintln!("After stdlib load:");
-    eprintln!("  Files: {}", server.workspace().file_count());
-    eprintln!(
-        "  Symbols: {}",
-        server.workspace().symbol_table().all_symbols().len()
-    );
+    server.ensure_workspace_loaded().unwrap();
 
     // Check if MeasurementReferences file is loaded
     let has_measurement_refs = server
@@ -1930,10 +1866,8 @@ fn test_cross_file_stdlib_reference_resolution() {
         .files()
         .keys()
         .any(|p| p.to_string_lossy().contains("MeasurementReferences"));
-    eprintln!("  Has MeasurementReferences.sysml: {has_measurement_refs}");
 
     // Check what symbols ARE in the symbol table from stdlib
-    eprintln!("\n  First 10 stdlib symbols:");
     for (i, (name, symbol)) in server
         .workspace()
         .symbol_table()
@@ -1950,11 +1884,9 @@ fn test_cross_file_stdlib_reference_resolution() {
             Symbol::Usage { kind, .. } => kind.as_str(),
             Symbol::Alias { .. } => "Alias",
         };
-        eprintln!("    {i}: {name} ({symbol_type})");
     }
 
     // Check specifically for attribute definitions
-    eprintln!("\n  Attribute definitions in symbol table:");
     let mut attr_count = 0;
     for (name, symbol) in server.workspace().symbol_table().all_symbols() {
         if let Symbol::Definition { kind, .. } = symbol
@@ -1962,11 +1894,9 @@ fn test_cross_file_stdlib_reference_resolution() {
         {
             attr_count += 1;
             if attr_count <= 5 {
-                eprintln!("    - {name}");
             }
         }
     }
-    eprintln!("  Total attribute definitions: {attr_count}");
 
     // Open a file that references a stdlib type
     let uri = Url::parse("file:///test.sysml").unwrap();
@@ -1981,26 +1911,15 @@ fn test_cross_file_stdlib_reference_resolution() {
 
     server.open_document(&uri, text).unwrap();
 
-    eprintln!("\nAfter opening test file:");
-    eprintln!("  Files: {}", server.workspace().file_count());
-    eprintln!(
-        "  Symbols: {}",
-        server.workspace().symbol_table().all_symbols().len()
-    );
-
     // Check if DimensionOneUnit is in symbol table
     if let Some(symbol) = server
         .workspace()
         .symbol_table()
         .lookup_qualified("MeasurementReferences::DimensionOneUnit")
     {
-        eprintln!("\nFound DimensionOneUnit: {symbol:?}");
     } else {
-        eprintln!("\nDimensionOneUnit NOT found in symbol table");
-        eprintln!("\nLooking for any MeasurementReferences symbols:");
         for (name, _) in server.workspace().symbol_table().all_symbols() {
             if name.contains("MeasurementReferences") {
-                eprintln!("  - {name}");
             }
         }
     }
@@ -2008,8 +1927,6 @@ fn test_cross_file_stdlib_reference_resolution() {
     // Try to get definition of DimensionOneUnit at line 4, column 36 (the :> reference)
     let position = Position::new(4, 36);
     let definition = server.get_definition(&uri, position);
-
-    eprintln!("\nDefinition result: {definition:?}");
 
     assert!(
         definition.is_some(),
@@ -2043,27 +1960,10 @@ fn test_stdlib_files_actually_load() {
 
     let mut server = LspServer::with_config(true, Some(stdlib_path.clone()));
 
-    eprintln!("Before stdlib load:");
-    eprintln!("  Files: {}", server.workspace().file_count());
-
-    eprintln!("\nStdlib path: {}", stdlib_path.display());
-    eprintln!("  Exists: {}", stdlib_path.exists());
-    eprintln!("  Is dir: {}", stdlib_path.is_dir());
-
-    let load_result = server.ensure_stdlib_loaded();
-    eprintln!("\nLoad result: {load_result:?}");
-
-    eprintln!("\nAfter stdlib load:");
-    eprintln!("  Files: {}", server.workspace().file_count());
-    eprintln!(
-        "  Symbols: {}",
-        server.workspace().symbol_table().all_symbols().len()
-    );
+    let load_result = server.ensure_workspace_loaded();
 
     // Print some file paths
-    eprintln!("\nFirst 5 files:");
     for (i, path) in server.workspace().files().keys().enumerate().take(5) {
-        eprintln!("  {}: {}", i, path.display());
     }
 
     assert!(
@@ -2085,36 +1985,25 @@ fn test_measurement_references_file_directly() {
         "/workspaces/syster/target/debug/sysml.library/Domain Libraries/Quantities and Units/MeasurementReferences.sysml",
     );
 
-    eprintln!("File exists: {}", file_path.exists());
-
     if !file_path.exists() {
-        eprintln!("File not found, skipping test");
         return;
     }
 
     let content = std::fs::read_to_string(&file_path).expect("Failed to read file");
-    eprintln!("File size: {} bytes", content.len());
 
     let parse_result = syster::project::file_loader::parse_with_result(&content, &file_path);
 
     if parse_result.content.is_none() {
-        eprintln!("Parse FAILED!");
-        eprintln!("Errors: {}", parse_result.errors.len());
         for (i, err) in parse_result.errors.iter().enumerate().take(5) {
-            eprintln!("  {i}: {err:?}");
         }
         panic!("Failed to parse MeasurementReferences.sysml");
     }
-
-    eprintln!("Parse succeeded!");
 
     let syntax_file = parse_result.content.unwrap();
     let sysml_file = match syntax_file {
         syster::syntax::SyntaxFile::SysML(f) => f,
         _ => panic!("Expected SysML file"),
     };
-
-    eprintln!("Top-level elements: {}", sysml_file.elements.len());
 
     // Populate symbol table
     let mut workspace = syster::semantic::Workspace::<syster::syntax::SyntaxFile>::new();
@@ -2123,12 +2012,6 @@ fn test_measurement_references_file_directly() {
         syster::syntax::SyntaxFile::SysML(sysml_file),
     );
     let _ = workspace.populate_all();
-
-    eprintln!(
-        "\nSymbols found: {}",
-        workspace.symbol_table().all_symbols().len()
-    );
-    eprintln!("\nAll symbols:");
     for (name, symbol) in workspace.symbol_table().all_symbols() {
         let sym_type = match symbol {
             Symbol::Package { .. } => "Package",
@@ -2138,7 +2021,6 @@ fn test_measurement_references_file_directly() {
             Symbol::Feature { .. } => "Feature",
             Symbol::Alias { .. } => "Alias",
         };
-        eprintln!("  {name} ({sym_type})");
     }
 
     // Check for attribute definitions
@@ -2148,10 +2030,7 @@ fn test_measurement_references_file_directly() {
         .filter(|(_, sym)| matches!(sym, Symbol::Definition { kind, .. } if kind == "Attribute"))
         .map(|(name, _)| name)
         .collect();
-
-    eprintln!("\nAttribute definitions: {}", attr_defs.len());
     for name in attr_defs.iter().take(10) {
-        eprintln!("  - {name}");
     }
 
     assert!(!attr_defs.is_empty(), "Should have attribute definitions");
@@ -2160,8 +2039,6 @@ fn test_measurement_references_file_directly() {
     let has_dimension_one = all_syms
         .iter()
         .any(|(name, _)| name.contains("DimensionOneUnit"));
-
-    eprintln!("\nHas DimensionOneUnit: {has_dimension_one}");
     assert!(has_dimension_one, "Should find DimensionOneUnit");
 }
 
@@ -2172,18 +2049,11 @@ fn test_dimension_one_unit_cross_file_resolution() {
     use syster::syntax::parser::parse_content;
 
     let stdlib_path = std::path::PathBuf::from("../../target/debug/sysml.library");
-    eprintln!("StdLib path: {:?}", stdlib_path.canonicalize().unwrap());
 
     let mut workspace = Workspace::new();
     let loader = StdLibLoader::with_path(stdlib_path);
     loader.load(&mut workspace).unwrap();
     let _populate_result = workspace.populate_all(); // Ignore errors, we want to test what DID load
-
-    eprintln!(
-        "Loaded stdlib - Files: {}, Symbols: {}",
-        workspace.file_count(),
-        workspace.symbol_table().all_symbols().len()
-    );
 
     // Sample some package names from stdlib
     let package_names: Vec<_> = workspace
@@ -2199,7 +2069,6 @@ fn test_dimension_one_unit_cross_file_resolution() {
         })
         .take(10)
         .collect();
-    eprintln!("Sample package names: {package_names:?}");
 
     // Check what symbols we actually have
     let measurement_refs_syms: Vec<_> = workspace
@@ -2209,14 +2078,12 @@ fn test_dimension_one_unit_cross_file_resolution() {
         .filter(|(name, _)| name.contains("MeasurementReferences") || name.contains("DimensionOne"))
         .map(|(name, _)| name.as_str())
         .collect();
-    eprintln!("MeasurementReferences symbols: {measurement_refs_syms:?}");
 
     // Check if MeasurementReferences.sysml file is in workspace
     let has_measurement_file = workspace
         .files()
         .keys()
         .any(|path| path.to_string_lossy().contains("MeasurementReferences"));
-    eprintln!("Has MeasurementReferences.sysml file: {has_measurement_file}");
 
     // Check parse errors for MeasurementReferences
     if let Some((_path, file)) = workspace
@@ -2228,19 +2095,12 @@ fn test_dimension_one_unit_cross_file_resolution() {
             syster::syntax::SyntaxFile::SysML(sysml) => ("SysML", sysml.elements.len()),
             syster::syntax::SyntaxFile::KerML(kerml) => ("KerML", kerml.elements.len()),
         };
-        eprintln!(
-            "MeasurementReferences file type: {file_type}, has {elem_count} top-level elements"
-        );
     }
 
     // Check DimensionOneUnit exists
     let found = workspace
         .symbol_table()
         .lookup_qualified("MeasurementReferences::DimensionOneUnit");
-    eprintln!(
-        "Lookup MeasurementReferences::DimensionOneUnit: {}",
-        found.is_some()
-    );
     assert!(
         found.is_some(),
         "DimensionOneUnit should be found in stdlib"
@@ -2261,25 +2121,14 @@ package TestPkg {
     workspace.add_file(path.clone(), file);
     let _ = workspace.populate_all();
 
-    eprintln!(
-        "After adding user file - Files: {}, Symbols: {}",
-        workspace.file_count(),
-        workspace.symbol_table().all_symbols().len()
-    );
-
     // Verify MyUnit is in the table
     let my_unit = workspace.symbol_table().lookup_qualified("TestPkg::MyUnit");
-    eprintln!("Lookup TestPkg::MyUnit: {}", my_unit.is_some());
     assert!(my_unit.is_some(), "MyUnit should be found");
 
     // Verify DimensionOneUnit is still findable
     let dim_one = workspace
         .symbol_table()
         .lookup_qualified("MeasurementReferences::DimensionOneUnit");
-    eprintln!(
-        "Lookup MeasurementReferences::DimensionOneUnit after user file: {}",
-        dim_one.is_some()
-    );
     assert!(
         dim_one.is_some(),
         "DimensionOneUnit should still be found after adding user file"
@@ -2300,8 +2149,8 @@ fn test_incremental_insert_at_start() {
     server.open_document(&uri, initial_text).unwrap();
 
     // Insert text at start: "// Comment\n"
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 0),
             end: Position::new(0, 0),
         }),
@@ -2331,8 +2180,8 @@ fn test_incremental_insert_in_middle() {
     server.open_document(&uri, initial_text).unwrap();
 
     // Insert new definition between them
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(1, 0),
             end: Position::new(1, 0),
         }),
@@ -2359,8 +2208,8 @@ fn test_incremental_delete_range() {
     server.open_document(&uri, initial_text).unwrap();
 
     // Delete "Bike" definition (entire second line)
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(1, 0),
             end: Position::new(1, 15), // "part def Bike;" is 15 chars
         }),
@@ -2386,8 +2235,8 @@ fn test_incremental_replace_range() {
     server.open_document(&uri, initial_text).unwrap();
 
     // Replace "Car" with "Vehicle"
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 9), // Start of "Car"
             end: Position::new(0, 12),  // End of "Car"
         }),
@@ -2413,8 +2262,8 @@ fn test_incremental_multiple_changes() {
 
     // Apply multiple incremental changes
     // Change 1: Add newline and new definition
-    let change1 = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change1 = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 13),
             end: Position::new(0, 13),
         }),
@@ -2424,8 +2273,8 @@ fn test_incremental_multiple_changes() {
     server.apply_incremental_change(&uri, &change1).unwrap();
 
     // Change 2: Insert comment at start
-    let change2 = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change2 = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 0),
             end: Position::new(0, 0),
         }),
@@ -2449,8 +2298,8 @@ fn test_incremental_multiline_insert() {
     server.open_document(&uri, "part def Car;").unwrap();
 
     // Insert multi-line text
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 13),
             end: Position::new(0, 13),
         }),
@@ -2477,8 +2326,8 @@ fn test_incremental_change_preserves_diagnostics() {
     assert!(server.get_diagnostics(&uri).is_empty());
 
     // Make an incremental change that introduces an error
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 13),
             end: Position::new(0, 13),
         }),
@@ -2503,7 +2352,7 @@ fn test_incremental_change_updates_semantic_tokens() {
 
     // Get initial semantic tokens
     let initial_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
-    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
+    let async_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
         panic!("Expected SemanticTokens result");
     };
 
@@ -2512,8 +2361,8 @@ fn test_incremental_change_updates_semantic_tokens() {
     let initial_count = initial.data.len();
 
     // Make an incremental change to add another part definition
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 17),
             end: Position::new(0, 17),
         }),
@@ -2525,7 +2374,7 @@ fn test_incremental_change_updates_semantic_tokens() {
 
     // Get updated semantic tokens
     let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
-    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
+    let async_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
         panic!("Expected SemanticTokens result");
     };
 
@@ -2554,8 +2403,8 @@ fn test_incremental_change_updates_references() {
     assert_eq!(initial_refs.len(), 2); // Definition + usage
 
     // Make an incremental change to add another usage of Vehicle
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(1, 20),
             end: Position::new(1, 20),
         }),
@@ -2587,7 +2436,7 @@ fn test_open_document_provides_semantic_tokens() {
 
     // Should be able to get semantic tokens immediately
     let tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
-    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(result) = tokens else {
+    let async_lsp::lsp_types::SemanticTokensResult::Tokens(result) = tokens else {
         panic!("Expected SemanticTokens result");
     };
 
@@ -2605,14 +2454,14 @@ fn test_new_file_then_incremental_update() {
 
     // Verify initial state
     let initial_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
-    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
+    let async_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
         panic!("Expected SemanticTokens result");
     };
     assert!(!initial.data.is_empty());
 
     // Now make an incremental change
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 13),
             end: Position::new(0, 13),
         }),
@@ -2624,7 +2473,7 @@ fn test_new_file_then_incremental_update() {
 
     // Verify semantic tokens still work after update
     let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
-    let tower_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
+    let async_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
         panic!("Expected SemanticTokens result");
     };
 
@@ -2647,8 +2496,8 @@ fn test_incremental_change_on_unopened_file() {
 
     // File was never opened with did_open, but client sends an incremental change
     // This can happen when creating a brand new file
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(0, 0),
             end: Position::new(0, 0),
         }),
@@ -2687,8 +2536,8 @@ fn test_incremental_insert_at_end_of_document() {
         .unwrap();
 
     // Insert at the very end of the document (after last line)
-    let change = tower_lsp::lsp_types::TextDocumentContentChangeEvent {
-        range: Some(tower_lsp::lsp_types::Range {
+    let change = async_lsp::lsp_types::TextDocumentContentChangeEvent {
+        range: Some(async_lsp::lsp_types::Range {
             start: Position::new(1, 16), // End of line 1
             end: Position::new(1, 16),
         }),

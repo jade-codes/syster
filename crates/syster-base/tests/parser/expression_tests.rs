@@ -580,8 +580,6 @@ fn test_action_body_item_identifier() {
     // This should fail or match as a usage
     let input = "a";
     let result = SysMLParser::parse(Rule::action_body_item, input);
-
-    println!("action_body_item('a') result: {result:?}");
 }
 
 #[test]
@@ -589,8 +587,6 @@ fn test_calculation_body_item_identifier() {
     // This should fail or match as a usage
     let input = "a";
     let result = SysMLParser::parse(Rule::calculation_body_item, input);
-
-    println!("calculation_body_item('a') result: {result:?}");
 }
 
 #[test]

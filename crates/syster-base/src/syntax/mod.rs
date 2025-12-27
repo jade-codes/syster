@@ -6,4 +6,4 @@ pub mod parser;
 pub mod sysml;
 
 pub use file::SyntaxFile;
-pub use formatter::{FormatOptions, format};
+pub use formatter::{FormatOptions, format_async};

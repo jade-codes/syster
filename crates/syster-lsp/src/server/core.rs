@@ -4,6 +4,7 @@ use syster::core::ParseError;
 use syster::project::StdLibLoader;
 use syster::semantic::{Workspace, resolver::Resolver};
 use syster::syntax::SyntaxFile;
+use tokio_util::sync::CancellationToken;
 
 /// LspServer manages the workspace state for the LSP server
 pub struct LspServer {
@@ -16,6 +17,10 @@ pub struct LspServer {
     pub(super) stdlib_loader: StdLibLoader,
     /// Whether stdlib loading is enabled
     stdlib_enabled: bool,
+    /// Cancellation tokens per document - cancelled when document changes
+    document_cancel_tokens: HashMap<PathBuf, CancellationToken>,
+    /// Whether workspace has been fully initialized
+    workspace_initialized: bool,
 }
 
 impl Default for LspServer {
@@ -62,7 +67,50 @@ impl LspServer {
             document_texts: HashMap::new(),
             stdlib_loader: StdLibLoader::with_path(stdlib_path),
             stdlib_enabled,
+            document_cancel_tokens: HashMap::new(),
+            workspace_initialized: false,
         }
+    }
+
+    /// Ensure workspace is fully initialized (stdlib loaded, symbols populated, texts synced).
+    /// Only runs once on first call, subsequent calls are no-ops.
+    pub fn ensure_workspace_loaded(&mut self) -> Result<(), String> {
+        if self.workspace_initialized {
+            return Ok(());
+        }
+
+        // Load stdlib if enabled
+        if self.stdlib_enabled {
+            self.stdlib_loader.ensure_loaded(&mut self.workspace)?;
+        }
+
+        // Populate all symbols
+        let _ = self.workspace.populate_all();
+
+        // Sync document texts for hover/features on stdlib files
+        self.sync_document_texts_from_workspace();
+
+        self.workspace_initialized = true;
+        Ok(())
+    }
+
+    /// Cancel any in-flight operations for a document and return a new token.
+    /// Call this at the start of didChange to cancel previous operations.
+    pub fn cancel_document_operations(&mut self, path: &PathBuf) -> CancellationToken {
+        // Cancel the old token if it exists
+        if let Some(old_token) = self.document_cancel_tokens.get(path) {
+            old_token.cancel();
+        }
+        // Create a new token for this document
+        let new_token = CancellationToken::new();
+        self.document_cancel_tokens
+            .insert(path.clone(), new_token.clone());
+        new_token
+    }
+
+    /// Get the current cancellation token for a document (for request handlers)
+    pub fn get_document_cancel_token(&self, path: &PathBuf) -> Option<CancellationToken> {
+        self.document_cancel_tokens.get(path).cloned()
     }
 
     pub fn workspace(&self) -> &Workspace<SyntaxFile> {
@@ -81,26 +129,6 @@ impl LspServer {
     #[allow(dead_code)]
     pub fn document_texts_mut(&mut self) -> &mut HashMap<PathBuf, String> {
         &mut self.document_texts
-    }
-
-    /// Ensure stdlib is loaded (lazy loading)
-    /// Only loads stdlib once, on first call
-    /// Returns Ok(()) even if stdlib loading is disabled
-    pub fn ensure_stdlib_loaded(&mut self) -> Result<(), String> {
-        if !self.stdlib_enabled {
-            return Ok(());
-        }
-
-        // Load stdlib files into workspace
-        self.stdlib_loader.ensure_loaded(&mut self.workspace)?;
-
-        // Populate symbols from loaded files (ignore errors for duplicate symbols)
-        let _ = self.workspace.populate_all();
-
-        // Sync document texts so hover can access source code
-        self.sync_document_texts_from_workspace();
-
-        Ok(())
     }
 
     /// Sync document_texts with all files currently in the workspace

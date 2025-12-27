@@ -2,9 +2,14 @@
 //!
 //! Tokenizes source code into tokens including whitespace and comments.
 
-use super::Token;
 use super::syntax_kind::SyntaxKind;
 use logos::Logos;
+
+/// Token with text and kind
+pub struct Token<'a> {
+    pub kind: SyntaxKind,
+    pub text: &'a str,
+}
 
 /// Logos-based token types
 #[derive(Logos, Debug, Clone, Copy, PartialEq)]

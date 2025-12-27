@@ -10,37 +10,41 @@ mod syntax_kind;
 #[cfg(test)]
 mod tests;
 
+use lexer::{Token, tokenize};
 pub use options::FormatOptions;
 use rowan::GreenNodeBuilder;
 use syntax_kind::{SyntaxKind, SyntaxNode};
+use tokio_util::sync::CancellationToken;
 
-/// Format SysML/KerML source code with the given options
-pub fn format(source: &str, options: &FormatOptions) -> String {
-    let tokens = lexer::tokenize(source);
-    let cst = parse_to_cst(&tokens);
-    render(&cst, options)
+/// Format SysML/KerML source code with cancellation support.
+/// Returns `None` if the cancellation token is signalled.
+pub fn format_async(
+    source: &str,
+    options: &FormatOptions,
+    cancel: &CancellationToken,
+) -> Option<String> {
+    let tokens = tokenize(source);
+    let cst = parse_to_cst(&tokens, cancel)?;
+    render(&cst, options, cancel)
 }
 
-/// Token with text and kind
-pub(crate) struct Token<'a> {
-    pub kind: SyntaxKind,
-    pub text: &'a str,
-}
-
-/// Parse tokens into a CST (Concrete Syntax Tree)
-fn parse_to_cst(tokens: &[Token]) -> SyntaxNode {
+/// Parse tokens into a CST with cancellation support
+fn parse_to_cst(tokens: &[Token], cancel: &CancellationToken) -> Option<SyntaxNode> {
     let mut builder = GreenNodeBuilder::new();
 
     builder.start_node(SyntaxKind::SourceFile.into());
 
     let mut pos = 0;
     while pos < tokens.len() {
+        if cancel.is_cancelled() {
+            return None;
+        }
         pos = parse_element(tokens, pos, &mut builder);
     }
 
     builder.finish_node();
 
-    SyntaxNode::new_root(builder.finish())
+    Some(SyntaxNode::new_root(builder.finish()))
 }
 
 /// Parse a single element (package, definition, usage, import, comment, etc.)
@@ -367,8 +371,12 @@ fn parse_annotation(tokens: &[Token], mut pos: usize, builder: &mut GreenNodeBui
     pos
 }
 
-/// Render the CST back to formatted source code
-fn render(node: &SyntaxNode, options: &FormatOptions) -> String {
+/// Render the CST back to formatted source code with cancellation support
+fn render(
+    node: &SyntaxNode,
+    options: &FormatOptions,
+    cancel: &CancellationToken,
+) -> Option<String> {
     let mut output = String::new();
     let mut indent_level: usize = 0;
     let mut at_line_start = true;
@@ -379,9 +387,10 @@ fn render(node: &SyntaxNode, options: &FormatOptions) -> String {
         &mut output,
         &mut indent_level,
         &mut at_line_start,
-    );
+        cancel,
+    )?;
 
-    output
+    Some(output)
 }
 
 fn render_node(
@@ -390,18 +399,39 @@ fn render_node(
     output: &mut String,
     indent_level: &mut usize,
     at_line_start: &mut bool,
-) {
-    for child in node.children_with_tokens() {
+    cancel: &CancellationToken,
+) -> Option<()> {
+    // Collect children for lookahead
+    let children: Vec<_> = node.children_with_tokens().collect();
+
+    for (i, child) in children.iter().enumerate() {
+        if cancel.is_cancelled() {
+            return None;
+        }
+
         match child {
             rowan::NodeOrToken::Token(token) => {
                 let kind: SyntaxKind = token.kind();
                 let text = token.text();
 
+                // Look ahead to next non-whitespace token
+                let next_significant = children[i + 1..].iter().find_map(|c| match c {
+                    rowan::NodeOrToken::Token(t) if t.kind() != SyntaxKind::Whitespace => {
+                        Some(t.kind())
+                    }
+                    _ => None,
+                });
+
                 match kind {
                     SyntaxKind::Whitespace => {
-                        // Normalize whitespace
-                        if text.contains('\n') {
-                            // Preserve newlines
+                        // Don't preserve newlines before opening brace - keep it on same line
+                        if next_significant == Some(SyntaxKind::LBrace) {
+                            // Just add a single space, brace will be on same line
+                            if !*at_line_start && !output.ends_with(' ') && !output.is_empty() {
+                                output.push(' ');
+                            }
+                        } else if text.contains('\n') {
+                            // Preserve newlines for other cases
                             let newline_count = text.matches('\n').count();
                             for _ in 0..newline_count.min(2) {
                                 output.push('\n');
@@ -427,8 +457,20 @@ fn render_node(
                         output.push_str(text);
                     }
                     SyntaxKind::LBrace => {
-                        if !output.ends_with(' ') && !output.ends_with('\n') {
+                        // Ensure space before brace if not at line start
+                        if !*at_line_start && !output.ends_with(' ') && !output.ends_with('\n') {
                             output.push(' ');
+                        }
+                        // If at line start but we want brace on same line, remove trailing newlines
+                        if *at_line_start && !output.is_empty() {
+                            // Remove trailing newlines to put brace on same line
+                            while output.ends_with('\n') {
+                                output.pop();
+                            }
+                            if !output.ends_with(' ') {
+                                output.push(' ');
+                            }
+                            *at_line_start = false;
                         }
                         output.push('{');
                         *indent_level += 1;
@@ -445,24 +487,32 @@ fn render_node(
                         output.push(';');
                         *at_line_start = false;
                     }
+                    SyntaxKind::Colon | SyntaxKind::ColonColon | SyntaxKind::Dot => {
+                        // No space before colons and dots
+                        output.push_str(text);
+                        *at_line_start = false;
+                    }
                     _ => {
                         if *at_line_start {
                             output.push_str(&options.indent(*indent_level));
                             *at_line_start = false;
-                        } else if !output.ends_with(' ')
-                            && !output.ends_with('\n')
-                            && !output.ends_with('{')
-                            && !output.is_empty()
-                        {
-                            output.push(' ');
                         }
+                        // Don't add automatic spaces - let whitespace tokens handle spacing
                         output.push_str(text);
                     }
                 }
             }
             rowan::NodeOrToken::Node(child_node) => {
-                render_node(&child_node, options, output, indent_level, at_line_start);
+                render_node(
+                    child_node,
+                    options,
+                    output,
+                    indent_level,
+                    at_line_start,
+                    cancel,
+                )?;
             }
         }
     }
+    Some(())
 }

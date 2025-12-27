@@ -69,9 +69,16 @@ opt-level = 0
 debug = true
 incremental = true
 
-# Release profile: optimize for runtime performance
+# Release profile: balanced for dev containers (lower memory usage)
 [profile.release]
 opt-level = 3
+lto = false
+codegen-units = 16
+strip = true
+
+# Production profile: maximum optimization (use with `cargo build --profile production`)
+# Requires more memory - may fail in constrained environments
+[profile.production]
+inherits = "release"
 lto = "thin"
 codegen-units = 1
-strip = true

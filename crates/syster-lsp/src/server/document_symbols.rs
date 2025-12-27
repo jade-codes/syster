@@ -1,8 +1,8 @@
 use super::LspServer;
+use async_lsp::lsp_types::{DocumentSymbol, SymbolKind};
 use std::collections::HashMap;
 use std::path::Path;
 use syster::semantic::symbol_table::Symbol;
-use tower_lsp::lsp_types::{DocumentSymbol, SymbolKind};
 
 impl LspServer {
     /// Get all symbols in a document for the outline view
@@ -61,7 +61,7 @@ impl LspServer {
 
         // Get all names and sort by depth (MORE "::" first, so deepest children are processed first)
         let mut all_names: Vec<String> = symbol_map.keys().cloned().collect();
-        all_names.sort_by(|a, b| {
+        all_names.sort_by(|a: &String, b: &String| {
             let depth_a = a.matches("::").count();
             let depth_b = b.matches("::").count();
             depth_b.cmp(&depth_a) // Reverse order: deepest first

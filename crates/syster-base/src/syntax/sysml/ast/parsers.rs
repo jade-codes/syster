@@ -235,7 +235,6 @@ mod tests {
                     "Should start after 'private import '"
                 );
                 assert!(span.end.column <= 37, "Should end at the path");
-                println!("Import 1 span: {span:?}");
             }
 
             // Check second import
@@ -251,7 +250,6 @@ mod tests {
                     span.start.column >= 19,
                     "Should start after 'private import '"
                 );
-                println!("Import 2 span: {span:?}");
             }
         } else {
             panic!("Expected SysML file");
@@ -294,9 +292,7 @@ attribute soundPressureLevel: SoundPressureLevelValue[*] nonunique;
                 usage.span.is_some(),
                 "Attribute usage should have span for 'soundPressureLevel'"
             );
-            if let Some(span) = &usage.span {
-                println!("Attribute usage span: {span:?}");
-            }
+            if let Some(span) = &usage.span {}
 
             // Check it has a type reference
             assert_eq!(
@@ -307,9 +303,7 @@ attribute soundPressureLevel: SoundPressureLevelValue[*] nonunique;
                 usage.relationships.typed_by_span.is_some(),
                 "Should have span for type 'SoundPressureLevelValue'"
             );
-            if let Some(span) = &usage.relationships.typed_by_span {
-                println!("Type reference span: {span:?}");
-            }
+            if let Some(span) = &usage.relationships.typed_by_span {}
         } else {
             panic!("Expected SysML file");
         }

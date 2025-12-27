@@ -4,6 +4,7 @@ mod definition;
 mod diagnostics;
 mod document;
 mod document_symbols;
+pub mod formatting;
 mod helpers;
 mod hover;
 mod position;

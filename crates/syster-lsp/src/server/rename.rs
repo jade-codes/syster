@@ -1,6 +1,6 @@
 use super::LspServer;
 use std::collections::HashMap;
-use tower_lsp::lsp_types::{Position, Range, TextEdit, Url, WorkspaceEdit};
+use async_lsp::lsp_types::{Position, Range, TextEdit, Url, WorkspaceEdit};
 
 impl LspServer {
     /// Rename a symbol at the given position
