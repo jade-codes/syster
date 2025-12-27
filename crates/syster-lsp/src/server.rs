@@ -7,6 +7,7 @@ mod document_symbols;
 mod folding_range;
 mod helpers;
 mod hover;
+mod inlay_hints;
 mod position;
 mod references;
 mod rename;

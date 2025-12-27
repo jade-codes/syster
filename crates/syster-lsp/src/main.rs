@@ -65,6 +65,7 @@ impl LanguageServer for SysterLanguageServer {
                 }),
                 folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
                 selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
+                inlay_hint_provider: Some(OneOf::Left(true)),
                 semantic_tokens_provider: Some(
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
@@ -296,6 +297,17 @@ impl LanguageServer for SysterLanguageServer {
             Ok(None)
         } else {
             Ok(Some(ranges))
+        }
+    }
+
+    async fn inlay_hint(&self, params: InlayHintParams) -> Result<Option<Vec<InlayHint>>> {
+        let server = self.server.lock().await;
+        let hints = server.get_inlay_hints(&params);
+
+        if hints.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(hints))
         }
     }
 
