@@ -1,12 +1,10 @@
 //! Folding range support for the LSP server
 //!
-//! This module converts semantic layer folding ranges to LSP types.
-//! All AST analysis is delegated to the semantic adapters.
+//! This module builds LSP FoldingRange types directly from the semantic adapters.
 
 use super::LspServer;
 use std::path::Path;
 use syster::semantic::folding::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
-use syster::semantic::types::{FoldableRange, FoldingKind};
 use syster::syntax::SyntaxFile;
 use tower_lsp::lsp_types::{FoldingRange, FoldingRangeKind};
 
@@ -17,41 +15,40 @@ impl LspServer {
             return Vec::new();
         };
 
-        let mut ranges = match workspace_file.content() {
-            SyntaxFile::SysML(sysml_file) => {
-                let semantic_ranges = extract_sysml_folding_ranges(sysml_file);
-                self.convert_folding_ranges(semantic_ranges)
-            }
-            SyntaxFile::KerML(kerml_file) => {
-                let semantic_ranges = extract_kerml_folding_ranges(kerml_file);
-                self.convert_folding_ranges(semantic_ranges)
-            }
+        let mut ranges: Vec<FoldingRange> = match workspace_file.content() {
+            SyntaxFile::SysML(sysml_file) => extract_sysml_folding_ranges(sysml_file)
+                .into_iter()
+                .map(|r| FoldingRange {
+                    start_line: r.span.start.line as u32,
+                    start_character: Some(r.span.start.column as u32),
+                    end_line: r.span.end.line as u32,
+                    end_character: Some(r.span.end.column as u32),
+                    kind: Some(if r.is_comment {
+                        FoldingRangeKind::Comment
+                    } else {
+                        FoldingRangeKind::Region
+                    }),
+                    collapsed_text: None,
+                })
+                .collect(),
+            SyntaxFile::KerML(kerml_file) => extract_kerml_folding_ranges(kerml_file)
+                .into_iter()
+                .map(|r| FoldingRange {
+                    start_line: r.span.start.line as u32,
+                    start_character: Some(r.span.start.column as u32),
+                    end_line: r.span.end.line as u32,
+                    end_character: Some(r.span.end.column as u32),
+                    kind: Some(if r.is_comment {
+                        FoldingRangeKind::Comment
+                    } else {
+                        FoldingRangeKind::Region
+                    }),
+                    collapsed_text: None,
+                })
+                .collect(),
         };
 
         ranges.sort_by_key(|r| r.start_line);
         ranges
-    }
-
-    /// Convert semantic FoldableRange to LSP FoldingRange
-    fn convert_folding_ranges(&self, ranges: Vec<FoldableRange>) -> Vec<FoldingRange> {
-        ranges
-            .into_iter()
-            .map(|r| self.to_lsp_folding_range(r))
-            .collect()
-    }
-
-    /// Convert a single semantic FoldableRange to LSP FoldingRange
-    fn to_lsp_folding_range(&self, range: FoldableRange) -> FoldingRange {
-        FoldingRange {
-            start_line: range.span.start.line as u32,
-            start_character: Some(range.span.start.column as u32),
-            end_line: range.span.end.line as u32,
-            end_character: Some(range.span.end.column as u32),
-            kind: Some(match range.kind {
-                FoldingKind::Region => FoldingRangeKind::Region,
-                FoldingKind::Comment => FoldingRangeKind::Comment,
-            }),
-            collapsed_text: range.collapsed_text,
-        }
     }
 }

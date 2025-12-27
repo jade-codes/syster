@@ -3,6 +3,7 @@ mod duplicate_symbol_test;
 mod folding_tests;
 mod import_tests;
 mod kerml_visitor_tests;
+mod selection_tests;
 mod stdlib_symbols_test;
 mod sysml_graph_tests;
 mod sysml_parsing_tests;

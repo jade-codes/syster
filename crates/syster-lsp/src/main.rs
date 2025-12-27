@@ -61,6 +61,7 @@ impl LanguageServer for SysterLanguageServer {
                     ..Default::default()
                 }),
                 folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
+                selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
                 semantic_tokens_provider: Some(
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
@@ -258,6 +259,24 @@ impl LanguageServer for SysterLanguageServer {
         let server = self.server.lock().await;
         let path = std::path::Path::new(uri.path());
         let ranges = server.get_folding_ranges(path);
+
+        if ranges.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(ranges))
+        }
+    }
+
+    async fn selection_range(
+        &self,
+        params: SelectionRangeParams,
+    ) -> Result<Option<Vec<SelectionRange>>> {
+        let uri = params.text_document.uri;
+        let positions = params.positions;
+
+        let server = self.server.lock().await;
+        let path = std::path::Path::new(uri.path());
+        let ranges = server.get_selection_ranges(path, positions);
 
         if ranges.is_empty() {
             Ok(None)

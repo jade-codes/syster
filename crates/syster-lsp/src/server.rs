@@ -10,6 +10,7 @@ mod hover;
 mod position;
 mod references;
 mod rename;
+mod selection_range;
 mod semantic_tokens;
 
 pub use core::LspServer;

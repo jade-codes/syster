@@ -43,10 +43,20 @@ pub use sysml::validator::SysmlValidator;
 pub use sysml_adapter::SysmlAdapter;
 pub use validator_factory::create_validator;
 
-// Re-export folding functions for each language
+// Re-export folding functions and types for each language
 pub mod folding {
-    pub use super::kerml::folding::extract_folding_ranges as extract_kerml_folding_ranges;
-    pub use super::sysml::folding::extract_folding_ranges as extract_sysml_folding_ranges;
+    pub use super::kerml::folding::{
+        FoldingSpan as KermlFoldingSpan, extract_folding_ranges as extract_kerml_folding_ranges,
+    };
+    pub use super::sysml::folding::{
+        FoldingSpan as SysmlFoldingSpan, extract_folding_ranges as extract_sysml_folding_ranges,
+    };
+}
+
+// Re-export selection range functions for each language
+pub mod selection {
+    pub use super::kerml::selection::find_selection_spans as find_kerml_selection_spans;
+    pub use super::sysml::selection::find_selection_spans as find_sysml_selection_spans;
 }
 
 #[cfg(test)]

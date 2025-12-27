@@ -1,27 +1,38 @@
 //! Folding range extraction for SysML files
 
-use crate::semantic::types::{FoldableRange, FoldingKind};
+use crate::core::Span;
 use crate::syntax::sysml::ast::{DefinitionMember, Element, SysMLFile, UsageMember};
 
+/// A simple folding range with span and whether it's a comment
+#[derive(Debug, Clone)]
+pub struct FoldingSpan {
+    pub span: Span,
+    pub is_comment: bool,
+}
+
 /// Extract all foldable ranges from a SysML file
-pub fn extract_folding_ranges(file: &SysMLFile) -> Vec<FoldableRange> {
+pub fn extract_folding_ranges(file: &SysMLFile) -> Vec<FoldingSpan> {
     let mut ranges = Vec::new();
 
     for element in &file.elements {
         collect_ranges(element, &mut ranges);
     }
 
-    ranges.retain(|r| r.is_multiline());
+    // Keep only multiline ranges and sort by start line
+    ranges.retain(|r| r.span.end.line > r.span.start.line);
     ranges.sort_by_key(|r| r.span.start.line);
     ranges
 }
 
 /// Recursively collect folding ranges from an element and its children
-fn collect_ranges(element: &Element, ranges: &mut Vec<FoldableRange>) {
+fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
     match element {
         Element::Package(p) => {
             if let Some(span) = &p.span {
-                ranges.push(FoldableRange::new(*span, FoldingKind::Region));
+                ranges.push(FoldingSpan {
+                    span: *span,
+                    is_comment: false,
+                });
             }
             for child in &p.elements {
                 collect_ranges(child, ranges);
@@ -29,7 +40,10 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldableRange>) {
         }
         Element::Definition(d) => {
             if let Some(span) = &d.span {
-                ranges.push(FoldableRange::new(*span, FoldingKind::Region));
+                ranges.push(FoldingSpan {
+                    span: *span,
+                    is_comment: false,
+                });
             }
             for member in &d.body {
                 match member {
@@ -44,7 +58,10 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldableRange>) {
         }
         Element::Usage(u) => {
             if let Some(span) = &u.span {
-                ranges.push(FoldableRange::new(*span, FoldingKind::Region));
+                ranges.push(FoldingSpan {
+                    span: *span,
+                    is_comment: false,
+                });
             }
             for member in &u.body {
                 match member {
@@ -55,7 +72,10 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldableRange>) {
         }
         Element::Comment(c) => {
             if let Some(span) = &c.span {
-                ranges.push(FoldableRange::new(*span, FoldingKind::Comment));
+                ranges.push(FoldingSpan {
+                    span: *span,
+                    is_comment: true,
+                });
             }
         }
         Element::Import(_) | Element::Alias(_) => {}
