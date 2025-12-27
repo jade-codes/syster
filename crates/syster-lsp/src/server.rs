@@ -5,6 +5,7 @@ mod diagnostics;
 mod document;
 mod document_symbols;
 mod folding_range;
+pub mod formatting;
 mod helpers;
 mod hover;
 mod position;

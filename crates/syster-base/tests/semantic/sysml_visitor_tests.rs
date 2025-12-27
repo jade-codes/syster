@@ -348,8 +348,6 @@ fn test_simple_redefinition_creates_no_new_symbol() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    eprintln!("AST: {file:#?}");
-
     let mut symbol_table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
@@ -362,11 +360,7 @@ fn test_simple_redefinition_creates_no_new_symbol() {
         .iter()
         .filter(|(name, _)| *name == "radius")
         .collect();
-
-    eprintln!("Found {} radius symbols:", radius_symbols.len());
-    for (name, symbol) in &radius_symbols {
-        eprintln!("  '{name}': {symbol:?}");
-    }
+    for (_name, _symbol) in &radius_symbols {}
 
     assert!(
         result.is_ok(),
@@ -473,12 +467,7 @@ fn test_debug_symbol_table_contents() {
     let mut graph = RelationshipGraph::new();
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-
-    println!("\n=== All symbols in table ===");
-    for (qname, symbol) in symbol_table.all_symbols() {
-        println!("  '{qname}' -> {symbol:?}");
-    }
-    println!("=== End of symbols ===\n");
+    for (_qname, _symbol) in symbol_table.all_symbols() {}
 }
 
 #[test]
@@ -828,27 +817,10 @@ fn test_alias_definition() {
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
-    println!(
-        "Elements in file: {:?}",
-        file.elements
-            .iter()
-            .map(|e| format!("{e:?}"))
-            .collect::<Vec<_>>()
-    );
-
     let mut symbol_table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-
-    println!(
-        "Symbols: {:?}",
-        symbol_table
-            .all_symbols()
-            .iter()
-            .map(|(n, _)| n)
-            .collect::<Vec<_>>()
-    );
 
     let symbol = symbol_table
         .all_symbols()

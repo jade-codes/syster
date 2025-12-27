@@ -25,9 +25,7 @@ fn test_stdlib_calculation_symbol_loads() {
         workspace.symbol_table().all_symbols().len()
     );
 
-    let (key, sym) = calculation.unwrap();
-    println!("Found Calculation with key: {key}");
-    println!("Qualified name: {}", sym.qualified_name());
+    let (_key, _sym) = calculation.unwrap();
 }
 
 #[test]
@@ -49,9 +47,7 @@ fn test_stdlib_case_symbol_loads() {
         workspace.symbol_table().all_symbols().len()
     );
 
-    let (key, sym) = case.unwrap();
-    println!("Found Case with key: {key}");
-    println!("Qualified name: {}", sym.qualified_name());
+    let (_key, _sym) = case.unwrap();
 }
 
 #[test]
@@ -64,7 +60,6 @@ fn test_stdlib_symbol_count() {
     workspace.populate_all().expect("Failed to populate stdlib");
 
     let symbol_count = workspace.symbol_table().all_symbols().len();
-    println!("Total symbols loaded: {symbol_count}");
 
     // We should have significantly more symbols now with Items, Cases, etc
     assert!(
@@ -73,11 +68,9 @@ fn test_stdlib_symbol_count() {
     );
 
     // Print first 20 symbols for debugging
-    println!("\nFirst 20 symbols:");
-    for (i, (key, sym)) in workspace.symbol_table().all_symbols().iter().enumerate() {
+    for (i, (_key, _sym)) in workspace.symbol_table().all_symbols().iter().enumerate() {
         if i >= 20 {
             break;
         }
-        println!("  {}: {} (qualified: {})", i + 1, sym.name(), key);
     }
 }

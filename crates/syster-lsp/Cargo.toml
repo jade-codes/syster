@@ -12,8 +12,11 @@ path = "src/main.rs"
 
 [dependencies]
 syster-base = { path = "../syster-base" }
-tower-lsp = "0.20"
+async-lsp = { version = "0.2", features = ["tokio", "tracing"] }
 tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+futures = "0.3"
+tower = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"

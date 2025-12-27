@@ -1,5 +1,5 @@
 use super::LspServer;
-use tower_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
+use async_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
 
 impl LspServer {
     /// Get LSP diagnostics for a given file

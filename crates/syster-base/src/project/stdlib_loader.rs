@@ -44,20 +44,24 @@ impl StdLibLoader {
     ///
     /// # Errors
     ///
+    /// Returns `Ok(true)` if stdlib was loaded, `Ok(false)` if already loaded.
+    ///
+    /// # Errors
+    ///
     /// Returns an error if:
     /// - The stdlib directory cannot be read
     /// - File collection fails
     ///
     /// Note: Individual file parse failures are logged but do not cause the load to fail.
-    pub fn ensure_loaded(&mut self, workspace: &mut Workspace<SyntaxFile>) -> Result<(), String> {
+    pub fn ensure_loaded(&mut self, workspace: &mut Workspace<SyntaxFile>) -> Result<bool, String> {
         // Don't reload if already loaded
         if self.loaded || workspace.has_stdlib() {
-            return Ok(());
+            return Ok(false);
         }
 
         self.load(workspace)?;
         self.loaded = true;
-        Ok(())
+        Ok(true)
     }
 
     /// Loads the SysML standard library into the workspace.

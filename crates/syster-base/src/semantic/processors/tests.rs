@@ -1178,29 +1178,14 @@ fn test_semantic_tokens_shows_what_symbols_have_spans() {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Check what symbols were created
-    println!("\n=== Symbols in table ===");
-    for (name, symbol) in symbol_table.all_symbols() {
+    for (_name, symbol) in symbol_table.all_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
-        {
-            println!(
-                "Symbol '{}': has_span={}, span={:?}",
-                name,
-                symbol.span().is_some(),
-                symbol.span()
-            );
-        }
+        {}
     }
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
-
-    println!("\n=== Generated tokens ===");
-    for token in &tokens {
-        println!(
-            "Token: line={}, col={}, len={}, type={:?}",
-            token.line, token.column, token.length, token.token_type
-        );
-    }
+    for _token in &tokens {}
 
     // We should get tokens for: TestPackage, InnerPart, myUsage
     assert_eq!(
@@ -1256,11 +1241,7 @@ fn test_semantic_tokens_symbols_without_spans_are_skipped() {
     );
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
-
-    println!("\n=== Tokens generated ===");
-    for token in &tokens {
-        println!("Token at line {}", token.line);
-    }
+    for _token in &tokens {}
 
     // Should only get 1 token (the one with a span)
     assert_eq!(
@@ -1284,7 +1265,6 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("sysml.library/Systems Library/Views.sysml");
 
     if !stdlib_path.exists() {
-        println!("Skipping test - stdlib file not found at {stdlib_path:?}");
         return;
     }
 
@@ -1296,46 +1276,28 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
     let file_path = stdlib_path.to_string_lossy().to_string();
     symbol_table.set_current_file(Some(file_path.clone()));
 
-    let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
-    println!("\n=== Populate result: {result:?} ===");
+    let _result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
 
     // Check what symbols were created
-    println!("\n=== Symbols from stdlib file ===");
     let mut symbol_count = 0;
-    let mut symbols_with_spans = 0;
-    for (name, symbol) in symbol_table.all_symbols() {
+    let mut _symbols_with_spans = 0;
+    for (_name, symbol) in symbol_table.all_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file.contains("Views.sysml")
         {
             symbol_count += 1;
             let has_span = symbol.span().is_some();
             if has_span {
-                symbols_with_spans += 1;
+                _symbols_with_spans += 1;
             }
-            if symbol_count <= 5 {
-                println!(
-                    "Symbol '{}': has_span={}, span={:?}",
-                    name,
-                    has_span,
-                    symbol.span()
-                );
-            }
+            if symbol_count <= 5 {}
         }
     }
-    println!("\n=== Total: {symbol_count} symbols, {symbols_with_spans} with spans ===");
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &file_path);
-
-    println!("\n=== Generated tokens ===");
-    for (i, token) in tokens.iter().enumerate() {
-        if i < 10 {
-            println!(
-                "Token {}: line={}, col={}, len={}, type={:?}",
-                i, token.line, token.column, token.length, token.token_type
-            );
-        }
+    for (i, _token) in tokens.iter().enumerate() {
+        if i < 10 {}
     }
-    println!("\n=== Total tokens: {} ===", tokens.len());
 
     // The file should have at least some tokens
     assert!(
@@ -1373,54 +1335,16 @@ package TestPkg {
     let mut relationship_graph = RelationshipGraph::new();
     symbol_table.set_current_file(Some("test.sysml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-
-    println!("\n=== ALL Symbols in table ===");
-    for (name, symbol) in symbol_table.all_symbols() {
+    for (_name, symbol) in symbol_table.all_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
-        {
-            println!(
-                "Symbol '{}': type={:?}, has_span={}, qualified_name={}",
-                name,
-                match symbol {
-                    Symbol::Package { .. } => "Package",
-                    Symbol::Classifier { .. } => "Classifier",
-                    Symbol::Feature { .. } => "Feature",
-                    Symbol::Definition { .. } => "Definition",
-                    Symbol::Usage { .. } => "Usage",
-                    Symbol::Alias { .. } => "Alias",
-                },
-                symbol.span().is_some(),
-                symbol.qualified_name()
-            );
-        }
+        {}
     }
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
+    for _token in &tokens {}
 
-    println!("\n=== Generated tokens ===");
-    for token in &tokens {
-        println!(
-            "Token: line={}, col={}, len={}, type={:?}",
-            token.line, token.column, token.length, token.token_type
-        );
-    }
-
-    println!("\n=== Analysis ===");
-    println!("Expected identifiers in code:");
-    println!("  - TestPkg (package)");
-    println!("  - Vehicle (definition)");
-    println!("  - engine (usage inside Vehicle)");
-    println!("  - mass (usage inside Vehicle)");
-    println!("  - powerPort (usage inside Vehicle)");
-    println!("  - myCar (usage)");
-    println!("  - specificEngine (usage inside myCar)");
-    println!("\nTotal expected: 7 tokens");
-    println!("Total collected: {} tokens", tokens.len());
-
-    if tokens.len() < 7 {
-        println!("\n!!! MISSING {} TOKENS !!!", 7 - tokens.len());
-    }
+    if tokens.len() < 7 {}
 }
 
 #[test]
@@ -1435,11 +1359,8 @@ fn test_semantic_tokens_all_stdlib_files() {
     let stdlib_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
 
     if !stdlib_dir.exists() {
-        println!("Skipping test - stdlib not found");
         return;
     }
-
-    println!("\n=== Testing ALL stdlib files ===\n");
 
     let mut total_files = 0;
     let mut files_with_zero_tokens = Vec::new();
@@ -1493,40 +1414,23 @@ fn test_semantic_tokens_all_stdlib_files() {
         match tokens.len() {
             0 => {
                 files_with_zero_tokens.push(filename.to_string());
-                println!("❌ {filename} - 0 tokens");
             }
             1 => {
                 files_with_one_token.push(filename.to_string());
-                println!("⚠️  {filename} - 1 token");
             }
             n => {
                 files_with_good_tokens.push((filename.to_string(), n));
-                println!("✅ {filename} - {n} tokens");
             }
         }
     }
 
-    println!("\n=== Summary ===");
-    println!("Total files tested: {total_files}");
-    println!("Files with 0 tokens: {}", files_with_zero_tokens.len());
-    println!("Files with 1 token: {}", files_with_one_token.len());
-    println!("Files with 2+ tokens: {}", files_with_good_tokens.len());
-
     if !files_with_zero_tokens.is_empty() {
-        println!("\n0-token files:");
-        for f in &files_with_zero_tokens {
-            println!("  - {f}");
-        }
+        for _f in &files_with_zero_tokens {}
     }
 
     if !files_with_one_token.is_empty() {
-        println!("\n1-token files (suspicious):");
-        for f in &files_with_one_token {
-            println!("  - {f}");
-        }
+        for _f in &files_with_one_token {}
     }
-
-    println!("\n");
 
     // This is clearly broken if most files have 0 or 1 token
     let bad_files = files_with_zero_tokens.len() + files_with_one_token.len();
@@ -1553,36 +1457,15 @@ fn test_allocation_definition_parsing() {
 
     let path = Path::new("test.sysml");
     let syntax_file = parse_content(content, path).expect("Should parse");
-
-    println!("\n=== Parsed Elements ===");
     let (_sysml_file, file_elements) = match &syntax_file {
         crate::syntax::SyntaxFile::SysML(file) => (file, &file.elements),
         crate::syntax::SyntaxFile::KerML(_file) => panic!("Expected SysML, got KerML"),
     };
-
-    println!("Total elements: {}", file_elements.len());
     for (i, elem) in file_elements.iter().enumerate() {
         match elem {
-            crate::syntax::sysml::ast::Element::Package(pkg) => {
-                println!(
-                    "Element {}: Package '{:?}', nested elements: {}",
-                    i,
-                    pkg.name,
-                    pkg.elements.len()
-                );
-            }
-            crate::syntax::sysml::ast::Element::Definition(def) => {
-                println!(
-                    "Element {}: Definition '{:?}' kind={:?}",
-                    i, def.name, def.kind
-                );
-            }
-            crate::syntax::sysml::ast::Element::Usage(usage) => {
-                println!(
-                    "Element {}: Usage '{:?}' kind={:?}",
-                    i, usage.name, usage.kind
-                );
-            }
+            crate::syntax::sysml::ast::Element::Package(_pkg) => {}
+            crate::syntax::sysml::ast::Element::Definition(_def) => {}
+            crate::syntax::sysml::ast::Element::Usage(_usage) => {}
             _ => println!("Element {i}: {elem:?}"),
         }
     }
@@ -1592,27 +1475,11 @@ fn test_allocation_definition_parsing() {
     let file_path = path.to_string_lossy().to_string();
     symbol_table.set_current_file(Some(file_path.clone()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-
-    println!("\n=== Symbols Created ===");
     let all_symbols = symbol_table.all_symbols();
-    println!("Total symbols: {}", all_symbols.len());
-    for (name, symbol) in &all_symbols {
-        println!(
-            "Symbol: name='{}', has_span={}",
-            name,
-            symbol.span().is_some()
-        );
-    }
+    for (_name, _symbol) in &all_symbols {}
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &file_path);
-    println!("\n=== Tokens Generated ===");
-    println!("Total tokens: {}", tokens.len());
-    for (i, token) in tokens.iter().enumerate() {
-        println!(
-            "Token {}: line={}, col={}, len={}, type={:?}",
-            i, token.line, token.column, token.length, token.token_type
-        );
-    }
+    for _token in tokens.iter() {}
 
     assert!(!file_elements.is_empty(), "Should have at least package");
     assert!(

@@ -1,5 +1,5 @@
 use crate::server::core::LspServer;
-use tower_lsp::lsp_types::{
+use async_lsp::lsp_types::{
     CompletionItem, CompletionItemKind, CompletionResponse, Documentation, Position,
 };
 

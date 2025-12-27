@@ -64,6 +64,12 @@ function createClientOptions(outputChannel: vscode.OutputChannel): LanguageClien
             provideHover: async (document, position, token, next) => {
                 outputChannel.appendLine(`[Client] Hover requested at ${position.line}:${position.character}`);
                 return await next(document, position, token);
+            },
+            provideDocumentFormattingEdits: async (document, options, token, next) => {
+                outputChannel.appendLine(`[Client] Format Document requested for ${document.uri.toString()}`);
+                const result = await next(document, options, token);
+                outputChannel.appendLine(`[Client] Format Document result: ${result ? result.length + ' edits' : 'null'}`);
+                return result;
             }
         }
     };

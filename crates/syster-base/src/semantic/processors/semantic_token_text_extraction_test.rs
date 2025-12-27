@@ -43,12 +43,6 @@ fn test_stdlib_package_with_types() {
     }
 }"#;
 
-    println!("\n=== Testing Standard Library Package with Type References ===");
-    println!("Source:");
-    for (i, line) in source.lines().enumerate() {
-        println!("  Line {i}: '{line}'");
-    }
-
     let syntax_file = parse_sysml(source);
 
     // Create a workspace to test type reference extraction
@@ -57,34 +51,8 @@ fn test_stdlib_package_with_types() {
     workspace.add_file(path.clone(), syntax_file);
     workspace.populate_file(&path).expect("Failed to populate");
 
-    println!("\n=== Symbols Found ===");
-    for (name, symbol) in workspace.symbol_table().all_symbols() {
-        if let Some(span) = symbol.span() {
-            println!(
-                "  '{}': line {}, col {} to {}",
-                name, span.start.line, span.start.column, span.end.column
-            );
-        } else {
-            println!("  '{name}': NO SPAN");
-        }
-    }
-
     let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
-
-    println!("\n=== Tokens Generated ===");
     let lines: Vec<&str> = source.lines().collect();
-    for (i, token) in tokens.iter().enumerate() {
-        let line_text = lines.get(token.line as usize).unwrap_or(&"");
-        let text: String = line_text
-            .chars()
-            .skip(token.column as usize)
-            .take(token.length as usize)
-            .collect();
-        println!(
-            "  Token {}: line {}, col {}, len {}, text='{}', type={:?}",
-            i, token.line, token.column, token.length, text, token.token_type
-        );
-    }
 
     // Should have tokens for: package, metadata def, attributes
     // Note: Type references like "String" may not be in the symbol table yet
@@ -102,9 +70,7 @@ fn test_stdlib_package_with_types() {
         .skip(pkg_token.unwrap().column as usize)
         .take(pkg_token.unwrap().length as usize)
         .collect();
-    println!("\n=== Package Token Verification ===");
-    println!("Expected: 'AnalysisTooling'");
-    println!("Actual: '{pkg_text}'");
+
     assert_eq!(
         pkg_text, "AnalysisTooling",
         "Package token should highlight 'AnalysisTooling'"
@@ -118,26 +84,7 @@ fn test_stdlib_package_with_types() {
             .skip(tok.column as usize)
             .take(tok.length as usize)
             .collect();
-        println!("\nMetadata def token: '{text}'");
         assert_eq!(text, "ToolExecution", "Should capture metadata def name");
-    }
-
-    // Check for attribute tokens
-    let attr_tokens: Vec<_> = tokens
-        .iter()
-        .filter(|t| t.line == 17 || t.line == 18)
-        .collect();
-    println!("\n=== Attribute Tokens ===");
-    for tok in &attr_tokens {
-        let text: String = lines[tok.line as usize]
-            .chars()
-            .skip(tok.column as usize)
-            .take(tok.length as usize)
-            .collect();
-        println!(
-            "Line {}: token='{}', type={:?}",
-            tok.line, text, tok.token_type
-        );
     }
 }
 
@@ -149,13 +96,6 @@ fn test_kerml_classifiers() {
     class MyClass;
     feature myFeature;
 }"#;
-
-    println!("\n=== Testing KerML Classifiers ===");
-    println!("Source:");
-    for (i, line) in source.lines().enumerate() {
-        println!("  Line {i}: '{line}'");
-    }
-
     let path = PathBuf::from("test.kerml");
     let syntax_file = parse_content(source, &path).expect("Parse should succeed");
 
@@ -166,34 +106,8 @@ fn test_kerml_classifiers() {
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
-    println!("\n=== Symbols Found ===");
-    for (name, symbol) in symbol_table.all_symbols() {
-        if let Some(span) = symbol.span() {
-            println!(
-                "  '{}': line {}, col {} to {}",
-                name, span.start.line, span.start.column, span.end.column
-            );
-        } else {
-            println!("  '{name}': NO SPAN");
-        }
-    }
-
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.kerml");
-
-    println!("\n=== Tokens Generated ===");
     let lines: Vec<&str> = source.lines().collect();
-    for (i, token) in tokens.iter().enumerate() {
-        let line_text = lines.get(token.line as usize).unwrap_or(&"");
-        let text: String = line_text
-            .chars()
-            .skip(token.column as usize)
-            .take(token.length as usize)
-            .collect();
-        println!(
-            "  Token {}: line {}, col {}, len {}, text='{}', type={:?}",
-            i, token.line, token.column, token.length, text, token.token_type
-        );
-    }
 
     // Should have tokens for package and classifiers (features may not be in symbol table yet)
     assert!(
@@ -239,13 +153,6 @@ fn test_attribute_definitions_and_usages() {
     
     part myVehicle : Vehicle;
 }"#;
-
-    println!("\n=== Testing Attributes ===");
-    println!("Source:");
-    for (i, line) in source.lines().enumerate() {
-        println!("  Line {i}: '{line}'");
-    }
-
     let syntax_file = parse_sysml(source);
     let mut symbol_table = SymbolTable::new();
     let mut relationship_graph = RelationshipGraph::new();
@@ -254,34 +161,8 @@ fn test_attribute_definitions_and_usages() {
     let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
-    println!("\n=== Symbols Found ===");
-    for (name, symbol) in symbol_table.all_symbols() {
-        if let Some(span) = symbol.span() {
-            println!(
-                "  '{}': line {}, col {} to {}",
-                name, span.start.line, span.start.column, span.end.column
-            );
-        } else {
-            println!("  '{name}': NO SPAN");
-        }
-    }
-
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
-
-    println!("\n=== Tokens Generated ===");
     let lines: Vec<&str> = source.lines().collect();
-    for (i, token) in tokens.iter().enumerate() {
-        let line_text = lines.get(token.line as usize).unwrap_or(&"");
-        let text: String = line_text
-            .chars()
-            .skip(token.column as usize)
-            .take(token.length as usize)
-            .collect();
-        println!(
-            "  Token {}: line {}, col {}, len {}, text='{}', type={:?}",
-            i, token.line, token.column, token.length, text, token.token_type
-        );
-    }
 
     // We should have tokens for: TestPackage, Vehicle (def), mass (attribute usage), myVehicle (part usage)
     assert!(
@@ -304,9 +185,6 @@ fn test_attribute_definitions_and_usages() {
         .skip(mass_token.column as usize)
         .take(mass_token.length as usize)
         .collect();
-    println!("\n=== Attribute Token ===");
-    println!("Expected: 'mass'");
-    println!("Actual: '{mass_text}'");
     assert_eq!(mass_text, "mass", "Attribute token should highlight 'mass'");
 }
 
@@ -318,12 +196,6 @@ fn test_semantic_token_text_extraction() {
     attribute def ScalarQuantityValue;
     part vehicle: Vehicle;
 }"#;
-
-    println!("\n=== Source Code ===");
-    for (i, line) in source.lines().enumerate() {
-        println!("Line {i}: '{line}'");
-    }
-
     // Parse the file
     let syntax_file = parse_sysml(source);
 
@@ -339,27 +211,8 @@ fn test_semantic_token_text_extraction() {
         "Symbol population failed: {populate_result:?}"
     );
 
-    println!("\n=== Symbols Created ===");
-    for (name, symbol) in symbol_table.all_symbols() {
-        if let Some(span) = symbol.span() {
-            println!(
-                "Symbol '{}': span=({},{}) to ({},{}), width={}",
-                name,
-                span.start.line,
-                span.start.column,
-                span.end.line,
-                span.end.column,
-                span.end.column - span.start.column
-            );
-        } else {
-            println!("Symbol '{name}': NO SPAN");
-        }
-    }
-
     // Collect semantic tokens
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
-
-    println!("\n=== Semantic Tokens ===");
     let lines: Vec<&str> = source.lines().collect();
 
     for (i, token) in tokens.iter().enumerate() {
@@ -380,11 +233,6 @@ fn test_semantic_token_text_extraction() {
             .skip(start_char)
             .take(token.length as usize)
             .collect();
-
-        println!(
-            "Token {}: line={}, char_col={}, char_len={}, text='{}', type={:?}",
-            i, token.line, token.column, token.length, char_slice, token.token_type
-        );
 
         // Verify the extracted text matches expectations
         assert!(
@@ -414,9 +262,6 @@ fn test_semantic_token_text_extraction() {
         .take(package_token.length as usize)
         .collect();
 
-    println!("\n=== Verification ===");
-    println!("Package token text: '{package_text}'");
-
     // KNOWN ISSUE: The AST span for Package currently covers the entire package declaration,
     // not just the identifier. So for "standard library package QuantityTest",
     // the span is (0,0) to (0,8) which captures "standard" instead of "QuantityTest".
@@ -442,8 +287,6 @@ fn test_semantic_token_text_extraction() {
             .skip(def_token.column as usize)
             .take(def_token.length as usize)
             .collect();
-
-        println!("Definition token text: '{def_text}'");
 
         // KNOWN ISSUE: Similar to packages, definition spans cover the entire declaration
         // rather than just the identifier

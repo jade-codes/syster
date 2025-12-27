@@ -3,6 +3,6 @@
 //! Provides LSP functionality for SysML v2 that can be used by the binary server
 //! or tested independently.
 
-mod server;
+pub mod server;
 
 pub use server::LspServer;

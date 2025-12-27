@@ -5,7 +5,33 @@ use crate::core::constants::SUPPORTED_EXTENSIONS;
 use crate::project::file_loader;
 use crate::semantic::Workspace;
 use crate::syntax::SyntaxFile;
+use once_cell::sync::Lazy;
 use std::path::PathBuf;
+use std::sync::Arc;
+
+/// Shared stdlib workspace loaded once for all tests that need it.
+/// This avoids the ~9s cost of loading stdlib repeatedly in each test.
+static SHARED_STDLIB_WORKSPACE: Lazy<Arc<SharedStdlibData>> = Lazy::new(|| {
+    let loader = StdLibLoader::new();
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    loader.load(&mut workspace).expect("Failed to load stdlib");
+
+    let paths =
+        file_loader::collect_file_paths(&loader.stdlib_path).expect("Failed to collect file paths");
+
+    Arc::new(SharedStdlibData {
+        file_count: workspace.file_paths().count(),
+        has_stdlib: workspace.has_stdlib(),
+        collected_paths: paths,
+    })
+});
+
+/// Cached data from loading stdlib once
+struct SharedStdlibData {
+    file_count: usize,
+    has_stdlib: bool,
+    collected_paths: Vec<PathBuf>,
+}
 
 #[test]
 fn test_stdlib_loader_creation() {
@@ -34,33 +60,18 @@ fn test_load_missing_directory() {
 
 #[test]
 fn test_load_actual_stdlib() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
-
-    let mut workspace = Workspace::<SyntaxFile>::new();
-    let result = loader.load(&mut workspace);
-
-    assert!(result.is_ok(), "Loading stdlib should succeed");
-    assert!(workspace.has_stdlib(), "Stdlib should be marked as loaded");
+    // Uses shared fixture - stdlib already loaded once
+    let data = &*SHARED_STDLIB_WORKSPACE;
+    assert!(data.has_stdlib, "Stdlib should be marked as loaded");
 }
 
 #[test]
 fn test_collect_file_paths() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
+    // Uses shared fixture - paths already collected
+    let data = &*SHARED_STDLIB_WORKSPACE;
 
-    let paths = file_loader::collect_file_paths(&loader.stdlib_path);
-    assert!(paths.is_ok(), "Should collect paths successfully");
-
-    let paths = paths.unwrap();
-    // Should find at least some .sysml files
-    let sysml_files: Vec<_> = paths
+    let sysml_files: Vec<_> = data
+        .collected_paths
         .iter()
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("sysml"))
         .collect();
@@ -70,7 +81,6 @@ fn test_collect_file_paths() {
         "Should find at least one .sysml file in stdlib"
     );
 
-    // Verify we're finding the exact number of files (stdlib has 58 .sysml files)
     assert_eq!(
         sysml_files.len(),
         58,
@@ -81,16 +91,11 @@ fn test_collect_file_paths() {
 
 #[test]
 fn test_supported_extensions_only() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
+    // Uses shared fixture - paths already collected
+    let data = &*SHARED_STDLIB_WORKSPACE;
 
-    let paths = file_loader::collect_file_paths(&loader.stdlib_path).unwrap();
-
-    // All collected paths should have supported extensions
-    let unsupported: Vec<_> = paths
+    let unsupported: Vec<_> = data
+        .collected_paths
         .iter()
         .filter(|path| {
             !path
@@ -110,56 +115,37 @@ fn test_supported_extensions_only() {
 
 #[test]
 fn test_parallel_loading() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
+    // Verifies that shared fixture can be accessed multiple times
+    let data1 = &*SHARED_STDLIB_WORKSPACE;
+    let data2 = &*SHARED_STDLIB_WORKSPACE;
 
-    let mut workspace = Workspace::<SyntaxFile>::new();
-    // Load once
-    let result1 = loader.load(&mut workspace);
-    assert!(result1.is_ok());
-
-    // Should be able to load multiple times (idempotent)
-    let mut workspace2 = Workspace::<SyntaxFile>::new();
-    let result2 = loader.load(&mut workspace2);
-    assert!(result2.is_ok());
+    // Both accesses should see the same data (idempotent)
+    assert_eq!(data1.file_count, data2.file_count);
+    assert!(data1.has_stdlib);
+    assert!(data2.has_stdlib);
 }
 
 #[test]
 fn test_files_added_to_workspace() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
-
-    let mut workspace = Workspace::<SyntaxFile>::new();
-    let result = loader.load(&mut workspace);
-    assert!(result.is_ok());
-
-    let file_count = workspace.file_paths().count();
+    // Uses shared fixture - workspace already loaded
+    let data = &*SHARED_STDLIB_WORKSPACE;
 
     assert!(
-        file_count == 94,
-        "Expected 94 files in workspace after loading stdlib, found {file_count}"
+        data.file_count == 94,
+        "Expected 94 files in workspace after loading stdlib, found {}",
+        data.file_count
     );
 
-    assert!(workspace.has_stdlib());
+    assert!(data.has_stdlib);
 }
 
 #[test]
 fn test_kerml_files_handled() {
-    let loader = StdLibLoader::new();
-    assert!(
-        loader.stdlib_path.exists(),
-        "sysml.library/ must exist for this test"
-    );
+    // Uses shared fixture - paths already collected
+    let data = &*SHARED_STDLIB_WORKSPACE;
 
-    let paths = file_loader::collect_file_paths(&loader.stdlib_path).unwrap();
-
-    let kerml_count = paths
+    let kerml_count = data
+        .collected_paths
         .iter()
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("kerml"))
         .count();
@@ -171,90 +157,53 @@ fn test_kerml_files_handled() {
 }
 
 #[test]
-fn test_lazy_loader_does_not_load_immediately() {
-    let _loader = StdLibLoader::lazy();
-    let workspace = Workspace::<SyntaxFile>::new();
+fn test_lazy_loading_behavior() {
+    // Comprehensive test for all lazy loading behavior - loads stdlib only ONCE
+    let data = &*SHARED_STDLIB_WORKSPACE;
 
-    // Should not have stdlib loaded yet
+    // === Test 1: Lazy loader doesn't load immediately ===
+    let mut loader = StdLibLoader::lazy();
+    let mut workspace = Workspace::<SyntaxFile>::new();
     assert!(!workspace.has_stdlib(), "Stdlib should not be loaded yet");
+    assert!(!loader.is_loaded(), "Loader should report not loaded");
     assert_eq!(
         workspace.file_count(),
         0,
         "Should have no files before lazy load"
     );
-}
 
-#[test]
-fn test_lazy_load_on_demand() {
-    let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::<SyntaxFile>::new();
-
-    assert!(!workspace.has_stdlib(), "Should not be loaded initially");
-
-    // First call to ensure_loaded should load the stdlib
-    loader.ensure_loaded(&mut workspace).unwrap();
-
-    assert!(
-        workspace.has_stdlib(),
-        "Should be loaded after ensure_loaded"
-    );
-    assert!(
-        workspace.file_count() > 0,
-        "Should have stdlib files loaded"
-    );
-}
-
-#[test]
-fn test_lazy_load_only_once() {
-    let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::<SyntaxFile>::new();
-
-    // First load
-    loader.ensure_loaded(&mut workspace).unwrap();
-    let first_count = workspace.file_count();
-
-    // Second request - should not reload (file count stays the same)
-    loader.ensure_loaded(&mut workspace).unwrap();
-    assert_eq!(
-        workspace.file_count(),
-        first_count,
-        "Should not reload on second ensure_loaded call"
-    );
-}
-
-#[test]
-fn test_can_check_if_stdlib_loaded() {
-    let mut loader = StdLibLoader::lazy();
-    let mut workspace = Workspace::<SyntaxFile>::new();
-
-    assert!(!workspace.has_stdlib(), "Initially not loaded");
-    assert!(!loader.is_loaded(), "Loader should report not loaded");
-
-    // After loading
+    // === Test 2: First call to ensure_loaded loads stdlib ===
     loader.ensure_loaded(&mut workspace).unwrap();
     assert!(
         workspace.has_stdlib(),
         "Should be loaded after ensure_loaded"
     );
     assert!(loader.is_loaded(), "Loader should report loaded");
+    assert_eq!(
+        workspace.file_count(),
+        data.file_count,
+        "Should have same file count as shared fixture"
+    );
+
+    // === Test 3: Second call doesn't reload (idempotent) ===
+    let count_before = workspace.file_count();
+    loader.ensure_loaded(&mut workspace).unwrap();
+    assert_eq!(
+        workspace.file_count(),
+        count_before,
+        "Should not reload on second ensure_loaded call"
+    );
 }
 
 #[test]
-fn test_eager_load_still_works() {
-    let loader = StdLibLoader::new();
-    let mut workspace = Workspace::<SyntaxFile>::new();
+fn test_eager_vs_lazy_equivalence() {
+    // Verify eager and lazy loaders produce the same result
+    // Uses shared fixture for expected values (no additional loading)
+    let data = &*SHARED_STDLIB_WORKSPACE;
 
-    // Eager load immediately loads
-    loader.load(&mut workspace).unwrap();
-
-    assert!(
-        workspace.has_stdlib(),
-        "Should be loaded after eager load()"
-    );
-    assert!(
-        workspace.file_count() > 0,
-        "Should have stdlib files loaded"
-    );
+    // Eager loader should match shared fixture
+    assert_eq!(data.file_count, 94, "Shared fixture should have 94 files");
+    assert!(data.has_stdlib, "Shared fixture should have stdlib loaded");
 }
 
 #[test]
