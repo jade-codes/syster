@@ -11,3 +11,7 @@ pub use table::SymbolTable;
 #[cfg(test)]
 #[path = "symbol_table/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "symbol_table/lookup_global_mut_test.rs"]
+mod lookup_global_mut_test;
