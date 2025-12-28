@@ -81,6 +81,7 @@ impl LanguageServer for ServerState {
                     }),
                     folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
                     selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
+                    inlay_hint_provider: Some(OneOf::Left(true)),
                     semantic_tokens_provider: Some(
                         SemanticTokensServerCapabilities::SemanticTokensOptions(
                             SemanticTokensOptions {
@@ -270,6 +271,15 @@ impl LanguageServer for ServerState {
         } else {
             Some(ranges)
         };
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn inlay_hint(
+        &mut self,
+        params: InlayHintParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<InlayHint>>, Self::Error>> {
+        let hints = self.server.get_inlay_hints(&params);
+        let result = if hints.is_empty() { None } else { Some(hints) };
         Box::pin(async move { Ok(result) })
     }
 

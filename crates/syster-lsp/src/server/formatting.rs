@@ -181,8 +181,7 @@ package Test {
         assert_eq!(
             result.trim(),
             "metadata def ToolVariable",
-            "Should normalize multiple spaces. Got: |{}|",
-            result
+            "Should normalize multiple spaces. Got: |{result}|"
         );
     }
 
@@ -204,13 +203,11 @@ package Test {
         let new_text = &edits[0].new_text;
         assert!(
             new_text.contains("metadata def ToolVariable"),
-            "Formatted text should normalize whitespace. Got: |{}|",
-            new_text
+            "Formatted text should normalize whitespace. Got: |{new_text}|"
         );
         assert!(
             !new_text.contains("def              "),
-            "Should not have multiple spaces. Got: |{}|",
-            new_text
+            "Should not have multiple spaces. Got: |{new_text}|"
         );
     }
 }

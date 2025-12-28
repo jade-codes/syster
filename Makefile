@@ -48,7 +48,7 @@ fmt-check:
 
 # Run clippy linter
 lint:
-	cargo clippy -- -D warnings
+	cargo clippy --all-targets -- -D warnings
 
 # Run all checks (format, lint, test)
 check: fmt-check lint test
@@ -63,7 +63,7 @@ run-guidelines:
 	@echo "✓ Code formatted"
 	@echo ""
 	@echo "Step 2/3: Running linter (includes build)..."
-	@cargo clippy --all-targets --all-features -- -D warnings
+	@cargo clippy --all-targets -- -D warnings
 	@echo "✓ Linting passed"
 	@echo ""
 	@echo "Step 3/3: Running tests..."
