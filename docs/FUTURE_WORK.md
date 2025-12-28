@@ -1,31 +1,7 @@
 # Future Work
-
-
 ---
 
 ## LSP Feature Implementation (Priority Order)
-
-### In Progress / Next Tasks
-- [ ] **Implement KerML visitor logic** (TDD - tests ready)
-  - 14 comprehensive tests written following SysML visitor pattern
-  - 4 tests currently pass (basic package handling)
-  - 10 tests failing, waiting for `KermlAdapter::populate()` implementation
-  - Tests cover: packages, classifiers, features, functions, relationships, imports
-  - Implementation should mirror SysMLAdapter structure and visitor patterns
-- [ ] Add tests for semantic tokens support
-- [ ] Do a code coverage analysis of missing tests
-- [ ] Remove logic from tests (match/if/else statements)
-- [ ] Scan folder to see cross cutting concerns
-- [ ] Refactor semantic tokens
-- [ ] Refactor LSP components
-- [ ] Clean up floating tests
-
-### Recently Completed
-- [x] **Fix architecture tests** - Already complete! The test has proper assertions at lines 149-153 that fail when violations are found.
-- [x] **BUG: Remaining duplicate symbol errors in stdlib** - FIXED! After fixing qualified redefinitions, discovered identifiers in value expressions (like `radius` in `attribute :>> semiMajorAxis [1] = radius;`) were being extracted as symbol names. Extended `is_relationship_part()` to skip `feature_value` and `value_part` rules. Used TDD approach: wrote failing test first, implemented fix, verified all duplicate symbol warnings eliminated. Stdlib now loads completely clean.
-- [x] **CRITICAL BUG: Duplicate symbol definitions from qualified redefinitions** - Fixed! The semantic visitor was incorrectly treating qualified names in redefinitions (e.g., `ref item :>> Shell::edges::vertices`) as new symbol definitions. Modified `find_name()` and `find_identifier_span()` to skip `feature_specialization_part` when searching for element names, preventing identifiers within relationship declarations from being mistaken for symbol names. Tests added to verify qualified redefinitions, comma-separated redefinitions, and anonymous redefinitions all work correctly.
-- [x] **CRITICAL BUG FIX: Stdlib cross-file reference resolution** - Fixed parser not capturing `abstract` flag from `abstract attribute def` declarations. Added `extract_definition_flags()` to properly extract abstract and variation markers. Fixed `populate_all()` to continue processing files even when one fails, preventing early exit that blocked MeasurementReferences.sysml and other files from loading.
-- [x] **CRITICAL BUG FIX: LSP message format** - Fixed tracing_subscriber writing to stdout which corrupted LSP protocol messages. LSP uses stdin/stdout for JSON-RPC, so all logging must go through client.log_message() instead.
 
 ### Architecture Notes
 - **Reusable patterns:**
