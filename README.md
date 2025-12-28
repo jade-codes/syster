@@ -10,7 +10,7 @@ Syster is organized as a Cargo workspace with three crates:
 
 - **syster-base** - Core library with parser, AST, and semantic analysis
 - **syster-cli** - Command-line tool for analyzing SysML/KerML files
-- **syster-lsp** - Language Server Protocol implementation (in progress)
+- **syster-lsp** - Language Server Protocol implementation with full IDE support
 
 ## Documentation
 
@@ -61,43 +61,95 @@ Syster provides a comprehensive implementation of parsers and Abstract Syntax Tr
 - Visitor pattern for AST traversal
 - Comprehensive test coverage (29 tests)
 
+### Code Formatter
+- **Rowan-based**: Uses Concrete Syntax Tree (CST) for lossless formatting
+- **Comment Preservation**: Line comments, block comments, and doc comments are preserved
+- **Whitespace Normalization**: Collapses multiple spaces, normalizes indentation
+- **Configurable**: Supports `tab_size`, `insert_spaces`, and `print_width` settings
+- **Async with Cancellation**: Can be cancelled mid-operation for responsive editing
+- **Idempotent**: Formatting is stable (formatting twice produces same result)
+- **75 unit tests**: Covers all SysML constructs, edge cases, and idempotency
+
+### Language Server Protocol (LSP)
+Full IDE integration support with:
+- **Navigation**:
+  - Go to Definition
+  - Find References
+  - Document Symbols (outline view)
+  - Hover information with symbol details
+- **Editing**:
+  - Document Formatting (preserves comments, normalizes whitespace)
+  - Rename Symbol (with prepare rename validation)
+  - Completion (context-aware suggestions)
+- **Analysis**:
+  - Semantic Tokens (syntax highlighting)
+  - Inlay Hints (type annotations)
+  - Diagnostics (parse errors)
+- **Code Structure**:
+  - Folding Ranges (collapse blocks)
+  - Selection Ranges (smart select expand/shrink)
+- **Async Architecture**: Uses async-lsp for proper request cancellation and ordering
+- **Standard Library**: Optional stdlib loading with configurable paths
+- **Incremental Updates**: Efficient document synchronization
+
 ## Architecture
 
 ```
 crates/
 ├── syster-base/             # Core library
 │   ├── src/
-│   │   ├── core/           # Shared infrastructure
-│   │   │   ├── traits.rs   # AstNode, Named, ToSource traits
-│   │   │   └── visitor.rs  # Visitor pattern implementation
-│   │   ├── language/
-│   │   │   ├── kerml/
-│   │   │   │   ├── syntax/ # KerML-specific AST
-│   │   │   │   └── model/  # Semantic model (planned)
-│   │   │   └── sysml/
-│   │   │       ├── syntax/ # SysML-specific AST
-│   │   │       └── model/  # Semantic model (planned)
-│   │   ├── parser/
+│   │   ├── parser/         # Pest grammars
 │   │   │   ├── kerml.pest  # KerML grammar
 │   │   │   └── sysml.pest  # SysML grammar
+│   │   ├── syntax/         # AST and formatter
+│   │   │   ├── kerml/      # KerML AST nodes
+│   │   │   ├── sysml/      # SysML AST nodes
+│   │   │   ├── formatter/  # Rowan-based code formatter
+│   │   │   │   ├── lexer.rs    # Token stream generation
+│   │   │   │   ├── options.rs  # Formatting configuration
+│   │   │   │   └── syntax_kind.rs  # Token types
+│   │   │   ├── file.rs     # File abstraction
+│   │   │   └── parser.rs   # AST construction
 │   │   ├── semantic/       # Cross-file analysis
-│   │   │   ├── symbol_table.rs
-│   │   │   ├── graph.rs
-│   │   │   ├── resolver.rs
-│   │   │   └── workspace.rs
-│   │   └── project/        # Workspace loading
-│   │       ├── workspace_loader.rs
-│   │       └── stdlib_loader.rs
-│   └── sysml.library/      # Standard library
+│   │   │   ├── symbol_table.rs  # Global symbol registry
+│   │   │   ├── graph.rs         # Relationship graphs
+│   │   │   ├── resolver.rs      # Name resolution
+│   │   │   ├── analyzer.rs      # Validation passes
+│   │   │   └── workspace.rs     # Multi-file coordination
+│   │   ├── project/        # File loading
+│   │   │   ├── workspace_loader.rs  # User files
+│   │   │   └── stdlib_loader.rs     # Standard library
+│   │   └── core/           # Shared traits and utilities
+│   └── sysml.library/      # Standard library files
 ├── syster-cli/              # Command-line tool
 │   ├── src/
 │   │   ├── main.rs         # CLI entry point
 │   │   └── lib.rs          # Testable analysis logic
 │   └── tests/
 │       └── cli_tests.rs    # Integration tests
-└── syster-lsp/              # LSP server (in progress)
-    └── src/
-        └── main.rs
+└── syster-lsp/              # LSP server with full feature support
+    ├── src/
+    │   ├── main.rs          # async-lsp server setup
+    │   ├── server.rs        # LSP router and lifecycle
+    │   └── server/          # Feature implementations
+    │       ├── core.rs           # Server capabilities
+    │       ├── document.rs       # Document lifecycle
+    │       ├── diagnostics.rs    # Error reporting
+    │       ├── hover.rs          # Hover information
+    │       ├── definition.rs     # Go to definition
+    │       ├── references.rs     # Find all references
+    │       ├── rename.rs         # Symbol renaming
+    │       ├── completion.rs     # Code completion
+    │       ├── document_symbols.rs  # Document outline
+    │       ├── semantic_tokens.rs   # Syntax highlighting
+    │       ├── inlay_hints.rs    # Inline type hints
+    │       ├── formatting.rs     # Code formatting (Rowan)
+    │       ├── folding_range.rs  # Code folding
+    │       ├── selection_range.rs # Smart selection
+    │       ├── position.rs       # Position utilities
+    │       └── helpers.rs        # Common utilities
+    └── tests/
+        └── integration_tests.rs  # LSP protocol tests
 ```
 
 ## Building
@@ -106,10 +158,43 @@ crates/
 # Build all crates
 cargo build
 
+# Build in release mode (for production use)
+cargo build --release
+
 # Build specific crate
 cargo build -p syster-base
 cargo build -p syster-cli
 cargo build -p syster-lsp
+```
+
+## VS Code Extension
+
+The LSP server integrates with VS Code for a full IDE experience:
+
+```bash
+# Build and install the extension
+cd editors/vscode
+npm install
+npm run compile
+```
+
+Features in VS Code:
+- Syntax highlighting with semantic tokens
+- IntelliSense with hover and completion
+- Go to definition and find all references
+- Symbol outline and document symbols
+- Code formatting with comment preservation
+- Smart rename with validation
+- Inlay hints for types
+- Code folding and smart selection
+- Real-time diagnostics
+
+Configure stdlib path in VS Code settings:
+```json
+{
+  "sysml.stdlibEnabled": true,
+  "sysml.stdlibPath": "/path/to/sysml.library"
+}
 ```
 
 ## Command-Line Usage
@@ -251,12 +336,35 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for full guidelines. Key points
 - **Format & Lint**: Run `make run-guidelines` before committing
 - **Small commits**: Commit after each completed todo with descriptive messages
 
+### Development Commands
+
+```bash
+# Run complete validation (format, lint, test)
+make run-guidelines
+
+# Format code
+make fmt
+
+# Run linter
+make lint
+
+# Run all tests
+make test
+
+# Build project
+make build
+
+# Clean build artifacts
+make clean
+```
+
 ### Key Design Patterns
 
 1. **Language-Specific AST**: Each language (KerML, SysML) has its own syntax module with specific node types
 2. **Shared Core**: Common traits and patterns are defined in `src/core/`
 3. **Macro-Based FromPest**: Uses `impl_from_pest!` macro to reduce boilerplate in CST→AST conversion
 4. **Recursive Name Finding**: Handles various grammar patterns for extracting identifications
+5. **Async-LSP**: Uses async-lsp library for proper request cancellation and synchronous notifications
 
 ### Grammar Rules
 
