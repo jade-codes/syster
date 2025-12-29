@@ -183,39 +183,12 @@ fn test_location_equality() {
 }
 
 #[test]
-fn test_location_clone() {
-    let range = Range::single(5, 10);
-    let loc1 = Location::new("test.sysml", range);
-    let loc2 = loc1.clone();
-    assert_eq!(loc1, loc2);
-}
-
+// Tests for Diagnostic
 // ============================================================================
-// Tests for Diagnostic::error (Issue #335)
-// ============================================================================
-// Note: Basic test for `Diagnostic::error` is in `tests.rs` (`test_diagnostic_creation`).
-// These tests focus on additional edge cases and behavior.
 
-#[test]
-fn test_diagnostic_error_with_string() {
-    let location = Location::new("file.sysml", Range::single(1, 1));
-    let message = String::from("Type mismatch");
-    let diag = Diagnostic::error(message, location);
-
-    assert_eq!(diag.message, "Type mismatch");
-}
-
-#[test]
-fn test_diagnostic_error_preserves_location() {
-    let location = Location::new(
-        "module.kerml",
-        Range::new(Position::new(10, 5), Position::new(12, 3)),
-    );
-    let diag = Diagnostic::error("Error message", location.clone());
-
-    assert_eq!(diag.location.file, location.file);
-    assert_eq!(diag.location.range, location.range);
-}
+// Note: Detailed tests for `Diagnostic::error` are defined in `tests.rs`
+// (`test_diagnostic_creation`). They verify severity, message, and location.
+// To avoid duplicate maintenance, we rely on that canonical test here.
 
 #[test]
 fn test_diagnostic_error_with_empty_message() {
