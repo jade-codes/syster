@@ -13,3 +13,7 @@ pub use symmetric_graph::SymmetricGraph;
 #[cfg(test)]
 #[path = "graphs/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "graphs/one_to_one_graph_onetoonegraph_test.rs"]
+mod one_to_one_graph_onetoonegraph_test;
