@@ -138,6 +138,9 @@ impl SymbolTable {
 
     /// Get all imports that reference a given target (for "Find References")
     /// Returns (file, span) pairs for each import of the target
+    ///
+    /// TODO: Consider optimizing with a reverse index if performance becomes an issue
+    /// with large projects. Current O(n*m) complexity where n=imports, m=scopes/symbols.
     pub fn get_import_references(&self, target_qname: &str) -> Vec<(&str, &Span)> {
         let mut refs = Vec::new();
         for scope in &self.scopes {
