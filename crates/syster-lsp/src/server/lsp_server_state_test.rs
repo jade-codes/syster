@@ -1087,8 +1087,10 @@ package Auto {
     let cancel_token = tokio_util::sync::CancellationToken::new();
     let formatted =
         super::formatting::format_text_async(&doc_text.unwrap(), options, &cancel_token);
-    // Should successfully format structured content
-    assert!(formatted.is_some() || !text.trim().is_empty());
+    assert!(
+        formatted.is_some(),
+        "Formatting should succeed for structured content"
+    );
 }
 
 // ============================================================================
@@ -1323,7 +1325,7 @@ async fn test_inlay_hint_out_of_range() {
 }
 
 // ============================================================================
-// Tests for did_open (#309, #311)
+// Tests for did_open (#309)
 // ============================================================================
 
 #[tokio::test]
@@ -1480,7 +1482,7 @@ async fn test_did_change_full_sync() {
 }
 
 // ============================================================================
-// Tests for did_close (#310-311)
+// Tests for did_close (#311)
 // ============================================================================
 
 #[tokio::test]
