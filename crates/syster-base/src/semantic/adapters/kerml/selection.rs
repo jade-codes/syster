@@ -57,7 +57,9 @@ fn try_push_span(span: &Option<Span>, position: Position, spans: &mut Vec<Span>)
 }
 
 /// Recursively collect all spans that contain the position
-fn collect_containing_spans(element: &Element, position: Position, spans: &mut Vec<Span>) -> bool {
+///
+/// This is a public function for testing purposes only.
+pub(crate) fn collect_containing_spans(element: &Element, position: Position, spans: &mut Vec<Span>) -> bool {
     match element {
         Element::Package(p) => collect_package_spans(p, position, spans),
         Element::Classifier(c) => collect_classifier_spans(c, position, spans),
