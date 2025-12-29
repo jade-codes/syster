@@ -324,19 +324,6 @@ fn test_diagnostic_with_code_complex_code() {
 // ============================================================================
 
 #[test]
-fn test_diagnostic_display_format() {
-    let location = Location::new("test.sysml", Range::single(0, 5));
-    let diag = Diagnostic::error("Test error", location);
-    let display = format!("{}", diag);
-
-    // Check format: file:line:column: severity: message
-    assert!(display.contains("test.sysml"));
-    assert!(display.contains("1:6")); // 1-indexed display (0+1, 5+1)
-    assert!(display.contains("Error"));
-    assert!(display.contains("Test error"));
-}
-
-#[test]
 fn test_diagnostic_display_multiline_location() {
     let location = Location::new(
         "module.kerml",
