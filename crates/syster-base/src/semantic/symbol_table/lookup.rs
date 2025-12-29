@@ -88,16 +88,18 @@ impl SymbolTable {
         }
     }
 
-    fn lookup_recursive_import(&self, name: &str, namespace: &str) -> Option<&Symbol> {
+    pub(super) fn lookup_recursive_import(&self, name: &str, namespace: &str) -> Option<&Symbol> {
         let prefix = format!("{namespace}::");
         let suffix = format!("::{name}");
 
         self.scopes.iter().find_map(|scope| {
             scope
                 .symbols
-                .iter()
-                .find(|(qname, _)| qname.starts_with(&prefix) && qname.ends_with(&suffix))
-                .map(|(_, symbol)| symbol)
+                .values()
+                .find(|symbol| {
+                    symbol.qualified_name().starts_with(&prefix)
+                        && symbol.qualified_name().ends_with(&suffix)
+                })
         })
     }
 
