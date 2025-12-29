@@ -61,7 +61,7 @@ fn test_lookup_mut_returns_none_for_nonexistent() {
 #[test]
 fn test_lookup_mut_with_shadowing() {
     let mut table = SymbolTable::new();
-    
+
     // Parent scope symbol
     table
         .insert(
