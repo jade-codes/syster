@@ -7,4 +7,6 @@ pub mod validator;
 mod visitors;
 
 #[cfg(test)]
+mod selection_test;
+#[cfg(test)]
 mod validator_test;
