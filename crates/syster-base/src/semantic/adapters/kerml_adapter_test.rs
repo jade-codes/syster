@@ -33,7 +33,7 @@ fn test_new_creates_adapter_with_empty_errors() {
 #[test]
 fn test_new_adapter_can_access_symbol_table() {
     let mut table = SymbolTable::new();
-    
+
     // Add a symbol to the table before creating the adapter
     table
         .insert(
@@ -68,7 +68,7 @@ fn test_new_with_empty_symbol_table() {
 #[test]
 fn test_new_with_populated_symbol_table() {
     let mut table = SymbolTable::new();
-    
+
     // Populate the symbol table with multiple symbols
     for i in 0..5 {
         table
@@ -96,7 +96,7 @@ fn test_new_with_populated_symbol_table() {
 fn test_with_relationships_includes_relationship_graph() {
     let mut table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
-    
+
     let adapter = KermlAdapter::with_relationships(&mut table, &mut graph);
 
     assert!(adapter.relationship_graph.is_some());
@@ -106,7 +106,7 @@ fn test_with_relationships_includes_relationship_graph() {
 fn test_with_relationships_has_empty_namespace() {
     let mut table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
-    
+
     let adapter = KermlAdapter::with_relationships(&mut table, &mut graph);
 
     assert!(adapter.current_namespace.is_empty());
@@ -116,7 +116,7 @@ fn test_with_relationships_has_empty_namespace() {
 fn test_with_relationships_has_empty_errors() {
     let mut table = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
-    
+
     let adapter = KermlAdapter::with_relationships(&mut table, &mut graph);
 
     assert!(adapter.errors.is_empty());
@@ -126,7 +126,7 @@ fn test_with_relationships_has_empty_errors() {
 fn test_multiple_adapters_from_same_table() {
     let mut table1 = SymbolTable::new();
     let mut table2 = SymbolTable::new();
-    
+
     let adapter1 = KermlAdapter::new(&mut table1);
     let adapter2 = KermlAdapter::new(&mut table2);
 
@@ -143,8 +143,14 @@ fn test_adapter_initialization_state() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify all fields are initialized to their default/empty states
-    assert!(adapter.current_namespace.is_empty(), "namespace should be empty");
-    assert!(adapter.relationship_graph.is_none(), "relationship_graph should be None");
+    assert!(
+        adapter.current_namespace.is_empty(),
+        "namespace should be empty"
+    );
+    assert!(
+        adapter.relationship_graph.is_none(),
+        "relationship_graph should be None"
+    );
     assert!(adapter.errors.is_empty(), "errors should be empty");
 }
 
@@ -153,14 +159,14 @@ fn test_new_vs_with_relationships_difference() {
     let mut table1 = SymbolTable::new();
     let mut table2 = SymbolTable::new();
     let mut graph = RelationshipGraph::new();
-    
+
     let adapter_without_graph = KermlAdapter::new(&mut table1);
     let adapter_with_graph = KermlAdapter::with_relationships(&mut table2, &mut graph);
 
     // The key difference is the relationship_graph field
     assert!(adapter_without_graph.relationship_graph.is_none());
     assert!(adapter_with_graph.relationship_graph.is_some());
-    
+
     // All other fields should be the same
     assert!(adapter_without_graph.current_namespace.is_empty());
     assert!(adapter_with_graph.current_namespace.is_empty());
@@ -173,7 +179,7 @@ fn test_adapter_can_be_created_in_nested_scope() {
     // Test that the adapter works correctly even when the symbol table
     // is modified before adapter creation
     let mut table = SymbolTable::new();
-    
+
     {
         // Add symbols in inner scope
         table
@@ -190,9 +196,9 @@ fn test_adapter_can_be_created_in_nested_scope() {
             )
             .unwrap();
     }
-    
+
     let adapter = KermlAdapter::new(&mut table);
-    
+
     // Adapter should still be able to access the symbol
     assert!(adapter.symbol_table.lookup("InnerSymbol").is_some());
 }
