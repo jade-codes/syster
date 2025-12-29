@@ -2,211 +2,296 @@
 
 use super::*;
 
-/// Test building scope chain for root scope only
-/// Expected: Chain contains only the root scope [0]
+/// Test that lookup_mut finds symbols in the current scope (root only)
+/// This verifies the scope chain includes the current scope
 #[test]
-fn test_build_scope_chain_root_only() {
-    let table = SymbolTable::new();
-
-    // Root scope is always 0
-    let chain = table.build_scope_chain(0);
-
-    assert_eq!(chain.len(), 1);
-    assert_eq!(chain[0], 0);
-}
-
-/// Test building scope chain for one child scope
-/// Expected: Chain contains [child_scope, root_scope] = [1, 0]
-#[test]
-fn test_build_scope_chain_one_level() {
+fn test_lookup_in_root_scope() {
     let mut table = SymbolTable::new();
 
-    // Enter one child scope (scope 1)
-    let child_scope = table.enter_scope();
-    assert_eq!(child_scope, 1);
+    // Insert symbol in root scope
+    let symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "RootSymbol".to_string(),
+        qualified_name: "RootSymbol".to_string(),
+    };
 
-    // Build chain from child scope
-    let chain = table.build_scope_chain(child_scope);
+    table.insert("RootSymbol".to_string(), symbol).unwrap();
 
-    assert_eq!(chain.len(), 2);
-    assert_eq!(chain[0], 1); // Current scope first
-    assert_eq!(chain[1], 0); // Then parent (root)
+    // lookup_mut should find it (scope chain: [0])
+    let found = table.lookup_mut("RootSymbol");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "RootSymbol");
 }
 
-/// Test building scope chain for multi-level hierarchy
-/// Expected: Chain contains all scopes from deepest to root
+/// Test that lookup_mut finds symbols in parent scope
+/// This verifies the scope chain includes parent scopes
 #[test]
-fn test_build_scope_chain_multi_level() {
+fn test_lookup_through_one_level() {
     let mut table = SymbolTable::new();
 
-    // Create a 3-level hierarchy: 0 -> 1 -> 2
-    let scope1 = table.enter_scope(); // scope 1
-    let scope2 = table.enter_scope(); // scope 2
+    // Insert symbol in root scope
+    let symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "ParentSymbol".to_string(),
+        qualified_name: "ParentSymbol".to_string(),
+    };
 
-    assert_eq!(scope1, 1);
-    assert_eq!(scope2, 2);
+    table.insert("ParentSymbol".to_string(), symbol).unwrap();
 
-    // Build chain from deepest scope (2)
-    let chain = table.build_scope_chain(scope2);
-
-    assert_eq!(chain.len(), 3);
-    assert_eq!(chain[0], 2); // Current (deepest)
-    assert_eq!(chain[1], 1); // Parent
-    assert_eq!(chain[2], 0); // Grandparent (root)
-}
-
-/// Test building scope chain explicitly from root scope
-/// Expected: Chain contains only [0]
-#[test]
-fn test_build_scope_chain_from_root_explicitly() {
-    let mut table = SymbolTable::new();
-
-    // Create some child scopes but query from root
-    table.enter_scope();
+    // Enter child scope
     table.enter_scope();
 
-    // Build chain from root scope 0
-    let chain = table.build_scope_chain(0);
-
-    assert_eq!(chain.len(), 1);
-    assert_eq!(chain[0], 0);
+    // lookup_mut from child should find parent symbol (scope chain: [1, 0])
+    let found = table.lookup_mut("ParentSymbol");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "ParentSymbol");
 }
 
-/// Test building scope chain from middle scope in deep hierarchy
-/// Expected: Chain from middle scope to root, not including deeper scopes
+/// Test that lookup_mut traverses multiple levels
+/// This verifies the scope chain includes all ancestors
 #[test]
-fn test_build_scope_chain_from_middle_scope() {
+fn test_lookup_through_multi_level() {
     let mut table = SymbolTable::new();
+
+    // Insert symbol in root scope
+    let symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "RootSymbol".to_string(),
+        qualified_name: "RootSymbol".to_string(),
+    };
+
+    table.insert("RootSymbol".to_string(), symbol).unwrap();
+
+    // Create 3-level hierarchy: 0 -> 1 -> 2
+    table.enter_scope(); // scope 1
+    table.enter_scope(); // scope 2
+
+    // lookup_mut from deepest scope should find root symbol (scope chain: [2, 1, 0])
+    let found = table.lookup_mut("RootSymbol");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "RootSymbol");
+}
+
+/// Test that lookup_mut doesn't find symbols in deeper child scopes
+/// This verifies the scope chain goes UP the tree, not down
+#[test]
+fn test_lookup_does_not_search_children() {
+    let mut table = SymbolTable::new();
+
+    // Enter child scope and insert symbol there
+    table.enter_scope();
+    let symbol = Symbol::Package {
+        scope_id: 1,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "ChildSymbol".to_string(),
+        qualified_name: "ChildSymbol".to_string(),
+    };
+
+    table.insert("ChildSymbol".to_string(), symbol).unwrap();
+
+    // Exit back to root scope
+    table.exit_scope();
+
+    // lookup_mut from root should NOT find child symbol (scope chain: [0])
+    let found = table.lookup_mut("ChildSymbol");
+    assert!(found.is_none());
+}
+
+/// Test scope chain correctness with symbols at different levels
+/// This verifies the scope chain is built correctly for middle scopes
+#[test]
+fn test_lookup_from_middle_scope() {
+    let mut table = SymbolTable::new();
+
+    // Insert symbol in root
+    let root_symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "RootSymbol".to_string(),
+        qualified_name: "RootSymbol".to_string(),
+    };
+
+    table.insert("RootSymbol".to_string(), root_symbol).unwrap();
 
     // Create hierarchy: 0 -> 1 -> 2 -> 3
-    let _scope1 = table.enter_scope(); // scope 1
-    let scope2 = table.enter_scope(); // scope 2
-    table.enter_scope(); // scope 3 (not used in test)
+    table.enter_scope(); // scope 1
 
-    // Build chain from middle scope (2)
-    let chain = table.build_scope_chain(scope2);
+    let middle_symbol = Symbol::Package {
+        scope_id: 1,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "MiddleSymbol".to_string(),
+        qualified_name: "MiddleSymbol".to_string(),
+    };
 
-    assert_eq!(chain.len(), 3);
-    assert_eq!(chain[0], 2); // Current (middle)
-    assert_eq!(chain[1], 1); // Parent
-    assert_eq!(chain[2], 0); // Grandparent (root)
-    // Note: scope 3 should NOT be in the chain
+    table.insert("MiddleSymbol".to_string(), middle_symbol).unwrap();
+
+    table.enter_scope(); // scope 2
+    table.enter_scope(); // scope 3
+
+    // Exit to scope 2 (middle scope)
+    table.exit_scope();
+
+    // From scope 2, should find both root and middle symbols (scope chain: [2, 1, 0])
+    let found_root = table.lookup_mut("RootSymbol");
+    assert!(found_root.is_some());
+    assert_eq!(found_root.unwrap().name(), "RootSymbol");
+
+    let found_middle = table.lookup_mut("MiddleSymbol");
+    assert!(found_middle.is_some());
+    assert_eq!(found_middle.unwrap().name(), "MiddleSymbol");
 }
 
-/// Test building scope chains from different scopes in same table
-/// Expected: Each chain is independent and correct for its starting scope
+/// Test deeply nested scopes
+/// This verifies the scope chain handles deep hierarchies correctly
 #[test]
-fn test_build_scope_chain_multiple_queries() {
+fn test_lookup_deeply_nested() {
     let mut table = SymbolTable::new();
 
-    // Create hierarchy: 0 -> 1 -> 2
-    let scope1 = table.enter_scope();
-    let scope2 = table.enter_scope();
+    // Insert symbol in root
+    let symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "DeepSymbol".to_string(),
+        qualified_name: "DeepSymbol".to_string(),
+    };
 
-    // Build chains from different scopes
-    let chain_from_root = table.build_scope_chain(0);
-    let chain_from_scope1 = table.build_scope_chain(scope1);
-    let chain_from_scope2 = table.build_scope_chain(scope2);
+    table.insert("DeepSymbol".to_string(), symbol).unwrap();
 
-    // Verify chain from root
-    assert_eq!(chain_from_root.len(), 1);
-    assert_eq!(chain_from_root[0], 0);
-
-    // Verify chain from scope 1
-    assert_eq!(chain_from_scope1.len(), 2);
-    assert_eq!(chain_from_scope1[0], 1);
-    assert_eq!(chain_from_scope1[1], 0);
-
-    // Verify chain from scope 2
-    assert_eq!(chain_from_scope2.len(), 3);
-    assert_eq!(chain_from_scope2[0], 2);
-    assert_eq!(chain_from_scope2[1], 1);
-    assert_eq!(chain_from_scope2[2], 0);
-}
-
-/// Test building scope chain for deeply nested scopes (5 levels)
-/// Expected: Chain contains all 5 scopes in correct order
-#[test]
-fn test_build_scope_chain_deeply_nested() {
-    let mut table = SymbolTable::new();
-
-    // Create 5-level hierarchy: 0 -> 1 -> 2 -> 3 -> 4
-    let mut last_scope = 0;
-    for _ in 1..=4 {
-        last_scope = table.enter_scope();
+    // Create 5-level hierarchy
+    for _ in 1..=5 {
+        table.enter_scope();
     }
 
-    assert_eq!(last_scope, 4);
-
-    // Build chain from deepest scope
-    let chain = table.build_scope_chain(last_scope);
-
-    assert_eq!(chain.len(), 5);
-    assert_eq!(chain[0], 4); // Deepest
-    assert_eq!(chain[1], 3);
-    assert_eq!(chain[2], 2);
-    assert_eq!(chain[3], 1);
-    assert_eq!(chain[4], 0); // Root
+    // From deepest scope, should find root symbol (scope chain: [5, 4, 3, 2, 1, 0])
+    let found = table.lookup_mut("DeepSymbol");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "DeepSymbol");
 }
 
-/// Test that scope chain reflects the actual parent-child relationships
-/// Expected: Chain order matches the scope creation order
+/// Test that sibling scopes don't see each other's symbols
+/// This verifies scope chain respects parent-child relationships
 #[test]
-fn test_build_scope_chain_parent_child_relationship() {
+fn test_lookup_sibling_scopes() {
     let mut table = SymbolTable::new();
 
-    // scope 0 is root
-    let scope1 = table.enter_scope(); // Child of 0
-    let scope2 = table.enter_scope(); // Child of 1
+    // Create scope 1 and add symbol
+    table.enter_scope();
+    let symbol1 = Symbol::Package {
+        scope_id: 1,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "Sibling1Symbol".to_string(),
+        qualified_name: "Sibling1Symbol".to_string(),
+    };
 
-    // Exit back to scope 1
+    table.insert("Sibling1Symbol".to_string(), symbol1).unwrap();
+
+    // Exit and create scope 2 (sibling of scope 1)
     table.exit_scope();
-    assert_eq!(table.current_scope_id(), scope1);
+    table.enter_scope();
 
-    // Create another child of scope 1 (this will be scope 3)
-    let scope3 = table.enter_scope(); // Child of 1, sibling of 2
-    assert_eq!(scope3, 3);
+    let symbol2 = Symbol::Package {
+        scope_id: 2,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "Sibling2Symbol".to_string(),
+        qualified_name: "Sibling2Symbol".to_string(),
+    };
 
-    // Build chains to verify parent relationships
-    let chain2 = table.build_scope_chain(scope2);
-    let chain3 = table.build_scope_chain(scope3);
+    table.insert("Sibling2Symbol".to_string(), symbol2).unwrap();
 
-    // Both scope 2 and scope 3 should have scope 1 as parent
-    assert_eq!(chain2.len(), 3);
-    assert_eq!(chain2[0], 2);
-    assert_eq!(chain2[1], 1); // Parent
-    assert_eq!(chain2[2], 0); // Grandparent
+    // From scope 2, should find own symbol but not sibling's
+    let found_own = table.lookup_mut("Sibling2Symbol");
+    assert!(found_own.is_some());
 
-    assert_eq!(chain3.len(), 3);
-    assert_eq!(chain3[0], 3);
-    assert_eq!(chain3[1], 1); // Same parent as scope 2
-    assert_eq!(chain3[2], 0); // Same grandparent
+    let found_sibling = table.lookup_mut("Sibling1Symbol");
+    assert!(found_sibling.is_none()); // Should NOT find sibling's symbol
 }
 
-/// Test building scope chain after complex scope navigation
-/// Expected: Chain is correct regardless of current scope position
+/// Test scope precedence - current scope overrides parent
+/// This verifies the scope chain searches in correct order (current first)
 #[test]
-fn test_build_scope_chain_after_scope_navigation() {
+fn test_lookup_scope_precedence() {
     let mut table = SymbolTable::new();
 
-    // Create hierarchy and navigate around
-    let scope1 = table.enter_scope();
-    let scope2 = table.enter_scope();
-    table.exit_scope(); // Back to scope 1
-    table.exit_scope(); // Back to scope 0
-    table.enter_scope(); // Create scope 3 (child of 0)
+    // Insert symbol in root scope
+    let root_symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "OverrideTest".to_string(),
+        qualified_name: "Root::OverrideTest".to_string(),
+    };
 
-    // Build chains from different scopes
-    let chain1 = table.build_scope_chain(scope1);
-    let chain2 = table.build_scope_chain(scope2);
+    table.insert("OverrideTest".to_string(), root_symbol).unwrap();
 
-    // Chains should still be correct
-    assert_eq!(chain1.len(), 2);
-    assert_eq!(chain1[0], 1);
-    assert_eq!(chain1[1], 0);
+    // Enter child scope and insert symbol with same name
+    table.enter_scope();
+    let child_symbol = Symbol::Package {
+        scope_id: 1,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "OverrideTest".to_string(),
+        qualified_name: "Child::OverrideTest".to_string(),
+    };
 
-    assert_eq!(chain2.len(), 3);
-    assert_eq!(chain2[0], 2);
-    assert_eq!(chain2[1], 1);
-    assert_eq!(chain2[2], 0);
+    table.insert("OverrideTest".to_string(), child_symbol).unwrap();
+
+    // Should find child symbol (scope chain searches current scope first)
+    let found = table.lookup_mut("OverrideTest");
+    assert!(found.is_some());
+    let found_symbol = found.unwrap();
+    assert_eq!(found_symbol.qualified_name(), "Child::OverrideTest");
+}
+
+/// Test complex scope navigation doesn't break scope chain
+/// This verifies scope chain is based on scope ID, not navigation history
+#[test]
+fn test_lookup_after_navigation() {
+    let mut table = SymbolTable::new();
+
+    // Insert symbol in root
+    let symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "NavTest".to_string(),
+        qualified_name: "NavTest".to_string(),
+    };
+
+    table.insert("NavTest".to_string(), symbol).unwrap();
+
+    // Complex navigation
+    table.enter_scope(); // scope 1
+    table.enter_scope(); // scope 2
+    table.exit_scope(); // back to 1
+    table.exit_scope(); // back to 0
+    table.enter_scope(); // scope 3 (child of 0)
+
+    // From scope 3, should still find root symbol
+    let found = table.lookup_mut("NavTest");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "NavTest");
 }
