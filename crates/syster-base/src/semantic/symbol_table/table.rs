@@ -161,9 +161,7 @@ impl SymbolTable {
                         .map(|s| s.qualified_name() == target_qname)
                         .unwrap_or(false);
 
-                if matches
-                    && let (Some(span), Some(file)) = (&import.span, &import.file)
-                {
+                if matches && let (Some(span), Some(file)) = (&import.span, &import.file) {
                     refs.push((file.as_str(), span));
                 }
             }
