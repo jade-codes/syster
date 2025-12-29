@@ -2,6 +2,7 @@ mod cross_file_tests;
 mod duplicate_symbol_test;
 mod folding_tests;
 mod import_tests;
+mod kerml_inlay_test;
 mod kerml_selection_test;
 mod kerml_visitor_tests;
 mod selection_collect_feature_spans_test;
