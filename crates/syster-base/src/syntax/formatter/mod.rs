@@ -10,6 +10,9 @@ mod syntax_kind;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod syntax_kind_test;
+
 use lexer::{Token, tokenize};
 pub use options::FormatOptions;
 use rowan::GreenNodeBuilder;
