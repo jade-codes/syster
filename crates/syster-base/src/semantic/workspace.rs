@@ -21,3 +21,7 @@ pub use parsed_file::ParsedFile;
 #[cfg(test)]
 #[path = "workspace/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "workspace/workspace_core_test.rs"]
+mod workspace_core_test;
