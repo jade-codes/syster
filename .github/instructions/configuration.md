@@ -28,13 +28,38 @@ The root `Cargo.toml` defines:
 
 Current clippy rules enforce:
 ```toml
+# Enforce explicit error handling
 unwrap_used = "warn"           # Avoid .unwrap() in production code
 expect_used = "warn"           # Avoid .expect() in production code  
 panic = "warn"                 # Avoid panic!() in production code
 todo = "warn"                  # Mark incomplete code
-dbg_macro = "warn"            # Remove debug macros
+unimplemented = "warn"         # Mark unimplemented code
+
+# Code quality
+dbg_macro = "warn"             # Remove debug macros
+print_stdout = "warn"          # Avoid print to stdout
+print_stderr = "warn"          # Avoid print to stderr
+missing_errors_doc = "warn"    # Document error conditions
+missing_panics_doc = "warn"    # Document panic conditions
+
+# Performance
+inefficient_to_string = "warn"
+unnecessary_wraps = "warn"
+
+# Style consistency
+enum_glob_use = "warn"
+wildcard_imports = "warn"
+
+# Test quality
+collapsible_if = "warn"
+collapsible_else_if = "warn"
 cognitive_complexity = "deny"  # Keep functions simple
+
+# Deny by category (set explicit priority to avoid ambiguity)
 correctness = { level = "deny", priority = -1 }  # Critical errors
+suspicious = { level = "deny", priority = -1 }
+complexity = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
 ```
 
 **When adding new lints:**
@@ -99,11 +124,11 @@ Located in `editors/vscode/package.json`, this defines:
 ### Extension Metadata
 ```json
 {
-  "name": "syster",
-  "displayName": "Syster - SysML v2",
+  "name": "sysml-language-support",
+  "displayName": "SysML v2 Language Support",
   "version": "0.1.0",
   "engines": {
-    "vscode": "^1.80.0"  // Minimum VS Code version
+    "vscode": "^1.85.0"  // Minimum VS Code version
   }
 }
 ```
@@ -127,10 +152,20 @@ Located in `editors/vscode/package.json`, this defines:
   "contributes": {
     "configuration": {
       "properties": {
-        "sysml.stdlibEnabled": {
+        "syster.stdlib.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable standard library"
+          "description": "Load SysML standard library on document open"
+        },
+        "syster.stdlib.path": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to SysML standard library directory"
+        },
+        "syster.lsp.path": {
+          "type": "string",
+          "default": "/workspaces/syster/target/release/syster-lsp",
+          "description": "Path to syster-lsp binary"
         }
       }
     }

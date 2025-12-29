@@ -20,11 +20,14 @@ The Syster VS Code extension provides IDE integration for SysML v2 and KerML lan
 
 ```
 editors/vscode/
-├── src/
-│   └── extension.ts      # Main extension entry point
-├── package.json          # Extension manifest and configuration
-├── tsconfig.json         # TypeScript configuration
-└── README.md            # Extension documentation
+├── client/
+│   └── src/
+│       ├── extension.ts      # Main extension entry point
+│       ├── client.ts         # LSP client setup
+│       └── server-locator.ts # Server path detection
+├── package.json              # Extension manifest and configuration
+├── tsconfig.json            # TypeScript configuration
+└── README.md                # Extension documentation
 ```
 
 ## Development Guidelines
@@ -73,8 +76,8 @@ interface ServerConfig {
 }
 
 // ✅ Good: Use VS Code API properly
-const config = vscode.workspace.getConfiguration('sysml');
-const enabled = config.get<boolean>('stdlibEnabled', true);
+const config = vscode.workspace.getConfiguration('syster');
+const enabled = config.get<boolean>('stdlib.enabled', true);
 
 // ❌ Bad: Don't use 'any' type
 const config: any = vscode.workspace.getConfiguration(); // Don't do this
@@ -86,9 +89,10 @@ client.start().catch(() => {}); // Don't do this
 ### Extension Configuration
 
 Current extension settings (in `package.json`):
-- `sysml.stdlibEnabled` - Enable/disable standard library loading
-- `sysml.stdlibPath` - Custom path to standard library files
-- `sysml.serverPath` - Custom path to syster-lsp server binary
+- `syster.stdlib.enabled` - Enable/disable standard library loading
+- `syster.stdlib.path` - Custom path to standard library files
+- `syster.lsp.path` - Custom path to syster-lsp server binary
+- `syster.lsp.trace.server` - Trace LSP communication for debugging
 
 ### Testing the Extension
 
@@ -128,7 +132,9 @@ code --install-extension syster-*.vsix
 
 ### Code Organization
 
-- **extension.ts** - Main entry point with `activate()` and `deactivate()`
+- **client/src/extension.ts** - Main entry point with `activate()` and `deactivate()`
+- **client/src/client.ts** - LSP client setup and configuration
+- **client/src/server-locator.ts** - Server binary path detection
 - Keep extension logic simple - delegate to LSP server
 - Configuration management should be centralized
 - Use VS Code's workspace configuration API
@@ -136,9 +142,9 @@ code --install-extension syster-*.vsix
 ### Common Tasks
 
 **Adding a new configuration setting:**
-1. Add to `contributes.configuration` in `package.json`
+1. Add to `contributes.configuration` in `package.json` with `syster.` prefix
 2. Document with clear description and default value
-3. Read in extension code using `vscode.workspace.getConfiguration('sysml')`
+3. Read in extension code using `vscode.workspace.getConfiguration('syster')`
 4. Pass to LSP server if needed via initialization options
 
 **Adding a new command:**
