@@ -447,3 +447,91 @@ fn test_alias_symbols_in_chain() {
     assert!(real.is_some());
     assert!(matches!(real.unwrap(), Symbol::Package { .. }));
 }
+
+/// Test with empty string as symbol name
+#[test]
+fn test_empty_string_name() {
+    let mut table = SymbolTable::new();
+
+    // Insert a symbol with empty name (edge case)
+    let symbol = Symbol::Package {
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "".to_string(),
+        qualified_name: "".to_string(),
+    };
+
+    // Should be able to insert and find empty string name
+    table.insert("".to_string(), symbol).unwrap();
+
+    let found = table.lookup_mut("");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "");
+}
+
+/// Test with special characters in symbol name
+#[test]
+fn test_special_characters_in_name() {
+    let mut table = SymbolTable::new();
+
+    // Test with various special characters that might appear in SysML names
+    let special_names = vec![
+        "name-with-dash",
+        "name_with_underscore",
+        "name::with::colons",
+        "name.with.dots",
+        "name123",
+    ];
+
+    for name in &special_names {
+        let symbol = Symbol::Package {
+            scope_id: 0,
+            source_file: None,
+            span: None,
+            references: Vec::new(),
+            name: name.to_string(),
+            qualified_name: name.to_string(),
+        };
+
+        table.insert(name.to_string(), symbol).unwrap();
+    }
+
+    // Verify all special names can be found
+    for name in special_names {
+        let found = table.lookup_mut(name);
+        assert!(found.is_some(), "Should find symbol with name: {}", name);
+        assert_eq!(found.unwrap().name(), name);
+    }
+}
+
+/// Test finding symbol when multiple scopes exist but symbol only in one
+#[test]
+fn test_symbol_in_middle_of_chain() {
+    let mut table = SymbolTable::new();
+
+    // Scope 0 - no symbols
+    table.enter_scope(); // Scope 1
+
+    // Scope 1 - add a symbol here
+    let symbol = Symbol::Package {
+        scope_id: 1,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+        name: "MiddleSymbol".to_string(),
+        qualified_name: "MiddleSymbol".to_string(),
+    };
+    table.insert("MiddleSymbol".to_string(), symbol).unwrap();
+
+    table.enter_scope(); // Scope 2 - no symbols
+    table.enter_scope(); // Scope 3 - no symbols
+
+    // From scope 3, should find symbol in scope 1 (middle of chain)
+    let found = table.lookup_mut("MiddleSymbol");
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name(), "MiddleSymbol");
+}
+
+
