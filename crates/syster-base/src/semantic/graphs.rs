@@ -13,3 +13,7 @@ pub use symmetric_graph::SymmetricGraph;
 #[cfg(test)]
 #[path = "graphs/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "graphs/symmetric_graph_symmetricgraph_test.rs"]
+mod symmetric_graph_symmetricgraph_test;
