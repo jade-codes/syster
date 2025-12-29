@@ -8,13 +8,14 @@
 //! - SysML validator tests  
 //! - Syntax factory tests
 //! - SysML adapter tests
+//! - KerML adapter tests
 
 use super::*;
 use crate::core::constants::{REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_SATISFY};
 use crate::semantic::analyzer::validation::RelationshipValidator;
 use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
-use crate::semantic::types::SemanticRole;
+use crate::semantic::types::{SemanticError, SemanticRole};
 use crate::syntax::SyntaxFile;
 use crate::syntax::sysml::ast::{Definition, DefinitionKind, Element, Package, SysMLFile};
 use std::sync::Arc;
@@ -696,4 +697,151 @@ fn test_populate_definition() {
 
     let symbol = table.lookup("MyPart");
     assert!(symbol.is_some());
+}
+
+// ============================================================================
+// KERML ADAPTER TESTS
+// ============================================================================
+
+#[test]
+fn test_kerml_adapter_new_basic_initialization() {
+    let mut table = SymbolTable::new();
+    let adapter = KermlAdapter::new(&mut table);
+
+    // Verify the adapter is created successfully
+    assert!(adapter.errors.is_empty());
+    assert!(adapter.current_namespace.is_empty());
+    assert!(adapter.relationship_graph.is_none());
+}
+
+#[test]
+fn test_kerml_adapter_new_symbol_table_accessible() {
+    let mut table = SymbolTable::new();
+    let adapter = KermlAdapter::new(&mut table);
+
+    // Verify we can use the symbol table through the adapter
+    let test_symbol = Symbol::Package {
+        name: "TestPackage".to_string(),
+        qualified_name: "TestPackage".to_string(),
+        scope_id: 0,
+        source_file: None,
+        span: None,
+        references: Vec::new(),
+    };
+
+    let result = adapter.symbol_table.insert("TestPackage".to_string(), test_symbol);
+    assert!(result.is_ok());
+    assert!(adapter.symbol_table.lookup("TestPackage").is_some());
+}
+
+#[test]
+fn test_kerml_adapter_new_with_empty_table() {
+    let mut table = SymbolTable::new();
+    let adapter = KermlAdapter::new(&mut table);
+
+    // Verify adapter works with an empty symbol table
+    assert!(adapter.errors.is_empty());
+    assert!(adapter.current_namespace.is_empty());
+}
+
+#[test]
+fn test_kerml_adapter_new_with_populated_table() {
+    let mut table = SymbolTable::new();
+    
+    // Pre-populate the symbol table
+    table.insert(
+        "ExistingSymbol".to_string(),
+        Symbol::Package {
+            name: "ExistingSymbol".to_string(),
+            qualified_name: "ExistingSymbol".to_string(),
+            scope_id: 0,
+            source_file: None,
+            span: None,
+            references: Vec::new(),
+        },
+    ).unwrap();
+
+    let adapter = KermlAdapter::new(&mut table);
+
+    // Verify the adapter can access the existing symbols
+    assert!(adapter.symbol_table.lookup("ExistingSymbol").is_some());
+    assert!(adapter.errors.is_empty());
+}
+
+#[test]
+fn test_kerml_adapter_new_multiple_instances() {
+    let mut table1 = SymbolTable::new();
+    let mut table2 = SymbolTable::new();
+
+    let adapter1 = KermlAdapter::new(&mut table1);
+    let adapter2 = KermlAdapter::new(&mut table2);
+
+    // Verify both adapters are independent
+    assert!(adapter1.errors.is_empty());
+    assert!(adapter2.errors.is_empty());
+    assert!(adapter1.current_namespace.is_empty());
+    assert!(adapter2.current_namespace.is_empty());
+}
+
+#[test]
+fn test_kerml_adapter_new_vs_with_relationships() {
+    let mut table = SymbolTable::new();
+    let mut graph = RelationshipGraph::new();
+
+    // Create adapter with new()
+    let adapter_new = KermlAdapter::new(&mut table);
+    assert!(adapter_new.relationship_graph.is_none());
+
+    // Create adapter with with_relationships()
+    let adapter_with_rel = KermlAdapter::with_relationships(&mut table, &mut graph);
+    assert!(adapter_with_rel.relationship_graph.is_some());
+}
+
+#[test]
+fn test_kerml_adapter_new_initial_state() {
+    let mut table = SymbolTable::new();
+    let adapter = KermlAdapter::new(&mut table);
+
+    // Verify all fields have expected initial values
+    assert_eq!(adapter.errors.len(), 0);
+    assert_eq!(adapter.current_namespace.len(), 0);
+    assert!(adapter.relationship_graph.is_none());
+}
+
+#[test]
+fn test_kerml_adapter_new_namespace_mutability() {
+    let mut table = SymbolTable::new();
+    let mut adapter = KermlAdapter::new(&mut table);
+
+    // Verify we can modify the namespace
+    adapter.current_namespace.push("TestNamespace".to_string());
+    assert_eq!(adapter.current_namespace.len(), 1);
+    assert_eq!(adapter.current_namespace[0], "TestNamespace");
+}
+
+#[test]
+fn test_kerml_adapter_new_errors_mutability() {
+    let mut table = SymbolTable::new();
+    let mut adapter = KermlAdapter::new(&mut table);
+
+    // Verify we can add errors
+    adapter.errors.push(SemanticError::duplicate_definition(
+        "Test".to_string(),
+        None,
+    ));
+    
+    assert_eq!(adapter.errors.len(), 1);
+}
+
+#[test]
+fn test_kerml_adapter_new_lifetime_handling() {
+    let mut table = SymbolTable::new();
+    
+    {
+        let adapter = KermlAdapter::new(&mut table);
+        assert!(adapter.errors.is_empty());
+    } // adapter goes out of scope here
+    
+    // Verify we can still use the table after adapter is dropped
+    assert!(table.lookup("NonExistent").is_none());
 }
