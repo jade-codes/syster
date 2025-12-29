@@ -151,11 +151,7 @@ fn test_find_selection_spans_stops_at_first_containing_element() {
         namespace: None,
         elements: vec![
             Element::Package(make_package("First", Some(make_span(1, 0, 3, 1)), vec![])),
-            Element::Package(make_package(
-                "Second",
-                Some(make_span(5, 0, 8, 1)),
-                vec![],
-            )),
+            Element::Package(make_package("Second", Some(make_span(5, 0, 8, 1)), vec![])),
         ],
     };
     let pos = Position::new(2, 5); // Inside first package
@@ -431,7 +427,11 @@ fn test_collect_containing_spans_with_mixed_elements() {
         elements: vec![
             Element::Comment(make_comment("Comment", Some(make_span(1, 0, 1, 10)))),
             Element::Import(make_import("Import", Some(make_span(2, 0, 2, 10)))),
-            Element::Package(make_package("Package", Some(make_span(3, 0, 5, 10)), vec![])),
+            Element::Package(make_package(
+                "Package",
+                Some(make_span(3, 0, 5, 10)),
+                vec![],
+            )),
         ],
     };
     let pos = Position::new(4, 5); // Inside package
@@ -463,11 +463,7 @@ fn test_collect_package_spans_empty_package() {
 #[test]
 fn test_collect_package_spans_with_nested_package() {
     // Test package containing another package
-    let inner = Element::Package(make_package(
-        "Inner",
-        Some(make_span(2, 2, 3, 3)),
-        vec![],
-    ));
+    let inner = Element::Package(make_package("Inner", Some(make_span(2, 2, 3, 3)), vec![]));
     let outer = Element::Package(make_package(
         "Outer",
         Some(make_span(1, 0, 5, 1)),
@@ -516,11 +512,7 @@ fn test_collect_package_spans_with_classifier_child() {
 #[test]
 fn test_collect_package_spans_with_feature_child() {
     // Test package containing a feature
-    let feature = Element::Feature(make_feature(
-        "Child",
-        Some(make_span(2, 2, 3, 3)),
-        vec![],
-    ));
+    let feature = Element::Feature(make_feature("Child", Some(make_span(2, 2, 3, 3)), vec![]));
     let package = Element::Package(make_package(
         "Parent",
         Some(make_span(1, 0, 5, 1)),
@@ -565,11 +557,7 @@ fn test_collect_package_spans_with_comment_child() {
 fn test_collect_package_spans_stops_at_first_matching_child() {
     // Test that iteration stops when a child contains the position
     let child1 = Element::Feature(make_feature("First", Some(make_span(2, 0, 3, 1)), vec![]));
-    let child2 = Element::Feature(make_feature(
-        "Second",
-        Some(make_span(4, 0, 5, 1)),
-        vec![],
-    ));
+    let child2 = Element::Feature(make_feature("Second", Some(make_span(4, 0, 5, 1)), vec![]));
     let package = Element::Package(make_package(
         "Parent",
         Some(make_span(1, 0, 6, 1)),
@@ -591,11 +579,7 @@ fn test_collect_package_spans_stops_at_first_matching_child() {
 #[test]
 fn test_collect_package_spans_returns_false_when_span_not_containing() {
     // Test that collect_package_spans returns false when package doesn't contain position
-    let package = Element::Package(make_package(
-        "Test",
-        Some(make_span(1, 0, 3, 1)),
-        vec![],
-    ));
+    let package = Element::Package(make_package("Test", Some(make_span(1, 0, 3, 1)), vec![]));
     let file = KerMLFile {
         namespace: None,
         elements: vec![package],
@@ -609,11 +593,7 @@ fn test_collect_package_spans_returns_false_when_span_not_containing() {
 fn test_collect_package_spans_with_multiple_children_none_matching() {
     // Test package with children but position not in any child
     let child1 = Element::Feature(make_feature("First", Some(make_span(2, 0, 2, 10)), vec![]));
-    let child2 = Element::Feature(make_feature(
-        "Second",
-        Some(make_span(3, 0, 3, 10)),
-        vec![],
-    ));
+    let child2 = Element::Feature(make_feature("Second", Some(make_span(3, 0, 3, 10)), vec![]));
     let package = Element::Package(make_package(
         "Parent",
         Some(make_span(1, 0, 5, 1)),
@@ -890,11 +870,7 @@ fn test_multiple_top_level_elements_first_contains() {
         namespace: None,
         elements: vec![
             Element::Package(make_package("First", Some(make_span(1, 0, 3, 1)), vec![])),
-            Element::Package(make_package(
-                "Second",
-                Some(make_span(5, 0, 7, 1)),
-                vec![],
-            )),
+            Element::Package(make_package("Second", Some(make_span(5, 0, 7, 1)), vec![])),
         ],
     };
     let pos = Position::new(2, 0); // Inside first
@@ -910,11 +886,7 @@ fn test_multiple_top_level_elements_second_contains() {
         namespace: None,
         elements: vec![
             Element::Package(make_package("First", Some(make_span(1, 0, 3, 1)), vec![])),
-            Element::Package(make_package(
-                "Second",
-                Some(make_span(5, 0, 7, 1)),
-                vec![],
-            )),
+            Element::Package(make_package("Second", Some(make_span(5, 0, 7, 1)), vec![])),
         ],
     };
     let pos = Position::new(6, 0); // Inside second
