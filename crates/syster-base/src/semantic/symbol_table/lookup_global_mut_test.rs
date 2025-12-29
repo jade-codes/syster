@@ -470,7 +470,10 @@ fn test_lookup_global_mut_modification_persists() {
             file: "test.sysml".to_string(),
             span: crate::core::Span {
                 start: crate::core::Position { line: 5, column: 1 },
-                end: crate::core::Position { line: 5, column: 10 },
+                end: crate::core::Position {
+                    line: 5,
+                    column: 10,
+                },
             },
         });
     }
@@ -504,7 +507,7 @@ fn test_lookup_global_mut_after_scope_changes() {
     // Enter and exit multiple scopes
     table.enter_scope(); // scope 1
     table.enter_scope(); // scope 2
-    table.exit_scope();  // back to scope 1
+    table.exit_scope(); // back to scope 1
     table.enter_scope(); // scope 3
 
     // Add symbol in current scope (3)
