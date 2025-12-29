@@ -158,4 +158,23 @@ impl RelationshipGraph {
             })
             .collect()
     }
+
+    /// Get all sources that reference a given target symbol.
+    /// Returns (source_qualified_name, span) pairs for all references.
+    /// This is used for "Find All References" without pre-computing references on every change.
+    pub fn get_references_to(&self, target: &str) -> Vec<(&String, Option<&Span>)> {
+        let mut refs = Vec::new();
+
+        // Check one-to-many relationships (specialization, subsetting, etc.)
+        for graph in self.one_to_many.values() {
+            refs.extend(graph.get_sources_with_spans(target));
+        }
+
+        // Check one-to-one relationships (typing)
+        for graph in self.one_to_one.values() {
+            refs.extend(graph.get_sources_with_spans(target));
+        }
+
+        refs
+    }
 }

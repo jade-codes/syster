@@ -77,12 +77,93 @@ fn test_change_document() {
 
     // Change document content
     server
-        .change_document(&uri, "part def Vehicle; part def Bike;")
+        .open_document(&uri, "part def Vehicle; part def Bike;")
         .unwrap();
 
     assert_eq!(server.workspace().file_count(), 1);
     let updated_symbols = server.workspace().symbol_table().all_symbols().len();
     assert!(updated_symbols > initial_symbols);
+}
+
+#[test]
+fn test_references_update_after_change_document() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document with a definition and usage
+    let initial = r#"
+part def Vehicle;
+part car : Vehicle;
+    "#;
+    server.open_document(&uri, initial).unwrap();
+
+    // Find references to Vehicle - should find the usage
+    let position = Position::new(1, 10); // On "Vehicle" definition
+    let refs = server.get_references(&uri, position, false).unwrap();
+    assert_eq!(refs.len(), 1, "Should find 1 reference (car : Vehicle)");
+
+    // Rename Vehicle to VehicleA in BOTH places (simulating user rename)
+    let updated = r#"
+part def VehicleA;
+part car : VehicleA;
+    "#;
+    server.open_document(&uri, updated).unwrap();
+
+    // Find references to VehicleA - should still find the usage
+    let position = Position::new(1, 10); // On "VehicleA" definition
+    let refs = server.get_references(&uri, position, false).unwrap();
+    assert_eq!(
+        refs.len(),
+        1,
+        "After rename, should find 1 reference (car : VehicleA)"
+    );
+
+    // Verify the old name has no references
+    // (Vehicle no longer exists, so lookup should fail)
+    assert!(
+        server
+            .workspace()
+            .symbol_table()
+            .lookup("Vehicle")
+            .is_none(),
+        "Old symbol 'Vehicle' should no longer exist"
+    );
+}
+
+#[test]
+fn test_references_break_when_definition_renamed_without_usages() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Open document with a definition and usage
+    let initial = r#"
+part def Vehicle;
+part car : Vehicle;
+    "#;
+    server.open_document(&uri, initial).unwrap();
+
+    // Find references to Vehicle - should find the usage
+    let position = Position::new(1, 10); // On "Vehicle" definition
+    let refs = server.get_references(&uri, position, false).unwrap();
+    assert_eq!(refs.len(), 1, "Should find 1 reference (car : Vehicle)");
+
+    // Rename ONLY the definition (simulating user typing, not using Rename)
+    let broken = r#"
+part def VehicleA;
+part car : Vehicle;
+    "#;
+    server.open_document(&uri, broken).unwrap();
+
+    // Find references to VehicleA - should find NONE (usage still says Vehicle)
+    let position = Position::new(1, 10); // On "VehicleA" definition
+    let refs = server.get_references(&uri, position, false);
+    assert!(
+        refs.is_none() || refs.as_ref().map(|r| r.is_empty()).unwrap_or(true),
+        "VehicleA should have no references (usage still references old name)"
+    );
+
+    // The old name Vehicle is referenced but doesn't exist as a definition
+    // This would be a semantic error in the diagnostics
 }
 
 #[test]
@@ -95,7 +176,7 @@ fn test_change_document_with_error() {
     assert_eq!(server.workspace().file_count(), 1);
 
     // Change to invalid content - should succeed but capture error
-    let result = server.change_document(&uri, "invalid syntax !@#");
+    let result = server.open_document(&uri, "invalid syntax !@#");
     assert!(result.is_ok());
 
     // File should be removed from workspace (parse failed)
@@ -112,8 +193,8 @@ fn test_change_nonexistent_document() {
     let uri = Url::parse("file:///test.sysml").unwrap();
 
     // Try to change a document that was never opened
-    let result = server.change_document(&uri, "part def Car;");
-    // Should succeed - change_document handles both open and update
+    let result = server.open_document(&uri, "part def Car;");
+    // Should succeed - open_document handles both open and update
     assert!(result.is_ok());
 }
 
@@ -173,7 +254,7 @@ fn test_get_diagnostics_clears_on_fix() {
     assert!(!diagnostics.is_empty());
 
     // Fix the error
-    server.change_document(&uri, "part def Car;").unwrap();
+    server.open_document(&uri, "part def Car;").unwrap();
     let diagnostics = server.get_diagnostics(&uri);
     assert!(
         diagnostics.is_empty(),
@@ -2242,7 +2323,8 @@ fn test_incremental_insert_at_start() {
         text: "// Comment\n".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Verify content is correct
     let path = uri.to_file_path().unwrap();
@@ -2273,7 +2355,8 @@ fn test_incremental_insert_in_middle() {
         text: "part def Truck;\n".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Verify all three definitions exist
     let symbols = server.workspace().symbol_table().all_symbols();
@@ -2301,7 +2384,8 @@ fn test_incremental_delete_range() {
         text: "".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Verify only Car exists
     let symbols = server.workspace().symbol_table().all_symbols();
@@ -2328,7 +2412,8 @@ fn test_incremental_replace_range() {
         text: "Vehicle".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Verify Vehicle exists, Car doesn't
     let symbols = server.workspace().symbol_table().all_symbols();
@@ -2354,7 +2439,8 @@ fn test_incremental_multiple_changes() {
         range_length: None,
         text: "\npart def Bike;".to_string(),
     };
-    server.apply_incremental_change(&uri, &change1).unwrap();
+    server.apply_text_change_only(&uri, &change1).unwrap();
+    server.parse_document(&uri);
 
     // Change 2: Insert comment at start
     let change2 = async_lsp::lsp_types::TextDocumentContentChangeEvent {
@@ -2365,7 +2451,8 @@ fn test_incremental_multiple_changes() {
         range_length: None,
         text: "// Vehicles\n".to_string(),
     };
-    server.apply_incremental_change(&uri, &change2).unwrap();
+    server.apply_text_change_only(&uri, &change2).unwrap();
+    server.parse_document(&uri);
 
     // Verify both definitions exist
     let symbols = server.workspace().symbol_table().all_symbols();
@@ -2391,7 +2478,8 @@ fn test_incremental_multiline_insert() {
         text: "\n\npart def Bike {\n    attribute weight : Real;\n}".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Verify both definitions and nested attribute exist
     let symbols = server.workspace().symbol_table().all_symbols();
@@ -2419,7 +2507,8 @@ fn test_incremental_change_preserves_diagnostics() {
         text: "\ninvalid syntax !@#".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Should have diagnostics now
     let diagnostics = server.get_diagnostics(&uri);
@@ -2454,7 +2543,8 @@ fn test_incremental_change_updates_semantic_tokens() {
         text: "\npart def Car;".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Get updated semantic tokens
     let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
@@ -2496,7 +2586,8 @@ fn test_incremental_change_updates_references() {
         text: "\npart truck : Vehicle;".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Find references again - should now find 3 (definition + 2 usages)
     let updated_refs = server.get_references(&uri, vehicle_pos, true).unwrap();
@@ -2553,7 +2644,8 @@ fn test_new_file_then_incremental_update() {
         text: "\npart def Truck;".to_string(),
     };
 
-    server.apply_incremental_change(&uri, &change).unwrap();
+    server.apply_text_change_only(&uri, &change).unwrap();
+    server.parse_document(&uri);
 
     // Verify semantic tokens still work after update
     let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
@@ -2590,7 +2682,8 @@ fn test_incremental_change_on_unopened_file() {
     };
 
     // Should not error, should treat as opening the document
-    let result = server.apply_incremental_change(&uri, &change);
+    let result = server.apply_text_change_only(&uri, &change);
+    server.parse_document(&uri);
     assert!(
         result.is_ok(),
         "Should handle incremental change on unopened file"
@@ -2630,7 +2723,8 @@ fn test_incremental_insert_at_end_of_document() {
     };
 
     // Should not error
-    let result = server.apply_incremental_change(&uri, &change);
+    let result = server.apply_text_change_only(&uri, &change);
+    server.parse_document(&uri);
     assert!(result.is_ok(), "Should handle insert at end of document");
 
     // Verify content
