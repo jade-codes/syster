@@ -67,7 +67,7 @@ impl SymbolTable {
         })
     }
 
-    fn lookup_namespace_import(
+    pub(super) fn lookup_namespace_import(
         &self,
         name: &str,
         import_path: &str,
