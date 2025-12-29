@@ -161,7 +161,9 @@ fn test_semantic_layer_only_adapters_import_syntax() {
         // Skip adapters, processors, and test files
         path.components()
             .any(|c| matches!(c.as_os_str().to_str(), Some("adapters" | "processors")))
-            || path.file_name().is_some_and(|n| n == "tests.rs")
+            || path
+                .file_name()
+                .is_some_and(|n| n == "tests.rs" || n == "workspace_file_test.rs")
     });
 
     assert!(
