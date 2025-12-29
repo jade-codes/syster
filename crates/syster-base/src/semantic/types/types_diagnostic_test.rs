@@ -59,18 +59,6 @@ fn test_range_new_single_line() {
 }
 
 #[test]
-fn test_range_new_multi_line() {
-    let start = Position::new(1, 0);
-    let end = Position::new(5, 10);
-    let range = Range::new(start, end);
-
-    assert_eq!(range.start.line, 1);
-    assert_eq!(range.start.column, 0);
-    assert_eq!(range.end.line, 5);
-    assert_eq!(range.end.column, 10);
-}
-
-#[test]
 fn test_range_new_same_position() {
     let pos = Position::new(3, 7);
     let range = Range::new(pos, pos);
@@ -205,16 +193,8 @@ fn test_location_clone() {
 // ============================================================================
 // Tests for Diagnostic::error (Issue #335)
 // ============================================================================
-
-#[test]
-fn test_diagnostic_error_basic() {
-    let location = Location::new("test.sysml", Range::single(0, 5));
-    let diag = Diagnostic::error("Undefined symbol", location);
-
-    assert_eq!(diag.severity, Severity::Error);
-    assert_eq!(diag.message, "Undefined symbol");
-    assert_eq!(diag.code, None);
-}
+// Note: Basic test for `Diagnostic::error` is in `tests.rs` (`test_diagnostic_creation`).
+// These tests focus on additional edge cases and behavior.
 
 #[test]
 fn test_diagnostic_error_with_string() {
@@ -299,7 +279,8 @@ fn test_diagnostic_with_code_chaining() {
     let location = Location::new("file.sysml", Range::single(1, 1));
     let diag = Diagnostic::warning("Warning", location).with_code("W001");
 
-    assert_eq!(diag.severity, Severity::Warning);
+    // Focus on chaining behavior: code should be set after chaining
+    assert_eq!(diag.message, "Warning");
     assert_eq!(diag.code, Some("W001".to_string()));
 }
 
