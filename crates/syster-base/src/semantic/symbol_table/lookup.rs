@@ -88,7 +88,7 @@ impl SymbolTable {
         }
     }
 
-    fn lookup_recursive_import(&self, name: &str, namespace: &str) -> Option<&Symbol> {
+    pub(super) fn lookup_recursive_import(&self, name: &str, namespace: &str) -> Option<&Symbol> {
         let prefix = format!("{namespace}::");
         let suffix = format!("::{name}");
 
