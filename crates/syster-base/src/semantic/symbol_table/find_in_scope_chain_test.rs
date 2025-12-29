@@ -533,5 +533,3 @@ fn test_symbol_in_middle_of_chain() {
     assert!(found.is_some());
     assert_eq!(found.unwrap().name(), "MiddleSymbol");
 }
-
-
