@@ -20,3 +20,7 @@ pub use core::LspServer;
 #[cfg(test)]
 #[path = "server/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "server/lsp_server_state_test.rs"]
+mod lsp_server_state_test;
