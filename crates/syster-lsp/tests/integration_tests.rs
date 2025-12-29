@@ -499,3 +499,392 @@ async fn test_cancellation_stops_async_work() {
     assert!(result.is_ok(), "Task should complete after cancellation");
     assert_eq!(result.unwrap().unwrap(), "cancelled");
 }
+
+#[test]
+fn test_rapid_changes_then_format() {
+    use async_lsp::lsp_types::{
+        FormattingOptions, Position, Range, TextDocumentContentChangeEvent,
+    };
+    use std::time::Instant;
+    use tokio_util::sync::CancellationToken;
+
+    let mut server = LspServer::new();
+
+    // Create a test document
+    let test_uri = async_lsp::lsp_types::Url::parse("file:///test.sysml").unwrap();
+    let initial_content = "package Test { part def Vehicle; }";
+
+    // Open document
+    server.open_document(&test_uri, initial_content).unwrap();
+    println!("Opened document");
+
+    // Simulate rapid typing - multiple incremental changes
+    let changes = [
+        // Add newline after {
+        TextDocumentContentChangeEvent {
+            range: Some(Range {
+                start: Position {
+                    line: 0,
+                    character: 14,
+                },
+                end: Position {
+                    line: 0,
+                    character: 14,
+                },
+            }),
+            range_length: None,
+            text: "\n    ".to_string(),
+        },
+        // Add a new part
+        TextDocumentContentChangeEvent {
+            range: Some(Range {
+                start: Position {
+                    line: 1,
+                    character: 4,
+                },
+                end: Position {
+                    line: 1,
+                    character: 4,
+                },
+            }),
+            range_length: None,
+            text: "part def Engine;\n    ".to_string(),
+        },
+        // Add another part
+        TextDocumentContentChangeEvent {
+            range: Some(Range {
+                start: Position {
+                    line: 2,
+                    character: 4,
+                },
+                end: Position {
+                    line: 2,
+                    character: 4,
+                },
+            }),
+            range_length: None,
+            text: "part def Wheel;\n    ".to_string(),
+        },
+    ];
+
+    // Apply changes rapidly without parsing between them, to simulate debounced behavior
+    let path = test_uri.to_file_path().unwrap();
+    for (i, change) in changes.iter().enumerate() {
+        let start = Instant::now();
+        server.cancel_document_operations(&path);
+        server.apply_text_change_only(&test_uri, change).unwrap();
+        println!("Change {}: {}ms", i + 1, start.elapsed().as_millis());
+    }
+
+    // After all rapid changes, parse once (as would happen after debounce delay)
+    server.parse_document(&test_uri);
+
+    // Get the current document text
+    let text = server.get_document_text(&test_uri).unwrap();
+    println!("Document after changes:\n{}", text);
+
+    // Now format
+    let format_start = Instant::now();
+    let cancel_token = CancellationToken::new();
+    let options = FormattingOptions {
+        tab_size: 4,
+        insert_spaces: true,
+        ..Default::default()
+    };
+
+    let format_result = syster_lsp::formatting::format_text_async(&text, options, &cancel_token);
+    println!("Format: {}ms", format_start.elapsed().as_millis());
+
+    if let Some(edits) = format_result {
+        println!("Formatted result ({} edits):", edits.len());
+        for edit in &edits {
+            println!("  Edit: {:?}", edit.range);
+            println!("  New text:\n{}", edit.new_text);
+        }
+    } else {
+        println!("No formatting changes needed");
+    }
+}
+
+#[test]
+fn test_interleaved_changes_and_format() {
+    use async_lsp::lsp_types::{FormattingOptions, TextDocumentContentChangeEvent};
+    use std::time::Instant;
+    use tokio_util::sync::CancellationToken;
+
+    let mut server = LspServer::new();
+
+    // Create a test document with poor formatting
+    let test_uri = async_lsp::lsp_types::Url::parse("file:///test2.sysml").unwrap();
+    let content = "package   Test{part def    Vehicle;part def Engine;}";
+
+    // Open document
+    let start = Instant::now();
+    server.open_document(&test_uri, content).unwrap();
+    println!("open_document: {}ms", start.elapsed().as_millis());
+
+    // Get initial text and format
+    let text = server.get_document_text(&test_uri).unwrap();
+    let cancel_token = CancellationToken::new();
+    let options = FormattingOptions {
+        tab_size: 4,
+        insert_spaces: true,
+        ..Default::default()
+    };
+
+    let format_start = Instant::now();
+    let format_result =
+        syster_lsp::formatting::format_text_async(&text, options.clone(), &cancel_token);
+    println!("format (first): {}ms", format_start.elapsed().as_millis());
+
+    // Apply formatted result as a change
+    if let Some(edits) = format_result {
+        let formatted_text = &edits[0].new_text;
+        println!("Formatted:\n{}", formatted_text);
+
+        // Simulate user making a change after format
+        let change = TextDocumentContentChangeEvent {
+            range: None, // Full document replacement
+            range_length: None,
+            text: formatted_text.clone(),
+        };
+
+        let change_start = Instant::now();
+        let path = test_uri.to_file_path().unwrap();
+        server.cancel_document_operations(&path);
+        server.apply_text_change_only(&test_uri, &change).unwrap();
+        server.parse_document(&test_uri);
+        println!(
+            "apply_text_change_only + parse_document: {}ms",
+            change_start.elapsed().as_millis()
+        );
+
+        // Format again - should be idempotent (no changes)
+        let text2 = server.get_document_text(&test_uri).unwrap();
+        let cancel_token2 = CancellationToken::new();
+
+        let format_start2 = Instant::now();
+        let format_result2 =
+            syster_lsp::formatting::format_text_async(&text2, options, &cancel_token2);
+        println!("format (second): {}ms", format_start2.elapsed().as_millis());
+
+        assert!(
+            format_result2.is_none(),
+            "Second format should produce no changes (idempotent)"
+        );
+    }
+}
+
+#[test]
+fn test_parse_timing_breakdown() {
+    use std::path::PathBuf;
+    use std::time::Instant;
+
+    // Test raw parsing time without LSP overhead
+    let source = "package Test { part def Vehicle; part def Engine; part def Wheel; }";
+    let path = PathBuf::from("/test.sysml");
+
+    // Warm up
+    let _ = syster::project::file_loader::parse_with_result(source, &path);
+
+    // Measure parse time
+    let iterations = 100;
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = syster::project::file_loader::parse_with_result(source, &path);
+    }
+    let parse_total = start.elapsed();
+    println!(
+        "Raw parse: {:.3}ms avg over {} iterations",
+        parse_total.as_micros() as f64 / 1000.0 / iterations as f64,
+        iterations
+    );
+
+    // Now test open_document directly (full document replacement)
+    let mut server = syster_lsp::LspServer::new();
+    let test_uri = async_lsp::lsp_types::Url::parse("file:///test.sysml").unwrap();
+
+    // Open document first
+    server.open_document(&test_uri, source).unwrap();
+
+    // Measure open_document time
+    let iterations = 50;
+    let start = Instant::now();
+    for _ in 0..iterations {
+        server.open_document(&test_uri, source).unwrap();
+    }
+    let change_total = start.elapsed();
+    println!(
+        "open_document: {:.3}ms avg over {} iterations",
+        change_total.as_micros() as f64 / 1000.0 / iterations as f64,
+        iterations
+    );
+
+    // Measure formatting time
+    use async_lsp::lsp_types::FormattingOptions;
+    use tokio_util::sync::CancellationToken;
+
+    let options = FormattingOptions {
+        tab_size: 4,
+        insert_spaces: true,
+        ..Default::default()
+    };
+    let cancel_token = CancellationToken::new();
+
+    // Warm up
+    let _ = syster_lsp::formatting::format_text_async(source, options.clone(), &cancel_token);
+
+    let iterations = 100;
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let _ = syster_lsp::formatting::format_text_async(source, options.clone(), &cancel_token);
+    }
+    let format_total = start.elapsed();
+    println!(
+        "format_text_async: {:.3}ms avg over {} iterations",
+        format_total.as_micros() as f64 / 1000.0 / iterations as f64,
+        iterations
+    );
+
+    // Simulate 20 rapid changes (like fast typing)
+    println!("\n--- 20 rapid changes simulation ---");
+    let start = Instant::now();
+    for i in 0..20 {
+        let modified = format!("package Test {{ part def V{}; }}", i);
+        server.open_document(&test_uri, &modified).unwrap();
+    }
+    let total = start.elapsed();
+    println!(
+        "20 changes total: {:.3}ms ({:.3}ms avg)",
+        total.as_micros() as f64 / 1000.0,
+        total.as_micros() as f64 / 1000.0 / 20.0
+    );
+
+    // Test with a large file with many symbols
+    println!("\n--- Large file with many symbols ---");
+    let mut large_source = String::from("package LargePackage {\n");
+    for i in 0..50 {
+        large_source.push_str(&format!("    part def Part{};\n", i));
+        large_source.push_str(&format!("    port def Port{};\n", i));
+        large_source.push_str(&format!("    action def Action{};\n", i));
+    }
+    large_source.push_str("}\n");
+    println!("Large file: {} bytes, ~150 symbols", large_source.len());
+
+    let large_uri = async_lsp::lsp_types::Url::parse("file:///large.sysml").unwrap();
+
+    // Open large file
+    let start = Instant::now();
+    server.open_document(&large_uri, &large_source).unwrap();
+    println!(
+        "open_document (large): {:.3}ms",
+        start.elapsed().as_micros() as f64 / 1000.0
+    );
+
+    // Change large file
+    let iterations = 20;
+    let start = Instant::now();
+    for i in 0..iterations {
+        let mut modified = large_source.clone();
+        modified.push_str(&format!("// edit {}\n", i));
+        server.open_document(&large_uri, &modified).unwrap();
+    }
+    let total = start.elapsed();
+    println!(
+        "20 changes (large file): {:.3}ms total ({:.3}ms avg)",
+        total.as_micros() as f64 / 1000.0,
+        total.as_micros() as f64 / 1000.0 / iterations as f64
+    );
+
+    // Format large file
+    let start = Instant::now();
+    let _ =
+        syster_lsp::formatting::format_text_async(&large_source, options.clone(), &cancel_token);
+    println!(
+        "format (large file): {:.3}ms",
+        start.elapsed().as_micros() as f64 / 1000.0
+    );
+}
+
+#[test]
+fn test_timing_with_stdlib_loaded() {
+    use async_lsp::lsp_types::FormattingOptions;
+    use std::time::Instant;
+    use tokio_util::sync::CancellationToken;
+
+    // Create server with stdlib
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let mut server = syster_lsp::LspServer::with_config(true, Some(stdlib_path.clone()));
+
+    // Load stdlib
+    println!("--- With stdlib loaded ---");
+    let start = Instant::now();
+    server.ensure_workspace_loaded().unwrap();
+    println!(
+        "ensure_workspace_loaded (stdlib): {:.3}ms",
+        start.elapsed().as_micros() as f64 / 1000.0
+    );
+    println!("Workspace files: {}", server.workspace().files().len());
+    println!(
+        "Symbols: {}",
+        server.workspace().symbol_table().all_symbols().len()
+    );
+
+    // Find AnalysisTooling.sysml
+    let analysis_tooling_path = server
+        .workspace()
+        .files()
+        .keys()
+        .find(|p| p.to_string_lossy().contains("AnalysisTooling.sysml"))
+        .cloned();
+
+    if let Some(path) = analysis_tooling_path {
+        let text = std::fs::read_to_string(&path).unwrap();
+        let uri = async_lsp::lsp_types::Url::from_file_path(&path).unwrap();
+
+        println!("\n--- AnalysisTooling.sysml ({} bytes) ---", text.len());
+
+        // Open document
+        let start = Instant::now();
+        server.open_document(&uri, &text).unwrap();
+        println!(
+            "open_document: {:.3}ms",
+            start.elapsed().as_micros() as f64 / 1000.0
+        );
+
+        // Make changes
+        let iterations = 20;
+        let start = Instant::now();
+        for i in 0..iterations {
+            let mut modified = text.clone();
+            modified.push_str(&format!("\n// edit {}", i));
+            server.open_document(&uri, &modified).unwrap();
+        }
+        let total = start.elapsed();
+        println!(
+            "20 changes: {:.3}ms total ({:.3}ms avg)",
+            total.as_micros() as f64 / 1000.0,
+            total.as_micros() as f64 / 1000.0 / iterations as f64
+        );
+
+        // Format
+        let options = FormattingOptions {
+            tab_size: 4,
+            insert_spaces: true,
+            ..Default::default()
+        };
+        let cancel_token = CancellationToken::new();
+        let start = Instant::now();
+        let _ = syster_lsp::formatting::format_text_async(&text, options, &cancel_token);
+        println!(
+            "format: {:.3}ms",
+            start.elapsed().as_micros() as f64 / 1000.0
+        );
+    } else {
+        println!("AnalysisTooling.sysml not found in stdlib");
+    }
+}

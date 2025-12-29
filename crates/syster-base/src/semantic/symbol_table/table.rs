@@ -1,3 +1,4 @@
+use crate::core::Span;
 use crate::core::events::EventEmitter;
 use crate::core::operation::{EventBus, OperationResult};
 use crate::semantic::SymbolTableEvent;
@@ -133,6 +134,39 @@ impl SymbolTable {
                 }
             }
         }
+    }
+
+    /// Get all imports that reference a given target (for "Find References")
+    /// Returns (file, span) pairs for each import of the target
+    ///
+    /// TODO: Consider optimizing with a reverse index if performance becomes an issue
+    /// with large projects. Current O(n*m) complexity where n=imports, m=scopes/symbols.
+    pub fn get_import_references(&self, target_qname: &str) -> Vec<(&str, &Span)> {
+        let mut refs = Vec::new();
+        for scope in &self.scopes {
+            for import in &scope.imports {
+                // Skip wildcard imports - they don't directly reference a symbol
+                if import.path.ends_with("::*") || import.path.ends_with("::**") {
+                    continue;
+                }
+
+                // Check if this import targets the symbol (either exact or qualified)
+                let matches = import.path == target_qname
+                    || self
+                        .lookup_qualified(&import.path)
+                        .map(|s| s.qualified_name() == target_qname)
+                        .unwrap_or(false)
+                    || self
+                        .lookup(&import.path)
+                        .map(|s| s.qualified_name() == target_qname)
+                        .unwrap_or(false);
+
+                if matches && let (Some(span), Some(file)) = (&import.span, &import.file) {
+                    refs.push((file.as_str(), span));
+                }
+            }
+        }
+        refs
     }
 }
 

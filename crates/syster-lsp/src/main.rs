@@ -1,5 +1,6 @@
 use std::ops::ControlFlow;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use async_lsp::client_monitor::ClientProcessMonitorLayer;
 use async_lsp::concurrency::ConcurrencyLayer;
@@ -10,6 +11,7 @@ use async_lsp::tracing::TracingLayer;
 use async_lsp::{ClientSocket, LanguageClient, LanguageServer, ResponseError};
 use futures::future::BoxFuture;
 use serde_json::Value;
+use tokio::sync::mpsc;
 use tower::ServiceBuilder;
 use tracing::{Level, info};
 
@@ -17,11 +19,14 @@ use async_lsp::lsp_types::*;
 
 mod server;
 use server::LspServer;
+use server::background_tasks::{debounce, events::ParseDocument};
 
 /// Server state that owns the LspServer and client socket
 struct ServerState {
     client: ClientSocket,
     server: LspServer,
+    /// Channel to send parse requests to the debounce task
+    parse_tx: mpsc::UnboundedSender<Url>,
 }
 
 impl LanguageServer for ServerState {
@@ -324,8 +329,9 @@ impl LanguageServer for ServerState {
             self.server.cancel_document_operations(&path);
         }
 
+        // Apply text changes only (fast - just string manipulation)
         for change in params.content_changes {
-            if let Err(e) = self.server.apply_incremental_change(&uri, &change) {
+            if let Err(e) = self.server.apply_text_change_only(&uri, &change) {
                 let _ = self.client.log_message(LogMessageParams {
                     typ: MessageType::ERROR,
                     message: format!("Failed to apply change to {uri}: {e}"),
@@ -334,13 +340,9 @@ impl LanguageServer for ServerState {
             }
         }
 
-        let diagnostics = self.server.get_diagnostics(&uri);
-        info!("did_change: done, {} diagnostics", diagnostics.len());
-        let _ = self.client.publish_diagnostics(PublishDiagnosticsParams {
-            uri,
-            diagnostics,
-            version: None,
-        });
+        // Send parse request to debounce task (non-blocking)
+        let _ = self.parse_tx.send(uri);
+
         ControlFlow::Continue(())
     }
 
@@ -362,10 +364,36 @@ impl LanguageServer for ServerState {
 
 impl ServerState {
     fn new_router(client: ClientSocket) -> Router<Self> {
-        Router::from_language_server(Self {
+        let (parse_tx, parse_rx) = mpsc::unbounded_channel::<Url>();
+
+        // Spawn debounced parse task: waits for typing to pause before parsing
+        let emit_client = client.clone();
+        debounce::spawn(
+            Duration::from_millis(debounce::DEFAULT_DELAY_MS),
+            parse_rx,
+            move |uri| emit_client.emit(ParseDocument { uri }).is_ok(),
+        );
+
+        let mut router = Router::from_language_server(Self {
             client,
             server: LspServer::new(),
-        })
+            parse_tx,
+        });
+
+        // Handle ParseDocument events
+        router.event(|state: &mut ServerState, event: ParseDocument| {
+            state.server.parse_document(&event.uri);
+
+            let diagnostics = state.server.get_diagnostics(&event.uri);
+            let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
+                uri: event.uri,
+                diagnostics,
+                version: None,
+            });
+            ControlFlow::Continue(())
+        });
+
+        router
     }
 }
 

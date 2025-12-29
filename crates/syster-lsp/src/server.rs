@@ -15,6 +15,8 @@ mod rename;
 mod selection_range;
 mod semantic_tokens;
 
+pub mod background_tasks;
+
 pub use core::LspServer;
 
 #[cfg(test)]

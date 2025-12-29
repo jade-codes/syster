@@ -52,13 +52,24 @@ impl LspServer {
         Ok(())
     }
 
-    /// Update an open document with new content
-    pub fn change_document(&mut self, uri: &Url, text: &str) -> Result<(), String> {
-        self.ensure_workspace_loaded()?;
-        let path = self.uri_to_sysml_path(uri)?;
-        self.document_texts.insert(path.clone(), text.to_string());
-        self.parse_into_workspace(&path, text);
-        Ok(())
+    /// Parse a document that already has updated text
+    /// Called after debounce delay
+    pub fn parse_document(&mut self, uri: &Url) {
+        // Validate file extension before parsing
+        let path = match self.uri_to_sysml_path(uri) {
+            Ok(p) => p,
+            Err(_) => return, // Unsupported file type, skip parsing
+        };
+
+        // Ensure workspace is loaded before parsing
+        if self.ensure_workspace_loaded().is_err() {
+            return;
+        }
+
+        // Get current text and parse it
+        if let Some(text) = self.document_texts.get(&path).cloned() {
+            self.parse_into_workspace(&path, &text);
+        }
     }
 
     /// Close a document - optionally remove from workspace
@@ -70,11 +81,11 @@ impl LspServer {
         Ok(())
     }
 
-    /// Apply an incremental text change to a document
+    /// Apply a text change without re-parsing (fast path for debouncing)
     ///
-    /// This method updates the document content based on LSP TextDocumentContentChangeEvent
-    /// and re-parses the file. Supports both ranged changes and full document updates.
-    pub fn apply_incremental_change(
+    /// This method updates the text buffer only. Call `parse_document` after
+    /// debounce delay to actually parse the updated content.
+    pub fn apply_text_change_only(
         &mut self,
         uri: &Url,
         change: &TextDocumentContentChangeEvent,
@@ -100,12 +111,8 @@ impl LspServer {
             change.text.clone()
         };
 
-        // If document wasn't opened yet, treat this as opening it
-        if !self.document_texts.contains_key(&path) {
-            self.open_document(uri, &new_text)
-        } else {
-            // Re-parse and update with the new text
-            self.change_document(uri, &new_text)
-        }
+        // Update text buffer only - parsing happens later via parse_document
+        self.document_texts.insert(path, new_text);
+        Ok(())
     }
 }
