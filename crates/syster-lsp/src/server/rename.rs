@@ -46,6 +46,8 @@ impl LspServer {
             .lookup_qualified(&element_name)
             .or_else(|| self.workspace.symbol_table().lookup(&element_name))?;
 
+        let qualified_name = symbol.qualified_name().to_string();
+
         // Collect all locations (definition + references)
         let mut edits_by_file: HashMap<Url, Vec<TextEdit>> = HashMap::new();
 
@@ -67,22 +69,61 @@ impl LspServer {
             });
         }
 
-        // Add all reference locations
-        for reference in symbol.references() {
-            let file_uri = Url::from_file_path(&reference.file).ok()?;
-            edits_by_file.entry(file_uri).or_default().push(TextEdit {
-                range: Range {
-                    start: Position {
-                        line: reference.span.start.line as u32,
-                        character: reference.span.start.column as u32,
+        // Add relationship references (typing, specialization, etc.)
+        let refs = self
+            .workspace
+            .relationship_graph()
+            .get_references_to(&qualified_name);
+
+        for (source_qname, span) in refs {
+            if let Some(source_symbol) =
+                self.workspace.symbol_table().lookup_qualified(source_qname)
+            {
+                if let Some(file) = source_symbol.source_file() {
+                    let symbol_span = source_symbol.span();
+                    if let Some(reference_span) = span.or(symbol_span.as_ref()) {
+                        if let Ok(file_uri) = Url::from_file_path(file) {
+                            edits_by_file.entry(file_uri).or_default().push(TextEdit {
+                                range: Range {
+                                    start: Position {
+                                        line: reference_span.start.line as u32,
+                                        character: reference_span.start.column as u32,
+                                    },
+                                    end: Position {
+                                        line: reference_span.end.line as u32,
+                                        character: reference_span.end.column as u32,
+                                    },
+                                },
+                                new_text: new_name.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add import references
+        let import_refs = self
+            .workspace
+            .symbol_table()
+            .get_import_references(&qualified_name);
+
+        for (file, span) in import_refs {
+            if let Ok(file_uri) = Url::from_file_path(file) {
+                edits_by_file.entry(file_uri).or_default().push(TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: span.start.line as u32,
+                            character: span.start.column as u32,
+                        },
+                        end: Position {
+                            line: span.end.line as u32,
+                            character: span.end.column as u32,
+                        },
                     },
-                    end: Position {
-                        line: reference.span.end.line as u32,
-                        character: reference.span.end.column as u32,
-                    },
-                },
-                new_text: new_name.to_string(),
-            });
+                    new_text: new_name.to_string(),
+                });
+            }
         }
 
         Some(WorkspaceEdit {

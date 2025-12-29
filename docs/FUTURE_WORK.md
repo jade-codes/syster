@@ -39,10 +39,31 @@
   - Extract common test patterns (e.g., unwrap_sysml helper, parse_sysml helper)
   
 ## Architecture & Code Cleanup
+
+### 🚨 IMMEDIATE: LSP Layer Refactoring (High Priority)
+The LSP crate needs significant cleanup to improve maintainability:
+
+- [ ] **Split `tests.rs` (~2700 lines)** - Currently a monolithic test file
+  - Extract to feature-based test modules: `tests/references_tests.rs`, `tests/hover_tests.rs`, etc.
+  - Each feature module should have its own focused test file
+  
+- [ ] **Improve main.rs organization** - `ServerState` struct is growing
+  - Consider splitting protocol handlers into separate files
+  - Extract initialization logic to dedicated module
+  
+- [ ] **Review handler modules** - Some may benefit from extraction
+  - `references.rs` + `rename.rs` share code → extract common reference-finding logic
+  - `document.rs` handles multiple concerns → consider splitting
+  
+- [ ] **Standardize patterns across handlers**
+  - Common error handling patterns
+  - Consistent URI → Path conversion with proper error messages
+  - Shared position/range utilities
+
 ### Next Module Refactoring Tasks
-- [ ] **lsp/ folder** (lsp-server crate) - Review files for refactoring opportunities
-- Check file sizes and identify files >100 lines
-- Apply same modularization pattern as semantic/
+- [ ] **lsp/ folder** (lsp-server crate) - Apply same modularization pattern as semantic/
+  - Check file sizes and identify files >100 lines
+  - Create focused submodules with clear single responsibilities
 - [ ] Metrics/observability layer for EventEmitter
 
 ### Code Cleanup

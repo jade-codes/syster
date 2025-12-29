@@ -361,3 +361,107 @@ fn test_stdlib_usage_pattern() {
     // Verify the workspace has stdlib loaded
     assert!(workspace.has_stdlib());
 }
+
+// =============================================================================
+// Tests for get_import_references - Find All References includes imports
+// =============================================================================
+
+#[test]
+fn test_get_import_references_finds_direct_import() {
+    let source = r#"
+        package Types {
+            part def Vehicle;
+        }
+        package Usage {
+            import Types::Vehicle;
+            part car : Vehicle;
+        }
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let path = PathBuf::from("test.sysml");
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.add_file(path.clone(), SyntaxFile::SysML(file));
+    workspace.populate_all().unwrap();
+
+    // Get import references for Vehicle
+    let import_refs = workspace
+        .symbol_table()
+        .get_import_references("Types::Vehicle");
+
+    // Should find the import statement
+    assert_eq!(
+        import_refs.len(),
+        1,
+        "Should find 1 import reference to Vehicle"
+    );
+
+    let (file, span) = &import_refs[0];
+    assert!(file.contains("test.sysml"), "Import should be in test file");
+    // Span should point to the import line
+    assert!(span.start.line > 0, "Span should have valid line number");
+}
+
+#[test]
+fn test_get_import_references_ignores_wildcard_imports() {
+    let source = r#"
+        package Types {
+            part def Vehicle;
+        }
+        package Usage {
+            import Types::*;
+            part car : Vehicle;
+        }
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let path = PathBuf::from("test.sysml");
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.add_file(path.clone(), SyntaxFile::SysML(file));
+    workspace.populate_all().unwrap();
+
+    // Wildcard imports shouldn't be returned as direct references
+    let import_refs = workspace
+        .symbol_table()
+        .get_import_references("Types::Vehicle");
+
+    // Wildcard import doesn't directly reference Vehicle
+    assert!(
+        import_refs.is_empty(),
+        "Wildcard imports should not be returned as direct references"
+    );
+}
+
+#[test]
+fn test_get_import_references_empty_for_unreferenced() {
+    let source = r#"
+        package Types {
+            part def Vehicle;
+            part def Unused;
+        }
+        package Usage {
+            import Types::Vehicle;
+        }
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let path = PathBuf::from("test.sysml");
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.add_file(path.clone(), SyntaxFile::SysML(file));
+    workspace.populate_all().unwrap();
+
+    // Unused is never imported
+    let import_refs = workspace
+        .symbol_table()
+        .get_import_references("Types::Unused");
+    assert!(
+        import_refs.is_empty(),
+        "Unreferenced symbol should have no import refs"
+    );
+}
