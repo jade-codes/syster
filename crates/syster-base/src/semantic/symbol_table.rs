@@ -20,3 +20,6 @@ mod lookup_global_mut_test;
 #[cfg(test)]
 #[path = "symbol_table/tests.rs"]
 mod tests;
+#[cfg(test)]
+#[path = "symbol_table/symbol_table_test.rs"]
+mod symbol_table_test;
