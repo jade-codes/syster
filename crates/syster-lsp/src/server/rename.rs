@@ -78,27 +78,23 @@ impl LspServer {
         for (source_qname, span) in refs {
             if let Some(source_symbol) =
                 self.workspace.symbol_table().lookup_qualified(source_qname)
+                && let Some(file) = source_symbol.source_file()
+                && let Some(reference_span) = span.or(source_symbol.span().as_ref())
+                && let Ok(file_uri) = Url::from_file_path(file)
             {
-                if let Some(file) = source_symbol.source_file() {
-                    let symbol_span = source_symbol.span();
-                    if let Some(reference_span) = span.or(symbol_span.as_ref()) {
-                        if let Ok(file_uri) = Url::from_file_path(file) {
-                            edits_by_file.entry(file_uri).or_default().push(TextEdit {
-                                range: Range {
-                                    start: Position {
-                                        line: reference_span.start.line as u32,
-                                        character: reference_span.start.column as u32,
-                                    },
-                                    end: Position {
-                                        line: reference_span.end.line as u32,
-                                        character: reference_span.end.column as u32,
-                                    },
-                                },
-                                new_text: new_name.to_string(),
-                            });
-                        }
-                    }
-                }
+                edits_by_file.entry(file_uri).or_default().push(TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: reference_span.start.line as u32,
+                            character: reference_span.start.column as u32,
+                        },
+                        end: Position {
+                            line: reference_span.end.line as u32,
+                            character: reference_span.end.column as u32,
+                        },
+                    },
+                    new_text: new_name.to_string(),
+                });
             }
         }
 

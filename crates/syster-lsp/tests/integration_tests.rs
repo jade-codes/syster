@@ -519,7 +519,7 @@ fn test_rapid_changes_then_format() {
     println!("Opened document");
 
     // Simulate rapid typing - multiple incremental changes
-    let changes = vec![
+    let changes = [
         // Add newline after {
         TextDocumentContentChangeEvent {
             range: Some(Range {
