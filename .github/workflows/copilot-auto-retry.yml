@@ -7,7 +7,7 @@ on:
 
 jobs:
   notify-copilot:
-    if: github.event.workflow_run.conclusion == 'failure'
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
