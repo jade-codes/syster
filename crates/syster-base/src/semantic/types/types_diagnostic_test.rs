@@ -182,10 +182,9 @@ fn test_location_equality() {
     assert_eq!(loc1, loc2);
 }
 
-#[test]
-// Tests for Diagnostic
 // ============================================================================
-
+// Tests for Diagnostic::error (Issue #335)
+// ============================================================================
 // Note: Detailed tests for `Diagnostic::error` are defined in `tests.rs`
 // (`test_diagnostic_creation`). They verify severity, message, and location.
 // To avoid duplicate maintenance, we rely on that canonical test here.
