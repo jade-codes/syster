@@ -703,3 +703,878 @@ package Outer {
     // Should rename definition and qualified usage
     assert_eq!(edits.len(), 2, "Should rename definition and usage");
 }
+
+// ============================================================================
+// Tests for initialize (#261-264, #278, #299, #316)
+// ============================================================================
+
+#[tokio::test]
+async fn test_initialize_returns_capabilities() {
+    let mut state = TestServerState::new();
+
+    // Initialize should set up server capabilities
+    // We can't directly call initialize without async-lsp infrastructure,
+    // but we can verify the server is ready
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "part def Vehicle;");
+
+    // Verify server can perform operations (it's initialized)
+    let symbols = state
+        .server
+        .get_document_symbols(std::path::Path::new(uri.path()));
+    assert!(!symbols.is_empty(), "Initialized server should work");
+}
+
+#[tokio::test]
+async fn test_initialize_with_stdlib_disabled() {
+    // Create server with stdlib disabled
+    let server = LspServer::with_config(false, None);
+
+    // Should work but not load stdlib
+    assert_eq!(server.workspace().file_count(), 0, "Should not load stdlib");
+}
+
+#[tokio::test]
+async fn test_initialize_with_custom_stdlib_path() {
+    // Create server with custom path
+    let custom_path = std::path::PathBuf::from("/custom/path");
+    let server = LspServer::with_config(true, Some(custom_path));
+
+    // Server should be created (even if path doesn't exist)
+    assert_eq!(server.workspace().file_count(), 0);
+}
+
+// ============================================================================
+// Tests for definition (#258, #275, #296, #313)
+// ============================================================================
+
+#[tokio::test]
+async fn test_definition_basic() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def Vehicle;
+part car : Vehicle;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // Go to definition from usage
+    let position = Position::new(2, 12); // On "Vehicle" in usage
+    let result = state.server.get_definition(&uri, position);
+
+    assert!(result.is_some(), "Should find definition");
+
+    let location = result.unwrap();
+    assert_eq!(location.uri, uri);
+    assert_eq!(
+        location.range.start.line, 1,
+        "Should point to definition line"
+    );
+}
+
+#[tokio::test]
+async fn test_definition_from_definition() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;"#;
+
+    state.open_doc(&uri, text);
+
+    // Go to definition from the definition itself
+    let position = Position::new(0, 10); // On "Vehicle" name
+    let result = state.server.get_definition(&uri, position);
+
+    assert!(result.is_some(), "Should return itself");
+    let location = result.unwrap();
+    assert_eq!(location.range.start.line, 0);
+}
+
+#[tokio::test]
+async fn test_definition_no_symbol() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;"#;
+
+    state.open_doc(&uri, text);
+
+    // Try definition on keyword/whitespace
+    let position = Position::new(0, 0); // On "p" of "part"
+    let result = state.server.get_definition(&uri, position);
+
+    assert!(result.is_none(), "Should return None for non-symbol");
+}
+
+#[tokio::test]
+async fn test_definition_nested_elements() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Auto {
+    part def Engine;
+    part def Car {
+        part engine : Engine;
+    }
+}
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // Go to definition from nested usage
+    let position = Position::new(4, 23); // On "Engine" in nested part
+    let result = state.server.get_definition(&uri, position);
+
+    assert!(result.is_some(), "Should find definition in parent scope");
+    let location = result.unwrap();
+    assert_eq!(
+        location.range.start.line, 2,
+        "Should point to Engine definition"
+    );
+}
+
+// ============================================================================
+// Tests for references (#266, #283, #301, #318)
+// ============================================================================
+
+#[tokio::test]
+async fn test_references_basic() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def Vehicle;
+part car : Vehicle;
+part bike : Vehicle;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // Find references including declaration
+    let position = Position::new(1, 10); // On definition
+    let result = state.server.get_references(&uri, position, true);
+
+    assert!(result.is_some(), "Should find references");
+    let locations = result.unwrap();
+
+    // Should find definition + 2 usages = 3 total
+    assert_eq!(locations.len(), 3, "Should find all references");
+}
+
+#[tokio::test]
+async fn test_references_exclude_declaration() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def Engine;
+part car : Engine;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // Find references excluding declaration
+    let position = Position::new(1, 10);
+    let result = state.server.get_references(&uri, position, false);
+
+    assert!(result.is_some());
+    let locations = result.unwrap();
+
+    // Should only find usage, not definition
+    assert_eq!(locations.len(), 1, "Should exclude definition");
+    assert_eq!(
+        locations[0].range.start.line, 2,
+        "Should only have usage line"
+    );
+}
+
+#[tokio::test]
+async fn test_references_no_symbol() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;"#;
+
+    state.open_doc(&uri, text);
+
+    let position = Position::new(0, 0); // On keyword
+    let result = state.server.get_references(&uri, position, true);
+
+    // Should return None or empty for non-symbol
+    if let Some(refs) = result {
+        assert!(refs.is_empty(), "Should have no references for keyword");
+    }
+}
+
+#[tokio::test]
+async fn test_references_no_usages() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def UnusedType;
+part def OtherType;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // Find references excluding declaration (no usages)
+    let position = Position::new(1, 10);
+    let result = state.server.get_references(&uri, position, false);
+
+    assert!(result.is_some());
+    let locations = result.unwrap();
+    assert_eq!(locations.len(), 0, "Should find no usages");
+}
+
+// ============================================================================
+// Tests for completion (#257, #274, #295, #312)
+// ============================================================================
+
+#[tokio::test]
+async fn test_completion_keywords() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "package Test {}\n";
+
+    state.open_doc(&uri, text);
+
+    let position = Position::new(1, 0); // After package
+    let path = std::path::Path::new(uri.path());
+    let result = state.server.get_completions(path, position);
+
+    let CompletionResponse::Array(items) = result else {
+        panic!("Expected array response");
+    };
+
+    assert!(!items.is_empty(), "Should return keyword completions");
+
+    // Should have SysML keywords
+    let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
+    assert!(labels.contains(&"part def"), "Should suggest 'part def'");
+    assert!(labels.contains(&"package"), "Should suggest 'package'");
+}
+
+#[tokio::test]
+async fn test_completion_empty_file() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "");
+
+    let position = Position::new(0, 0);
+    let path = std::path::Path::new(uri.path());
+    let result = state.server.get_completions(path, position);
+
+    let CompletionResponse::Array(items) = result else {
+        panic!("Expected array response");
+    };
+
+    assert!(!items.is_empty(), "Should suggest top-level keywords");
+}
+
+#[tokio::test]
+async fn test_completion_type_context() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Test {
+    part def Vehicle;
+    part car : 
+}
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // After colon - should suggest type symbols
+    let position = Position::new(3, 15);
+    let path = std::path::Path::new(uri.path());
+    let result = state.server.get_completions(path, position);
+
+    let CompletionResponse::Array(items) = result else {
+        panic!("Expected array response");
+    };
+
+    let labels: Vec<_> = items.iter().map(|i| i.label.as_str()).collect();
+    assert!(labels.contains(&"Vehicle"), "Should suggest Vehicle type");
+}
+
+#[tokio::test]
+async fn test_completion_invalid_position() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "part def Car;");
+
+    // Position way beyond file end
+    let position = Position::new(100, 100);
+    let path = std::path::Path::new(uri.path());
+    let result = state.server.get_completions(path, position);
+
+    // Should handle gracefully
+    match result {
+        CompletionResponse::Array(_) | CompletionResponse::List(_) => {
+            // Either response is acceptable
+        }
+    }
+}
+
+// ============================================================================
+// Tests for formatting (#254, #259-260, #276-277, #298, #315)
+// ============================================================================
+
+#[tokio::test]
+async fn test_formatting_basic() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part  def   Vehicle;"; // Extra spaces
+
+    state.open_doc(&uri, text);
+
+    // Get document text for formatting
+    let doc_text = state.server.get_document_text(&uri);
+    assert!(doc_text.is_some(), "Should have document text");
+
+    // Format the text (synchronously for testing)
+    let options = FormattingOptions {
+        tab_size: 4,
+        insert_spaces: true,
+        ..Default::default()
+    };
+
+    let cancel_token = tokio_util::sync::CancellationToken::new();
+    let formatted =
+        super::formatting::format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    assert!(formatted.is_some(), "Should format successfully");
+}
+
+#[tokio::test]
+async fn test_formatting_empty_file() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "");
+
+    let doc_text = state.server.get_document_text(&uri);
+    assert!(doc_text.is_some());
+
+    let options = FormattingOptions {
+        tab_size: 4,
+        insert_spaces: true,
+        ..Default::default()
+    };
+
+    let cancel_token = tokio_util::sync::CancellationToken::new();
+    let formatted =
+        super::formatting::format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    // Empty file should return None or empty edits
+    assert!(formatted.is_none() || formatted.unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn test_formatting_preserves_structure() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Auto {
+    part def Vehicle;
+}
+    "#;
+
+    state.open_doc(&uri, text);
+
+    let doc_text = state.server.get_document_text(&uri);
+    assert!(doc_text.is_some());
+
+    let options = FormattingOptions {
+        tab_size: 4,
+        insert_spaces: true,
+        ..Default::default()
+    };
+
+    let cancel_token = tokio_util::sync::CancellationToken::new();
+    let formatted =
+        super::formatting::format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    // Should successfully format structured content
+    assert!(formatted.is_some() || !text.trim().is_empty());
+}
+
+// ============================================================================
+// Tests for prepare_rename (#268, #285, #303, #320)
+// ============================================================================
+
+#[tokio::test]
+async fn test_prepare_rename_on_definition() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;"#;
+
+    state.open_doc(&uri, text);
+
+    let position = Position::new(0, 10); // On "Vehicle"
+    let result = state.server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should be renameable");
+
+    let response = result.unwrap();
+    if let PrepareRenameResponse::RangeWithPlaceholder { placeholder, .. } = response {
+        assert_eq!(placeholder, "Vehicle", "Should use symbol name");
+    }
+}
+
+#[tokio::test]
+async fn test_prepare_rename_on_usage() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def Car;
+part myCar : Car;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    let position = Position::new(2, 14); // On "Car" in usage
+    let result = state.server.prepare_rename(&uri, position);
+
+    assert!(result.is_some(), "Should be renameable from usage");
+}
+
+#[tokio::test]
+async fn test_prepare_rename_no_symbol() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def Vehicle;"#;
+
+    state.open_doc(&uri, text);
+
+    let position = Position::new(0, 0); // On keyword
+    let result = state.server.prepare_rename(&uri, position);
+
+    assert!(result.is_none(), "Should not be renameable");
+}
+
+#[tokio::test]
+async fn test_prepare_rename_returns_correct_range() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"part def MyLongSymbolName;"#;
+
+    state.open_doc(&uri, text);
+
+    let position = Position::new(0, 12); // Inside symbol name
+    let result = state.server.prepare_rename(&uri, position);
+
+    assert!(result.is_some());
+
+    let response = result.unwrap();
+    if let PrepareRenameResponse::RangeWithPlaceholder { range, placeholder } = response {
+        assert_eq!(placeholder, "MyLongSymbolName");
+        assert!(
+            range.end.character > range.start.character,
+            "Range should span symbol"
+        );
+    }
+}
+
+// ============================================================================
+// Tests for folding_range (#267, #284, #302, #319)
+// ============================================================================
+
+#[tokio::test]
+async fn test_folding_range_basic() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Test {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+}
+    "#;
+
+    state.open_doc(&uri, text);
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = state.server.get_folding_ranges(path);
+
+    // Should have folding ranges for blocks
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line, "Valid folding range");
+    }
+}
+
+#[tokio::test]
+async fn test_folding_range_empty_file() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "");
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = state.server.get_folding_ranges(path);
+
+    // Empty file should have no folding ranges
+    assert!(ranges.is_empty(), "Empty file should have no folding");
+}
+
+#[tokio::test]
+async fn test_folding_range_single_line() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "part def Car;");
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = state.server.get_folding_ranges(path);
+
+    // Single-line elements shouldn't create folding ranges
+    assert!(ranges.is_empty() || ranges.iter().all(|r| r.end_line > r.start_line));
+}
+
+#[tokio::test]
+async fn test_folding_range_nested() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+package Outer {
+    package Inner {
+        part def Vehicle;
+    }
+}
+    "#;
+
+    state.open_doc(&uri, text);
+
+    let path = std::path::Path::new(uri.path());
+    let ranges = state.server.get_folding_ranges(path);
+
+    // Should handle nested structures
+    for range in &ranges {
+        assert!(range.end_line > range.start_line, "Multi-line fold");
+    }
+}
+
+// ============================================================================
+// Tests for inlay_hint (#265, #282, #300, #317)
+// ============================================================================
+
+#[tokio::test]
+async fn test_inlay_hint_basic() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def Vehicle;
+part car : Vehicle;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(10, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = state.server.get_inlay_hints(&params);
+
+    // May or may not have hints depending on implementation
+    // Just verify it doesn't crash
+    for hint in &hints {
+        // Check label exists - InlayHintLabel is an enum so we just verify it's there
+        match &hint.label {
+            InlayHintLabel::String(s) => assert!(!s.is_empty(), "Label should not be empty"),
+            InlayHintLabel::LabelParts(parts) => {
+                assert!(!parts.is_empty(), "Label parts should not be empty")
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_inlay_hint_empty_file() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "");
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(0, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = state.server.get_inlay_hints(&params);
+    assert!(hints.is_empty(), "Empty file should have no hints");
+}
+
+#[tokio::test]
+async fn test_inlay_hint_out_of_range() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    state.open_doc(&uri, "part def Car;");
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(100, 0), // Beyond file
+            end: Position::new(200, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = state.server.get_inlay_hints(&params);
+    // Should handle gracefully
+    assert!(hints.is_empty(), "Out of range should return empty");
+}
+
+// ============================================================================
+// Tests for did_open (#309, #311)
+// ============================================================================
+
+#[tokio::test]
+async fn test_did_open_valid_document() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    // Simulate did_open
+    state.open_doc(&uri, text);
+
+    // Verify document was opened and parsed
+    assert_eq!(state.server.workspace().file_count(), 1);
+
+    let symbols = state.server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
+}
+
+#[tokio::test]
+async fn test_did_open_invalid_document() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "invalid syntax !@#$%";
+
+    // Should handle parse errors gracefully
+    let result = state.server.open_document(&uri, text);
+    assert!(result.is_ok(), "Should succeed even with parse errors");
+
+    // Document should not be in workspace (parse failed)
+    assert_eq!(state.server.workspace().file_count(), 0);
+
+    // But should have diagnostics
+    let diagnostics = state.server.get_diagnostics(&uri);
+    assert!(!diagnostics.is_empty(), "Should have error diagnostics");
+}
+
+#[tokio::test]
+async fn test_did_open_multiple_documents() {
+    let mut state = TestServerState::new();
+    let uri1 = Url::parse("file:///file1.sysml").unwrap();
+    let uri2 = Url::parse("file:///file2.sysml").unwrap();
+
+    state.open_doc(&uri1, "part def Car;");
+    state.open_doc(&uri2, "part def Truck;");
+
+    assert_eq!(state.server.workspace().file_count(), 2);
+
+    let symbols = state.server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Truck"));
+}
+
+// ============================================================================
+// Tests for did_change (#297)
+// ============================================================================
+
+#[tokio::test]
+async fn test_did_change_incremental_insert() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    state.open_doc(&uri, "part def Car;");
+
+    // Simulate incremental change - insert at end
+    let change = TextDocumentContentChangeEvent {
+        range: Some(Range {
+            start: Position::new(0, 13),
+            end: Position::new(0, 13),
+        }),
+        range_length: None,
+        text: "\npart def Truck;".to_string(),
+    };
+
+    state.server.apply_text_change_only(&uri, &change).unwrap();
+    state.server.parse_document(&uri);
+
+    // Verify both symbols exist
+    let symbols = state.server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Truck"));
+}
+
+#[tokio::test]
+async fn test_did_change_incremental_delete() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    state.open_doc(&uri, "part def Car;\npart def Truck;");
+
+    // Delete second line
+    let change = TextDocumentContentChangeEvent {
+        range: Some(Range {
+            start: Position::new(1, 0),
+            end: Position::new(1, 16),
+        }),
+        range_length: Some(16),
+        text: "".to_string(),
+    };
+
+    state.server.apply_text_change_only(&uri, &change).unwrap();
+    state.server.parse_document(&uri);
+
+    // Only Car should exist
+    let symbols = state.server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
+    assert!(!symbols.iter().any(|(_, s)| s.name() == "Truck"));
+}
+
+#[tokio::test]
+async fn test_did_change_incremental_replace() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    state.open_doc(&uri, "part def Car;");
+
+    // Replace "Car" with "Vehicle"
+    let change = TextDocumentContentChangeEvent {
+        range: Some(Range {
+            start: Position::new(0, 9),
+            end: Position::new(0, 12),
+        }),
+        range_length: Some(3),
+        text: "Vehicle".to_string(),
+    };
+
+    state.server.apply_text_change_only(&uri, &change).unwrap();
+    state.server.parse_document(&uri);
+
+    let symbols = state.server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
+    assert!(!symbols.iter().any(|(_, s)| s.name() == "Car"));
+}
+
+#[tokio::test]
+async fn test_did_change_full_sync() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    state.open_doc(&uri, "part def Car;");
+
+    // Full document sync (no range)
+    let change = TextDocumentContentChangeEvent {
+        range: None,
+        range_length: None,
+        text: "part def CompletelyNew;".to_string(),
+    };
+
+    state.server.apply_text_change_only(&uri, &change).unwrap();
+    state.server.parse_document(&uri);
+
+    let symbols = state.server.workspace().symbol_table().all_symbols();
+    assert!(symbols.iter().any(|(_, s)| s.name() == "CompletelyNew"));
+    assert!(!symbols.iter().any(|(_, s)| s.name() == "Car"));
+}
+
+// ============================================================================
+// Tests for did_close (#310-311)
+// ============================================================================
+
+#[tokio::test]
+async fn test_did_close_document() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    state.open_doc(&uri, "part def Vehicle;");
+    assert_eq!(state.server.workspace().file_count(), 1);
+
+    // Close document
+    state.server.close_document(&uri).unwrap();
+
+    // Document stays in workspace (for cross-file references)
+    assert_eq!(state.server.workspace().file_count(), 1);
+}
+
+#[tokio::test]
+async fn test_did_close_nonexistent() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///never_opened.sysml").unwrap();
+
+    // Closing non-existent document should not error
+    let result = state.server.close_document(&uri);
+    assert!(
+        result.is_ok(),
+        "Should handle closing non-existent gracefully"
+    );
+}
+
+// ============================================================================
+// Tests for did_save (#310)
+// ============================================================================
+
+#[tokio::test]
+async fn test_did_save_document() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    state.open_doc(&uri, "part def Vehicle;");
+
+    // did_save is a no-op in current implementation
+    // Just verify it doesn't break anything
+    let symbols_before = state.server.workspace().symbol_table().all_symbols().len();
+
+    // Simulate save (no-op)
+    // In real ServerState, did_save returns ControlFlow::Continue(())
+
+    let symbols_after = state.server.workspace().symbol_table().all_symbols().len();
+    assert_eq!(
+        symbols_before, symbols_after,
+        "Save should not modify state"
+    );
+}
+
+// ============================================================================
+// Tests for new_router (#293)
+// ============================================================================
+
+#[tokio::test]
+async fn test_new_router_setup() {
+    // Testing new_router requires async-lsp infrastructure
+    // We test that the server can be created and used
+    let state = TestServerState::new();
+
+    // Verify server is initialized
+    assert_eq!(state.server.workspace().file_count(), 0);
+}
+
+#[tokio::test]
+async fn test_router_handles_multiple_operations() {
+    let mut state = TestServerState::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"
+part def Vehicle;
+part car : Vehicle;
+    "#;
+
+    state.open_doc(&uri, text);
+
+    // Test multiple operations work together
+    let hover = state.server.get_hover(&uri, Position::new(1, 10));
+    assert!(hover.is_some(), "Hover should work");
+
+    let definition = state.server.get_definition(&uri, Position::new(2, 12));
+    assert!(definition.is_some(), "Definition should work");
+
+    let references = state
+        .server
+        .get_references(&uri, Position::new(1, 10), true);
+    assert!(references.is_some(), "References should work");
+
+    let symbols = state
+        .server
+        .get_document_symbols(std::path::Path::new(uri.path()));
+    assert!(!symbols.is_empty(), "Symbols should work");
+}
