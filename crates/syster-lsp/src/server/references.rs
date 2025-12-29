@@ -29,16 +29,15 @@ impl LspServer {
         let mut locations: Vec<Location> = refs
             .into_iter()
             .filter_map(|(source_qname, span)| {
+                // Only use span from relationship graph; skip imprecise references
+                let reference_span = span?;
+
                 // Look up the source symbol to get its file path
                 let source_symbol = self
                     .workspace
                     .symbol_table()
                     .lookup_qualified(source_qname)?;
                 let file = source_symbol.source_file()?;
-
-                // Use span from graph if available, otherwise use symbol's span
-                let symbol_span = source_symbol.span();
-                let reference_span = span.or(symbol_span.as_ref())?;
 
                 Url::from_file_path(file).ok().map(|uri| Location {
                     uri,

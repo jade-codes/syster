@@ -567,15 +567,17 @@ fn test_rapid_changes_then_format() {
         },
     ];
 
-    // Apply changes rapidly with timing
+    // Apply changes rapidly without parsing between them, to simulate debounced behavior
+    let path = test_uri.to_file_path().unwrap();
     for (i, change) in changes.iter().enumerate() {
         let start = Instant::now();
-        let path = test_uri.to_file_path().unwrap();
         server.cancel_document_operations(&path);
         server.apply_text_change_only(&test_uri, change).unwrap();
-        server.parse_document(&test_uri);
         println!("Change {}: {}ms", i + 1, start.elapsed().as_millis());
     }
+
+    // After all rapid changes, parse once (as would happen after debounce delay)
+    server.parse_document(&test_uri);
 
     // Get the current document text
     let text = server.get_document_text(&test_uri).unwrap();

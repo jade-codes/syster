@@ -76,10 +76,15 @@ impl LspServer {
             .get_references_to(&qualified_name);
 
         for (source_qname, span) in refs {
+            // Only use span from relationship graph; skip references without precise spans
+            let reference_span = match span {
+                Some(s) => s,
+                None => continue, // Skip imprecise references
+            };
+
             if let Some(source_symbol) =
                 self.workspace.symbol_table().lookup_qualified(source_qname)
                 && let Some(file) = source_symbol.source_file()
-                && let Some(reference_span) = span.or(source_symbol.span().as_ref())
                 && let Ok(file_uri) = Url::from_file_path(file)
             {
                 edits_by_file.entry(file_uri).or_default().push(TextEdit {

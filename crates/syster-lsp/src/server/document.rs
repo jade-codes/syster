@@ -55,16 +55,20 @@ impl LspServer {
     /// Parse a document that already has updated text
     /// Called after debounce delay
     pub fn parse_document(&mut self, uri: &Url) {
-        if let Ok(path) = uri.to_file_path() {
-            // Ensure workspace is loaded before parsing
-            if self.ensure_workspace_loaded().is_err() {
-                return;
-            }
+        // Validate file extension before parsing
+        let path = match self.uri_to_sysml_path(uri) {
+            Ok(p) => p,
+            Err(_) => return, // Unsupported file type, skip parsing
+        };
 
-            // Get current text and parse it
-            if let Some(text) = self.document_texts.get(&path).cloned() {
-                self.parse_into_workspace(&path, &text);
-            }
+        // Ensure workspace is loaded before parsing
+        if self.ensure_workspace_loaded().is_err() {
+            return;
+        }
+
+        // Get current text and parse it
+        if let Some(text) = self.document_texts.get(&path).cloned() {
+            self.parse_into_workspace(&path, &text);
         }
     }
 
