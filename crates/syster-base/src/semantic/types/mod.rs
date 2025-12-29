@@ -12,3 +12,5 @@ pub use semantic_role::SemanticRole;
 
 #[cfg(test)]
 mod types_error_test;
+#[cfg(test)]
+mod types_semantic_role_test;
