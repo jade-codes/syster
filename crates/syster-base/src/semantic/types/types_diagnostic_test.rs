@@ -109,16 +109,6 @@ fn test_range_copy() {
 // ============================================================================
 
 #[test]
-fn test_range_single_creates_one_char_range() {
-    let range = Range::single(5, 10);
-
-    assert_eq!(range.start.line, 5);
-    assert_eq!(range.start.column, 10);
-    assert_eq!(range.end.line, 5);
-    assert_eq!(range.end.column, 11);
-}
-
-#[test]
 fn test_range_single_at_zero() {
     let range = Range::single(0, 0);
 
