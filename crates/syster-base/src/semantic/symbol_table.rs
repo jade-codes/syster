@@ -11,11 +11,9 @@ pub use table::SymbolTable;
 #[cfg(test)]
 #[path = "symbol_table/tests.rs"]
 mod tests;
-
-#[cfg(test)]
 #[path = "symbol_table/find_in_scope_chain_test.rs"]
 mod find_in_scope_chain_test;
-
-#[cfg(test)]
 #[path = "symbol_table/build_scope_chain_test.rs"]
 mod build_scope_chain_test;
+#[path = "symbol_table/lookup_global_mut_test.rs"]
+mod lookup_global_mut_test;
