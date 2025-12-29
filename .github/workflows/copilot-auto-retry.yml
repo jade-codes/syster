@@ -20,19 +20,24 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const pulls = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: `${context.repo.owner}:${github.event.workflow_run.head_branch}`,
-              state: 'open'
-            });
-            
-            if (pulls.data.length === 0) {
-              console.log('No open PR found for this branch');
+            try {
+              const pulls = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${github.event.workflow_run.head_repository.owner.login}:${github.event.workflow_run.head_branch}`,
+                state: 'open'
+              });
+              
+              if (pulls.data.length === 0) {
+                console.log('No open PR found for this branch');
+                return 'none';
+              }
+              
+              return pulls.data[0].number.toString();
+            } catch (error) {
+              console.error('Error fetching PR:', error);
               return 'none';
             }
-            
-            return pulls.data[0].number.toString();
           result-encoding: string
       
       - name: Check if already notified
@@ -41,22 +46,28 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = parseInt('${{ steps.pr.outputs.result }}');
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              per_page: 100
-            });
-            
-            // Check if Copilot was already notified in the last 5 comments
-            const recentComments = comments.data.slice(-5);
-            const alreadyNotified = recentComments.some(comment => 
-              comment.body.includes('@copilot') && 
-              comment.body.includes('CI pipeline failed')
-            );
-            
-            return alreadyNotified ? 'true' : 'false';
+            try {
+              const prNumber = parseInt('${{ steps.pr.outputs.result }}');
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 5,
+                sort: 'created',
+                direction: 'desc',
+              });
+              
+              // Check if Copilot was already notified in the most recent 5 comments
+              const alreadyNotified = comments.data.some(comment => 
+                comment.body.includes('@copilot') && 
+                comment.body.includes('CI pipeline failed')
+              );
+              
+              return alreadyNotified ? 'true' : 'false';
+            } catch (error) {
+              console.error('Error checking for duplicate notifications:', error);
+              return 'false';
+            }
           result-encoding: string
       
       - name: Get workflow run logs URL
@@ -75,12 +86,17 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = parseInt('${{ steps.pr.outputs.result }}');
-            const logsUrl = '${{ steps.logs.outputs.result }}';
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: `@copilot The CI pipeline failed. Please analyze the errors and fix the issues.\n\n📋 [View failed workflow run](${logsUrl})`
-            });
+            try {
+              const prNumber = parseInt('${{ steps.pr.outputs.result }}');
+              const logsUrl = '${{ steps.logs.outputs.result }}';
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `@copilot The CI pipeline failed. Please analyze the errors and fix the issues.\n\n📋 [View failed workflow run](${logsUrl})`
+              });
+            } catch (error) {
+              console.error('Error posting comment:', error);
+              throw error;
+            }
