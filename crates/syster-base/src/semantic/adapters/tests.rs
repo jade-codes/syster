@@ -729,7 +729,9 @@ fn test_kerml_adapter_new_symbol_table_accessible() {
         references: Vec::new(),
     };
 
-    let result = adapter.symbol_table.insert("TestPackage".to_string(), test_symbol);
+    let result = adapter
+        .symbol_table
+        .insert("TestPackage".to_string(), test_symbol);
     assert!(result.is_ok());
     assert!(adapter.symbol_table.lookup("TestPackage").is_some());
 }
@@ -747,19 +749,21 @@ fn test_kerml_adapter_new_with_empty_table() {
 #[test]
 fn test_kerml_adapter_new_with_populated_table() {
     let mut table = SymbolTable::new();
-    
+
     // Pre-populate the symbol table
-    table.insert(
-        "ExistingSymbol".to_string(),
-        Symbol::Package {
-            name: "ExistingSymbol".to_string(),
-            qualified_name: "ExistingSymbol".to_string(),
-            scope_id: 0,
-            source_file: None,
-            span: None,
-            references: Vec::new(),
-        },
-    ).unwrap();
+    table
+        .insert(
+            "ExistingSymbol".to_string(),
+            Symbol::Package {
+                name: "ExistingSymbol".to_string(),
+                qualified_name: "ExistingSymbol".to_string(),
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+            },
+        )
+        .unwrap();
 
     let adapter = KermlAdapter::new(&mut table);
 
@@ -829,19 +833,19 @@ fn test_kerml_adapter_new_errors_mutability() {
         "Test".to_string(),
         None,
     ));
-    
+
     assert_eq!(adapter.errors.len(), 1);
 }
 
 #[test]
 fn test_kerml_adapter_new_lifetime_handling() {
     let mut table = SymbolTable::new();
-    
+
     {
         let adapter = KermlAdapter::new(&mut table);
         assert!(adapter.errors.is_empty());
     } // adapter goes out of scope here
-    
+
     // Verify we can still use the table after adapter is dropped
     assert!(table.lookup("NonExistent").is_none());
 }
