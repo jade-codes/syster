@@ -11,5 +11,8 @@ pub use relationship_graph::RelationshipGraph;
 pub use symmetric_graph::SymmetricGraph;
 
 #[cfg(test)]
+#[path = "graphs/one_to_many_graph_onetomanygraph_test.rs"]
+mod one_to_many_graph_onetomanygraph_test;
+#[cfg(test)]
 #[path = "graphs/tests.rs"]
 mod tests;
