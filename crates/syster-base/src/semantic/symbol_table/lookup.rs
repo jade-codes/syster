@@ -29,7 +29,7 @@ impl SymbolTable {
         self.find_in_scope_chain(name, &scope_chain)
     }
 
-    fn build_scope_chain(&self, scope_id: usize) -> Vec<usize> {
+    pub(super) fn build_scope_chain(&self, scope_id: usize) -> Vec<usize> {
         let mut chain = Vec::new();
         let mut current = scope_id;
         loop {
