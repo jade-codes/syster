@@ -16,3 +16,7 @@ mod one_to_many_graph_onetomanygraph_test;
 #[cfg(test)]
 #[path = "graphs/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "graphs/one_to_one_graph_onetoonegraph_test.rs"]
+mod one_to_one_graph_onetoonegraph_test;
