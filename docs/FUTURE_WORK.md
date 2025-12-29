@@ -41,29 +41,81 @@
 ## Architecture & Code Cleanup
 
 ### 🚨 IMMEDIATE: LSP Layer Refactoring (High Priority)
-The LSP crate needs significant cleanup to improve maintainability:
 
-- [ ] **Split `tests.rs` (~2700 lines)** - Currently a monolithic test file
-  - Extract to feature-based test modules: `tests/references_tests.rs`, `tests/hover_tests.rs`, etc.
-  - Each feature module should have its own focused test file
-  
-- [ ] **Improve main.rs organization** - `ServerState` struct is growing
-  - Consider splitting protocol handlers into separate files
-  - Extract initialization logic to dedicated module
-  
-- [ ] **Review handler modules** - Some may benefit from extraction
-  - `references.rs` + `rename.rs` share code → extract common reference-finding logic
-  - `document.rs` handles multiple concerns → consider splitting
-  
-- [ ] **Standardize patterns across handlers**
-  - Common error handling patterns
-  - Consistent URI → Path conversion with proper error messages
-  - Shared position/range utilities
+**File Size Analysis** (lines):
+```
+2778  tests.rs         ← CRITICAL: 82 tests in one file
+ 433  main.rs          ← Protocol handlers mixed with state
+ 213  formatting.rs
+ 176  helpers.rs       ← Has span_to_lsp_range() but not used everywhere!
+ 170  completion.rs
+ 146  core.rs
+ 135  rename.rs        ← Duplicates reference-finding from references.rs
+ 114  document.rs
+ 105  selection_range.rs
+ 101  semantic_tokens.rs
+  89  references.rs    ← Core pattern that rename.rs duplicates
+```
 
-### Next Module Refactoring Tasks
-- [ ] **lsp/ folder** (lsp-server crate) - Apply same modularization pattern as semantic/
-  - Check file sizes and identify files >100 lines
-  - Create focused submodules with clear single responsibilities
+#### Cross-Cutting Concerns Identified
+
+1. **URI → PathBuf Conversion** (11 occurrences, 3 different patterns)
+   - `uri.to_file_path().ok()?` - hover, formatting, references, definition, rename
+   - `uri.to_file_path().map_err(...)` - document.rs
+   - `match uri.to_file_path() { Ok/Err }` - diagnostics, inlay_hints
+   → **Extract:** `fn require_path(uri: &Url) -> Result<PathBuf, LspError>`
+
+2. **Span → LSP Range Conversion** (exists in helpers.rs, NOT USED in 6+ places!)
+   - `span_to_lsp_range()` exists in helpers.rs (line 92)
+   - Manual conversion repeated in: references.rs, rename.rs, selection_range.rs, folding_range.rs, diagnostics.rs
+   → **Action:** Use existing helper everywhere, delete duplicates
+
+3. **Symbol Lookup Pattern** (repeated 6 times)
+   ```rust
+   .lookup_qualified(&name)
+   .or_else(|| .lookup(&name))?
+   ```
+   - Found in: rename.rs (3x), definition.rs, and implicit in others
+   → **Extract:** `fn resolve_symbol(&self, name: &str) -> Option<&Symbol>`
+
+4. **Reference Collection + Location Building** (massive duplication)
+   - `references.rs` lines 23-80: get refs → lookup source → build Location
+   - `rename.rs` lines 72-107: EXACT SAME PATTERN → build TextEdit instead
+   → **Extract:** `fn collect_reference_locations(&self, qname: &str) -> Vec<(PathBuf, Span)>`
+
+5. **Position Finding Pattern**
+   - `find_symbol_at_position()` used in: hover, references, definition, rename (2x)
+   → Already extracted to position.rs ✓
+
+#### Refactoring Plan
+
+**Phase 1: Use Existing Helpers** (quick wins)
+- [ ] Replace all manual Span→Range with `span_to_lsp_range()` (6 files)
+- [ ] Add `span_to_lsp_position()` helper for single positions
+
+**Phase 2: Extract Cross-Cutting Utilities**
+- [ ] Create `server/uri.rs`: `require_path()`, `path_to_uri()`
+- [ ] Create `server/symbol_resolver.rs`: `resolve_symbol()`, `resolve_at_position()`
+- [ ] Create `server/reference_collector.rs`: shared logic for refs + rename
+
+**Phase 3: Split Large Files**
+- [ ] `tests.rs` → `tests/` directory with feature modules:
+  - `tests/document_tests.rs` (~10 tests)
+  - `tests/hover_tests.rs` (~6 tests)
+  - `tests/definition_tests.rs` (~4 tests)
+  - `tests/references_tests.rs` (~12 tests)
+  - `tests/rename_tests.rs` (~10 tests)
+  - `tests/completion_tests.rs` (~8 tests)
+  - `tests/symbols_tests.rs` (~4 tests)
+  - `tests/semantic_tokens_tests.rs` (~4 tests)
+  - `tests/formatting_tests.rs` (~8 tests)
+  - `tests/incremental_tests.rs` (~12 tests)
+  - `tests/cross_file_tests.rs` (~4 tests)
+- [ ] `main.rs` → extract `initialization.rs` for workspace/stdlib setup
+
+**Phase 4: Consolidate Handler Logic**
+- [ ] `references.rs` + `rename.rs` → share `ReferenceCollector`
+- [ ] Review if `definition.rs` (38 lines) should merge with position.rs
 - [ ] Metrics/observability layer for EventEmitter
 
 ### Code Cleanup
