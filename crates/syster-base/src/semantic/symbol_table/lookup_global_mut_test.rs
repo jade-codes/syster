@@ -277,7 +277,8 @@ fn test_lookup_global_mut_different_symbol_types() {
                 span: None,
                 references: Vec::new(),
                 name: "Alias".to_string(),
-                qualified_name: "Package::Classifier::Feature::Definition::Usage::Alias".to_string(),
+                qualified_name: "Package::Classifier::Feature::Definition::Usage::Alias"
+                    .to_string(),
                 target: "Package".to_string(),
             },
         )
