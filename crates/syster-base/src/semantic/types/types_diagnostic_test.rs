@@ -278,14 +278,6 @@ fn test_diagnostic_error_clone() {
 // ============================================================================
 
 #[test]
-fn test_diagnostic_with_code_string_literal() {
-    let location = Location::new("test.sysml", Range::single(0, 5));
-    let diag = Diagnostic::error("Parse error", location).with_code("E001");
-
-    assert_eq!(diag.code, Some("E001".to_string()));
-}
-
-#[test]
 fn test_diagnostic_with_code_string() {
     let location = Location::new("file.sysml", Range::single(1, 1));
     let code = String::from("E042");
