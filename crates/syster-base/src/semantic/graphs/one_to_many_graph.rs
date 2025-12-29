@@ -44,6 +44,19 @@ impl OneToManyGraph {
             .collect()
     }
 
+    /// Get all sources that reference the given target, with their spans
+    pub fn get_sources_with_spans(&self, target: &str) -> Vec<(&String, Option<&Span>)> {
+        self.relationships
+            .iter()
+            .flat_map(|(source, targets)| {
+                targets
+                    .iter()
+                    .filter(|(t, _)| t == target)
+                    .map(move |(_, span)| (source, span.as_ref()))
+            })
+            .collect()
+    }
+
     pub fn has_path(&self, from: &str, to: &str) -> bool {
         if from == to {
             return true;

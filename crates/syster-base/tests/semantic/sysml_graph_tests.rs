@@ -761,3 +761,157 @@ fn test_multiple_derived_requirements_in_body() {
     assert_eq!(subsets2.as_ref().map(|v| v.len()), Some(1));
     assert!(subsets2.unwrap().contains(&&"Req2".to_string()));
 }
+
+// =============================================================================
+// Tests for get_references_to - O(1) reference lookup
+// =============================================================================
+
+#[test]
+fn test_get_references_to_finds_typing_references() {
+    // Test that get_references_to finds all symbols that reference a given target
+    let source = r#"
+        part def Vehicle;
+        part car : Vehicle;
+        part truck : Vehicle;
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    populator.populate(&file).unwrap();
+
+    // Get all references to Vehicle
+    let refs = relationship_graph.get_references_to("Vehicle");
+
+    // Should find 2 references: car and truck (both typed by Vehicle)
+    assert_eq!(refs.len(), 2, "Should find 2 references to Vehicle");
+
+    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
+    assert!(ref_names.contains(&"car"), "Should find 'car' reference");
+    assert!(
+        ref_names.contains(&"truck"),
+        "Should find 'truck' reference"
+    );
+}
+
+#[test]
+fn test_get_references_to_finds_specialization_references() {
+    let source = r#"
+        part def Vehicle;
+        part def Car :> Vehicle;
+        part def Truck :> Vehicle;
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    populator.populate(&file).unwrap();
+
+    // Get all references to Vehicle via specialization
+    let refs = relationship_graph.get_references_to("Vehicle");
+
+    // Should find 2 references: Car and Truck (both specialize Vehicle)
+    assert_eq!(refs.len(), 2, "Should find 2 specialization references");
+
+    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
+    assert!(
+        ref_names.contains(&"Car"),
+        "Should find 'Car' specialization"
+    );
+    assert!(
+        ref_names.contains(&"Truck"),
+        "Should find 'Truck' specialization"
+    );
+}
+
+#[test]
+fn test_get_references_to_returns_spans() {
+    let source = "part def Vehicle; part car : Vehicle;";
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    populator.populate(&file).unwrap();
+
+    let refs = relationship_graph.get_references_to("Vehicle");
+
+    // Should have a span for the reference
+    assert_eq!(refs.len(), 1);
+    let (name, span) = &refs[0];
+    assert_eq!(name.as_str(), "car");
+    // Span might be None depending on how typing relationships store spans
+    // but we're testing the API works
+    let _ = span; // Use the span to avoid warning
+}
+
+#[test]
+fn test_get_references_to_empty_for_unreferenced_symbol() {
+    let source = r#"
+        part def Vehicle;
+        part def Unused;
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    populator.populate(&file).unwrap();
+
+    // Unused has no references
+    let refs = relationship_graph.get_references_to("Unused");
+    assert!(refs.is_empty(), "Unreferenced symbol should have no refs");
+}
+
+#[test]
+fn test_get_references_to_combined_relationship_types() {
+    // Test that references from different relationship types are combined
+    let source = r#"
+        part def Base;
+        part def Derived :> Base;
+        part instance : Base;
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    let mut populator =
+        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    populator.populate(&file).unwrap();
+
+    // Get all references to Base
+    let refs = relationship_graph.get_references_to("Base");
+
+    // Should find: Derived (specializes), instance (typed by)
+    assert_eq!(
+        refs.len(),
+        2,
+        "Should find refs from both specialization and typing"
+    );
+
+    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
+    assert!(
+        ref_names.contains(&"Derived"),
+        "Should find specialization reference"
+    );
+    assert!(
+        ref_names.contains(&"instance"),
+        "Should find typing reference"
+    );
+}

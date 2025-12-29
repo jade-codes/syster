@@ -40,4 +40,13 @@ impl OneToOneGraph {
             .map(|(s, _)| s)
             .collect()
     }
+
+    /// Get all sources that reference the given target, with their spans
+    pub fn get_sources_with_spans(&self, target: &str) -> Vec<(&String, Option<&Span>)> {
+        self.relationships
+            .iter()
+            .filter(|(_, (t, _))| t.as_str() == target)
+            .map(|(source, (_, span))| (source, span.as_ref()))
+            .collect()
+    }
 }
