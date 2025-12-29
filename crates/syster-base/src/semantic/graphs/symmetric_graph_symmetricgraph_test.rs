@@ -46,6 +46,9 @@ fn test_add_multiple_relationships_to_same_element() {
 #[test]
 fn test_add_duplicate_relationships() {
     // Test adding the same relationship multiple times (edge case)
+    // NOTE: This documents current behavior which is likely a bug.
+    // For symmetric relationships like "disjoints", duplicates don't make semantic sense.
+    // The implementation should ideally use HashSet or deduplicate entries.
     let mut graph = SymmetricGraph::new();
 
     graph.add("X".to_string(), "Y".to_string());
@@ -54,9 +57,9 @@ fn test_add_duplicate_relationships() {
     // Should still be related (implementation allows duplicates in the Vec)
     assert!(graph.are_related("X", "Y"));
 
-    // Note: Current implementation will have duplicates in the vector
+    // Current implementation stores duplicates in the vector
     let related = graph.get_related("X").unwrap();
-    assert_eq!(related.len(), 2); // Two entries of Y
+    assert_eq!(related.len(), 2); // Two entries of Y (documents current behavior)
 }
 
 #[test]
@@ -96,15 +99,6 @@ fn test_get_related_nonexistent_element() {
     let graph = SymmetricGraph::new();
 
     assert!(graph.get_related("NonExistent").is_none());
-}
-
-#[test]
-fn test_get_related_returns_empty_vec_for_isolated_element() {
-    // Edge case: element exists but has no relationships
-    // Note: Current implementation returns None, not an empty vec
-    let graph = SymmetricGraph::new();
-
-    assert!(graph.get_related("Isolated").is_none());
 }
 
 #[test]
@@ -168,6 +162,8 @@ fn test_are_related_self_relationship() {
 
     // Should be related to itself if explicitly added
     assert!(graph.are_related("Element", "Element"));
+    // Self-relationship is stored twice in the symmetric adjacency list
+    assert_eq!(graph.get_related("Element").unwrap().len(), 2);
 }
 
 #[test]
