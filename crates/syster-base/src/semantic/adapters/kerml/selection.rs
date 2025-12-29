@@ -110,7 +110,11 @@ fn collect_classifier_spans(
     true
 }
 
-fn collect_feature_spans(feature: &Feature, position: Position, spans: &mut Vec<Span>) -> bool {
+pub(crate) fn collect_feature_spans(
+    feature: &Feature,
+    position: Position,
+    spans: &mut Vec<Span>,
+) -> bool {
     if !try_push_span(&feature.span, position, spans) {
         return false;
     }
