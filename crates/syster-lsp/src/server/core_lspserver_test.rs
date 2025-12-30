@@ -34,7 +34,7 @@ fn test_folding_ranges_basic_package() {
     // Folding ranges are implementation-dependent
     // The main verification is that the function doesn't crash
     // and returns valid data if any ranges are returned
-    
+
     // Verify ranges are sorted by start line if any exist
     for i in 1..ranges.len() {
         assert!(
@@ -42,7 +42,7 @@ fn test_folding_ranges_basic_package() {
             "Ranges should be sorted by start line"
         );
     }
-    
+
     // All ranges should be valid (end >= start)
     for range in &ranges {
         assert!(
@@ -71,11 +71,16 @@ fn test_folding_ranges_nested_structures() {
 
     // The implementation should handle nested structures gracefully
     // Check that if we have ranges, they have appropriate kinds
-    let has_region = ranges.iter().any(|r| r.kind == Some(FoldingRangeKind::Region));
-    
+    let has_region = ranges
+        .iter()
+        .any(|r| r.kind == Some(FoldingRangeKind::Region));
+
     // If we have any ranges, at least one should be a Region
     if !ranges.is_empty() {
-        assert!(has_region, "Should have Region kind folding ranges if any ranges exist");
+        assert!(
+            has_region,
+            "Should have Region kind folding ranges if any ranges exist"
+        );
     }
 }
 
@@ -107,7 +112,10 @@ fn test_folding_ranges_empty_file() {
     let ranges = server.get_folding_ranges(path);
 
     // Empty file should have no folding ranges
-    assert!(ranges.is_empty(), "Empty file should have no folding ranges");
+    assert!(
+        ranges.is_empty(),
+        "Empty file should have no folding ranges"
+    );
 }
 
 #[test]
@@ -117,7 +125,10 @@ fn test_folding_ranges_nonexistent_file() {
     let ranges = server.get_folding_ranges(path);
 
     // Nonexistent file should return empty vec
-    assert!(ranges.is_empty(), "Nonexistent file should return empty vec");
+    assert!(
+        ranges.is_empty(),
+        "Nonexistent file should return empty vec"
+    );
 }
 
 #[test]
@@ -160,12 +171,18 @@ package TestPkg {
 
     // Should handle comments appropriately without crashing
     // Check for comment kind if comments are foldable
-    let has_comment_kind = ranges.iter().any(|r| r.kind == Some(FoldingRangeKind::Comment));
-    
+    let has_comment_kind = ranges
+        .iter()
+        .any(|r| r.kind == Some(FoldingRangeKind::Comment));
+
     // Note: Whether comments are folded depends on implementation
     // Just verify it doesn't crash and returns valid data
-    let _comment_count = if has_comment_kind { "has comments" } else { "no comment folding" };
-    
+    let _comment_count = if has_comment_kind {
+        "has comments"
+    } else {
+        "no comment folding"
+    };
+
     // All returned ranges should be valid
     for range in &ranges {
         assert!(range.end_line >= range.start_line);
@@ -190,7 +207,7 @@ fn test_folding_ranges_character_positions() {
         if range.start_character.is_some() && range.end_character.is_some() {
             let start_char = range.start_character.unwrap();
             let end_char = range.end_character.unwrap();
-            
+
             // On same line, end should be after start
             if range.start_line == range.end_line {
                 assert!(
@@ -209,13 +226,20 @@ fn test_folding_ranges_character_positions() {
 #[test]
 fn test_semantic_tokens_legend_has_required_types() {
     let legend = LspServer::semantic_tokens_legend();
-    
+
     // Should have at least the basic token types
-    assert!(!legend.token_types.is_empty(), "Legend should have token types");
-    
+    assert!(
+        !legend.token_types.is_empty(),
+        "Legend should have token types"
+    );
+
     // Verify specific token types are present
-    let type_strings: Vec<String> = legend.token_types.iter().map(|t| t.as_str().to_string()).collect();
-    
+    let type_strings: Vec<String> = legend
+        .token_types
+        .iter()
+        .map(|t| t.as_str().to_string())
+        .collect();
+
     assert!(
         type_strings.contains(&"namespace".to_string()),
         "Should have NAMESPACE token type"
@@ -243,13 +267,13 @@ fn test_semantic_tokens_legend_consistent() {
     // Call multiple times to ensure it's consistent
     let legend1 = LspServer::semantic_tokens_legend();
     let legend2 = LspServer::semantic_tokens_legend();
-    
+
     assert_eq!(
         legend1.token_types.len(),
         legend2.token_types.len(),
         "Legend should be consistent across calls"
     );
-    
+
     // Verify same types in same order
     for (t1, t2) in legend1.token_types.iter().zip(legend2.token_types.iter()) {
         assert_eq!(t1, t2, "Token types should be in same order");
@@ -259,7 +283,7 @@ fn test_semantic_tokens_legend_consistent() {
 #[test]
 fn test_semantic_tokens_legend_no_modifiers() {
     let legend = LspServer::semantic_tokens_legend();
-    
+
     // Current implementation has no modifiers
     assert!(
         legend.token_modifiers.is_empty(),
@@ -283,23 +307,23 @@ fn test_semantic_tokens_basic_package() {
     let result = server.get_semantic_tokens(uri.as_str());
 
     assert!(result.is_some(), "Should return semantic tokens");
-    
+
     let SemanticTokensResult::Tokens(tokens) = result.unwrap() else {
         panic!("Expected SemanticTokens result");
     };
-    
+
     // Should have tokens for package, part, def, identifiers
     assert!(!tokens.data.is_empty(), "Should have semantic tokens");
-    
+
     // Verify tokens are in delta encoding format
     let mut _prev_line = 0;
     for token in &tokens.data {
         // Delta line is relative to previous token
         _prev_line += token.delta_line;
-        
+
         // Token type should be valid (within legend range)
         assert!(token.token_type < 5, "Token type should be valid");
-        
+
         // Length should be positive
         assert!(token.length > 0, "Token length should be positive");
     }
@@ -318,12 +342,15 @@ fn test_semantic_tokens_multiple_symbols() {
     server.open_document(&uri, text).unwrap();
     let result = server.get_semantic_tokens(uri.as_str());
 
-    assert!(result.is_some(), "Should return tokens for multiple symbols");
-    
+    assert!(
+        result.is_some(),
+        "Should return tokens for multiple symbols"
+    );
+
     let SemanticTokensResult::Tokens(tokens) = result.unwrap() else {
         panic!("Expected SemanticTokens result");
     };
-    
+
     // Should have multiple tokens
     assert!(tokens.data.len() >= 4, "Should have tokens for all symbols");
 }
@@ -339,11 +366,11 @@ fn test_semantic_tokens_empty_file() {
 
     // Empty file should return Some with empty tokens
     assert!(result.is_some(), "Empty file should return Some result");
-    
+
     let SemanticTokensResult::Tokens(tokens) = result.unwrap() else {
         panic!("Expected SemanticTokens result");
     };
-    
+
     assert!(tokens.data.is_empty(), "Empty file should have no tokens");
 }
 
@@ -381,13 +408,16 @@ fn test_semantic_tokens_with_relationships() {
     let result = server.get_semantic_tokens(uri.as_str());
 
     assert!(result.is_some(), "Should handle relationships");
-    
+
     let SemanticTokensResult::Tokens(tokens) = result.unwrap() else {
         panic!("Expected SemanticTokens result");
     };
-    
+
     // Should have tokens for all symbols including relationships
-    assert!(!tokens.data.is_empty(), "Should have tokens for relationships");
+    assert!(
+        !tokens.data.is_empty(),
+        "Should have tokens for relationships"
+    );
 }
 
 #[test]
@@ -402,11 +432,11 @@ fn test_semantic_tokens_utf16_encoding() {
     let result = server.get_semantic_tokens(uri.as_str());
 
     assert!(result.is_some(), "Should handle unicode characters");
-    
+
     let SemanticTokensResult::Tokens(tokens) = result.unwrap() else {
         panic!("Expected SemanticTokens result");
     };
-    
+
     // Should successfully encode tokens with UTF-16 positions
     assert!(!tokens.data.is_empty(), "Should have tokens");
 }
@@ -426,11 +456,11 @@ fn test_semantic_tokens_multiline_structure() {
     let result = server.get_semantic_tokens(uri.as_str());
 
     assert!(result.is_some(), "Should handle multiline structures");
-    
+
     let SemanticTokensResult::Tokens(tokens) = result.unwrap() else {
         panic!("Expected SemanticTokens result");
     };
-    
+
     // Tokens should span multiple lines
     let mut has_multiline = false;
     let mut current_line = 0;
@@ -441,12 +471,12 @@ fn test_semantic_tokens_multiline_structure() {
             break;
         }
     }
-    
+
     assert!(has_multiline, "Should have tokens on multiple lines");
 }
 
 // ============================================================================
-// Tests for get_selection_ranges, build_selection_range_chain, 
+// Tests for get_selection_ranges, build_selection_range_chain,
 // default_selection_range (#71-91)
 // ============================================================================
 
@@ -459,14 +489,17 @@ fn test_selection_ranges_basic_element() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(0, 10)]; // Inside "Vehicle"
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     assert_eq!(ranges.len(), 1, "Should return one selection range");
-    
+
     let range = &ranges[0];
-    assert!(range.range.start.line <= range.range.end.line, "Range should be valid");
-    
+    assert!(
+        range.range.start.line <= range.range.end.line,
+        "Range should be valid"
+    );
+
     // May have parent chain for nested selections
     let _has_parent = range.parent.is_some();
 }
@@ -486,10 +519,14 @@ fn test_selection_ranges_multiple_positions() {
         Position::new(1, 14), // On "Vehicle"
         Position::new(2, 14), // On "Car"
     ];
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
-    assert_eq!(ranges.len(), 2, "Should return selection range for each position");
+    assert_eq!(
+        ranges.len(),
+        2,
+        "Should return selection range for each position"
+    );
 }
 
 #[test]
@@ -505,23 +542,26 @@ fn test_selection_ranges_nested_structure() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(2, 20)]; // Inside attribute
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     assert_eq!(ranges.len(), 1, "Should return one range");
-    
+
     // Check if parent chain exists for nested elements
     let range = &ranges[0];
     let mut depth = 0;
     let mut current = Some(range);
-    
+
     while let Some(r) = current {
         depth += 1;
         current = r.parent.as_ref().map(|b| b.as_ref());
     }
-    
+
     // Should have some nesting for attribute inside part def
-    assert!(depth >= 1, "Should have at least one level in selection chain");
+    assert!(
+        depth >= 1,
+        "Should have at least one level in selection chain"
+    );
 }
 
 #[test]
@@ -533,12 +573,12 @@ fn test_selection_ranges_out_of_bounds() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(100, 100)]; // Way out of bounds
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     // Should return default range (single character) gracefully
     assert_eq!(ranges.len(), 1, "Should return a default range");
-    
+
     let range = &ranges[0];
     assert!(
         range.range.end.character >= range.range.start.character,
@@ -551,15 +591,16 @@ fn test_selection_ranges_nonexistent_file() {
     let server = LspServer::new();
     let path = Path::new("/nonexistent.sysml");
     let positions = vec![Position::new(0, 0)];
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     // Should return default ranges for nonexistent file
     assert_eq!(
-        ranges.len(), 1,
+        ranges.len(),
+        1,
         "Should return default range for nonexistent file"
     );
-    
+
     // Default range should be single character
     let range = &ranges[0];
     assert_eq!(
@@ -578,12 +619,12 @@ fn test_selection_ranges_empty_file() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(0, 0)];
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     // Empty file should return default ranges
     assert_eq!(ranges.len(), 1, "Should return one range");
-    
+
     // Should be a valid default range
     let range = &ranges[0];
     assert!(range.range.start.line == 0 && range.range.start.character == 0);
@@ -602,14 +643,14 @@ fn test_selection_ranges_chain_ordering() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(2, 18)]; // On "Vehicle"
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     assert_eq!(ranges.len(), 1, "Should return one range chain");
-    
+
     // Walk the parent chain and verify each parent is larger than child
     let mut current = Some(&ranges[0]);
-    
+
     while let Some(range) = current {
         if let Some(parent) = &range.parent {
             // Parent should start at or before child
@@ -617,14 +658,14 @@ fn test_selection_ranges_chain_ordering() {
                 parent.range.start.line <= range.range.start.line,
                 "Parent should start at or before child"
             );
-            
+
             // Parent should end at or after child
             assert!(
                 parent.range.end.line >= range.range.end.line,
                 "Parent should end at or after child"
             );
         }
-        
+
         current = range.parent.as_ref().map(|b| b.as_ref());
     }
 }
@@ -638,7 +679,7 @@ fn test_selection_ranges_whitespace_position() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(0, 2)]; // In leading whitespace
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     // Should handle whitespace positions gracefully
@@ -656,7 +697,7 @@ part def Truck;"#;
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(1, 0)]; // Empty line between elements
-    
+
     let ranges = server.get_selection_ranges(path, positions);
 
     // Should return default range for positions not in elements
@@ -677,7 +718,7 @@ fn test_inlay_hints_basic_structure() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    
+
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
         range: Range {
@@ -686,7 +727,7 @@ fn test_inlay_hints_basic_structure() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // May or may not have hints depending on implementation
@@ -695,9 +736,9 @@ fn test_inlay_hints_basic_structure() {
         // Label should not be empty
         match &hint.label {
             InlayHintLabel::String(s) => assert!(!s.is_empty(), "Label should not be empty"),
-            InlayHintLabel::LabelParts(_) => {}, // Also valid
+            InlayHintLabel::LabelParts(_) => {} // Also valid
         }
-        
+
         // Kind should be valid
         assert!(hint.kind.is_some(), "Kind should be specified");
     }
@@ -710,7 +751,7 @@ fn test_inlay_hints_empty_file() {
     let text = "";
 
     server.open_document(&uri, text).unwrap();
-    
+
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
         range: Range {
@@ -719,7 +760,7 @@ fn test_inlay_hints_empty_file() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Empty file should have no hints
@@ -730,7 +771,7 @@ fn test_inlay_hints_empty_file() {
 fn test_inlay_hints_nonexistent_file() {
     let server = LspServer::new();
     let uri = Url::parse("file:///nonexistent.sysml").unwrap();
-    
+
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri },
         range: Range {
@@ -739,7 +780,7 @@ fn test_inlay_hints_nonexistent_file() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Nonexistent file should return empty vec
@@ -757,7 +798,7 @@ fn test_inlay_hints_specific_range() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    
+
     // Request hints for only part of the file
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
@@ -767,14 +808,14 @@ fn test_inlay_hints_specific_range() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Should only return hints within the requested range
     for hint in &hints {
         let line = hint.position.line;
         assert!(
-            line >= 2 && line < 3,
+            (2..3).contains(&line),
             "Hints should be within requested range"
         );
     }
@@ -790,7 +831,7 @@ fn test_inlay_hints_type_annotations() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    
+
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
         range: Range {
@@ -799,15 +840,19 @@ fn test_inlay_hints_type_annotations() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Check if any hints are type hints
     let has_type_hints = hints.iter().any(|h| h.kind == Some(InlayHintKind::TYPE));
-    
+
     // Whether we have type hints depends on implementation
     // Just verify the function works
-    let _type_hint_count = if has_type_hints { "has type hints" } else { "no type hints" };
+    let _type_hint_count = if has_type_hints {
+        "has type hints"
+    } else {
+        "no type hints"
+    };
 }
 
 #[test]
@@ -821,7 +866,7 @@ fn test_inlay_hints_padding_fields() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    
+
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
         range: Range {
@@ -830,14 +875,20 @@ fn test_inlay_hints_padding_fields() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Verify padding fields are set appropriately
     for hint in &hints {
         // Padding should be specified (true or false)
-        assert!(hint.padding_left.is_some(), "Padding left should be specified");
-        assert!(hint.padding_right.is_some(), "Padding right should be specified");
+        assert!(
+            hint.padding_left.is_some(),
+            "Padding left should be specified"
+        );
+        assert!(
+            hint.padding_right.is_some(),
+            "Padding right should be specified"
+        );
     }
 }
 
@@ -848,7 +899,7 @@ fn test_inlay_hints_out_of_bounds_range() {
     let text = "part def Vehicle;";
 
     server.open_document(&uri, text).unwrap();
-    
+
     // Request hints for range beyond file bounds
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
@@ -858,7 +909,7 @@ fn test_inlay_hints_out_of_bounds_range() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Should handle gracefully, return empty
@@ -877,7 +928,7 @@ fn test_inlay_hints_parameter_hints() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    
+
     let params = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri.clone() },
         range: Range {
@@ -886,12 +937,18 @@ fn test_inlay_hints_parameter_hints() {
         },
         work_done_progress_params: Default::default(),
     };
-    
+
     let hints = server.get_inlay_hints(&params);
 
     // Check if any hints are parameter hints
-    let has_parameter_hints = hints.iter().any(|h| h.kind == Some(InlayHintKind::PARAMETER));
-    
+    let has_parameter_hints = hints
+        .iter()
+        .any(|h| h.kind == Some(InlayHintKind::PARAMETER));
+
     // Whether we have parameter hints depends on implementation
-    let _param_hint_count = if has_parameter_hints { "has parameter hints" } else { "no parameter hints" };
+    let _param_hint_count = if has_parameter_hints {
+        "has parameter hints"
+    } else {
+        "no parameter hints"
+    };
 }
