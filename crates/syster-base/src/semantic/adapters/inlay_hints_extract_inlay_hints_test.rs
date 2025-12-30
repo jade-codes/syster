@@ -11,13 +11,13 @@
 use crate::core::{Position, Span};
 use crate::semantic::inlay_hints::extract_inlay_hints;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
-use crate::semantic::types::{InlayHint, InlayHintKind};
+use crate::semantic::types::InlayHintKind;
+use crate::syntax::SyntaxFile;
 use crate::syntax::kerml::ast::{Element as KerMLElement, Feature, FeatureMember, KerMLFile};
 use crate::syntax::sysml::ast::{
     Definition, DefinitionKind, DefinitionMember, Element, Package, Relationships, SysMLFile,
     Usage, UsageKind, UsageMember,
 };
-use crate::syntax::SyntaxFile;
 
 // ============================================================================
 // TESTS FOR semantic::inlay_hints::extract_inlay_hints (Issue #153)
@@ -182,7 +182,10 @@ fn test_extract_inlay_hints_respects_range_filter_sysml() {
     let syntax_file = SyntaxFile::SysML(file);
 
     // Range that excludes the usage (lines 1-3)
-    let range = (Position { line: 1, column: 0 }, Position { line: 3, column: 0 });
+    let range = (
+        Position { line: 1, column: 0 },
+        Position { line: 3, column: 0 },
+    );
     let hints = extract_inlay_hints(&syntax_file, &symbol_table, Some(range));
 
     // Should be empty because usage is outside range
@@ -225,7 +228,10 @@ fn test_extract_inlay_hints_respects_range_filter_kerml() {
     let syntax_file = SyntaxFile::KerML(file);
 
     // Range that excludes the feature (lines 1-5)
-    let range = (Position { line: 1, column: 0 }, Position { line: 5, column: 0 });
+    let range = (
+        Position { line: 1, column: 0 },
+        Position { line: 5, column: 0 },
+    );
     let hints = extract_inlay_hints(&syntax_file, &symbol_table, Some(range));
 
     // Should be empty because feature is outside range
@@ -309,8 +315,10 @@ fn test_sysml_usage_with_explicit_type_no_hint() {
 
     let symbol_table = SymbolTable::new();
 
-    let mut relationships = Relationships::default();
-    relationships.typed_by = Some("Engine".to_string());
+    let relationships = Relationships {
+        typed_by: Some("Engine".to_string()),
+        ..Default::default()
+    };
 
     let usage = Usage {
         kind: UsageKind::Part,
@@ -763,7 +771,13 @@ fn test_sysml_range_filter_excludes_usage_before_range() {
     };
 
     // Range starts after the usage
-    let range = (Position { line: 5, column: 0 }, Position { line: 10, column: 0 });
+    let range = (
+        Position { line: 5, column: 0 },
+        Position {
+            line: 10,
+            column: 0,
+        },
+    );
     let hints = extract_sysml_inlay_hints(&file, &symbol_table, Some(range));
 
     assert!(hints.is_empty());
@@ -810,7 +824,10 @@ fn test_sysml_range_filter_excludes_usage_after_range() {
     };
 
     // Range ends before the usage
-    let range = (Position { line: 1, column: 0 }, Position { line: 5, column: 0 });
+    let range = (
+        Position { line: 1, column: 0 },
+        Position { line: 5, column: 0 },
+    );
     let hints = extract_sysml_inlay_hints(&file, &symbol_table, Some(range));
 
     assert!(hints.is_empty());
@@ -857,7 +874,13 @@ fn test_sysml_range_filter_includes_usage_in_range() {
     };
 
     // Range includes the usage
-    let range = (Position { line: 1, column: 0 }, Position { line: 10, column: 0 });
+    let range = (
+        Position { line: 1, column: 0 },
+        Position {
+            line: 10,
+            column: 0,
+        },
+    );
     let hints = extract_sysml_inlay_hints(&file, &symbol_table, Some(range));
 
     assert_eq!(hints.len(), 1);
@@ -1040,7 +1063,12 @@ fn test_kerml_feature_with_explicit_typing_no_hint() {
         direction: None,
         is_readonly: false,
         is_derived: false,
-        body: vec![FeatureMember::Typing(crate::syntax::kerml::ast::TypingRelationship { typed: "Integer".to_string(), span: None })], // Has typing
+        body: vec![FeatureMember::Typing(
+            crate::syntax::kerml::ast::TypingRelationship {
+                typed: "Integer".to_string(),
+                span: None,
+            },
+        )], // Has typing
         span: Some(Span::from_coords(1, 8, 1, 13)),
     };
 
@@ -1339,7 +1367,13 @@ fn test_kerml_range_filter_excludes_feature_before_range() {
     };
 
     // Range starts after the feature
-    let range = (Position { line: 5, column: 0 }, Position { line: 10, column: 0 });
+    let range = (
+        Position { line: 5, column: 0 },
+        Position {
+            line: 10,
+            column: 0,
+        },
+    );
     let hints = extract_kerml_inlay_hints(&file, &symbol_table, Some(range));
 
     assert!(hints.is_empty());
@@ -1382,7 +1416,10 @@ fn test_kerml_range_filter_excludes_feature_after_range() {
     };
 
     // Range ends before the feature
-    let range = (Position { line: 1, column: 0 }, Position { line: 5, column: 0 });
+    let range = (
+        Position { line: 1, column: 0 },
+        Position { line: 5, column: 0 },
+    );
     let hints = extract_kerml_inlay_hints(&file, &symbol_table, Some(range));
 
     assert!(hints.is_empty());
@@ -1425,7 +1462,13 @@ fn test_kerml_range_filter_includes_feature_in_range() {
     };
 
     // Range includes the feature
-    let range = (Position { line: 1, column: 0 }, Position { line: 10, column: 0 });
+    let range = (
+        Position { line: 1, column: 0 },
+        Position {
+            line: 10,
+            column: 0,
+        },
+    );
     let hints = extract_kerml_inlay_hints(&file, &symbol_table, Some(range));
 
     assert_eq!(hints.len(), 1);
