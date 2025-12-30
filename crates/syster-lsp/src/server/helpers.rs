@@ -260,7 +260,7 @@ mod tests {
     }
 
     #[test]
-    fn test_char_offset_to_byte_multibyte_utf8() {
+    fn test_char_offset_to_byte_multi_byte_utf8() {
         // 'é' is 2 bytes in UTF-8
         let line = "café";
         assert_eq!(char_offset_to_byte(line, 0), 0);
@@ -303,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn test_position_to_byte_offset_multiline() {
+    fn test_position_to_byte_offset_multi_line() {
         let text = "line1\nline2\nline3";
         // Start of line 0
         let pos = Position::new(0, 0);
@@ -390,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn test_apply_text_edit_multiline() {
+    fn test_apply_text_edit_multi_line() {
         let text = "line1\nline2\nline3";
         let range = Range::new(Position::new(1, 0), Position::new(1, 5));
         let result = apply_text_edit(text, &range, "REPLACED").unwrap();
