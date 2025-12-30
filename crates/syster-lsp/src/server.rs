@@ -42,3 +42,15 @@ mod core_lspserver_test;
 #[cfg(test)]
 #[path = "server/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "server/helpers_position_to_byte_offset_test.rs"]
+mod helpers_position_to_byte_offset_test;
+
+#[cfg(test)]
+#[path = "server/helpers_span_to_lsp_range_test.rs"]
+mod helpers_span_to_lsp_range_test;
+
+#[cfg(test)]
+#[path = "server/helpers_format_rich_hover_test.rs"]
+mod helpers_format_rich_hover_test;

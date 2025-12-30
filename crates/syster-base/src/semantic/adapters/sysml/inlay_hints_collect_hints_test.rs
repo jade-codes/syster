@@ -1350,3 +1350,301 @@ fn test_collect_hints_no_range_filter() {
     assert!(hints[0].label.contains("Type1"));
     assert!(hints[1].label.contains("Type2"));
 }
+
+// ============================================================================
+// Tests for collect_usage_hints (Issue #131)
+// Tests using the public API through LSP server integration
+// ============================================================================
+
+// Note: The following tests exercise collect_usage_hints through the public API
+// by using the LSP server's inlay hints functionality, which calls extract_inlay_hints,
+// which in turn calls collect_usage_hints.
+
+#[test]
+fn test_collect_usage_hints_with_explicit_type() {
+    // Test that collect_usage_hints doesn't add hints when type is explicit
+    use super::inlay_hints::extract_inlay_hints;
+
+    let symbol_table = SymbolTable::new();
+
+    let usage = Usage {
+        kind: UsageKind::Part,
+        name: Some("myCar".to_string()),
+        relationships: Relationships {
+            typed_by: Some("Vehicle".to_string()),
+            ..Default::default()
+        },
+        body: vec![],
+        span: Some(Span::from_coords(3, 4, 3, 9)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let file = SysMLFile {
+        namespace: None,
+        namespaces: vec![],
+        elements: vec![Element::Usage(usage)],
+    };
+
+    // Since myCar has explicit type ": Vehicle", no hint should be added
+    let hints = extract_inlay_hints(&file, &symbol_table, None);
+
+    // Should not add any hints for explicitly typed usage
+    assert!(hints.is_empty());
+}
+
+#[test]
+fn test_collect_usage_hints_nested_usage() {
+    // Test that collect_usage_hints recurses into nested usages
+    use super::inlay_hints::extract_inlay_hints;
+
+    let mut symbol_table = SymbolTable::new();
+    symbol_table
+        .insert(
+            "engine".to_string(),
+            Symbol::Usage {
+                name: "engine".to_string(),
+                qualified_name: "engine".to_string(),
+                kind: "Part".to_string(),
+                semantic_role: None,
+                usage_type: Some("Engine".to_string()),
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: vec![],
+            },
+        )
+        .unwrap();
+
+    let nested_usage = Usage {
+        kind: UsageKind::Part,
+        name: Some("engine".to_string()),
+        relationships: Relationships::default(),
+        body: vec![],
+        span: Some(Span::from_coords(4, 8, 4, 14)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let parent_usage = Usage {
+        kind: UsageKind::Part,
+        name: Some("vehicle".to_string()),
+        relationships: Relationships::default(),
+        body: vec![UsageMember::Usage(Box::new(nested_usage))],
+        span: Some(Span::from_coords(3, 4, 5, 5)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let file = SysMLFile {
+        namespace: None,
+        namespaces: vec![],
+        elements: vec![Element::Usage(parent_usage)],
+    };
+
+    // Should process nested usage (engine)
+    let hints = extract_inlay_hints(&file, &symbol_table, None);
+
+    // Should find hint for the nested usage
+    assert_eq!(hints.len(), 1);
+    assert!(hints[0].label.contains("Engine"));
+    // Verify hint is positioned at the nested usage
+    assert_eq!(hints[0].position.line, 4);
+}
+
+#[test]
+fn test_collect_usage_hints_with_range_filter() {
+    // Test that collect_usage_hints respects range filtering
+    use super::inlay_hints::extract_inlay_hints;
+    use crate::core::Position;
+
+    let mut symbol_table = SymbolTable::new();
+    symbol_table
+        .insert(
+            "car1".to_string(),
+            Symbol::Usage {
+                name: "car1".to_string(),
+                qualified_name: "car1".to_string(),
+                kind: "Part".to_string(),
+                semantic_role: None,
+                usage_type: Some("Vehicle".to_string()),
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: vec![],
+            },
+        )
+        .unwrap();
+
+    symbol_table
+        .insert(
+            "car2".to_string(),
+            Symbol::Usage {
+                name: "car2".to_string(),
+                qualified_name: "car2".to_string(),
+                kind: "Part".to_string(),
+                semantic_role: None,
+                usage_type: Some("Vehicle".to_string()),
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: vec![],
+            },
+        )
+        .unwrap();
+
+    let usage1 = Usage {
+        kind: UsageKind::Part,
+        name: Some("car1".to_string()),
+        relationships: Relationships::default(),
+        body: vec![],
+        span: Some(Span::from_coords(3, 4, 3, 8)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let usage2 = Usage {
+        kind: UsageKind::Part,
+        name: Some("car2".to_string()),
+        relationships: Relationships::default(),
+        body: vec![],
+        span: Some(Span::from_coords(5, 4, 5, 8)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let file = SysMLFile {
+        namespace: None,
+        namespaces: vec![],
+        elements: vec![Element::Usage(usage1), Element::Usage(usage2)],
+    };
+
+    // Get hints for a specific range (e.g., just line 3)
+    let range = Some((
+        Position { line: 3, column: 0 },
+        Position {
+            line: 3,
+            column: 100,
+        },
+    ));
+    let hints = extract_inlay_hints(&file, &symbol_table, range);
+
+    // Should only return hints within the specified range
+    for hint in hints {
+        assert_eq!(hint.position.line, 3);
+    }
+}
+
+#[test]
+fn test_collect_usage_hints_empty_file() {
+    // Test collect_usage_hints with empty file
+    use super::inlay_hints::extract_inlay_hints;
+
+    let symbol_table = SymbolTable::new();
+    let file = SysMLFile {
+        namespace: None,
+        namespaces: vec![],
+        elements: vec![],
+    };
+
+    let hints = extract_inlay_hints(&file, &symbol_table, None);
+
+    // Should return empty hints without crashing
+    assert!(hints.is_empty());
+}
+
+#[test]
+fn test_collect_usage_hints_usage_without_name() {
+    // Test edge case: usage without a name
+    use super::inlay_hints::extract_inlay_hints;
+
+    let symbol_table = SymbolTable::new();
+
+    let usage = Usage {
+        kind: UsageKind::Part,
+        name: None, // Anonymous usage
+        relationships: Relationships {
+            typed_by: Some("Engine".to_string()),
+            ..Default::default()
+        },
+        body: vec![],
+        span: Some(Span::from_coords(3, 8, 3, 15)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let file = SysMLFile {
+        namespace: None,
+        namespaces: vec![],
+        elements: vec![Element::Usage(usage)],
+    };
+
+    // Should handle anonymous usages gracefully
+    let hints = extract_inlay_hints(&file, &symbol_table, None);
+
+    // Should not crash - anonymous usages don't get hints
+    assert!(hints.is_empty());
+}
+
+#[test]
+fn test_collect_usage_hints_deeply_nested() {
+    // Test deeply nested structure
+    use super::inlay_hints::extract_inlay_hints;
+
+    let symbol_table = SymbolTable::new();
+
+    // Create deeply nested usage structure
+    let level4 = Usage {
+        kind: UsageKind::Part,
+        name: Some("level4".to_string()),
+        relationships: Relationships::default(),
+        body: vec![],
+        span: Some(Span::from_coords(7, 16, 7, 22)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let level3 = Usage {
+        kind: UsageKind::Part,
+        name: Some("level3".to_string()),
+        relationships: Relationships::default(),
+        body: vec![UsageMember::Usage(Box::new(level4))],
+        span: Some(Span::from_coords(6, 12, 8, 13)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let level2 = Usage {
+        kind: UsageKind::Part,
+        name: Some("level2".to_string()),
+        relationships: Relationships::default(),
+        body: vec![UsageMember::Usage(Box::new(level3))],
+        span: Some(Span::from_coords(5, 8, 9, 9)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let level1 = Usage {
+        kind: UsageKind::Part,
+        name: Some("level1".to_string()),
+        relationships: Relationships::default(),
+        body: vec![UsageMember::Usage(Box::new(level2))],
+        span: Some(Span::from_coords(3, 4, 10, 5)),
+        is_derived: false,
+        is_readonly: false,
+    };
+
+    let file = SysMLFile {
+        namespace: None,
+        namespaces: vec![],
+        elements: vec![Element::Usage(level1)],
+    };
+
+    // Should recursively process all levels
+    let hints = extract_inlay_hints(&file, &symbol_table, None);
+
+    // Verify deeply nested structure is handled correctly
+    // All 4 levels should be processed without crashing
+    // Since none have types in symbol table, no hints expected
+    assert!(hints.is_empty());
+}
