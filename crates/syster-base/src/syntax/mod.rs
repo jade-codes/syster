@@ -5,5 +5,8 @@ pub mod kerml;
 pub mod parser;
 pub mod sysml;
 
+#[cfg(test)]
+mod file_syntaxfile_test;
+
 pub use file::SyntaxFile;
 pub use formatter::{FormatOptions, format_async};
