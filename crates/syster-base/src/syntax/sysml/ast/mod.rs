@@ -13,6 +13,8 @@ mod tests_countingvisitor_test;
 #[cfg(test)]
 mod types_comment_test;
 #[cfg(test)]
+mod utils_all_refs_from_test;
+#[cfg(test)]
 mod utils_ref_from_test;
 
 pub use constants::*;
