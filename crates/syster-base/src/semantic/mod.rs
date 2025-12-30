@@ -25,7 +25,7 @@ pub use adapters::folding_ranges::{extract_kerml_folding_ranges, extract_sysml_f
 /// underlying implementation lives in `adapters::folding_ranges`.
 pub mod folding {
     pub use super::adapters::folding_ranges::{
-        extract_kerml_folding_ranges, extract_sysml_folding_ranges,
+        FoldingRangeInfo, extract_kerml_folding_ranges, extract_sysml_folding_ranges,
     };
 }
 
