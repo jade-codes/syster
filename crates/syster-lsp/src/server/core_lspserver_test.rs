@@ -311,9 +311,7 @@ fn test_semantic_tokens_basic_package() {
     assert!(!tokens.data.is_empty(), "Should have semantic tokens");
 
     // Verify tokens are in delta encoding format
-    let legend_len = LspServer::semantic_tokens_legend()
-        .token_types
-        .len() as u32;
+    let legend_len = LspServer::semantic_tokens_legend().token_types.len() as u32;
     let mut _prev_line = 0;
     for token in &tokens.data {
         // Delta line is relative to previous token

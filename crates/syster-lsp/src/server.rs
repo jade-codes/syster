@@ -35,6 +35,7 @@ mod lsp_server_state_test;
 #[path = "server/core_lspserver_test.rs"]
 mod core_lspserver_test;
 
+#[cfg(test)]
 #[path = "server/helpers_format_symbol_declaration_test.rs"]
 mod helpers_format_symbol_declaration_test;
 #[path = "server/tests.rs"]
