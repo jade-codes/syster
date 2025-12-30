@@ -591,3 +591,7 @@ pub struct ResultExpressionMembership {
 pub struct ReturnParameterMembership {
     pub parameter_membership: ParameterMembership,
 }
+
+#[cfg(test)]
+#[path = "types_test.rs"]
+mod types_test;
