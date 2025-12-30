@@ -2,6 +2,47 @@
 
 use super::*;
 
+// Helper function to create a basic LiteralExpression for testing
+fn create_literal_expression() -> LiteralExpression {
+    let element = Element {
+        declared_name: None,
+        declared_short_name: None,
+    };
+    let namespace = Namespace {
+        element,
+        prefixes: vec![],
+        children: vec![],
+    };
+    let type_ = Type {
+        namespace,
+        is_sufficient: false,
+        is_abstract: None,
+        heritage: vec![],
+        type_relationships: vec![],
+        multiplicity: None,
+    };
+    let feature = Feature {
+        type_,
+        is_nonunique: false,
+        is_ordered: false,
+        direction: None,
+        is_composite: None,
+        is_derived: None,
+        is_end: None,
+        is_portion: None,
+        is_readonly: None,
+        value: None,
+        write: None,
+        crossing_feature: None,
+    };
+    let step = Step { feature };
+    let expression = Expression {
+        step,
+        result: None,
+    };
+    LiteralExpression { expression }
+}
+
 // ============================================================================
 // Tests for Element
 // ============================================================================
@@ -186,7 +227,7 @@ fn test_membership_clone_preserves_alias() {
     };
     
     let cloned = membership.clone();
-    assert_eq!(cloned.is_alias, true, "Cloned membership should preserve is_alias value");
+    assert!(cloned.is_alias, "Cloned membership should preserve is_alias value");
     assert_eq!(membership, cloned, "Cloned membership should equal original");
 }
 
@@ -731,43 +772,7 @@ fn test_import_namespace() {
 
 #[test]
 fn test_literal_boolean_true() {
-    let element = Element {
-        declared_name: None,
-        declared_short_name: None,
-    };
-    let namespace = Namespace {
-        element,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type_ = Type {
-        namespace,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature = Feature {
-        type_,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
-    let literal_expression = LiteralExpression { expression };
+    let literal_expression = create_literal_expression();
     let literal_bool = LiteralBoolean {
         literal_expression,
         literal: true,
@@ -778,43 +783,7 @@ fn test_literal_boolean_true() {
 
 #[test]
 fn test_literal_boolean_false() {
-    let element = Element {
-        declared_name: None,
-        declared_short_name: None,
-    };
-    let namespace = Namespace {
-        element,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type_ = Type {
-        namespace,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature = Feature {
-        type_,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
-    let literal_expression = LiteralExpression { expression };
+    let literal_expression = create_literal_expression();
     let literal_bool = LiteralBoolean {
         literal_expression,
         literal: false,
@@ -825,43 +794,7 @@ fn test_literal_boolean_false() {
 
 #[test]
 fn test_literal_string() {
-    let element = Element {
-        declared_name: None,
-        declared_short_name: None,
-    };
-    let namespace = Namespace {
-        element,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type_ = Type {
-        namespace,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature = Feature {
-        type_,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
-    let literal_expression = LiteralExpression { expression };
+    let literal_expression = create_literal_expression();
     let literal_str = LiteralString {
         literal_expression,
         literal: "Hello, World!".to_string(),
@@ -872,43 +805,7 @@ fn test_literal_string() {
 
 #[test]
 fn test_literal_number_positive() {
-    let element = Element {
-        declared_name: None,
-        declared_short_name: None,
-    };
-    let namespace = Namespace {
-        element,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type_ = Type {
-        namespace,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature = Feature {
-        type_,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
-    let literal_expression = LiteralExpression { expression };
+    let literal_expression = create_literal_expression();
     let literal_num = LiteralNumber {
         literal_expression,
         literal: 42.0,
@@ -919,43 +816,7 @@ fn test_literal_number_positive() {
 
 #[test]
 fn test_literal_number_negative() {
-    let element = Element {
-        declared_name: None,
-        declared_short_name: None,
-    };
-    let namespace = Namespace {
-        element,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type_ = Type {
-        namespace,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature = Feature {
-        type_,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
-    let literal_expression = LiteralExpression { expression };
+    let literal_expression = create_literal_expression();
     let literal_num = LiteralNumber {
         literal_expression,
         literal: -3.14,
@@ -966,43 +827,7 @@ fn test_literal_number_negative() {
 
 #[test]
 fn test_literal_number_zero() {
-    let element = Element {
-        declared_name: None,
-        declared_short_name: None,
-    };
-    let namespace = Namespace {
-        element,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type_ = Type {
-        namespace,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature = Feature {
-        type_,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
-    let literal_expression = LiteralExpression { expression };
+    let literal_expression = create_literal_expression();
     let literal_num = LiteralNumber {
         literal_expression,
         literal: 0.0,
