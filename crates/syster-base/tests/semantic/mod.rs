@@ -8,7 +8,10 @@ mod import_tests;
 mod kerml_inlay_test;
 mod kerml_selection_test;
 mod kerml_visitor_tests;
+mod selection_collect_containing_spans_test;
+mod selection_collect_definition_spans_test;
 mod selection_collect_feature_spans_test;
+mod selection_collect_package_spans_test;
 mod selection_tests;
 #[cfg(test)]
 mod semantic_analyzer_semanticanalyzer_test;
@@ -21,4 +24,5 @@ mod sysml_selection_find_selection_spans_test;
 mod sysml_selection_range_size_test;
 mod sysml_selection_try_push_span_test;
 mod sysml_visitor_tests;
+mod test_utils;
 mod visitor_astvisitor_test;
