@@ -36,10 +36,7 @@ fn create_literal_expression() -> LiteralExpression {
         crossing_feature: None,
     };
     let step = Step { feature };
-    let expression = Expression {
-        step,
-        result: None,
-    };
+    let expression = Expression { step, result: None };
     LiteralExpression { expression }
 }
 
@@ -190,7 +187,7 @@ fn test_membership_alias_toggle() {
         target_ref: None,
         target_chain: None,
     };
-    
+
     let membership_not_alias = Membership {
         relationship: relationship.clone(),
         is_alias: false,
@@ -199,9 +196,11 @@ fn test_membership_alias_toggle() {
         relationship,
         is_alias: true,
     };
-    
-    assert_ne!(membership_not_alias, membership_is_alias, 
-        "Memberships with different is_alias values should not be equal");
+
+    assert_ne!(
+        membership_not_alias, membership_is_alias,
+        "Memberships with different is_alias values should not be equal"
+    );
 }
 
 #[test]
@@ -225,10 +224,16 @@ fn test_membership_clone_preserves_alias() {
         relationship,
         is_alias: true,
     };
-    
+
     let cloned = membership.clone();
-    assert!(cloned.is_alias, "Cloned membership should preserve is_alias value");
-    assert_eq!(membership, cloned, "Cloned membership should equal original");
+    assert!(
+        cloned.is_alias,
+        "Cloned membership should preserve is_alias value"
+    );
+    assert_eq!(
+        membership, cloned,
+        "Cloned membership should equal original"
+    );
 }
 
 // ============================================================================
@@ -257,8 +262,11 @@ fn test_owning_membership_with_alias() {
         is_alias: true,
     };
     let owning = OwningMembership { membership };
-    
-    assert!(owning.membership.is_alias, "OwningMembership should preserve is_alias");
+
+    assert!(
+        owning.membership.is_alias,
+        "OwningMembership should preserve is_alias"
+    );
 }
 
 #[test]
@@ -283,8 +291,11 @@ fn test_owning_membership_without_alias() {
         is_alias: false,
     };
     let owning = OwningMembership { membership };
-    
-    assert!(!owning.membership.is_alias, "OwningMembership should preserve is_alias as false");
+
+    assert!(
+        !owning.membership.is_alias,
+        "OwningMembership should preserve is_alias as false"
+    );
 }
 
 // ============================================================================
@@ -312,7 +323,7 @@ fn test_namespace_with_children() {
         declared_name: Some("ParentNamespace".to_string()),
         declared_short_name: None,
     };
-    
+
     let child_element = Element {
         declared_name: None,
         declared_short_name: None,
@@ -332,13 +343,13 @@ fn test_namespace_with_children() {
         relationship: child_relationship,
         is_alias: false,
     };
-    
+
     let namespace = Namespace {
         element,
         prefixes: vec![],
         children: vec![NamespaceChild::Membership(Box::new(child_membership))],
     };
-    
+
     assert_eq!(namespace.children.len(), 1);
 }
 
@@ -365,7 +376,7 @@ fn test_type_basic() {
         type_relationships: vec![],
         multiplicity: None,
     };
-    
+
     assert!(!type_.is_sufficient);
     assert_eq!(type_.is_abstract, None);
 }
@@ -389,7 +400,7 @@ fn test_type_abstract() {
         type_relationships: vec![],
         multiplicity: None,
     };
-    
+
     assert_eq!(type_.is_abstract, Some(AbstractMarker::Abstract));
 }
 
@@ -412,7 +423,7 @@ fn test_type_sufficient() {
         type_relationships: vec![],
         multiplicity: None,
     };
-    
+
     assert!(type_.is_sufficient);
 }
 
@@ -453,7 +464,7 @@ fn test_feature_basic() {
         write: None,
         crossing_feature: None,
     };
-    
+
     assert!(!feature.is_nonunique);
     assert!(!feature.is_ordered);
 }
@@ -491,7 +502,7 @@ fn test_feature_ordered() {
         write: None,
         crossing_feature: None,
     };
-    
+
     assert!(feature.is_ordered);
 }
 
@@ -528,7 +539,7 @@ fn test_feature_composite() {
         write: None,
         crossing_feature: None,
     };
-    
+
     assert_eq!(feature.is_composite, Some(CompositeMarker::Composite));
 }
 
@@ -565,7 +576,7 @@ fn test_feature_readonly() {
         write: None,
         crossing_feature: None,
     };
-    
+
     assert_eq!(feature.is_readonly, Some(ReadonlyMarker::Readonly));
 }
 
@@ -602,7 +613,7 @@ fn test_feature_derived() {
         write: None,
         crossing_feature: None,
     };
-    
+
     assert_eq!(feature.is_derived, Some(DerivedMarker::Derived));
 }
 
@@ -627,7 +638,7 @@ fn test_relationship_basic() {
         target_ref: None,
         target_chain: None,
     };
-    
+
     assert_eq!(relationship.visibility, None);
     assert_eq!(relationship.elements.len(), 0);
 }
@@ -649,7 +660,7 @@ fn test_relationship_with_visibility() {
         target_ref: None,
         target_chain: None,
     };
-    
+
     assert_eq!(relationship.visibility, Some(VisibilityKind::Public));
 }
 
@@ -680,7 +691,7 @@ fn test_import_basic() {
         is_recursive: false,
         is_namespace: None,
     };
-    
+
     assert!(!import.imports_all);
     assert!(!import.is_recursive);
 }
@@ -708,7 +719,7 @@ fn test_import_all() {
         is_recursive: false,
         is_namespace: None,
     };
-    
+
     assert!(import.imports_all);
 }
 
@@ -735,7 +746,7 @@ fn test_import_recursive() {
         is_recursive: true,
         is_namespace: None,
     };
-    
+
     assert!(import.is_recursive);
 }
 
@@ -762,7 +773,7 @@ fn test_import_namespace() {
         is_recursive: false,
         is_namespace: Some(NamespaceMarker::Namespace),
     };
-    
+
     assert_eq!(import.is_namespace, Some(NamespaceMarker::Namespace));
 }
 
@@ -777,7 +788,7 @@ fn test_literal_boolean_true() {
         literal_expression,
         literal: true,
     };
-    
+
     assert!(literal_bool.literal);
 }
 
@@ -788,7 +799,7 @@ fn test_literal_boolean_false() {
         literal_expression,
         literal: false,
     };
-    
+
     assert!(!literal_bool.literal);
 }
 
@@ -799,7 +810,7 @@ fn test_literal_string() {
         literal_expression,
         literal: "Hello, World!".to_string(),
     };
-    
+
     assert_eq!(literal_str.literal, "Hello, World!");
 }
 
@@ -810,7 +821,7 @@ fn test_literal_number_positive() {
         literal_expression,
         literal: 42.0,
     };
-    
+
     assert_eq!(literal_num.literal, 42.0);
 }
 
@@ -821,7 +832,7 @@ fn test_literal_number_negative() {
         literal_expression,
         literal: -25.5,
     };
-    
+
     assert_eq!(literal_num.literal, -25.5);
 }
 
@@ -832,7 +843,7 @@ fn test_literal_number_zero() {
         literal_expression,
         literal: 0.0,
     };
-    
+
     assert_eq!(literal_num.literal, 0.0);
 }
 
@@ -861,9 +872,11 @@ fn test_class_creation() {
     };
     let classifier = Classifier { type_ };
     let class = Class { classifier };
-    
-    assert_eq!(class.classifier.type_.namespace.element.declared_name, 
-               Some("MyClass".to_string()));
+
+    assert_eq!(
+        class.classifier.type_.namespace.element.declared_name,
+        Some("MyClass".to_string())
+    );
 }
 
 #[test]
@@ -887,9 +900,11 @@ fn test_datatype_creation() {
     };
     let classifier = Classifier { type_ };
     let datatype = DataType { classifier };
-    
-    assert_eq!(datatype.classifier.type_.namespace.element.declared_name, 
-               Some("MyDataType".to_string()));
+
+    assert_eq!(
+        datatype.classifier.type_.namespace.element.declared_name,
+        Some("MyDataType".to_string())
+    );
 }
 
 #[test]
@@ -914,9 +929,17 @@ fn test_structure_creation() {
     let classifier = Classifier { type_ };
     let class = Class { classifier };
     let structure = Structure { class };
-    
-    assert_eq!(structure.class.classifier.type_.namespace.element.declared_name, 
-               Some("MyStructure".to_string()));
+
+    assert_eq!(
+        structure
+            .class
+            .classifier
+            .type_
+            .namespace
+            .element
+            .declared_name,
+        Some("MyStructure".to_string())
+    );
 }
 
 // ============================================================================
@@ -935,8 +958,11 @@ fn test_package_creation() {
         children: vec![],
     };
     let package = Package { namespace };
-    
-    assert_eq!(package.namespace.element.declared_name, Some("MyPackage".to_string()));
+
+    assert_eq!(
+        package.namespace.element.declared_name,
+        Some("MyPackage".to_string())
+    );
 }
 
 #[test]
@@ -955,7 +981,7 @@ fn test_library_package_standard() {
         package,
         is_standard: true,
     };
-    
+
     assert!(lib_package.is_standard);
 }
 
@@ -975,7 +1001,7 @@ fn test_library_package_non_standard() {
         package,
         is_standard: false,
     };
-    
+
     assert!(!lib_package.is_standard);
 }
 
@@ -991,7 +1017,7 @@ fn test_comment_basic() {
         locale: None,
         span: None,
     };
-    
+
     assert_eq!(comment.content, "This is a comment");
 }
 
@@ -1003,7 +1029,7 @@ fn test_comment_with_locale() {
         locale: Some("fr-FR".to_string()),
         span: None,
     };
-    
+
     assert_eq!(comment.locale, Some("fr-FR".to_string()));
 }
 
@@ -1019,7 +1045,7 @@ fn test_documentation() {
         comment,
         span: None,
     };
-    
+
     assert_eq!(doc.comment.content, "Documentation content");
 }
 
@@ -1100,7 +1126,7 @@ fn test_feature_value_default() {
         is_default: true,
         is_initial: false,
     };
-    
+
     assert!(feature_value.is_default);
     assert!(!feature_value.is_initial);
 }
@@ -1132,7 +1158,7 @@ fn test_feature_value_initial() {
         is_default: false,
         is_initial: true,
     };
-    
+
     assert!(!feature_value.is_default);
     assert!(feature_value.is_initial);
 }
