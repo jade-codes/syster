@@ -24,6 +24,10 @@ pub use core::LspServer;
 mod helpers_char_offset_to_byte_test;
 
 #[cfg(test)]
+#[path = "server/helpers_char_offset_to_utf16_test.rs"]
+mod helpers_char_offset_to_utf16_test;
+
+#[cfg(test)]
 #[path = "server/helpers_format_symbol_declaration_test.rs"]
 mod helpers_format_symbol_declaration_test;
 
