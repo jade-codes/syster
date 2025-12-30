@@ -18,6 +18,17 @@ pub use adapters::{SysmlAdapter, SysmlValidator, create_validator, populate_synt
 pub use analyzer::{AnalysisContext, NoOpValidator, RelationshipValidator, SemanticAnalyzer};
 // Re-export folding types and extraction functions
 pub use adapters::folding_ranges::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
+
+/// Backwards-compatible module path for folding range extraction.
+/// 
+/// This preserves the old `syster::semantic::folding::*` API while the
+/// underlying implementation lives in `adapters::folding_ranges`.
+pub mod folding {
+    pub use super::adapters::folding_ranges::{
+        extract_kerml_folding_ranges, extract_sysml_folding_ranges,
+    };
+}
+
 pub use graphs::{DependencyGraph, RelationshipGraph};
 pub use inlay_hints::extract_inlay_hints;
 pub use processors::ReferenceCollector;
