@@ -143,11 +143,7 @@ fn test_load_and_parse_with_package() {
     std::fs::create_dir_all(&test_dir).unwrap();
 
     let test_file = test_dir.join("with_package.sysml");
-    std::fs::write(
-        &test_file,
-        "package MyPackage {\n    part def Vehicle;\n}",
-    )
-    .unwrap();
+    std::fs::write(&test_file, "package MyPackage {\n    part def Vehicle;\n}").unwrap();
 
     let result = load_and_parse(&test_file);
     assert!(result.is_ok(), "Should parse file with package");
@@ -177,11 +173,7 @@ fn test_load_and_parse_multiple_elements() {
     assert!(result.is_ok(), "Should parse multiple elements");
 
     let sysml_file = result.unwrap();
-    assert_eq!(
-        sysml_file.elements.len(),
-        3,
-        "Should have three elements"
-    );
+    assert_eq!(sysml_file.elements.len(), 3, "Should have three elements");
 }
 
 #[test]
@@ -210,11 +202,7 @@ fn test_load_and_parse_with_crlf_line_endings() {
     assert!(result.is_ok(), "Should handle CRLF line endings");
 
     let sysml_file = result.unwrap();
-    assert_eq!(
-        sysml_file.elements.len(),
-        2,
-        "Should parse both elements"
-    );
+    assert_eq!(sysml_file.elements.len(), 2, "Should parse both elements");
 }
 
 #[test]
@@ -224,11 +212,7 @@ fn test_load_and_parse_with_imports() {
     std::fs::create_dir_all(&test_dir).unwrap();
 
     let test_file = test_dir.join("with_imports.sysml");
-    std::fs::write(
-        &test_file,
-        "import Base::*;\npart def Vehicle;",
-    )
-    .unwrap();
+    std::fs::write(&test_file, "import Base::*;\npart def Vehicle;").unwrap();
 
     let result = load_and_parse(&test_file);
     assert!(result.is_ok(), "Should parse file with imports");
@@ -241,11 +225,7 @@ fn test_load_and_parse_ast_construction() {
     std::fs::create_dir_all(&test_dir).unwrap();
 
     let test_file = test_dir.join("ast_test.sysml");
-    std::fs::write(
-        &test_file,
-        "package TestPkg;\npart def TestDef;",
-    )
-    .unwrap();
+    std::fs::write(&test_file, "package TestPkg;\npart def TestDef;").unwrap();
 
     let result = load_and_parse(&test_file);
     assert!(result.is_ok(), "Should successfully construct AST");
@@ -256,8 +236,5 @@ fn test_load_and_parse_ast_construction() {
         sysml_file.namespace.is_some(),
         "Should have namespace declaration"
     );
-    assert!(
-        !sysml_file.elements.is_empty(),
-        "Should have elements"
-    );
+    assert!(!sysml_file.elements.is_empty(), "Should have elements");
 }
