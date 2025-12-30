@@ -171,17 +171,12 @@ package TestPkg {
 
     // Should handle comments appropriately without crashing
     // Check for comment kind if comments are foldable
-    let has_comment_kind = ranges
+    let _has_comment_kind = ranges
         .iter()
         .any(|r| r.kind == Some(FoldingRangeKind::Comment));
 
-    // Note: Whether comments are folded depends on implementation
-    // Just verify it doesn't crash and returns valid data
-    let _comment_count = if has_comment_kind {
-        "has comments"
-    } else {
-        "no comment folding"
-    };
+    // Note: Whether comments are folded depends on implementation; we only
+    // verify that the call does not crash and returns structurally valid data.
 
     // All returned ranges should be valid
     for range in &ranges {
@@ -316,13 +311,16 @@ fn test_semantic_tokens_basic_package() {
     assert!(!tokens.data.is_empty(), "Should have semantic tokens");
 
     // Verify tokens are in delta encoding format
+    let legend_len = LspServer::semantic_tokens_legend()
+        .token_types
+        .len() as u32;
     let mut _prev_line = 0;
     for token in &tokens.data {
         // Delta line is relative to previous token
         _prev_line += token.delta_line;
 
         // Token type should be valid (within legend range)
-        assert!(token.token_type < 5, "Token type should be valid");
+        assert!(token.token_type < legend_len, "Token type should be valid");
 
         // Length should be positive
         assert!(token.length > 0, "Token length should be positive");
@@ -499,9 +497,6 @@ fn test_selection_ranges_basic_element() {
         range.range.start.line <= range.range.end.line,
         "Range should be valid"
     );
-
-    // May have parent chain for nested selections
-    let _has_parent = range.parent.is_some();
 }
 
 #[test]
@@ -844,15 +839,10 @@ fn test_inlay_hints_type_annotations() {
     let hints = server.get_inlay_hints(&params);
 
     // Check if any hints are type hints
-    let has_type_hints = hints.iter().any(|h| h.kind == Some(InlayHintKind::TYPE));
+    let _has_type_hints = hints.iter().any(|h| h.kind == Some(InlayHintKind::TYPE));
 
     // Whether we have type hints depends on implementation
     // Just verify the function works
-    let _type_hint_count = if has_type_hints {
-        "has type hints"
-    } else {
-        "no type hints"
-    };
 }
 
 #[test]
@@ -938,17 +928,5 @@ fn test_inlay_hints_parameter_hints() {
         work_done_progress_params: Default::default(),
     };
 
-    let hints = server.get_inlay_hints(&params);
-
-    // Check if any hints are parameter hints
-    let has_parameter_hints = hints
-        .iter()
-        .any(|h| h.kind == Some(InlayHintKind::PARAMETER));
-
-    // Whether we have parameter hints depends on implementation
-    let _param_hint_count = if has_parameter_hints {
-        "has parameter hints"
-    } else {
-        "no parameter hints"
-    };
+    server.get_inlay_hints(&params);
 }
