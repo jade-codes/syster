@@ -26,3 +26,7 @@ mod tests;
 #[cfg(test)]
 #[path = "server/lsp_server_state_test.rs"]
 mod lsp_server_state_test;
+
+#[cfg(test)]
+#[path = "server/core_lspserver_test.rs"]
+mod core_lspserver_test;
