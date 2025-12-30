@@ -1201,8 +1201,11 @@ fn test_sysmlfile_accept_with_namespace_and_elements() {
 
     assert_eq!(visitor.file_visits, 1);
     assert_eq!(visitor.namespace_visits, 1);
-    // Package declaration creates both namespace and Package element
-    assert!(visitor.element_visits >= 1, "Should visit elements");
+    // File-level package declaration creates a namespace declaration and may also create a Package element
+    assert!(
+        visitor.element_visits >= 1,
+        "Should visit at least one element (part def)"
+    );
 }
 
 #[test]
@@ -1287,7 +1290,10 @@ fn test_sysmlfile_accept_visitor_receives_correct_data() {
     file.accept(&mut visitor);
 
     assert!(visitor.has_namespace, "Should detect namespace");
-    assert!(visitor.element_count > 0, "Should count elements");
+    assert!(
+        visitor.element_count >= 1,
+        "Should count at least one element (part def)"
+    );
 }
 
 // ============================================================================

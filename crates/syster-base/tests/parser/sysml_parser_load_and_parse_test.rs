@@ -1,6 +1,5 @@
 #![allow(clippy::unwrap_used)]
 
-use std::path::PathBuf;
 use syster::syntax::sysml::parser::load_and_parse;
 
 // ============================================================================
@@ -33,8 +32,8 @@ fn test_load_and_parse_valid_sysml_file() {
 
 #[test]
 fn test_load_and_parse_valid_kerml_extension() {
-    // Test that .kerml extension is accepted (even though content is SysML)
-    // The SysML parser accepts both .sysml and .kerml extensions
+    // Test current behavior: .kerml extension is accepted by the SysML parser,
+    // and the file is still parsed using the SysML grammar (content is SysML here).
     let test_dir = std::env::temp_dir().join("batch_2_tests");
     std::fs::create_dir_all(&test_dir).unwrap();
 
@@ -82,7 +81,7 @@ fn test_load_and_parse_invalid_extension() {
 #[test]
 fn test_load_and_parse_nonexistent_file() {
     // Test error handling for non-existent files
-    let test_file = PathBuf::from("/tmp/nonexistent_batch2_test_12345.sysml");
+    let test_file = std::env::temp_dir().join("nonexistent_batch2_test_12345.sysml");
 
     let result = load_and_parse(&test_file);
     assert!(result.is_err(), "Should fail for non-existent file");
