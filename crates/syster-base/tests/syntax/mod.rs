@@ -1,0 +1,1 @@
+mod formatter_syntax_kind_test;

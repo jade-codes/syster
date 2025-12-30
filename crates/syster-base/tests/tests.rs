@@ -4,8 +4,11 @@ mod parser;
 #[path = "semantic/mod.rs"]
 mod semantic;
 
-#[cfg(test)]
-mod batch_1_test;
+#[path = "core/mod.rs"]
+mod core;
+
+#[path = "syntax/mod.rs"]
+mod syntax;
 
 #[cfg(test)]
 mod core_parse_result_test;
