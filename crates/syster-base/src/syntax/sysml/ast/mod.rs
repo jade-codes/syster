@@ -10,6 +10,8 @@ pub mod utils;
 mod tests;
 #[cfg(test)]
 mod types_comment_test;
+#[cfg(test)]
+mod tests_countingvisitor_test;
 
 pub use constants::*;
 pub use enums::*;
