@@ -9,3 +9,6 @@ mod tests;
 
 #[cfg(test)]
 mod semantic_token_text_extraction_test;
+
+#[cfg(test)]
+mod semantic_token_collector_semantictokencollector_test;
