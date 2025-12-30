@@ -54,3 +54,7 @@ mod helpers_span_to_lsp_range_test;
 #[cfg(test)]
 #[path = "server/helpers_format_rich_hover_test.rs"]
 mod helpers_format_rich_hover_test;
+
+#[cfg(test)]
+#[path = "server/helpers_apply_text_edit_test.rs"]
+mod helpers_apply_text_edit_test;
