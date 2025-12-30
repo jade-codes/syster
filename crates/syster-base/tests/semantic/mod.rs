@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod batch_3_test;
 mod cross_file_tests;
 mod duplicate_symbol_test;
 #[cfg(test)]
@@ -9,7 +7,10 @@ mod import_tests;
 mod kerml_inlay_test;
 mod kerml_selection_test;
 mod kerml_visitor_tests;
+mod selection_collect_containing_spans_test;
+mod selection_collect_definition_spans_test;
 mod selection_collect_feature_spans_test;
+mod selection_collect_package_spans_test;
 mod selection_tests;
 #[cfg(test)]
 mod semantic_analyzer_semanticanalyzer_test;

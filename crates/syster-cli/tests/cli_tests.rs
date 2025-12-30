@@ -241,3 +241,93 @@ fn test_custom_stdlib_path() {
     assert!(result.file_count >= 1);
     assert!(result.symbol_count >= 1);
 }
+
+#[test]
+fn test_run_analysis_complex_sysml() {
+    // Test analyzing more complex SysML content
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("complex.sysml");
+
+    let mut file = fs::File::create(&file_path).unwrap();
+    writeln!(file, "package TestPackage {{").unwrap();
+    writeln!(file, "    part def Vehicle {{").unwrap();
+    writeln!(file, "        part engine;").unwrap();
+    writeln!(file, "    }}").unwrap();
+    writeln!(file, "}}").unwrap();
+
+    let result = run_analysis(&file_path, false, false, None).unwrap();
+
+    assert_eq!(result.file_count, 1);
+    // Should have multiple symbols (package, definition, usage)
+    assert!(result.symbol_count >= 2);
+}
+
+#[test]
+fn test_run_analysis_multiple_packages() {
+    // Test file with multiple package declarations
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("multi.sysml");
+
+    let mut file = fs::File::create(&file_path).unwrap();
+    writeln!(file, "package Package1 {{ }}").unwrap();
+    writeln!(file, "package Package2 {{ }}").unwrap();
+
+    let result = run_analysis(&file_path, false, false, None).unwrap();
+
+    assert_eq!(result.file_count, 1);
+    assert!(result.symbol_count >= 2);
+}
+
+#[test]
+fn test_run_analysis_with_imports() {
+    // Test file with imports
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("imports.sysml");
+
+    let mut file = fs::File::create(&file_path).unwrap();
+    writeln!(file, "package Test {{").unwrap();
+    writeln!(file, "    import Base::*;").unwrap();
+    writeln!(file, "    part def Vehicle;").unwrap();
+    writeln!(file, "}}").unwrap();
+
+    let result = run_analysis(&file_path, false, false, None).unwrap();
+
+    assert_eq!(result.file_count, 1);
+    assert!(result.symbol_count >= 1);
+}
+
+#[test]
+fn test_run_analysis_edge_case_empty_file() {
+    // Test with empty file
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("empty.sysml");
+
+    fs::File::create(&file_path).unwrap();
+
+    let result = run_analysis(&file_path, false, false, None);
+
+    // Empty file should parse successfully but have no symbols
+    assert!(result.is_ok());
+    let result = result.unwrap();
+    assert_eq!(result.file_count, 1);
+    assert_eq!(result.symbol_count, 0);
+}
+
+#[test]
+fn test_run_analysis_with_comments_only() {
+    // Test file with only comments
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("comments.sysml");
+
+    let mut file = fs::File::create(&file_path).unwrap();
+    writeln!(file, "// This is a comment").unwrap();
+    writeln!(file, "/* Multi-line comment */").unwrap();
+
+    let result = run_analysis(&file_path, false, false, None);
+
+    assert!(result.is_ok());
+    let result = result.unwrap();
+    assert_eq!(result.file_count, 1);
+    // Comments don't create symbols
+    assert_eq!(result.symbol_count, 0);
+}
