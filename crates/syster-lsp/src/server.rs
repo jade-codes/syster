@@ -26,3 +26,7 @@ mod tests;
 #[cfg(test)]
 #[path = "server/lsp_server_state_test.rs"]
 mod lsp_server_state_test;
+
+#[cfg(test)]
+#[path = "server/helpers_format_symbol_declaration_test.rs"]
+mod helpers_format_symbol_declaration_test;
