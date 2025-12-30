@@ -42,3 +42,7 @@ mod core_lspserver_test;
 #[cfg(test)]
 #[path = "server/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "server/batch_5_test.rs"]
+mod batch_5_test;
