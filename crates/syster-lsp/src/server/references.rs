@@ -1,5 +1,6 @@
 use super::LspServer;
-use async_lsp::lsp_types::{Location, Position, Range, Url};
+use super::helpers::span_to_lsp_range;
+use async_lsp::lsp_types::{Location, Position, Url};
 
 impl LspServer {
     /// Find all references to a symbol at the given position
@@ -41,16 +42,7 @@ impl LspServer {
 
                 Url::from_file_path(file).ok().map(|uri| Location {
                     uri,
-                    range: Range {
-                        start: Position {
-                            line: reference_span.start.line as u32,
-                            character: reference_span.start.column as u32,
-                        },
-                        end: Position {
-                            line: reference_span.end.line as u32,
-                            character: reference_span.end.column as u32,
-                        },
-                    },
+                    range: span_to_lsp_range(reference_span),
                 })
             })
             .collect();
@@ -65,16 +57,7 @@ impl LspServer {
             if let Ok(uri) = Url::from_file_path(file) {
                 locations.push(Location {
                     uri,
-                    range: Range {
-                        start: Position {
-                            line: span.start.line as u32,
-                            character: span.start.column as u32,
-                        },
-                        end: Position {
-                            line: span.end.line as u32,
-                            character: span.end.column as u32,
-                        },
-                    },
+                    range: span_to_lsp_range(span),
                 });
             }
         }

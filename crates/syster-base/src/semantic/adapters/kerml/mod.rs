@@ -1,4 +1,4 @@
-pub mod folding;
+pub mod folding_ranges;
 mod helpers;
 pub mod inlay_hints;
 mod population;

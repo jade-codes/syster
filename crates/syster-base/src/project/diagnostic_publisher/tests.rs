@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use super::*;
-use crate::core::ErrorPosition;
+use crate::core::Position;
 use crate::semantic::Severity;
 
 #[test]
@@ -23,10 +23,7 @@ fn test_publish_syntax_error() {
     // TDD: Syntax error converts to diagnostic with code
     let error = ParseError {
         message: "Expected identifier".to_string(),
-        position: ErrorPosition {
-            line: 5,
-            column: 10,
-        },
+        position: Position::new(5, 10),
         kind: ParseErrorKind::SyntaxError,
     };
     let result: ParseResult<()> = ParseResult::with_errors(vec![error]);
@@ -45,7 +42,7 @@ fn test_publish_ast_error() {
     // TDD: AST error gets different code
     let error = ParseError {
         message: "Failed to construct AST".to_string(),
-        position: ErrorPosition { line: 0, column: 0 },
+        position: Position::new(0, 0),
         kind: ParseErrorKind::AstError,
     };
     let result: ParseResult<()> = ParseResult::with_errors(vec![error]);

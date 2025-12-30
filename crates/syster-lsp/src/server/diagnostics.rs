@@ -1,4 +1,5 @@
 use super::LspServer;
+use super::helpers::position_to_lsp_position;
 use async_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
 
 impl LspServer {
@@ -15,20 +16,20 @@ impl LspServer {
             .map(|errors| {
                 errors
                     .iter()
-                    .map(|e| Diagnostic {
-                        range: Range {
-                            start: Position {
-                                line: e.position.line as u32,
-                                character: e.position.column as u32,
+                    .map(|e| {
+                        let pos = position_to_lsp_position(&e.position);
+                        Diagnostic {
+                            range: Range {
+                                start: pos,
+                                end: Position {
+                                    line: pos.line,
+                                    character: pos.character + 1,
+                                },
                             },
-                            end: Position {
-                                line: e.position.line as u32,
-                                character: (e.position.column + 1) as u32,
-                            },
-                        },
-                        severity: Some(DiagnosticSeverity::ERROR),
-                        message: e.message.clone(),
-                        ..Default::default()
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            message: e.message.clone(),
+                            ..Default::default()
+                        }
                     })
                     .collect()
             })

@@ -43,14 +43,12 @@ pub use sysml::validator::SysmlValidator;
 pub use sysml_adapter::SysmlAdapter;
 pub use validator_factory::create_validator;
 
-// Re-export folding functions and types for each language
-pub mod folding {
-    pub use super::kerml::folding::{
-        FoldingSpan as KermlFoldingSpan, extract_folding_ranges as extract_kerml_folding_ranges,
-    };
-    pub use super::sysml::folding::{
-        FoldingSpan as SysmlFoldingSpan, extract_folding_ranges as extract_sysml_folding_ranges,
-    };
+// Re-export folding functions for each language
+pub mod folding_ranges {
+    pub use super::kerml::folding_ranges::extract_folding_ranges as extract_kerml_folding_ranges;
+    pub use super::sysml::folding_ranges::extract_folding_ranges as extract_sysml_folding_ranges;
+    // Re-export the shared FoldingRangeInfo type
+    pub use crate::semantic::types::FoldingRangeInfo;
 }
 
 // Re-export selection range functions for each language

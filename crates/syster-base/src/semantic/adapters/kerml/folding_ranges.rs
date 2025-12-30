@@ -1,17 +1,10 @@
 //! Folding range extraction for KerML files
 
-use crate::core::Span;
+use crate::semantic::types::FoldingRangeInfo;
 use crate::syntax::kerml::ast::{ClassifierMember, Element, FeatureMember, KerMLFile};
 
-/// A simple folding range with span and whether it's a comment
-#[derive(Debug, Clone)]
-pub struct FoldingSpan {
-    pub span: Span,
-    pub is_comment: bool,
-}
-
 /// Extract all foldable ranges from a KerML file
-pub fn extract_folding_ranges(file: &KerMLFile) -> Vec<FoldingSpan> {
+pub fn extract_folding_ranges(file: &KerMLFile) -> Vec<FoldingRangeInfo> {
     let mut ranges = Vec::new();
 
     for element in &file.elements {
@@ -24,14 +17,11 @@ pub fn extract_folding_ranges(file: &KerMLFile) -> Vec<FoldingSpan> {
 }
 
 /// Recursively collect folding ranges from an element and its children
-fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
+fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingRangeInfo>) {
     match element {
         Element::Package(p) => {
             if let Some(span) = &p.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
+                ranges.push(FoldingRangeInfo::code(*span));
             }
             for child in &p.elements {
                 collect_ranges(child, ranges);
@@ -39,10 +29,7 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
         }
         Element::Classifier(c) => {
             if let Some(span) = &c.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
+                ranges.push(FoldingRangeInfo::code(*span));
             }
             for member in &c.body {
                 match member {
@@ -58,10 +45,7 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
         }
         Element::Feature(f) => {
             if let Some(span) = &f.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: false,
-                });
+                ranges.push(FoldingRangeInfo::code(*span));
             }
             for member in &f.body {
                 if let FeatureMember::Comment(c) = member {
@@ -71,10 +55,7 @@ fn collect_ranges(element: &Element, ranges: &mut Vec<FoldingSpan>) {
         }
         Element::Comment(c) => {
             if let Some(span) = &c.span {
-                ranges.push(FoldingSpan {
-                    span: *span,
-                    is_comment: true,
-                });
+                ranges.push(FoldingRangeInfo::comment(*span));
             }
         }
         Element::Import(_) | Element::Annotation(_) => {}

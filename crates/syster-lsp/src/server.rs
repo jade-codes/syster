@@ -4,7 +4,7 @@ mod definition;
 mod diagnostics;
 mod document;
 mod document_symbols;
-mod folding_range;
+mod folding_ranges;
 pub mod formatting;
 mod helpers;
 mod hover;

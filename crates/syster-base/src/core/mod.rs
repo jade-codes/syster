@@ -9,5 +9,5 @@ pub mod text_utils;
 pub mod traits;
 
 pub use file_io::{get_extension, load_file, validate_extension};
-pub use parse_result::{ErrorPosition, ParseError, ParseErrorKind, ParseResult};
+pub use parse_result::{ParseError, ParseErrorKind, ParseResult};
 pub use span::*;
