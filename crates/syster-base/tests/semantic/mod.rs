@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod batch_3_test;
 mod cross_file_tests;
 mod duplicate_symbol_test;
 #[cfg(test)]
