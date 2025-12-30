@@ -354,9 +354,28 @@ fn test_definition_traits() {
     assert_eq!(def.name(), Some("Vehicle"));
 }
 
-struct CountingVisitor {
-    packages: usize,
-    definitions: usize,
+pub(crate) struct CountingVisitor {
+    pub(crate) packages: usize,
+    pub(crate) definitions: usize,
+    pub(crate) usages: usize,
+    pub(crate) comments: usize,
+    pub(crate) imports: usize,
+    pub(crate) aliases: usize,
+    pub(crate) namespaces: usize,
+}
+
+impl CountingVisitor {
+    pub(crate) fn new() -> Self {
+        Self {
+            packages: 0,
+            definitions: 0,
+            usages: 0,
+            comments: 0,
+            imports: 0,
+            aliases: 0,
+            namespaces: 0,
+        }
+    }
 }
 
 impl AstVisitor for CountingVisitor {
@@ -366,6 +385,26 @@ impl AstVisitor for CountingVisitor {
 
     fn visit_definition(&mut self, _definition: &Definition) {
         self.definitions += 1;
+    }
+
+    fn visit_usage(&mut self, _usage: &Usage) {
+        self.usages += 1;
+    }
+
+    fn visit_comment(&mut self, _comment: &Comment) {
+        self.comments += 1;
+    }
+
+    fn visit_import(&mut self, _import: &Import) {
+        self.imports += 1;
+    }
+
+    fn visit_alias(&mut self, _alias: &Alias) {
+        self.aliases += 1;
+    }
+
+    fn visit_namespace(&mut self, _namespace: &NamespaceDeclaration) {
+        self.namespaces += 1;
     }
 }
 
@@ -392,10 +431,7 @@ fn test_visitor_pattern() {
         ],
     };
 
-    let mut visitor = CountingVisitor {
-        packages: 0,
-        definitions: 0,
-    };
+    let mut visitor = CountingVisitor::new();
 
     file.accept(&mut visitor);
 
