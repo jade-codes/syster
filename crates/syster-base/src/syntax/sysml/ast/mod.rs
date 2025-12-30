@@ -8,6 +8,8 @@ pub mod utils;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod types_comment_test;
 
 pub use constants::*;
 pub use enums::*;
