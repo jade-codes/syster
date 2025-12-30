@@ -2815,15 +2815,7 @@ fn test_folding_ranges_simple_package() {
     for range in &ranges {
         assert!(
             range.end_line >= range.start_line,
-            "All ranges must have end >= start"
-        );
-    }
-
-    // If ranges exist, they should be multiline
-    for range in &ranges {
-        assert!(
-            range.end_line > range.start_line || range.end_line == range.start_line,
-            "Ranges should span multiple lines or be valid single line"
+            "All ranges must be valid"
         );
     }
 }
