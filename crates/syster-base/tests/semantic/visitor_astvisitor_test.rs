@@ -1116,3 +1116,702 @@ fn test_visitor_with_multiple_packages_at_top_level() {
         "Should visit all top-level packages"
     );
 }
+// Tests for SysMLFile::accept (Issue #173)
+// <syster::syntax::sysml::ast::types::SysMLFile as syster::syntax::sysml::visitor::Visitable>::accept::<_>
+// ============================================================================
+
+#[test]
+fn test_sysmlfile_accept_calls_visit_file() {
+    // Test that accept calls visit_file on the visitor
+    let source = "part def Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.file_visits, 1,
+        "accept should call visit_file exactly once"
+    );
+}
+
+#[test]
+fn test_sysmlfile_accept_traverses_namespace() {
+    // Test that accept traverses the namespace declaration
+    let source = "package MyPackage;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.file_visits, 1);
+    assert_eq!(
+        visitor.namespace_visits, 1,
+        "accept should traverse namespace"
+    );
+}
+
+#[test]
+fn test_sysmlfile_accept_traverses_elements() {
+    // Test that accept traverses all elements
+    let source = "part def Car;\npart def Truck;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.file_visits, 1);
+    assert_eq!(
+        visitor.element_visits, 2,
+        "accept should traverse all elements"
+    );
+    assert_eq!(
+        visitor.definition_visits, 2,
+        "accept should traverse to definition level"
+    );
+}
+
+#[test]
+fn test_sysmlfile_accept_with_empty_file() {
+    // Test accept with empty file (no namespace, no elements)
+    let source = "";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.file_visits, 1, "Should still call visit_file");
+    assert_eq!(visitor.namespace_visits, 0, "Should not visit namespace");
+    assert_eq!(visitor.element_visits, 0, "Should not visit any elements");
+}
+
+#[test]
+fn test_sysmlfile_accept_with_namespace_and_elements() {
+    // Test accept with both namespace and elements
+    let source = "package Vehicles;\npart def Car;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.file_visits, 1);
+    assert_eq!(visitor.namespace_visits, 1);
+    // File-level package declaration creates a namespace declaration and may also create a Package element
+    assert!(
+        visitor.element_visits >= 1,
+        "Should visit at least one element (part def)"
+    );
+}
+
+#[test]
+fn test_sysmlfile_accept_with_mixed_elements() {
+    // Test accept with various element types
+    let source = r#"
+        import Base::*;
+        part def Vehicle;
+        part myCar;
+        alias MyAlias for Type;
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.file_visits, 1);
+    assert_eq!(
+        visitor.element_visits, 4,
+        "Should visit import, definition, usage, and alias"
+    );
+    assert_eq!(visitor.import_visits, 1);
+    assert_eq!(visitor.definition_visits, 1);
+    assert_eq!(visitor.usage_visits, 1);
+    assert_eq!(visitor.alias_visits, 1);
+}
+
+#[test]
+fn test_sysmlfile_accept_with_complex_nested_structure() {
+    // Test accept with nested packages and definitions
+    let source = r#"
+        package Vehicles {
+            import Base::*;
+            part def Car;
+            package Subsystem {
+                part def Engine;
+            }
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.file_visits, 1);
+    assert_eq!(
+        visitor.package_visits, 2,
+        "Should visit both outer and inner packages"
+    );
+    assert_eq!(
+        visitor.definition_visits, 2,
+        "Should visit both definitions"
+    );
+    assert_eq!(visitor.import_visits, 1);
+}
+
+#[test]
+fn test_sysmlfile_accept_visitor_receives_correct_data() {
+    // Test that visitor receives correct file data
+    struct FileChecker {
+        element_count: usize,
+        has_namespace: bool,
+    }
+
+    impl AstVisitor for FileChecker {
+        fn visit_file(&mut self, file: &SysMLFile) {
+            self.element_count = file.elements.len();
+            self.has_namespace = file.namespace.is_some();
+        }
+    }
+
+    let source = "package TestPkg;\npart def Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = FileChecker {
+        element_count: 0,
+        has_namespace: false,
+    };
+    file.accept(&mut visitor);
+
+    assert!(visitor.has_namespace, "Should detect namespace");
+    assert!(
+        visitor.element_count >= 1,
+        "Should count at least one element (part def)"
+    );
+}
+
+// ============================================================================
+// Tests for Definition::accept (Issue #164)
+// <syster::syntax::sysml::ast::types::Definition as syster::syntax::sysml::visitor::Visitable>::accept::<_>
+// ============================================================================
+
+#[test]
+fn test_definition_accept_calls_visit_definition() {
+    // Test that accept calls visit_definition
+    let source = "part def Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.definition_visits, 1,
+        "accept should call visit_definition"
+    );
+}
+
+#[test]
+fn test_definition_accept_with_multiple_definitions() {
+    // Test accept with multiple definitions
+    let source = "part def Car;\naction def Drive;\nrequirement def Safety;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.definition_visits, 3,
+        "Should visit all three definitions"
+    );
+}
+
+#[test]
+fn test_definition_accept_receives_correct_data() {
+    // Test that visitor receives correct definition data
+    struct DefinitionChecker {
+        definition_names: Vec<String>,
+    }
+
+    impl AstVisitor for DefinitionChecker {
+        fn visit_definition(&mut self, definition: &Definition) {
+            if let Some(ref name) = definition.name {
+                self.definition_names.push(name.clone());
+            }
+        }
+    }
+
+    let source = "part def Car;\naction def Drive;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = DefinitionChecker {
+        definition_names: Vec::new(),
+    };
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.definition_names.len(), 2);
+    assert!(visitor.definition_names.contains(&"Car".to_string()));
+    assert!(visitor.definition_names.contains(&"Drive".to_string()));
+}
+
+#[test]
+fn test_definition_accept_with_anonymous_definition() {
+    // Test accept with anonymous (unnamed) definition
+    let source = "part def;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.definition_visits, 1,
+        "Should visit anonymous definition"
+    );
+}
+
+#[test]
+fn test_definition_accept_all_definition_kinds() {
+    // Test accept with various definition kinds
+    let source = r#"
+        part def PartDef;
+        action def ActionDef;
+        requirement def ReqDef;
+        port def PortDef;
+        item def ItemDef;
+        attribute def AttrDef;
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.definition_visits, 6,
+        "Should visit all definition kinds"
+    );
+}
+
+#[test]
+fn test_definition_accept_nested_in_package() {
+    // Test that definitions nested in packages are visited
+    let source = r#"
+        package MyPackage {
+            part def Vehicle;
+            action def Drive;
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.definition_visits, 2,
+        "Should visit nested definitions"
+    );
+}
+
+#[test]
+fn test_definition_accept_with_specialization() {
+    // Test accept with definition that has specialization
+    let source = "part def Car :> Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.definition_visits, 1,
+        "Should visit definition with specialization"
+    );
+}
+
+// ============================================================================
+// Tests for Package::accept (Issue #163)
+// <syster::syntax::sysml::ast::types::Package as syster::syntax::sysml::visitor::Visitable>::accept::<_>
+// ============================================================================
+
+#[test]
+fn test_package_accept_calls_visit_package() {
+    // Test that accept calls visit_package
+    let source = "package TestPackage { }";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.package_visits, 1,
+        "accept should call visit_package"
+    );
+}
+
+#[test]
+fn test_package_accept_traverses_nested_elements() {
+    // Test that accept traverses nested elements in package
+    let source = r#"
+        package OuterPackage {
+            part def Car;
+            part def Truck;
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.package_visits, 1);
+    assert_eq!(
+        visitor.definition_visits, 2,
+        "Should traverse nested definitions"
+    );
+}
+
+#[test]
+fn test_package_accept_with_empty_body() {
+    // Test accept with empty package
+    let source = "package EmptyPackage { }";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.package_visits, 1);
+    assert_eq!(
+        visitor.definition_visits, 0,
+        "Should not visit any nested elements"
+    );
+}
+
+#[test]
+fn test_package_accept_with_nested_packages() {
+    // Test accept with nested packages
+    let source = r#"
+        package Outer {
+            package Inner1 { }
+            package Inner2 { }
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.package_visits, 3,
+        "Should visit outer and both inner packages"
+    );
+}
+
+#[test]
+fn test_package_accept_receives_correct_data() {
+    // Test that visitor receives correct package data
+    struct PackageChecker {
+        package_names: Vec<String>,
+    }
+
+    impl AstVisitor for PackageChecker {
+        fn visit_package(&mut self, package: &Package) {
+            if let Some(ref name) = package.name {
+                self.package_names.push(name.clone());
+            }
+        }
+    }
+
+    let source = "package First { }\npackage Second { }";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = PackageChecker {
+        package_names: Vec::new(),
+    };
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.package_names.len(), 2);
+    assert!(visitor.package_names.contains(&"First".to_string()));
+    assert!(visitor.package_names.contains(&"Second".to_string()));
+}
+
+#[test]
+fn test_package_accept_with_deeply_nested_structure() {
+    // Test accept with deeply nested packages
+    let source = r#"
+        package Level1 {
+            package Level2 {
+                part def Component;
+            }
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.package_visits, 2);
+    assert_eq!(visitor.definition_visits, 1);
+}
+
+#[test]
+fn test_package_accept_with_mixed_nested_elements() {
+    // Test accept with various nested element types
+    let source = r#"
+        package MyPackage {
+            import Base::*;
+            part def Vehicle;
+            part myCar;
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.package_visits, 1);
+    assert_eq!(visitor.import_visits, 1);
+    assert_eq!(visitor.definition_visits, 1);
+    // Part usages at top level inside package body are visited
+    assert_eq!(
+        visitor.usage_visits, 1,
+        "Should visit top-level usage in package"
+    );
+}
+
+// ============================================================================
+// Tests for Element::accept (Issue #160)
+// <syster::syntax::sysml::ast::enums::Element as syster::syntax::sysml::visitor::Visitable>::accept::<_>
+// ============================================================================
+
+#[test]
+fn test_element_accept_calls_visit_element() {
+    // Test that accept calls visit_element for all element types
+    let source = "part def Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(
+        visitor.element_visits, 1,
+        "accept should call visit_element"
+    );
+}
+
+#[test]
+fn test_element_accept_dispatches_to_package() {
+    // Test that Element::accept dispatches to Package::accept
+    let source = "package MyPackage { }";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.element_visits, 1);
+    assert_eq!(
+        visitor.package_visits, 1,
+        "Should dispatch to visit_package"
+    );
+}
+
+#[test]
+fn test_element_accept_dispatches_to_definition() {
+    // Test that Element::accept dispatches to Definition::accept
+    let source = "part def Vehicle;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.element_visits, 1);
+    assert_eq!(
+        visitor.definition_visits, 1,
+        "Should dispatch to visit_definition"
+    );
+}
+
+#[test]
+fn test_element_accept_dispatches_to_usage() {
+    // Test that Element::accept dispatches to Usage::accept
+    let source = "part myCar;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.element_visits, 1);
+    assert_eq!(visitor.usage_visits, 1, "Should dispatch to visit_usage");
+}
+
+#[test]
+fn test_element_accept_dispatches_to_import() {
+    // Test that Element::accept dispatches to Import::accept
+    let source = "import Package::*;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.element_visits, 1);
+    assert_eq!(visitor.import_visits, 1, "Should dispatch to visit_import");
+}
+
+#[test]
+fn test_element_accept_dispatches_to_alias() {
+    // Test that Element::accept dispatches to Alias::accept
+    let source = "alias MyAlias for SomeType;";
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.element_visits, 1);
+    assert_eq!(visitor.alias_visits, 1, "Should dispatch to visit_alias");
+}
+
+#[test]
+fn test_element_accept_with_mixed_element_types() {
+    // Test accept with multiple different element types
+    let source = r#"
+        import Base::*;
+        package MyPkg { }
+        part def Car;
+        part myCar;
+        alias MyAlias for Type;
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    assert_eq!(visitor.element_visits, 5, "Should visit all 5 elements");
+    assert_eq!(visitor.import_visits, 1);
+    assert_eq!(visitor.package_visits, 1);
+    assert_eq!(visitor.definition_visits, 1);
+    assert_eq!(visitor.usage_visits, 1);
+    assert_eq!(visitor.alias_visits, 1);
+}
+
+#[test]
+fn test_element_accept_dispatches_correctly_for_each_variant() {
+    // Test that each Element variant dispatches to correct visitor method
+    let test_cases = vec![
+        ("package Pkg { }", 1, 0, 0, 0, 0), // Package
+        ("part def Def;", 0, 1, 0, 0, 0),   // Definition
+        ("part usage;", 0, 0, 1, 0, 0),     // Usage
+        ("import Pkg::*;", 0, 0, 0, 1, 0),  // Import
+        ("alias A for B;", 0, 0, 0, 0, 1),  // Alias
+    ];
+
+    for (source, pkg, def, usage, import, alias) in test_cases {
+        let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+        let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+        let mut visitor = CountingVisitor::new();
+        file.accept(&mut visitor);
+
+        assert_eq!(visitor.package_visits, pkg, "Failed for: {}", source);
+        assert_eq!(visitor.definition_visits, def, "Failed for: {}", source);
+        assert_eq!(visitor.usage_visits, usage, "Failed for: {}", source);
+        assert_eq!(visitor.import_visits, import, "Failed for: {}", source);
+        assert_eq!(visitor.alias_visits, alias, "Failed for: {}", source);
+    }
+}
+
+#[test]
+fn test_element_accept_receives_correct_element_data() {
+    // Test that visit_element receives correct Element variant
+    struct ElementTypeChecker {
+        has_package: bool,
+        has_definition: bool,
+        has_usage: bool,
+        has_import: bool,
+        has_alias: bool,
+    }
+
+    impl AstVisitor for ElementTypeChecker {
+        fn visit_element(&mut self, element: &Element) {
+            match element {
+                Element::Package(_) => self.has_package = true,
+                Element::Definition(_) => self.has_definition = true,
+                Element::Usage(_) => self.has_usage = true,
+                Element::Import(_) => self.has_import = true,
+                Element::Alias(_) => self.has_alias = true,
+                Element::Comment(_) => {}
+            }
+        }
+    }
+
+    let source = r#"
+        package Pkg { }
+        part def Def;
+        part usage;
+        import Pkg::*;
+        alias A for B;
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = ElementTypeChecker {
+        has_package: false,
+        has_definition: false,
+        has_usage: false,
+        has_import: false,
+        has_alias: false,
+    };
+    file.accept(&mut visitor);
+
+    assert!(visitor.has_package, "Should detect package element");
+    assert!(visitor.has_definition, "Should detect definition element");
+    assert!(visitor.has_usage, "Should detect usage element");
+    assert!(visitor.has_import, "Should detect import element");
+    assert!(visitor.has_alias, "Should detect alias element");
+}
+
+#[test]
+fn test_element_accept_nested_elements_traversal() {
+    // Test that nested elements are properly traversed
+    let source = r#"
+        package Outer {
+            package Inner {
+                part def Vehicle;
+            }
+        }
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut visitor = CountingVisitor::new();
+    file.accept(&mut visitor);
+
+    // Outer package (1) + Inner package (1) + Definition (1) = 3 elements
+    assert_eq!(
+        visitor.element_visits, 3,
+        "Should visit all nested elements"
+    );
+    assert_eq!(visitor.package_visits, 2);
+    assert_eq!(visitor.definition_visits, 1);
+}
