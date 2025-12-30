@@ -26,3 +26,7 @@ mod tests;
 #[cfg(test)]
 #[path = "server/lsp_server_state_test.rs"]
 mod lsp_server_state_test;
+
+#[cfg(test)]
+#[path = "server/helpers_char_offset_to_byte_test.rs"]
+mod helpers_char_offset_to_byte_test;
