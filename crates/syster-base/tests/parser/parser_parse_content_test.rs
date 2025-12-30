@@ -137,8 +137,8 @@ fn test_parse_content_complex_structure() {
 }
 
 // ============================================================================
-// Tests for parse error handling - closure #1 (Issue #190)
-// These tests verify the first map_err closure that formats parse errors
+// Tests for parse error handling (parse_error map_err closure)
+// These tests verify the map_err closure that formats parse errors
 // ============================================================================
 
 #[test]
@@ -250,21 +250,18 @@ fn test_parse_content_error_with_special_chars_in_path() {
 // These tests verify the second map_err closure that formats AST errors
 // ============================================================================
 
-#[test]
-fn test_parse_content_ast_construction_notes() {
-    // Note: AST construction errors are difficult to trigger directly because
-    // the from_pest implementation usually handles most cases that parse correctly.
-    // The second closure formats AST errors as:
-    // |e| format!("AST error in {}: {:?}", path.display(), e)
-    //
-    // This would require content that:
-    // 1. Parses successfully by the Pest parser
-    // 2. Fails during AST construction (from_pest)
-    //
-    // Such cases are rare but could theoretically occur with malformed
-    // parse tree structures that don't match AST expectations.
-    // For comprehensive coverage, we've tested the parse error path extensively.
-}
+// Note: AST construction errors are difficult to trigger directly because
+// the from_pest implementation usually handles most cases that parse correctly.
+// The second closure formats AST errors as:
+// |e| format!("AST error in {}: {:?}", path.display(), e)
+//
+// This would require content that:
+// 1. Parses successfully by the Pest parser
+// 2. Fails during AST construction (from_pest)
+//
+// Such cases are rare but could theoretically occur with malformed
+// parse tree structures that don't match AST expectations.
+// For comprehensive coverage, we've tested the parse error path extensively.
 
 // ============================================================================
 // Edge case tests
@@ -396,16 +393,13 @@ fn test_parse_content_nested_packages() {
 #[test]
 fn test_parse_content_trailing_semicolon_only() {
     // Test with just a semicolon
+    // This should either succeed with empty elements or fail with a clear error.
+    // Either behavior is acceptable as long as it doesn't panic, and simply
+    // calling parse_content here will cause the test to fail if a panic occurs.
     let content = ";";
     let path = Path::new("semicolon.sysml");
 
-    let result = parse_content(content, path);
-    // This should either succeed with empty elements or fail with a clear error
-    // Either behavior is acceptable as long as it doesn't panic
-    assert!(
-        result.is_ok() || result.is_err(),
-        "Should handle standalone semicolon gracefully"
-    );
+    let _ = parse_content(content, path);
 }
 
 #[test]
