@@ -2896,7 +2896,10 @@ fn test_folding_ranges_attribute_def_with_body() {
     let path = std::path::Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Ranges may or may not exist depending on parser
+    // Verify ranges are valid if they exist
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
 }
 
 #[test]
@@ -3090,8 +3093,10 @@ fn test_folding_ranges_action_def() {
     let path = std::path::Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Action def with body should have folding range
-    // Ranges may or may not exist depending on parser
+    // Verify ranges are valid if they exist
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
 }
 
 #[test]
@@ -3112,8 +3117,10 @@ fn test_folding_ranges_requirement_def() {
     let path = std::path::Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Requirement def with body should have folding range
-    // Ranges may or may not exist depending on parser
+    // Verify ranges are valid if they exist
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
 }
 
 #[test]
@@ -3188,7 +3195,10 @@ fn test_folding_ranges_connection_def() {
     let path = std::path::Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Ranges may or may not exist depending on parser
+    // Verify ranges are valid if they exist
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
 }
 
 #[test]
@@ -3207,7 +3217,10 @@ fn test_folding_ranges_interface_def() {
     let path = std::path::Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Ranges may or may not exist depending on parser
+    // Verify ranges are valid if they exist
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
 }
 
 #[test]
@@ -3225,7 +3238,10 @@ fn test_folding_ranges_enumeration_def() {
     let path = std::path::Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Ranges may or may not exist depending on parser
+    // Verify ranges are valid if they exist
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
 }
 
 #[test]
