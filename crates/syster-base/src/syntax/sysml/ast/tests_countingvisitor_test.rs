@@ -812,7 +812,7 @@ fn test_visit_multiple_of_each_type() {
 fn test_visit_large_file() {
     // Test with a larger number of elements
     let mut elements = Vec::new();
-    
+
     // Add 10 packages
     for i in 0..10 {
         elements.push(Element::Package(Package {
@@ -821,7 +821,7 @@ fn test_visit_large_file() {
             span: None,
         }));
     }
-    
+
     // Add 15 definitions
     for i in 0..15 {
         elements.push(Element::Definition(Definition {
@@ -834,7 +834,7 @@ fn test_visit_large_file() {
             span: None,
         }));
     }
-    
+
     // Add 20 usages
     for i in 0..20 {
         elements.push(Element::Usage(Usage {
@@ -847,7 +847,7 @@ fn test_visit_large_file() {
             span: None,
         }));
     }
-    
+
     // Add 5 comments
     for i in 0..5 {
         elements.push(Element::Comment(Comment {
@@ -855,7 +855,7 @@ fn test_visit_large_file() {
             span: None,
         }));
     }
-    
+
     // Add 8 imports
     for i in 0..8 {
         elements.push(Element::Import(Import {
@@ -864,7 +864,7 @@ fn test_visit_large_file() {
             span: None,
         }));
     }
-    
+
     // Add 3 aliases
     for i in 0..3 {
         elements.push(Element::Alias(Alias {
