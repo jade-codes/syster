@@ -41,12 +41,7 @@ fn make_definition(
 }
 
 /// Helper to create a Usage with a span
-fn make_usage(
-    kind: UsageKind,
-    name: Option<String>,
-    body: Vec<UsageMember>,
-    span: Span,
-) -> Usage {
+fn make_usage(kind: UsageKind, name: Option<String>, body: Vec<UsageMember>, span: Span) -> Usage {
     let mut usage = Usage::new(kind, name, Relationships::default(), body);
     usage.span = Some(span);
     usage
@@ -81,7 +76,7 @@ fn test_kerml_nested_packages() {
     assert!(!ranges[0].is_comment);
     assert!(!ranges[1].is_comment);
     assert!(!ranges[2].is_comment);
-    
+
     // Verify sorting by start line
     assert!(ranges[0].span.start.line == 1);
     assert!(ranges[1].span.start.line == 2);
@@ -309,11 +304,11 @@ fn test_kerml_mixed_nesting_with_comments() {
 
     let ranges = extract_kerml_folding_ranges(&file);
     assert_eq!(ranges.len(), 7, "Should extract all foldable elements");
-    
+
     // Verify all comments are marked correctly
     let comment_count = ranges.iter().filter(|r| r.is_comment).count();
     assert_eq!(comment_count, 4, "Should have 4 comments");
-    
+
     // Verify sorting by start line
     for i in 1..ranges.len() {
         assert!(
@@ -385,7 +380,10 @@ fn test_kerml_multiple_comments_in_sequence() {
 
     let ranges = extract_kerml_folding_ranges(&file);
     assert_eq!(ranges.len(), 3, "All comments should be extracted");
-    assert!(ranges.iter().all(|r| r.is_comment), "All should be comments");
+    assert!(
+        ranges.iter().all(|r| r.is_comment),
+        "All should be comments"
+    );
 }
 
 #[test]
@@ -455,7 +453,7 @@ fn test_sysml_nested_packages() {
     assert!(!ranges[0].is_comment);
     assert!(!ranges[1].is_comment);
     assert!(!ranges[2].is_comment);
-    
+
     // Verify sorting by start line
     assert!(ranges[0].span.start.line == 1);
     assert!(ranges[1].span.start.line == 2);
@@ -688,11 +686,11 @@ fn test_sysml_mixed_nesting_with_comments() {
 
     let ranges = extract_sysml_folding_ranges(&file);
     assert_eq!(ranges.len(), 7, "Should extract all foldable elements");
-    
+
     // Verify all comments are marked correctly
     let comment_count = ranges.iter().filter(|r| r.is_comment).count();
     assert_eq!(comment_count, 4, "Should have 4 comments");
-    
+
     // Verify sorting by start line
     for i in 1..ranges.len() {
         assert!(
@@ -757,7 +755,10 @@ fn test_sysml_multiple_comments_in_sequence() {
 
     let ranges = extract_sysml_folding_ranges(&file);
     assert_eq!(ranges.len(), 3, "All comments should be extracted");
-    assert!(ranges.iter().all(|r| r.is_comment), "All should be comments");
+    assert!(
+        ranges.iter().all(|r| r.is_comment),
+        "All should be comments"
+    );
 }
 
 #[test]

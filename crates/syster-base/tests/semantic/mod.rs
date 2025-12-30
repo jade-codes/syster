@@ -1,8 +1,8 @@
 mod cross_file_tests;
 mod duplicate_symbol_test;
-mod folding_tests;
 #[cfg(test)]
 mod folding_extract_folding_ranges_test;
+mod folding_tests;
 mod import_tests;
 mod kerml_inlay_test;
 mod kerml_selection_test;
