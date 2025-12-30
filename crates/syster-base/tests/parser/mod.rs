@@ -1,3 +1,4 @@
+mod batch_2_test;
 mod constraint_tests;
 mod expression_tests;
 mod kerml_parser_test;
