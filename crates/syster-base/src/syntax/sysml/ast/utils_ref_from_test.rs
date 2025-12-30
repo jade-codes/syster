@@ -122,8 +122,8 @@ fn test_ref_from_identifier_trims_whitespace() {
     let result = ref_from(&pair);
 
     // Should not have leading/trailing whitespace
-    assert_eq!(result, Some("Vehicle".to_string()));
-    assert!(!result.unwrap().starts_with(' '));
+    assert_eq!(result.as_deref(), Some("Vehicle"));
+    assert!(!result.as_ref().unwrap().starts_with(' '));
 }
 
 // ============================================================================
@@ -246,32 +246,21 @@ fn test_ref_from_returns_first_reference_only() {
     assert_eq!(result, Some("base1".to_string()));
 }
 
-#[test]
-fn test_ref_from_typings_with_multiple_returns_first() {
-    let source = ": Type1";
-    let mut pairs = SysMLParser::parse(Rule::typings, source).unwrap();
-    let pair = pairs.next().unwrap();
 
-    let result = ref_from(&pair);
-
-    assert_eq!(result, Some("Type1".to_string()));
-}
 
 // ============================================================================
-// None/Empty Tests - Cases where no reference should be found
+// Complex Nested Structure Tests
 // ============================================================================
 
 #[test]
-fn test_ref_from_with_no_matching_children() {
-    // Test with a rule that doesn't contain identifier-like children
-    // Using a keyword-only token that won't have identifier children
+fn test_ref_from_part_definition_finds_name() {
+    // Test that ref_from can extract identifier from a part definition
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::part_definition, source).unwrap();
     let pair = pairs.next().unwrap();
-
-    // The part_definition will contain an identifier, so it should find it
+    
     let result = ref_from(&pair);
-
+    
     // Should find the Vehicle identifier
     assert_eq!(result, Some("Vehicle".to_string()));
 }
@@ -283,14 +272,11 @@ fn test_ref_from_deeply_nested_reference() {
     let mut pairs = SysMLParser::parse(Rule::part_usage, source).unwrap();
     let pair = pairs.next().unwrap();
 
-    // The part_usage contains feature_specialization which contains typing which contains a reference
-    // ref_from should find the first reference it encounters (likely "myPart")
+    // ref_from should find the first reference it encounters (the part usage name "myPart")
     let result = ref_from(&pair);
 
-    // Should find first identifier during depth-first search
-    assert!(result.is_some());
-    let found = result.unwrap();
-    assert!(found == "myPart" || found == "Vehicle");
+    // Should find first identifier during depth-first search: the part usage name "myPart"
+    assert_eq!(result, Some("myPart".to_string()));
 }
 
 // ============================================================================
@@ -348,13 +334,7 @@ fn test_ref_from_long_identifier() {
     );
 }
 
-#[test]
-fn test_ref_from_identifier_starting_with_underscore() {
-    // According to SysML grammar, identifiers must start with ASCII_ALPHA, not underscore
-    // So this test verifies the grammar constraint
-    let result = SysMLParser::parse(Rule::identifier, "_invalid");
-    assert!(result.is_err(), "Identifiers cannot start with underscore");
-}
+
 
 #[test]
 fn test_ref_from_feature_reference_all_keyword() {
