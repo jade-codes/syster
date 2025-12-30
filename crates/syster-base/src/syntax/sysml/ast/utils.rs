@@ -561,11 +561,11 @@ mod tests {
 
         let refs = all_refs_from(&pair);
 
-        // Should extract Type1 (from typing child), base1, base2 (from subsetting child), 
+        // Should extract Type1 (from typing child), base1, base2 (from subsetting child),
         // and redef1 (from redefinition child)
         // The exact count depends on how ref_from traverses the children
-        assert!(refs.len() >= 1, "Expected at least 1 ref, got {}", refs.len());
-        
+        assert!(!refs.is_empty(), "Expected at least 1 ref, got 0");
+
         // We should at least get the typing reference
         assert!(refs.iter().any(|r| r == "Type1"), "Should contain Type1");
     }
@@ -580,7 +580,7 @@ mod tests {
         let refs = all_refs_from(&pair);
 
         // all_refs_from looks at children, references rule has children that include the identifiers
-        assert!(refs.len() >= 1, "Expected at least 1 ref, got {}", refs.len());
+        assert!(!refs.is_empty(), "Expected at least 1 ref, got 0");
         // Should contain at least one of the references
         let has_ref = refs.iter().any(|r| r == "ref1" || r == "ref2");
         assert!(has_ref, "Should contain ref1 or ref2");
@@ -731,7 +731,10 @@ mod tests {
 
         let refs_with_spans = all_refs_with_spans_from(&pair);
 
-        assert!(refs_with_spans.len() >= 1, "Expected at least 1 ref with span");
+        assert!(
+            !refs_with_spans.is_empty(),
+            "Expected at least 1 ref with span"
+        );
 
         // Verify all have spans
         for (_, span_opt) in &refs_with_spans {
@@ -887,8 +890,11 @@ mod tests {
         let refs = all_refs_from(&pair);
 
         // Should find at least the typing (PartType)
-        assert!(refs.len() >= 1, "Expected at least 1 ref, got {}", refs.len());
-        assert!(refs.iter().any(|r| r == "PartType"), "Should contain PartType");
+        assert!(!refs.is_empty(), "Expected at least 1 ref, got 0");
+        assert!(
+            refs.iter().any(|r| r == "PartType"),
+            "Should contain PartType"
+        );
     }
 
     #[test]
