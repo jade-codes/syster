@@ -12,3 +12,6 @@ mod semantic_token_text_extraction_test;
 
 #[cfg(test)]
 mod semantic_token_collector_semantictokencollector_test;
+
+#[cfg(test)]
+mod semantic_token_collector_normalize_path_test;
