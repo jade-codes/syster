@@ -4,24 +4,13 @@
 //! The function `collect_package_spans` is a private helper that handles Package nodes
 //! in the AST, collecting spans that contain a given position.
 
-use syster::core::{Position, Span};
+use syster::core::Position;
 use syster::semantic::selection::find_sysml_selection_spans;
 use syster::syntax::sysml::ast::{
     Definition, DefinitionKind, Element, Package, Relationships, SysMLFile,
 };
 
-fn make_span(start_line: usize, start_col: usize, end_line: usize, end_col: usize) -> Span {
-    Span {
-        start: Position {
-            line: start_line,
-            column: start_col,
-        },
-        end: Position {
-            line: end_line,
-            column: end_col,
-        },
-    }
-}
+use super::test_utils::make_span;
 
 #[test]
 fn test_collect_package_spans_simple_package() {

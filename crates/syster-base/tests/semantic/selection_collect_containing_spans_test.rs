@@ -4,25 +4,14 @@
 //! The function `collect_containing_spans` is a private helper that dispatches to specific
 //! element handlers based on the element type, collecting spans that contain a given position.
 
-use syster::core::{Position, Span};
+use syster::core::Position;
 use syster::semantic::selection::find_sysml_selection_spans;
 use syster::syntax::sysml::ast::{
     Comment, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage,
     UsageKind,
 };
 
-fn make_span(start_line: usize, start_col: usize, end_line: usize, end_col: usize) -> Span {
-    Span {
-        start: Position {
-            line: start_line,
-            column: start_col,
-        },
-        end: Position {
-            line: end_line,
-            column: end_col,
-        },
-    }
-}
+use super::test_utils::make_span;
 
 #[test]
 fn test_collect_containing_spans_package_element() {

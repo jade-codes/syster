@@ -18,4 +18,5 @@ mod stdlib_symbols_test;
 mod sysml_graph_tests;
 mod sysml_parsing_tests;
 mod sysml_visitor_tests;
+mod test_utils;
 mod visitor_astvisitor_test;

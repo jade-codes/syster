@@ -4,25 +4,14 @@
 //! The function `collect_definition_spans` is a private helper that handles Definition nodes
 //! in the AST, collecting spans that contain a given position.
 
-use syster::core::{Position, Span};
+use syster::core::Position;
 use syster::semantic::selection::find_sysml_selection_spans;
 use syster::syntax::sysml::ast::{
     Comment, Definition, DefinitionKind, DefinitionMember, Element, Relationships, SysMLFile,
     Usage, UsageKind, UsageMember,
 };
 
-fn make_span(start_line: usize, start_col: usize, end_line: usize, end_col: usize) -> Span {
-    Span {
-        start: Position {
-            line: start_line,
-            column: start_col,
-        },
-        end: Position {
-            line: end_line,
-            column: end_col,
-        },
-    }
-}
+use super::test_utils::make_span;
 
 #[test]
 fn test_collect_definition_spans_simple_definition() {
