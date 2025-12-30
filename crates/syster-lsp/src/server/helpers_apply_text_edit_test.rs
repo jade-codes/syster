@@ -337,10 +337,7 @@ fn test_apply_text_edit_sysml_multiline_block() {
     // Replace entire attribute block
     let range = Range::new(Position::new(1, 4), Position::new(2, 32));
     let result = apply_text_edit(text, &range, "// Attributes removed").unwrap();
-    assert_eq!(
-        result,
-        "part def Vehicle {\n    // Attributes removed\n}"
-    );
+    assert_eq!(result, "part def Vehicle {\n    // Attributes removed\n}");
 }
 
 // ========================================================================
