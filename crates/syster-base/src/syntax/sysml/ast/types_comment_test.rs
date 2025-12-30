@@ -312,15 +312,18 @@ fn test_comment_visitable_with_span() {
 }
 
 // ============================================================================
-// CountingVisitor tests (Issue #167)
+// CommentCountingVisitor tests (Issue #167)
 // ============================================================================
 
-struct CountingVisitor {
+/// A visitor that counts comment visits and total visit calls.
+/// This is separate from the CountingVisitor in tests.rs which tracks all element types.
+/// We use a focused visitor here to specifically test comment visitor behavior.
+struct CommentCountingVisitor {
     comments: usize,
     total_visits: usize,
 }
 
-impl AstVisitor for CountingVisitor {
+impl AstVisitor for CommentCountingVisitor {
     fn visit_comment(&mut self, _comment: &Comment) {
         self.comments += 1;
         self.total_visits += 1;
@@ -338,7 +341,7 @@ fn test_comment_visitable_accept_counting_visitor() {
         span: None,
     };
 
-    let mut visitor = CountingVisitor {
+    let mut visitor = CommentCountingVisitor {
         comments: 0,
         total_visits: 0,
     };
@@ -367,7 +370,7 @@ fn test_comment_visitable_counting_multiple_comments() {
         span: None,
     };
 
-    let mut visitor = CountingVisitor {
+    let mut visitor = CommentCountingVisitor {
         comments: 0,
         total_visits: 0,
     };
@@ -388,7 +391,7 @@ fn test_comment_element_with_counting_visitor() {
     };
     let element = Element::Comment(comment);
 
-    let mut visitor = CountingVisitor {
+    let mut visitor = CommentCountingVisitor {
         comments: 0,
         total_visits: 0,
     };
@@ -405,7 +408,7 @@ fn test_comment_element_with_counting_visitor() {
 
 #[test]
 fn test_comment_counting_visitor_zero_initial() {
-    let visitor = CountingVisitor {
+    let visitor = CommentCountingVisitor {
         comments: 0,
         total_visits: 0,
     };
@@ -434,7 +437,7 @@ fn test_comment_in_file_with_counting_visitor() {
         elements: vec![Element::Comment(comment1), Element::Comment(comment2)],
     };
 
-    let mut visitor = CountingVisitor {
+    let mut visitor = CommentCountingVisitor {
         comments: 0,
         total_visits: 0,
     };
@@ -442,6 +445,10 @@ fn test_comment_in_file_with_counting_visitor() {
     file.accept(&mut visitor);
 
     assert_eq!(visitor.comments, 2, "Should count both comments in file");
+    assert_eq!(
+        visitor.total_visits, 4,
+        "Should count 2 element visits + 2 comment visits"
+    );
 }
 
 // ============================================================================
