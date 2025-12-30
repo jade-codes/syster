@@ -9,6 +9,8 @@ pub mod utils;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_countingvisitor_test;
+#[cfg(test)]
 mod utils_ref_from_test;
 
 pub use constants::*;
