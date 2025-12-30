@@ -819,10 +819,10 @@ fn test_literal_number_negative() {
     let literal_expression = create_literal_expression();
     let literal_num = LiteralNumber {
         literal_expression,
-        literal: -3.14,
+        literal: -25.5,
     };
     
-    assert_eq!(literal_num.literal, -3.14);
+    assert_eq!(literal_num.literal, -25.5);
 }
 
 #[test]
