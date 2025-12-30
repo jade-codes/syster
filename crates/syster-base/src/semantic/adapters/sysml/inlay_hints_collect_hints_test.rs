@@ -1389,8 +1389,8 @@ fn test_collect_usage_hints_with_explicit_type() {
     // Since myCar has explicit type ": Vehicle", no hint should be added
     let hints = extract_inlay_hints(&file, &symbol_table, None);
 
-    // Should not add redundant type hint for explicitly typed usage
-    assert!(hints.is_empty() || !hints.iter().any(|h| h.label.contains("Vehicle")));
+    // Should not add any hints for explicitly typed usage
+    assert!(hints.is_empty());
 }
 
 #[test]
@@ -1445,8 +1445,11 @@ fn test_collect_usage_hints_nested_usage() {
     // Should process nested usage (engine)
     let hints = extract_inlay_hints(&file, &symbol_table, None);
 
-    // Verify it doesn't crash on nested structure and can find nested hints
-    let _ = hints; // Use the result to ensure it was computed
+    // Should find hint for the nested usage
+    assert_eq!(hints.len(), 1);
+    assert!(hints[0].label.contains("Engine"));
+    // Verify hint is positioned at the nested usage
+    assert_eq!(hints[0].position.line, 4);
 }
 
 #[test]
@@ -1640,6 +1643,8 @@ fn test_collect_usage_hints_deeply_nested() {
     // Should recursively process all levels
     let hints = extract_inlay_hints(&file, &symbol_table, None);
 
-    // Verify it handles deep nesting without crashing
-    let _ = hints;
+    // Verify deeply nested structure is handled correctly
+    // All 4 levels should be processed without crashing
+    // Since none have types in symbol table, no hints expected
+    assert!(hints.is_empty());
 }
