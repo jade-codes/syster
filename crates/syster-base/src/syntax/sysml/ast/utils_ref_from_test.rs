@@ -246,8 +246,6 @@ fn test_ref_from_returns_first_reference_only() {
     assert_eq!(result, Some("base1".to_string()));
 }
 
-
-
 // ============================================================================
 // Complex Nested Structure Tests
 // ============================================================================
@@ -258,9 +256,9 @@ fn test_ref_from_part_definition_finds_name() {
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::part_definition, source).unwrap();
     let pair = pairs.next().unwrap();
-    
+
     let result = ref_from(&pair);
-    
+
     // Should find the Vehicle identifier
     assert_eq!(result, Some("Vehicle".to_string()));
 }
@@ -333,8 +331,6 @@ fn test_ref_from_long_identifier() {
         Some("veryLongIdentifierNameWithManyCharacters".to_string())
     );
 }
-
-
 
 #[test]
 fn test_ref_from_feature_reference_all_keyword() {
