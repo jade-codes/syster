@@ -17,6 +17,8 @@ mod types_import_test;
 #[cfg(test)]
 mod types_namespacedeclaration_test;
 #[cfg(test)]
+mod types_usage_test;
+#[cfg(test)]
 mod utils_all_refs_from_test;
 #[cfg(test)]
 mod utils_ref_from_test;
