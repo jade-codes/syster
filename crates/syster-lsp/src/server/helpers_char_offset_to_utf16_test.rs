@@ -550,22 +550,14 @@ fn test_newline_characters() {
 #[test]
 fn test_consistency_with_string_encode_utf16() {
     // Verify our function matches Rust's built-in UTF-16 encoding
-    let test_cases = vec![
-        "hello",
-        "café",
-        "你好",
-        "😀😁",
-        "test 😀 123",
-        "a€é😀b",
-    ];
+    let test_cases = vec!["hello", "café", "你好", "😀😁", "test 😀 123", "a€é😀b"];
 
     for line in test_cases {
         let char_count = line.chars().count();
         let our_result = char_offset_to_utf16(line, char_count);
         let rust_result = line.encode_utf16().count();
         assert_eq!(
-            our_result as usize,
-            rust_result,
+            our_result as usize, rust_result,
             "Mismatch for line: {line}"
         );
     }
@@ -574,18 +566,16 @@ fn test_consistency_with_string_encode_utf16() {
 #[test]
 fn test_partial_string_utf16_encoding() {
     let line = "Hello 😀 World 🚀!";
-    
+
     // Test various offsets match Rust's UTF-16 encoding
     for char_offset in 0..=line.chars().count() {
         let our_result = char_offset_to_utf16(line, char_offset);
         let partial: String = line.chars().take(char_offset).collect();
         let rust_result = partial.encode_utf16().count();
         assert_eq!(
-            our_result as usize,
-            rust_result,
+            our_result as usize, rust_result,
             "Mismatch at offset {} for line: {}",
-            char_offset,
-            line
+            char_offset, line
         );
     }
 }
