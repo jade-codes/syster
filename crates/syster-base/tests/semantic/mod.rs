@@ -1,4 +1,5 @@
 mod cross_file_tests;
+mod diagnostic_test;
 mod duplicate_symbol_test;
 #[cfg(test)]
 mod folding_extract_folding_ranges_test;
