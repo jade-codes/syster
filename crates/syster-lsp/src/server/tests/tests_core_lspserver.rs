@@ -928,3 +928,764 @@ fn test_inlay_hints_parameter_hints() {
 
     server.get_inlay_hints(&params);
 }
+
+// ============================================================================
+// Additional comprehensive tests for folding ranges (#551-560)
+// ============================================================================
+
+#[test]
+fn test_folding_ranges_kerml_file() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.kerml").unwrap();
+    let text = r#"class Vehicle {
+    feature weight : Real;
+    feature speed : Real;
+}"#;
+
+    // KerML files not yet fully supported, so we expect an error
+    let result = server.open_document(&uri, text);
+    if result.is_err() {
+        // Expected - KerML not fully supported yet
+        return;
+    }
+
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Should handle KerML files gracefully if opened
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
+}
+
+#[test]
+fn test_folding_ranges_only_comments() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"/* This is a
+   multi-line comment
+   block */
+// Single line comment"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Should handle comment-only files
+    if !ranges.is_empty() {
+        let has_comment = ranges
+            .iter()
+            .any(|r| r.kind == Some(FoldingRangeKind::Comment));
+        // If there are ranges in comment-only file, they should be comments
+        assert!(
+            has_comment || ranges.is_empty(),
+            "Comment-only file should have comment ranges if any"
+        );
+    }
+}
+
+#[test]
+fn test_folding_ranges_mixed_kerml_sysml_syntax() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Mixed {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+    class Engine {
+        feature power : Real;
+    }
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Should handle mixed syntax
+    for i in 1..ranges.len() {
+        assert!(ranges[i].start_line >= ranges[i - 1].start_line);
+    }
+}
+
+#[test]
+fn test_folding_ranges_comment_validity() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"/* Block comment
+   line 2
+   line 3 */
+package Test {
+    // Inline comment
+    part def Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Test that comment ranges have valid line numbers
+    let comment_ranges: Vec<_> = ranges
+        .iter()
+        .filter(|r| r.kind == Some(FoldingRangeKind::Comment))
+        .collect();
+
+    // Verify comment ranges have proper structure
+    for range in comment_ranges {
+        assert!(range.end_line >= range.start_line);
+    }
+}
+
+#[test]
+fn test_folding_ranges_has_region_kinds() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package TestPkg {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Test that region ranges exist for non-comments
+    let region_ranges: Vec<_> = ranges
+        .iter()
+        .filter(|r| r.kind == Some(FoldingRangeKind::Region))
+        .collect();
+
+    // Should have region ranges for packages and elements
+    if !ranges.is_empty() {
+        assert!(
+            !region_ranges.is_empty(),
+            "Should have region ranges for packages/elements"
+        );
+    }
+}
+
+#[test]
+fn test_folding_ranges_deeply_nested_packages() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Level1 {
+    package Level2 {
+        package Level3 {
+            package Level4 {
+                part def Vehicle;
+            }
+        }
+    }
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Should handle deeply nested structures
+    // Note: folding ranges depend on implementation and parser
+    // Verify that function doesn't crash and returns valid data
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
+}
+
+#[test]
+fn test_folding_ranges_line_boundaries() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def A;
+}
+package Test2 {
+    part def B;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Verify ranges don't overlap incorrectly
+    for i in 0..ranges.len() {
+        for j in (i + 1)..ranges.len() {
+            let r1 = &ranges[i];
+            let r2 = &ranges[j];
+
+            // If ranges overlap, one must contain the other (nested)
+            let overlap = r1.start_line <= r2.end_line && r2.start_line <= r1.end_line;
+            if overlap {
+                let r1_contains_r2 = r1.start_line <= r2.start_line && r1.end_line >= r2.end_line;
+                let r2_contains_r1 = r2.start_line <= r1.start_line && r2.end_line >= r1.end_line;
+                assert!(
+                    r1_contains_r2 || r2_contains_r1,
+                    "Overlapping ranges must be properly nested"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn test_folding_ranges_sort_stability() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package A { part def X; }
+package B { part def Y; }
+package C { part def Z; }"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Verify sorting by start line is correct
+    for i in 1..ranges.len() {
+        assert!(
+            ranges[i].start_line >= ranges[i - 1].start_line,
+            "Ranges must be sorted by start line"
+        );
+    }
+}
+
+#[test]
+fn test_folding_ranges_with_attributes() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle {
+        attribute weight : Real;
+        attribute speed : Real;
+        attribute color : String;
+    }
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let ranges = server.get_folding_ranges(path);
+
+    // Should handle attributes without crashing
+    // Folding ranges depend on implementation
+    for range in &ranges {
+        assert!(range.end_line >= range.start_line);
+    }
+}
+
+// ============================================================================
+// Additional comprehensive tests for inlay hints (#545-550)
+// ============================================================================
+
+#[test]
+fn test_inlay_hints_multiple_files() {
+    let mut server = LspServer::new();
+    let uri1 = Url::parse("file:///test1.sysml").unwrap();
+    let uri2 = Url::parse("file:///test2.sysml").unwrap();
+    let text1 = r#"package Test {
+    part def Vehicle;
+    part car : Vehicle;
+}"#;
+    let text2 = r#"package Different {
+    part def Truck;
+    part myTruck : Truck;
+}"#;
+
+    server.open_document(&uri1, text1).unwrap();
+    server.open_document(&uri2, text2).unwrap();
+
+    let params1 = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri1 },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(3, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let params2 = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri2 },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(3, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints1 = server.get_inlay_hints(&params1);
+    let hints2 = server.get_inlay_hints(&params2);
+
+    // Both files should be handled independently - verify hints are returned for both
+    // and they don't interfere with each other
+    for hint in &hints1 {
+        assert!(hint.kind.is_some(), "File 1 hints should have kinds");
+    }
+    for hint in &hints2 {
+        assert!(hint.kind.is_some(), "File 2 hints should have kinds");
+    }
+}
+
+#[test]
+fn test_inlay_hints_zero_width_range() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(1, 5),
+            end: Position::new(1, 5),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = server.get_inlay_hints(&params);
+
+    // Zero-width range should be handled gracefully
+    for hint in &hints {
+        assert!(hint.kind.is_some());
+    }
+}
+
+#[test]
+fn test_inlay_hints_multiline_range() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle {
+        attribute weight : Real;
+        attribute speed : Real;
+    }
+    part car : Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(6, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = server.get_inlay_hints(&params);
+
+    // Should handle multiline ranges
+    for hint in &hints {
+        assert!(hint.position.line <= 6);
+    }
+}
+
+#[test]
+fn test_inlay_hints_kind_assignment() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+    part myCar : Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(5, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = server.get_inlay_hints(&params);
+
+    // All hints should have a kind assigned
+    for hint in &hints {
+        assert!(hint.kind.is_some(), "All hints should have a kind");
+        let kind = hint.kind.unwrap();
+        assert!(
+            kind == InlayHintKind::TYPE || kind == InlayHintKind::PARAMETER,
+            "Kind should be TYPE or PARAMETER"
+        );
+    }
+}
+
+#[test]
+fn test_inlay_hints_position_accuracy() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part car : Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(2, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = server.get_inlay_hints(&params);
+
+    // Compute maximum line length in the document to validate character positions
+    let max_line_length: u32 = text
+        .lines()
+        .map(|line| line.len() as u32)
+        .max()
+        .unwrap_or(0);
+
+    // Verify positions are within document bounds
+    for hint in &hints {
+        assert!(hint.position.line <= 2, "Position should be within range");
+        assert!(
+            hint.position.character <= max_line_length,
+            "Character should be within line length bounds"
+        );
+    }
+}
+
+#[test]
+fn test_inlay_hints_label_format() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle;
+    part car : Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+
+    let params = InlayHintParams {
+        text_document: TextDocumentIdentifier { uri: uri.clone() },
+        range: Range {
+            start: Position::new(0, 0),
+            end: Position::new(3, 0),
+        },
+        work_done_progress_params: Default::default(),
+    };
+
+    let hints = server.get_inlay_hints(&params);
+
+    // Verify label format
+    for hint in &hints {
+        match &hint.label {
+            InlayHintLabel::String(s) => {
+                assert!(!s.is_empty(), "String labels should not be empty");
+            }
+            InlayHintLabel::LabelParts(parts) => {
+                assert!(!parts.is_empty(), "Label parts should not be empty");
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Additional comprehensive tests for selection ranges (#535-544)
+// ============================================================================
+
+#[test]
+fn test_selection_ranges_at_line_start() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![Position::new(0, 0), Position::new(1, 0)];
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 2, "Should return two ranges");
+    for range in &ranges {
+        assert!(range.range.start.line <= range.range.end.line);
+    }
+}
+
+#[test]
+fn test_selection_ranges_at_line_end() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    // Position 17 is at the semicolon - testing positions at element boundaries
+    let positions = vec![Position::new(0, 17)];
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 1);
+    assert!(ranges[0].range.end.character >= ranges[0].range.start.character);
+}
+
+#[test]
+fn test_selection_ranges_default_range_validity() {
+    let server = LspServer::new();
+    let path = Path::new("/nonexistent.sysml");
+    let positions = vec![Position::new(5, 10), Position::new(10, 20)];
+    let positions_copy = positions.clone();
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 2);
+    for (i, range) in ranges.iter().enumerate() {
+        // Default range should be single character at position
+        assert_eq!(
+            range.range.start, positions_copy[i],
+            "Default range should start at requested position"
+        );
+        assert_eq!(
+            range.range.end.character,
+            positions_copy[i].character + 1,
+            "Default range should be single character"
+        );
+        assert!(
+            range.parent.is_none(),
+            "Default range should have no parent"
+        );
+    }
+}
+
+#[test]
+fn test_selection_ranges_build_chain_single_span() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def V;";
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![Position::new(0, 10)];
+    let positions_copy = positions.clone();
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 1);
+
+    // Verify that the built selection range chain is well-formed for a single-span document.
+    let requested_pos = positions_copy[0];
+    let mut current = Some(&ranges[0]);
+    let mut prev_range: Option<Range> = None;
+    let mut depth = 0;
+
+    while let Some(sel_range) = current {
+        // Guard against cycles in the parent chain.
+        depth += 1;
+        assert!(
+            depth < 16,
+            "Selection range parent chain is unexpectedly deep or cyclic"
+        );
+
+        let range = sel_range.range;
+
+        // Range must contain the requested position.
+        let starts_before_or_at_pos = range.start.line < requested_pos.line
+            || (range.start.line == requested_pos.line
+                && range.start.character <= requested_pos.character);
+        let ends_after_or_at_pos = range.end.line > requested_pos.line
+            || (range.end.line == requested_pos.line
+                && range.end.character >= requested_pos.character);
+        assert!(
+            starts_before_or_at_pos && ends_after_or_at_pos,
+            "Each selection range in the chain should contain the requested position"
+        );
+
+        if let Some(prev) = prev_range {
+            // Parent ranges (walking up the chain) should be no smaller than their children.
+            assert!(
+                range.start.line <= prev.start.line,
+                "Parent should start before or at child"
+            );
+            assert!(
+                range.end.line >= prev.end.line,
+                "Parent should end after or at child"
+            );
+        }
+
+        prev_range = Some(range);
+        current = sel_range.parent.as_ref().map(|b| b.as_ref());
+    }
+
+    // Single element may or may not have parent depending on AST structure, but
+    // the chain must be finite and each element must contain the requested position.
+}
+
+#[test]
+fn test_selection_ranges_build_chain_ordering() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Outer {
+    package Middle {
+        package Inner {
+            part def Vehicle;
+        }
+    }
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![Position::new(3, 22)]; // On "Vehicle"
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 1);
+
+    // Walk the chain and verify proper nesting
+    let mut current = Some(&ranges[0]);
+    let mut prev_range: Option<Range> = None;
+
+    while let Some(sel_range) = current {
+        if let Some(prev) = prev_range {
+            // Current parent should contain previous child
+            assert!(
+                sel_range.range.start.line <= prev.start.line,
+                "Parent should start before or at child"
+            );
+            assert!(
+                sel_range.range.end.line >= prev.end.line,
+                "Parent should end after or at child"
+            );
+        }
+        prev_range = Some(sel_range.range);
+        current = sel_range.parent.as_ref().map(|b| b.as_ref());
+    }
+}
+
+#[test]
+fn test_selection_ranges_multiple_positions_independence() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def A;
+    part def B;
+    part def C;
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![
+        Position::new(1, 14),
+        Position::new(2, 14),
+        Position::new(3, 14),
+    ];
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 3);
+
+    // Each position should get its own independent chain rooted at its line
+    assert_eq!(
+        ranges[0].range.start.line, 1,
+        "First selection range should correspond to line 1 (part def A)"
+    );
+    assert_eq!(
+        ranges[1].range.start.line, 2,
+        "Second selection range should correspond to line 2 (part def B)"
+    );
+    assert_eq!(
+        ranges[2].range.start.line, 3,
+        "Third selection range should correspond to line 3 (part def C)"
+    );
+}
+
+#[test]
+fn test_selection_ranges_chain_parent_exists() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = r#"package Test {
+    part def Vehicle {
+        attribute weight : Real;
+    }
+}"#;
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![Position::new(2, 20)]; // Inside attribute
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 1);
+
+    // Nested structure should have parent chain
+    let has_parent = ranges[0].parent.is_some();
+    if has_parent {
+        // If there's a parent, verify it's larger
+        let child = &ranges[0];
+        let parent = child.parent.as_ref().unwrap();
+
+        assert!(
+            parent.range.start.line <= child.range.start.line,
+            "Parent should start before or at child"
+        );
+        assert!(
+            parent.range.end.line >= child.range.end.line,
+            "Parent should end after or at child"
+        );
+    }
+}
+
+#[test]
+fn test_selection_ranges_empty_positions_vec() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![];
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert!(
+        ranges.is_empty(),
+        "Empty positions should return empty ranges"
+    );
+}
+
+#[test]
+fn test_selection_ranges_same_position_multiple_times() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![
+        Position::new(0, 10),
+        Position::new(0, 10),
+        Position::new(0, 10),
+    ];
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(
+        ranges.len(),
+        3,
+        "Should return range for each position even if duplicates"
+    );
+}
+
+#[test]
+fn test_selection_ranges_ascii_positions() {
+    let mut server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+    let text = "part def Vehicle;";
+
+    server.open_document(&uri, text).unwrap();
+    let path = Path::new(uri.path());
+    let positions = vec![Position::new(0, 9)];
+
+    let ranges = server.get_selection_ranges(path, positions);
+
+    assert_eq!(ranges.len(), 1);
+    assert!(ranges[0].range.start.line <= ranges[0].range.end.line);
+}
