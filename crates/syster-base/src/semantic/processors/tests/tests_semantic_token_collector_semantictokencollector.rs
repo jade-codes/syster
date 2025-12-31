@@ -636,3 +636,102 @@ fn test_token_ordering_and_deduplication() {
         );
     }
 }
+
+// ============================================================================
+// Additional tests for full code coverage
+// ============================================================================
+
+#[test]
+fn test_classifier_member_with_specialization() {
+    // Test ClassifierMember::Specialization variant
+    let source = r#"package Test {
+    class Base;
+    class Derived specializes Base;
+}"#;
+
+    let workspace = create_kerml_workspace(source, "test.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    // Specialization should not produce type reference tokens from extract_type_refs_from_classifier_member
+    // Just verify no crash
+    assert!(!tokens.is_empty(), "Should have tokens for classes");
+}
+
+#[test]
+fn test_classifier_member_with_import() {
+    // Test ClassifierMember::Import variant
+    let source = r#"package Test {
+    classifier MyClassifier {
+        import ScalarValues::*;
+    }
+}"#;
+
+    let workspace = create_kerml_workspace(source, "test.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    // Import inside classifier should not produce type reference tokens from extract_type_refs_from_classifier_member
+    // Just verify no crash
+    assert!(!tokens.is_empty(), "Should have tokens");
+}
+
+#[test]
+fn test_classifier_member_comment() {
+    // Test ClassifierMember::Comment variant explicitly
+    let source = r#"classifier MyClassifier {
+    // This is a comment inside a classifier
+    /* Block comment */
+}"#;
+
+    let workspace = create_kerml_workspace(source, "test.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    // Comments should not produce type reference tokens
+    assert!(!tokens.is_empty(), "Should have tokens for classifier");
+}
+
+#[test]
+fn test_def_member_comment_variant() {
+    // Explicitly test DefinitionMember::Comment variant (non-Usage)
+    let source = r#"package Test {
+    part def MyDef {
+        // Comment in definition body
+    }
+}"#;
+
+    let workspace = create_sysml_workspace(source, "test.sysml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Comments in definition body should not crash
+    assert!(
+        !tokens.is_empty(),
+        "Should have tokens for package and definition"
+    );
+}
+
+#[test]
+fn test_usage_member_nested_recursion() {
+    // Test that UsageMember::Usage actually gets handled by the parent function recursion
+    let source = r#"package Test {
+    part def Container {
+        part inner {
+            part deeplyNested {
+                attribute value: Real;
+            }
+        }
+    }
+}"#;
+
+    let workspace = create_sysml_workspace(source, "test.sysml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Should extract type token from deeply nested usage
+    let type_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Type)
+        .collect();
+
+    assert!(
+        !type_tokens.is_empty(),
+        "Should have type token from nested usage"
+    );
+}
