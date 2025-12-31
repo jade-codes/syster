@@ -1538,3 +1538,91 @@ fn test_multi_file_update_isolation() {
     assert!(dog_spec.is_some());
     assert_eq!(dog_spec.unwrap()[0], "Animal");
 }
+
+// =============================================================================
+// Tests for cross-language (SysML <-> KerML) relationships
+// =============================================================================
+
+/// Test that SysML definitions can reference KerML types in relationships
+#[test]
+fn test_cross_language_sysml_specializes_kerml() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+
+    // KerML file defining NumericalVectorValue
+    let kerml_path = PathBuf::from("VectorValues.kerml");
+    let kerml_source = r#"
+        standard library package VectorValues {
+            datatype VectorValue;
+            datatype NumericalVectorValue :> VectorValue;
+        }
+    "#;
+    let kerml_result = syster::project::file_loader::parse_with_result(kerml_source, &kerml_path);
+    workspace.add_file(kerml_path.clone(), kerml_result.content.unwrap());
+
+    // SysML file using NumericalVectorValue
+    let sysml_path = PathBuf::from("Quantities.sysml");
+    let sysml_source = r#"
+        package Quantities {
+            import VectorValues::*;
+            attribute def VectorQuantityValue :> NumericalVectorValue;
+        }
+    "#;
+    let sysml_result = syster::project::file_loader::parse_with_result(sysml_source, &sysml_path);
+    workspace.add_file(sysml_path.clone(), sysml_result.content.unwrap());
+
+    workspace.populate_all().expect("Failed to populate");
+
+    // Debug: print all symbols
+    println!("All symbols:");
+    for (name, symbol) in workspace.symbol_table().all_symbols() {
+        println!("  {} -> {}", name, symbol.qualified_name());
+    }
+
+    // lookup() is scope-aware, use resolve() for cross-scope lookups
+    // In the SysML file with "import VectorValues::*", NumericalVectorValue should be visible
+    // But lookup() only searches current scope chain, not through imports for other files
+
+    // Use qualified name lookup instead
+    let symbol = workspace
+        .symbol_table()
+        .lookup_qualified("VectorValues::NumericalVectorValue");
+    println!(
+        "VectorValues::NumericalVectorValue lookup: {:?}",
+        symbol.map(|s| s.qualified_name())
+    );
+    assert!(
+        symbol.is_some(),
+        "VectorValues::NumericalVectorValue should be found"
+    );
+
+    // Check relationships for NumericalVectorValue (using qualified name)
+    let rels_qname = workspace
+        .relationship_graph()
+        .get_all_relationships("VectorValues::NumericalVectorValue");
+    println!(
+        "VectorValues::NumericalVectorValue relationships: {:?}",
+        rels_qname
+    );
+
+    // Check what VectorQuantityValue specializes
+    let vqv_rels = workspace
+        .relationship_graph()
+        .get_one_to_many(REL_SPECIALIZATION, "Quantities::VectorQuantityValue");
+    println!("VectorQuantityValue specializes: {:?}", vqv_rels);
+
+    // The SysML type should specialize the KerML type
+    assert!(
+        vqv_rels.is_some(),
+        "VectorQuantityValue should have specialization relationship"
+    );
+    let targets = vqv_rels.unwrap();
+    assert!(
+        targets.iter().any(|t| t.contains("NumericalVectorValue")),
+        "VectorQuantityValue should specialize NumericalVectorValue, got: {:?}",
+        targets
+    );
+}
