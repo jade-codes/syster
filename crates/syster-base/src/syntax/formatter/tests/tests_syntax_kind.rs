@@ -1,13 +1,14 @@
 #![allow(clippy::unwrap_used)]
 
+use crate::syntax::formatter::syntax_kind::{SyntaxKind, SysMLLanguage};
 use crate::syntax::formatter::{FormatOptions, format_async};
 use tokio_util::sync::CancellationToken;
 
 // ============================================================================
-// Tests for SysMLLanguage::kind_to_raw (#420)
+// Tests for SysMLLanguage::kind_to_raw and kind_from_raw (#532, #533)
 // ============================================================================
-// Note: kind_to_raw is a private implementation detail of the rowan::Language trait.
-// We test it indirectly through the public formatter API which uses it internally.
+// These tests verify the trait implementation of rowan::Language for SysMLLanguage.
+// We test both the conversion functions and their usage through the formatter API.
 
 #[test]
 fn test_kind_to_raw_via_formatter_simple_package() {
@@ -64,4 +65,336 @@ fn test_kind_to_raw_via_formatter_with_cancellation() {
     cancel.cancel();
     let result = format_async(source, &FormatOptions::default(), &cancel);
     assert!(result.is_none());
+}
+
+// ============================================================================
+// Direct tests for kind_to_raw and kind_from_raw (#532, #533)
+// ============================================================================
+
+/// Test round-trip conversion for trivia tokens
+#[test]
+fn test_roundtrip_trivia_tokens() {
+    let trivia_kinds = [
+        SyntaxKind::Whitespace,
+        SyntaxKind::LineComment,
+        SyntaxKind::BlockComment,
+    ];
+
+    for kind in trivia_kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for literal tokens
+#[test]
+fn test_roundtrip_literal_tokens() {
+    let literal_kinds = [
+        SyntaxKind::Identifier,
+        SyntaxKind::Number,
+        SyntaxKind::String,
+    ];
+
+    for kind in literal_kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for punctuation tokens
+#[test]
+fn test_roundtrip_punctuation_tokens() {
+    let punctuation_kinds = [
+        SyntaxKind::LBrace,
+        SyntaxKind::RBrace,
+        SyntaxKind::LBracket,
+        SyntaxKind::RBracket,
+        SyntaxKind::LParen,
+        SyntaxKind::RParen,
+        SyntaxKind::Semicolon,
+        SyntaxKind::Colon,
+        SyntaxKind::ColonColon,
+        SyntaxKind::Dot,
+        SyntaxKind::Comma,
+        SyntaxKind::Eq,
+        SyntaxKind::EqEq,
+        SyntaxKind::NotEq,
+        SyntaxKind::Lt,
+        SyntaxKind::Gt,
+        SyntaxKind::LtEq,
+        SyntaxKind::GtEq,
+        SyntaxKind::Arrow,
+        SyntaxKind::At,
+        SyntaxKind::Star,
+        SyntaxKind::Plus,
+        SyntaxKind::Minus,
+        SyntaxKind::Slash,
+        SyntaxKind::Percent,
+        SyntaxKind::Caret,
+        SyntaxKind::Tilde,
+        SyntaxKind::Question,
+        SyntaxKind::Bang,
+        SyntaxKind::Pipe,
+        SyntaxKind::Ampersand,
+        SyntaxKind::Hash,
+    ];
+
+    for kind in punctuation_kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for common SysML keywords
+#[test]
+fn test_roundtrip_sysml_keywords() {
+    let sysml_keywords = [
+        SyntaxKind::PackageKw,
+        SyntaxKind::PartKw,
+        SyntaxKind::DefKw,
+        SyntaxKind::ImportKw,
+        SyntaxKind::AttributeKw,
+        SyntaxKind::PortKw,
+        SyntaxKind::ItemKw,
+        SyntaxKind::ActionKw,
+        SyntaxKind::StateKw,
+        SyntaxKind::RequirementKw,
+        SyntaxKind::ConstraintKw,
+        SyntaxKind::ConnectionKw,
+        SyntaxKind::AllocationKw,
+        SyntaxKind::InterfaceKw,
+        SyntaxKind::FlowKw,
+        SyntaxKind::UseCaseKw,
+        SyntaxKind::ViewKw,
+        SyntaxKind::ViewpointKw,
+        SyntaxKind::RenderingKw,
+        SyntaxKind::MetadataKw,
+    ];
+
+    for kind in sysml_keywords {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for SysML modifier keywords
+#[test]
+fn test_roundtrip_sysml_modifier_keywords() {
+    let modifier_keywords = [
+        SyntaxKind::AbstractKw,
+        SyntaxKind::RefKw,
+        SyntaxKind::ReadonlyKw,
+        SyntaxKind::DerivedKw,
+        SyntaxKind::InKw,
+        SyntaxKind::OutKw,
+        SyntaxKind::InoutKw,
+        SyntaxKind::PrivateKw,
+        SyntaxKind::ProtectedKw,
+        SyntaxKind::PublicKw,
+    ];
+
+    for kind in modifier_keywords {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for SysML relationship keywords
+#[test]
+fn test_roundtrip_sysml_relationship_keywords() {
+    let relationship_keywords = [
+        SyntaxKind::SpecializesKw,
+        SyntaxKind::SubsetsKw,
+        SyntaxKind::RedefinesKw,
+        SyntaxKind::TypedByKw,
+        SyntaxKind::ReferencesKw,
+    ];
+
+    for kind in relationship_keywords {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for KerML keywords
+#[test]
+fn test_roundtrip_kerml_keywords() {
+    let kerml_keywords = [
+        SyntaxKind::StructKw,
+        SyntaxKind::ClassKw,
+        SyntaxKind::DataTypeKw,
+        SyntaxKind::AssocKw,
+        SyntaxKind::BehaviorKw,
+        SyntaxKind::FunctionKw,
+        SyntaxKind::TypeKw,
+        SyntaxKind::FeatureKw,
+        SyntaxKind::StepKw,
+        SyntaxKind::ExprKw,
+        SyntaxKind::BindingKw,
+        SyntaxKind::SuccessionKw,
+        SyntaxKind::ConnectorKw,
+        SyntaxKind::InvKw,
+        SyntaxKind::NonuniqueKw,
+        SyntaxKind::OrderedKw,
+        SyntaxKind::UnorderedKw,
+    ];
+
+    for kind in kerml_keywords {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for composite node kinds
+#[test]
+fn test_roundtrip_composite_nodes() {
+    let composite_kinds = [
+        SyntaxKind::SourceFile,
+        SyntaxKind::Package,
+        SyntaxKind::Definition,
+        SyntaxKind::Usage,
+        SyntaxKind::Import,
+        SyntaxKind::Alias,
+        SyntaxKind::Annotation,
+        SyntaxKind::Name,
+        SyntaxKind::Body,
+        SyntaxKind::Relationship,
+    ];
+
+    for kind in composite_kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip conversion for special tokens
+#[test]
+fn test_roundtrip_special_tokens() {
+    let special_kinds = [SyntaxKind::Error, SyntaxKind::Eof];
+
+    for kind in special_kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test that kind_to_raw produces unique raw values for different kinds
+#[test]
+fn test_kind_to_raw_uniqueness() {
+    let kinds = [
+        SyntaxKind::Whitespace,
+        SyntaxKind::PackageKw,
+        SyntaxKind::PartKw,
+        SyntaxKind::DefKw,
+        SyntaxKind::LBrace,
+        SyntaxKind::RBrace,
+        SyntaxKind::Identifier,
+        SyntaxKind::SourceFile,
+        SyntaxKind::Error,
+        SyntaxKind::Eof,
+    ];
+
+    let mut raw_values = std::collections::HashSet::new();
+    for kind in kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        assert!(
+            raw_values.insert(raw.0),
+            "Duplicate raw value {} for {:?}",
+            raw.0,
+            kind
+        );
+    }
+}
+
+/// Test boundary values - first and last enum variants
+#[test]
+fn test_roundtrip_boundary_values() {
+    let boundary_kinds = [
+        SyntaxKind::Whitespace, // First variant (0)
+        SyntaxKind::Eof,        // Last variant
+    ];
+
+    for kind in boundary_kinds {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for boundary {:?}", kind);
+    }
+}
+
+/// Test that raw values preserve the numeric representation
+#[test]
+fn test_kind_to_raw_numeric_value() {
+    // Test that the numeric value is preserved correctly
+    let kind = SyntaxKind::Whitespace;
+    let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+    assert_eq!(
+        raw.0, kind as u16,
+        "Raw value should match enum discriminant"
+    );
+
+    let kind = SyntaxKind::PackageKw;
+    let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+    assert_eq!(
+        raw.0, kind as u16,
+        "Raw value should match enum discriminant"
+    );
+}
+
+/// Test round-trip with boolean and control flow keywords
+#[test]
+fn test_roundtrip_boolean_control_keywords() {
+    let keywords = [
+        SyntaxKind::TrueKw,
+        SyntaxKind::FalseKw,
+        SyntaxKind::NullKw,
+        SyntaxKind::AndKw,
+        SyntaxKind::OrKw,
+        SyntaxKind::NotKw,
+        SyntaxKind::XorKw,
+        SyntaxKind::ImpliesKw,
+        SyntaxKind::IfKw,
+        SyntaxKind::ElseKw,
+        SyntaxKind::ThenKw,
+        SyntaxKind::LoopKw,
+        SyntaxKind::WhileKw,
+        SyntaxKind::UntilKw,
+        SyntaxKind::ForKw,
+    ];
+
+    for kind in keywords {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
+}
+
+/// Test round-trip for documentation and metadata keywords
+#[test]
+fn test_roundtrip_documentation_keywords() {
+    let doc_keywords = [
+        SyntaxKind::DocKw,
+        SyntaxKind::CommentKw,
+        SyntaxKind::AboutKw,
+        SyntaxKind::RepKw,
+        SyntaxKind::LanguageKw,
+        SyntaxKind::AliasKw,
+        SyntaxKind::ModelKw,
+        SyntaxKind::LibraryKw,
+        SyntaxKind::StandardKw,
+    ];
+
+    for kind in doc_keywords {
+        let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(kind);
+        let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
+        assert_eq!(kind, back, "Round-trip failed for {:?}", kind);
+    }
 }
