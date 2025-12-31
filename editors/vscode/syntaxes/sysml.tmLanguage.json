@@ -13,7 +13,7 @@
       "patterns": [
         {
           "name": "keyword.control.sysml",
-          "match": "\\b(standard\\s+library\\s+package|library\\s+package|package|import|private|public|protected|abstract|alias|readonly|derived|end|specializes|subsets|redefines|references|conjugate|inv|true|false|standard|library)\\b"
+          "match": "\\b(standard\\s+library\\s+package|library\\s+package|package|import|private|public|protected|abstract|alias|readonly|derived|end|specializes|subsets|redefines|references|conjugate|inv|true|false|standard|library|doc)\\b"
         },
         {
           "name": "storage.type.sysml",
@@ -21,7 +21,7 @@
         },
         {
           "name": "storage.type.sysml",
-          "match": "\\b(part|attribute|item|port|action|state|constraint|requirement|concern|case|use\\s+case|view|connection|interface|allocation|flow|calc|enum|occurrence|individual)\\b"
+          "match": "\\b(part|attribute|item|port|action|state|constraint|requirement|concern|case|use\\s+case|view|connection|interface|allocation|flow|calc|enum|occurrence|individual|doc)\\b"
         },
         {
           "name": "storage.type.sysml",

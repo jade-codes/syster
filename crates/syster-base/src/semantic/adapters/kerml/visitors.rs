@@ -107,15 +107,17 @@ impl<'a> KermlAdapter<'a> {
             ClassifierMember::Feature(feature) => self.visit_feature(feature),
             ClassifierMember::Specialization(spec) => {
                 // Record relationship in graph if available
-                if let Some(graph) = &mut self.relationship_graph
-                    && let Some(current) = self.current_namespace.last()
-                {
-                    graph.add_one_to_one(
-                        REL_SPECIALIZATION,
-                        current.clone(),
-                        spec.general.clone(),
-                        spec.span,
-                    );
+                // Use qualified name for source since relationships are stored with qualified names
+                if let Some(graph) = &mut self.relationship_graph {
+                    let source_qname = self.current_namespace.join("::");
+                    if !source_qname.is_empty() {
+                        graph.add_one_to_many(
+                            REL_SPECIALIZATION,
+                            source_qname,
+                            spec.general.clone(),
+                            spec.span,
+                        );
+                    }
                 }
             }
             ClassifierMember::Comment(_) | ClassifierMember::Import(_) => {

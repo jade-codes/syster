@@ -57,6 +57,11 @@ impl OneToManyGraph {
             .collect()
     }
 
+    /// Remove all relationships where the given source is the origin
+    pub fn remove_source(&mut self, source: &str) {
+        self.relationships.remove(source);
+    }
+
     pub fn has_path(&self, from: &str, to: &str) -> bool {
         if from == to {
             return true;

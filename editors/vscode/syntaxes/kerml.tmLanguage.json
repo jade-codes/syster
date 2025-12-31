@@ -17,7 +17,7 @@
         },
         {
           "name": "storage.type.kerml",
-          "match": "\\b(classifier|class|datatype|struct|assoc|association|struct|behavior|function|predicate|expr|interaction|step|feature|type)\\b"
+          "match": "\\b(classifier|class|datatype|struct|assoc|association|struct|behavior|function|predicate|expr|interaction|step|feature|type|doc)\\b"
         }
       ]
     },

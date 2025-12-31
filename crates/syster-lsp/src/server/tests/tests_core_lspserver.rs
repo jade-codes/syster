@@ -299,7 +299,7 @@ fn test_semantic_tokens_basic_package() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    let result = server.get_semantic_tokens(uri.as_str());
+    let result = server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should return semantic tokens");
 
@@ -336,7 +336,7 @@ fn test_semantic_tokens_multiple_symbols() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    let result = server.get_semantic_tokens(uri.as_str());
+    let result = server.get_semantic_tokens(&uri);
 
     assert!(
         result.is_some(),
@@ -358,7 +358,7 @@ fn test_semantic_tokens_empty_file() {
     let text = "";
 
     server.open_document(&uri, text).unwrap();
-    let result = server.get_semantic_tokens(uri.as_str());
+    let result = server.get_semantic_tokens(&uri);
 
     // Empty file should return Some with empty tokens
     assert!(result.is_some(), "Empty file should return Some result");
@@ -373,21 +373,11 @@ fn test_semantic_tokens_empty_file() {
 #[test]
 fn test_semantic_tokens_nonexistent_file() {
     let server = LspServer::new();
-    let uri = "file:///nonexistent.sysml";
-    let result = server.get_semantic_tokens(uri);
+    let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+    let result = server.get_semantic_tokens(&uri);
 
     // Nonexistent file should return None
     assert!(result.is_none(), "Nonexistent file should return None");
-}
-
-#[test]
-fn test_semantic_tokens_invalid_uri() {
-    let server = LspServer::new();
-    let invalid_uri = "not-a-valid-uri";
-    let result = server.get_semantic_tokens(invalid_uri);
-
-    // Invalid URI should return None
-    assert!(result.is_none(), "Invalid URI should return None");
 }
 
 #[test]
@@ -401,7 +391,7 @@ fn test_semantic_tokens_with_relationships() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    let result = server.get_semantic_tokens(uri.as_str());
+    let result = server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should handle relationships");
 
@@ -425,7 +415,7 @@ fn test_semantic_tokens_utf16_encoding() {
     let text = "package TestPkg { part def Vehicle; }";
 
     server.open_document(&uri, text).unwrap();
-    let result = server.get_semantic_tokens(uri.as_str());
+    let result = server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should handle unicode characters");
 
@@ -449,7 +439,7 @@ fn test_semantic_tokens_multiline_structure() {
 }"#;
 
     server.open_document(&uri, text).unwrap();
-    let result = server.get_semantic_tokens(uri.as_str());
+    let result = server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should handle multiline structures");
 

@@ -592,7 +592,7 @@ fn test_rapid_changes_then_format() {
         ..Default::default()
     };
 
-    let format_result = syster_lsp::formatting::format_text_async(&text, options, &cancel_token);
+    let format_result = syster_lsp::formatting::format_text(&text, options, &cancel_token);
     println!("Format: {}ms", format_start.elapsed().as_millis());
 
     if let Some(edits) = format_result {
@@ -633,8 +633,7 @@ fn test_interleaved_changes_and_format() {
     };
 
     let format_start = Instant::now();
-    let format_result =
-        syster_lsp::formatting::format_text_async(&text, options.clone(), &cancel_token);
+    let format_result = syster_lsp::formatting::format_text(&text, options.clone(), &cancel_token);
     println!("format (first): {}ms", format_start.elapsed().as_millis());
 
     // Apply formatted result as a change
@@ -664,8 +663,7 @@ fn test_interleaved_changes_and_format() {
         let cancel_token2 = CancellationToken::new();
 
         let format_start2 = Instant::now();
-        let format_result2 =
-            syster_lsp::formatting::format_text_async(&text2, options, &cancel_token2);
+        let format_result2 = syster_lsp::formatting::format_text(&text2, options, &cancel_token2);
         println!("format (second): {}ms", format_start2.elapsed().as_millis());
 
         assert!(
@@ -732,16 +730,16 @@ fn test_parse_timing_breakdown() {
     let cancel_token = CancellationToken::new();
 
     // Warm up
-    let _ = syster_lsp::formatting::format_text_async(source, options.clone(), &cancel_token);
+    let _ = syster_lsp::formatting::format_text(source, options.clone(), &cancel_token);
 
     let iterations = 100;
     let start = Instant::now();
     for _ in 0..iterations {
-        let _ = syster_lsp::formatting::format_text_async(source, options.clone(), &cancel_token);
+        let _ = syster_lsp::formatting::format_text(source, options.clone(), &cancel_token);
     }
     let format_total = start.elapsed();
     println!(
-        "format_text_async: {:.3}ms avg over {} iterations",
+        "format_text: {:.3}ms avg over {} iterations",
         format_total.as_micros() as f64 / 1000.0 / iterations as f64,
         iterations
     );
@@ -798,8 +796,7 @@ fn test_parse_timing_breakdown() {
 
     // Format large file
     let start = Instant::now();
-    let _ =
-        syster_lsp::formatting::format_text_async(&large_source, options.clone(), &cancel_token);
+    let _ = syster_lsp::formatting::format_text(&large_source, options.clone(), &cancel_token);
     println!(
         "format (large file): {:.3}ms",
         start.elapsed().as_micros() as f64 / 1000.0
@@ -879,7 +876,7 @@ fn test_timing_with_stdlib_loaded() {
         };
         let cancel_token = CancellationToken::new();
         let start = Instant::now();
-        let _ = syster_lsp::formatting::format_text_async(&text, options, &cancel_token);
+        let _ = syster_lsp::formatting::format_text(&text, options, &cancel_token);
         println!(
             "format: {:.3}ms",
             start.elapsed().as_micros() as f64 / 1000.0

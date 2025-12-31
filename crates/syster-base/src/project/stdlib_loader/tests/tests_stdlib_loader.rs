@@ -161,7 +161,7 @@ fn test_lazy_loading_behavior() {
     let data = &*SHARED_STDLIB_WORKSPACE;
 
     // === Test 1: Lazy loader doesn't load immediately ===
-    let mut loader = StdLibLoader::lazy();
+    let mut loader = StdLibLoader::new();
     let mut workspace = Workspace::<SyntaxFile>::new();
     assert!(!workspace.has_stdlib(), "Stdlib should not be loaded yet");
     assert!(!loader.is_loaded(), "Loader should report not loaded");
@@ -207,7 +207,7 @@ fn test_eager_vs_lazy_equivalence() {
 
 #[test]
 fn test_lazy_avoids_reloading() {
-    let mut loader = StdLibLoader::lazy();
+    let mut loader = StdLibLoader::new();
     let mut workspace = Workspace::<SyntaxFile>::new();
 
     // Manually mark stdlib as loaded (simulate pre-loaded state)

@@ -1,7 +1,8 @@
 //! Tests for selection range extraction
 
 use syster::core::{Position, Span};
-use syster::semantic::selection::{find_kerml_selection_spans, find_sysml_selection_spans};
+use syster::semantic::find_selection_spans;
+use syster::syntax::SyntaxFile;
 use syster::syntax::kerml::ast::{Element as KerMLElement, KerMLFile, Package as KerMLPackage};
 use syster::syntax::sysml::ast::{Element as SysMLElement, Package as SysMLPackage, SysMLFile};
 
@@ -24,19 +25,19 @@ fn make_span(start_line: usize, start_col: usize, end_line: usize, end_col: usiz
 
 #[test]
 fn test_sysml_find_selection_spans_empty_file() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![],
-    };
+    });
     let pos = Position::new(1, 5);
-    let spans = find_sysml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
     assert!(spans.is_empty());
 }
 
 #[test]
 fn test_sysml_find_selection_spans_position_in_package() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![SysMLElement::Package(SysMLPackage {
@@ -44,9 +45,9 @@ fn test_sysml_find_selection_spans_position_in_package() {
             elements: vec![],
             span: Some(make_span(0, 0, 5, 1)),
         })],
-    };
+    });
     let pos = Position::new(2, 5); // Inside package
-    let spans = find_sysml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
     assert_eq!(spans.len(), 1);
     assert_eq!(spans[0].start.line, 0);
     assert_eq!(spans[0].end.line, 5);
@@ -54,7 +55,7 @@ fn test_sysml_find_selection_spans_position_in_package() {
 
 #[test]
 fn test_sysml_find_selection_spans_position_outside() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![SysMLElement::Package(SysMLPackage {
@@ -62,9 +63,9 @@ fn test_sysml_find_selection_spans_position_outside() {
             elements: vec![],
             span: Some(make_span(0, 0, 5, 1)),
         })],
-    };
+    });
     let pos = Position::new(10, 5); // Outside package
-    let spans = find_sysml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
     assert!(spans.is_empty());
 }
 
@@ -80,14 +81,14 @@ fn test_sysml_find_selection_spans_nested_packages() {
         elements: vec![SysMLElement::Package(inner_package)],
         span: Some(make_span(0, 0, 6, 1)),
     };
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![SysMLElement::Package(outer_package)],
-    };
+    });
 
     let pos = Position::new(3, 5); // Inside inner package
-    let spans = find_sysml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
 
     // Should have 2 spans: inner (smaller) first, outer (larger) second
     assert_eq!(spans.len(), 2);
@@ -103,27 +104,27 @@ fn test_sysml_find_selection_spans_nested_packages() {
 
 #[test]
 fn test_kerml_find_selection_spans_empty_file() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![],
-    };
+    });
     let pos = Position::new(1, 5);
-    let spans = find_kerml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
     assert!(spans.is_empty());
 }
 
 #[test]
 fn test_kerml_find_selection_spans_position_in_package() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![KerMLElement::Package(KerMLPackage {
             name: Some("Test".to_string()),
             elements: vec![],
             span: Some(make_span(0, 0, 5, 1)),
         })],
-    };
+    });
     let pos = Position::new(2, 5); // Inside package
-    let spans = find_kerml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
     assert_eq!(spans.len(), 1);
     assert_eq!(spans[0].start.line, 0);
     assert_eq!(spans[0].end.line, 5);
@@ -131,15 +132,15 @@ fn test_kerml_find_selection_spans_position_in_package() {
 
 #[test]
 fn test_kerml_find_selection_spans_position_outside() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![KerMLElement::Package(KerMLPackage {
             name: Some("Test".to_string()),
             elements: vec![],
             span: Some(make_span(0, 0, 5, 1)),
         })],
-    };
+    });
     let pos = Position::new(10, 5); // Outside package
-    let spans = find_kerml_selection_spans(&file, pos);
+    let spans = find_selection_spans(&file, pos);
     assert!(spans.is_empty());
 }
