@@ -75,6 +75,9 @@ impl LspServer {
                     work_done_progress_options: WorkDoneProgressOptions::default(),
                 }),
             ),
+            linked_editing_range_provider: Some(
+                async_lsp::lsp_types::LinkedEditingRangeServerCapabilities::Simple(true),
+            ),
             workspace: Some(WorkspaceServerCapabilities {
                 workspace_folders: None,
                 file_operations: None,

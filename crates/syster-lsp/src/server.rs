@@ -9,6 +9,7 @@ pub mod formatting;
 mod helpers;
 mod hover;
 mod inlay_hints;
+mod linked_editing_range;
 mod position;
 mod references;
 mod rename;

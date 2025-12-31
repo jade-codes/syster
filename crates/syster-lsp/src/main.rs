@@ -199,6 +199,17 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
+    fn linked_editing_range(
+        &mut self,
+        params: async_lsp::lsp_types::LinkedEditingRangeParams,
+    ) -> BoxFuture<'static, Result<Option<async_lsp::lsp_types::LinkedEditingRanges>, Self::Error>>
+    {
+        let uri = params.text_document_position_params.text_document.uri;
+        let position = params.text_document_position_params.position;
+        let result = self.server.get_linked_editing_ranges(&uri, position);
+        Box::pin(async move { Ok(result) })
+    }
+
     // Notification handlers - these are called synchronously in async-lsp!
     // This is the key difference from tower-lsp that fixes our ordering issues.
 
