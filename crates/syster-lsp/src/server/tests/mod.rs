@@ -1,5 +1,6 @@
 // Test modules
 mod tests_core_lspserver;
+mod tests_helpers_apply_text_edit;
 mod tests_helpers_char_offset_to_byte;
 mod tests_helpers_char_offset_to_utf16;
 mod tests_helpers_format_rich_hover;
