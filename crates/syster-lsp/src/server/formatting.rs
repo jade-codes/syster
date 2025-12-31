@@ -1,5 +1,6 @@
 use crate::server::LspServer;
 use crate::server::helpers::uri_to_path;
+use async_lsp::ResponseError;
 use async_lsp::lsp_types::*;
 use syster::syntax::formatter;
 use tokio_util::sync::CancellationToken;
@@ -12,9 +13,39 @@ impl LspServer {
     }
 }
 
+/// Handle document formatting request asynchronously
+///
+/// This function takes snapshots of the required data and returns a future
+/// that can be awaited. The formatting work runs on a blocking thread pool
+/// and respects cancellation.
+pub async fn format_document(
+    text_snapshot: Option<String>,
+    options: FormattingOptions,
+    cancel_token: CancellationToken,
+) -> Result<Option<Vec<TextEdit>>, ResponseError> {
+    let result = match text_snapshot {
+        Some(text) => {
+            let cancel_for_select = cancel_token.clone();
+
+            // Run formatting on the blocking thread pool.
+            // Use select! to race the work against cancellation.
+            let format_task =
+                tokio::task::spawn_blocking(move || format_text(&text, options, &cancel_token));
+
+            tokio::select! {
+                result = format_task => result.unwrap_or(None),
+                _ = cancel_for_select.cancelled() => None,
+            }
+        }
+        None => None,
+    };
+
+    Ok(result)
+}
+
 /// Format text with cancellation support
 /// Returns None if cancelled or if no changes needed
-pub fn format_text_async(
+pub fn format_text(
     text: &str,
     options: FormattingOptions,
     cancel: &CancellationToken,

@@ -52,3 +52,17 @@ pub fn relationship_label(rel_type: &str) -> &str {
         _ => rel_type,
     }
 }
+
+// LSP server constants
+pub const LSP_SERVER_NAME: &str = "SysML v2 Language Server";
+pub const LSP_SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// LSP initialization option keys
+pub const OPT_STDLIB_ENABLED: &str = "stdlibEnabled";
+pub const OPT_STDLIB_PATH: &str = "stdlibPath";
+
+// Standard library directory name
+pub const STDLIB_DIR: &str = "sysml.library";
+
+// Completion trigger characters
+pub const COMPLETION_TRIGGERS: &[&str] = &[":", " "];

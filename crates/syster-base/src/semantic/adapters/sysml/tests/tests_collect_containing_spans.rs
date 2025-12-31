@@ -5,7 +5,7 @@
 //! element handlers based on the element type, collecting spans that contain a given position.
 
 use crate::core::Position;
-use crate::semantic::selection::find_sysml_selection_spans;
+use crate::semantic::adapters::selection::find_sysml_selection_spans;
 use crate::syntax::sysml::ast::{
     Comment, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage,
     UsageKind,

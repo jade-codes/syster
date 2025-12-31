@@ -1,21 +1,18 @@
 use std::ops::ControlFlow;
-use std::path::PathBuf;
 use std::time::Duration;
 
 use async_lsp::client_monitor::ClientProcessMonitorLayer;
 use async_lsp::concurrency::ConcurrencyLayer;
+use async_lsp::lsp_types::*;
 use async_lsp::panic::CatchUnwindLayer;
 use async_lsp::router::Router;
 use async_lsp::server::LifecycleLayer;
 use async_lsp::tracing::TracingLayer;
 use async_lsp::{ClientSocket, LanguageClient, LanguageServer, ResponseError};
 use futures::future::BoxFuture;
-use serde_json::Value;
 use tokio::sync::mpsc;
 use tower::ServiceBuilder;
 use tracing::{Level, info};
-
-use async_lsp::lsp_types::*;
 
 mod server;
 use server::LspServer;
@@ -38,77 +35,12 @@ impl LanguageServer for ServerState {
         params: InitializeParams,
     ) -> BoxFuture<'static, Result<InitializeResult, Self::Error>> {
         let (stdlib_enabled, stdlib_path) =
-            if let Some(Value::Object(opts)) = params.initialization_options {
-                let enabled = opts
-                    .get("stdlibEnabled")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(true);
-                let path = opts
-                    .get("stdlibPath")
-                    .and_then(|v| v.as_str())
-                    .filter(|s| !s.is_empty())
-                    .map(PathBuf::from);
-                (enabled, path)
-            } else {
-                (true, None)
-            };
+            LspServer::parse_init_options(params.initialization_options);
 
-        // Update server with config - this happens synchronously before returning the future
         self.server = LspServer::with_config(stdlib_enabled, stdlib_path);
 
-        Box::pin(async move {
-            Ok(InitializeResult {
-                capabilities: ServerCapabilities {
-                    text_document_sync: Some(TextDocumentSyncCapability::Options(
-                        TextDocumentSyncOptions {
-                            open_close: Some(true),
-                            change: Some(TextDocumentSyncKind::INCREMENTAL),
-                            will_save: None,
-                            will_save_wait_until: None,
-                            save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
-                                include_text: Some(false),
-                            })),
-                        },
-                    )),
-                    hover_provider: Some(HoverProviderCapability::Simple(true)),
-                    definition_provider: Some(OneOf::Left(true)),
-                    references_provider: Some(OneOf::Left(true)),
-                    document_symbol_provider: Some(OneOf::Left(true)),
-                    rename_provider: Some(OneOf::Right(RenameOptions {
-                        prepare_provider: Some(true),
-                        work_done_progress_options: WorkDoneProgressOptions::default(),
-                    })),
-                    document_formatting_provider: Some(OneOf::Left(true)),
-                    completion_provider: Some(CompletionOptions {
-                        resolve_provider: Some(false),
-                        trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
-                        ..Default::default()
-                    }),
-                    folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
-                    selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
-                    inlay_hint_provider: Some(OneOf::Left(true)),
-                    semantic_tokens_provider: Some(
-                        SemanticTokensServerCapabilities::SemanticTokensOptions(
-                            SemanticTokensOptions {
-                                legend: LspServer::semantic_tokens_legend(),
-                                full: Some(SemanticTokensFullOptions::Bool(true)),
-                                range: None,
-                                work_done_progress_options: WorkDoneProgressOptions::default(),
-                            },
-                        ),
-                    ),
-                    workspace: Some(WorkspaceServerCapabilities {
-                        workspace_folders: None,
-                        file_operations: None,
-                    }),
-                    ..Default::default()
-                },
-                server_info: Some(ServerInfo {
-                    name: "SysML v2 Language Server".to_string(),
-                    version: Some(env!("CARGO_PKG_VERSION").to_string()),
-                }),
-            })
-        })
+        let result = LspServer::initialize_result();
+        Box::pin(async move { Ok(result) })
     }
 
     fn hover(
@@ -199,43 +131,22 @@ impl LanguageServer for ServerState {
     ) -> BoxFuture<'static, Result<Option<Vec<TextEdit>>, Self::Error>> {
         let uri = params.text_document.uri;
         let options = params.options;
-        info!("formatting: snapshot for {}", uri);
 
         // Snapshot the text synchronously - this is fast
         let text_snapshot = self.server.get_document_text(&uri);
 
         // Get the current cancellation token for this document.
-        // When didChange arrives, this token is cancelled and replaced.
         let cancel_token = uri
             .to_file_path()
             .ok()
             .and_then(|path| self.server.get_document_cancel_token(&path))
             .unwrap_or_default();
-        let cancel_token_for_select = cancel_token.clone();
 
-        Box::pin(async move {
-            info!("formatting: start work for {}", uri);
-            let result = match text_snapshot {
-                Some(text) => {
-                    // Run formatting on the blocking thread pool.
-                    // Use select! to race the work against cancellation.
-                    let format_task = tokio::task::spawn_blocking(move || {
-                        server::formatting::format_text_async(&text, options, &cancel_token)
-                    });
-
-                    tokio::select! {
-                        result = format_task => result.unwrap_or(None),
-                        _ = cancel_token_for_select.cancelled() => {
-                            info!("formatting: cancelled for {}", uri);
-                            None
-                        }
-                    }
-                }
-                None => None,
-            };
-            info!("formatting: done for {}", uri);
-            Ok(result)
-        })
+        Box::pin(server::formatting::format_document(
+            text_snapshot,
+            options,
+            cancel_token,
+        ))
     }
 
     fn prepare_rename(

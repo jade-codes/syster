@@ -1037,7 +1037,7 @@ async fn test_formatting_basic() {
     };
 
     let cancel_token = tokio_util::sync::CancellationToken::new();
-    let formatted = format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    let formatted = format_text(&doc_text.unwrap(), options, &cancel_token);
     assert!(formatted.is_some(), "Should format successfully");
 }
 
@@ -1057,7 +1057,7 @@ async fn test_formatting_empty_file() {
     };
 
     let cancel_token = tokio_util::sync::CancellationToken::new();
-    let formatted = format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    let formatted = format_text(&doc_text.unwrap(), options, &cancel_token);
     // Empty file should return None or empty edits
     assert!(formatted.is_none() || formatted.unwrap().is_empty());
 }
@@ -1084,7 +1084,7 @@ package Auto {
     };
 
     let cancel_token = tokio_util::sync::CancellationToken::new();
-    let formatted = format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    let formatted = format_text(&doc_text.unwrap(), options, &cancel_token);
     assert!(
         formatted.is_some(),
         "Formatting should succeed for structured content"

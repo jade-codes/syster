@@ -117,7 +117,7 @@ fn test_lsp_format_normalizes_whitespace() {
         ..Default::default()
     };
 
-    let result = format_text_async(source, options, &CancellationToken::new());
+    let result = format_text(source, options, &CancellationToken::new());
 
     assert!(result.is_some(), "format should return Some edits");
     let edits = result.unwrap();
