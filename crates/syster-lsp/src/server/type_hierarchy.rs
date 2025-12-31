@@ -1,5 +1,5 @@
-use super::helpers::{span_to_lsp_range, uri_to_path};
 use super::LspServer;
+use super::helpers::{span_to_lsp_range, uri_to_path};
 use async_lsp::lsp_types::{Position, SymbolKind, TypeHierarchyItem, Url};
 use syster::core::constants::REL_SPECIALIZATION;
 use syster::semantic::symbol_table::Symbol;
@@ -50,11 +50,7 @@ impl LspServer {
             })
             .collect();
 
-        if items.is_empty() {
-            None
-        } else {
-            Some(items)
-        }
+        if items.is_empty() { None } else { Some(items) }
     }
 
     /// Get subtypes (types that specialize/inherit from this type)
@@ -84,11 +80,7 @@ impl LspServer {
             })
             .collect();
 
-        if items.is_empty() {
-            None
-        } else {
-            Some(items)
-        }
+        if items.is_empty() { None } else { Some(items) }
     }
 
     /// Convert a Symbol to a TypeHierarchyItem
