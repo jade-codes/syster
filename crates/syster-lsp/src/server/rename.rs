@@ -44,13 +44,13 @@ impl LspServer {
         let mut edits_by_file: HashMap<Url, Vec<TextEdit>> = HashMap::new();
 
         // Add definition location
-        if let (Some(source_file), Some(span)) = (symbol.source_file(), symbol.span()) {
-            if let Ok(file_uri) = Url::from_file_path(source_file) {
-                edits_by_file.entry(file_uri).or_default().push(TextEdit {
-                    range: span_to_lsp_range(&span),
-                    new_text: new_name.to_string(),
-                });
-            }
+        if let (Some(source_file), Some(span)) = (symbol.source_file(), symbol.span())
+            && let Ok(file_uri) = Url::from_file_path(source_file)
+        {
+            edits_by_file.entry(file_uri).or_default().push(TextEdit {
+                range: span_to_lsp_range(&span),
+                new_text: new_name.to_string(),
+            });
         }
 
         // Add all reference locations using shared helper

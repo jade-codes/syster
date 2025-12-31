@@ -23,10 +23,8 @@ impl LspServer {
         // Collect all references using shared helper
         let mut locations = collect_reference_locations(&self.workspace, &element_qname);
 
-        if include_declaration {
-            if let Some(def) = self.get_definition(uri, position) {
-                locations.push(def);
-            }
+        if include_declaration && let Some(def) = self.get_definition(uri, position) {
+            locations.push(def);
         }
 
         Some(locations)

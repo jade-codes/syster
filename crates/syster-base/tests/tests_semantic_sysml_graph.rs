@@ -966,7 +966,7 @@ fn test_stdlib_no_duplicate_relationships() {
     let targets = rels.unwrap();
 
     // Check for duplicates by comparing length with deduplicated length
-    let mut unique_targets: Vec<_> = targets.iter().cloned().collect();
+    let mut unique_targets: Vec<_> = targets.to_vec();
     unique_targets.sort();
     unique_targets.dedup();
 
