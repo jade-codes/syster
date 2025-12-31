@@ -4,8 +4,5 @@ mod parser;
 #[path = "semantic/mod.rs"]
 mod semantic;
 
-#[path = "core/mod.rs"]
-mod core;
-
 #[path = "syntax/mod.rs"]
 mod syntax;

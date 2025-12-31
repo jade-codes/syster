@@ -20,7 +20,7 @@ pub use analyzer::{AnalysisContext, NoOpValidator, RelationshipValidator, Semant
 pub use adapters::folding_ranges::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
 
 /// Backwards-compatible module path for folding range extraction.
-/// 
+///
 /// This preserves the old `syster::semantic::folding::*` API while the
 /// underlying implementation lives in `adapters::folding_ranges`.
 pub mod folding {
