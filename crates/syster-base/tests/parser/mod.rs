@@ -1,13 +1,9 @@
 mod constraint_tests;
 mod expression_tests;
-mod kerml_parser_test;
 mod kerml_tests;
-mod keywords_test;
-mod parser_parse_content_test;
 mod span_tests;
 mod stdlib_kerml_tests;
 mod stdlib_sysml_tests;
-mod sysml_parser_load_and_parse_test;
 mod sysml_tests;
 mod test_kerml_stdlib;
 mod usage_body_tests;

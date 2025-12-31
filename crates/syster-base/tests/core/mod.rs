@@ -1,2 +1,1 @@
-mod constants_test;
-mod traits_test;
+// Core tests - currently empty

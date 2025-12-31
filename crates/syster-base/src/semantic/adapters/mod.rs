@@ -64,10 +64,4 @@ pub mod inlay_hints {
 }
 
 #[cfg(test)]
-mod inlay_hints_extract_inlay_hints_test;
-#[cfg(test)]
-mod kerml_adapter_test;
-#[cfg(test)]
-mod sysml_adapter_sysmladapter_test;
-#[cfg(test)]
 mod tests;

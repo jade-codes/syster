@@ -20,37 +20,4 @@ pub mod background_tasks;
 pub use core::LspServer;
 
 #[cfg(test)]
-#[path = "server/helpers_char_offset_to_byte_test.rs"]
-mod helpers_char_offset_to_byte_test;
-
-#[cfg(test)]
-#[path = "server/helpers_char_offset_to_utf16_test.rs"]
-mod helpers_char_offset_to_utf16_test;
-
-#[cfg(test)]
-#[path = "server/helpers_format_symbol_declaration_test.rs"]
-mod helpers_format_symbol_declaration_test;
-
-#[cfg(test)]
-#[path = "server/lsp_server_state_test.rs"]
-mod lsp_server_state_test;
-
-#[cfg(test)]
-#[path = "server/core_lspserver_test.rs"]
-mod core_lspserver_test;
-
-#[cfg(test)]
-#[path = "server/tests.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "server/helpers_position_to_byte_offset_test.rs"]
-mod helpers_position_to_byte_offset_test;
-
-#[cfg(test)]
-#[path = "server/helpers_span_to_lsp_range_test.rs"]
-mod helpers_span_to_lsp_range_test;
-
-#[cfg(test)]
-#[path = "server/helpers_format_rich_hover_test.rs"]
-mod helpers_format_rich_hover_test;

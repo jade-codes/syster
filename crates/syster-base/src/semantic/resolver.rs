@@ -30,5 +30,4 @@ pub fn is_wildcard_import(path: &str) -> bool {
 }
 
 #[cfg(test)]
-#[path = "resolver/tests.rs"]
 mod tests;

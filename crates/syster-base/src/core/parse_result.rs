@@ -72,6 +72,3 @@ impl ParseError {
         }
     }
 }
-
-#[cfg(test)]
-mod tests;

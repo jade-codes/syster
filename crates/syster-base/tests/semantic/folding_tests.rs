@@ -1,7 +1,7 @@
 //! Tests for folding range extraction
 
 use syster::core::{Position, Span};
-use syster::semantic::folding::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
+use syster::semantic::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
 use syster::syntax::kerml::ast::{
     Comment as KerMLComment, Element as KerMLElement, KerMLFile, Package as KerMLPackage,
 };

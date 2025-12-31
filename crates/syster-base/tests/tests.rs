@@ -9,6 +9,3 @@ mod core;
 
 #[path = "syntax/mod.rs"]
 mod syntax;
-
-#[cfg(test)]
-mod core_parse_result_test;

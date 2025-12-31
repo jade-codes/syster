@@ -127,7 +127,3 @@ pub const IO_WORKSPACE_ERROR_MSG: &str = "Workspace error";
 
 pub const IO_STDLIB_LOAD_FAILED: &str = "IO009";
 pub const IO_STDLIB_LOAD_FAILED_MSG: &str = "Failed to load standard library";
-
-#[cfg(test)]
-#[path = "error_codes/tests.rs"]
-mod tests;

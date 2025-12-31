@@ -7,4 +7,4 @@ pub mod validator;
 mod visitors;
 
 #[cfg(test)]
-mod kerml_validator_test;
+mod tests;

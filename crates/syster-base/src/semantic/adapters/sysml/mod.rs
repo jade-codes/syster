@@ -7,4 +7,4 @@ pub mod validator;
 pub mod visitors;
 
 #[cfg(test)]
-mod inlay_hints_collect_hints_test;
+mod tests;

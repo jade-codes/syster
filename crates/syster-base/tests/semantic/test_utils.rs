@@ -21,6 +21,7 @@ use syster::core::{Position, Span};
 /// assert_eq!(span.end.line, 5);
 /// assert_eq!(span.end.column, 10);
 /// ```
+#[allow(dead_code)]
 pub fn make_span(start_line: usize, start_col: usize, end_line: usize, end_col: usize) -> Span {
     Span {
         start: Position {
