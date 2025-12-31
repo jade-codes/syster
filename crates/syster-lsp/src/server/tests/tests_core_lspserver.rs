@@ -1114,10 +1114,8 @@ package Test2 {
             // If ranges overlap, one must contain the other (nested)
             let overlap = r1.start_line <= r2.end_line && r2.start_line <= r1.end_line;
             if overlap {
-                let r1_contains_r2 =
-                    r1.start_line <= r2.start_line && r1.end_line >= r2.end_line;
-                let r2_contains_r1 =
-                    r2.start_line <= r1.start_line && r2.end_line >= r1.end_line;
+                let r1_contains_r2 = r1.start_line <= r2.start_line && r1.end_line >= r2.end_line;
+                let r2_contains_r1 = r2.start_line <= r1.start_line && r2.end_line >= r1.end_line;
                 assert!(
                     r1_contains_r2 || r2_contains_r1,
                     "Overlapping ranges must be properly nested"
