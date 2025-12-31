@@ -221,6 +221,92 @@ fn test_validators_use_semantic_roles_not_strings() {
     );
 }
 
+/// Verifies that test files follow the naming convention:
+/// - Must be in a `/tests/` directory
+/// - Must have `tests_` prefix (except mod.rs)
+#[test]
+fn test_test_files_follow_naming_convention() {
+    use std::fs;
+
+    fn check_test_naming(dir: &Path, violations: &mut Vec<String>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_dir() {
+                    check_test_naming(&path, violations);
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
+                    let file_name = path.file_name().unwrap().to_str().unwrap();
+
+                    // Skip mod.rs files
+                    if file_name == "mod.rs" {
+                        continue;
+                    }
+
+                    // Check if this file has actual test functions (not just mod tests;)
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        // Files with `mod tests;` are parent modules referencing tests/ dir - OK
+                        // We only care about files with actual #[test] functions
+                        let has_test_functions = content.contains("#[test]");
+
+                        // Also flag old naming patterns
+                        let has_old_naming =
+                            file_name.ends_with("_test.rs") || file_name.starts_with("test_");
+
+                        if has_old_naming {
+                            violations.push(format!(
+                                "{}: Uses old naming pattern (*_test.rs or test_*), should be tests_*.rs in tests/ directory",
+                                path.display()
+                            ));
+                        } else if has_test_functions {
+                            // Check if in tests/ directory
+                            let in_tests_dir = path
+                                .components()
+                                .any(|c| c.as_os_str().to_str() == Some("tests"));
+
+                            if !in_tests_dir {
+                                // Check if has tests_ prefix
+                                let has_tests_prefix = file_name.starts_with("tests_");
+
+                                if !has_tests_prefix {
+                                    // This is a file with #[test] outside tests/ dir
+                                    // Only flag if it's a dedicated test file (not inline tests)
+                                    // Inline tests in production code are OK
+                                    // We detect dedicated test files by checking if they ONLY have tests
+                                    let is_dedicated_test_file = !content.contains("pub fn ")
+                                        && !content.contains("pub struct ")
+                                        && !content.contains("pub enum ")
+                                        && !content.contains("pub trait ");
+
+                                    if is_dedicated_test_file {
+                                        violations.push(format!(
+                                            "{}: Dedicated test file should be in tests/ directory with 'tests_' prefix",
+                                            path.display()
+                                        ));
+                                    }
+                                }
+                            } else if !file_name.starts_with("tests_") {
+                                violations.push(format!(
+                                    "{}: Test file in tests/ directory missing 'tests_' prefix",
+                                    path.display()
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut violations = Vec::new();
+    check_test_naming(Path::new("src"), &mut violations);
+
+    assert!(
+        violations.is_empty(),
+        "\n❌ Test files must be in a tests/ directory with 'tests_' prefix:\n{}\n",
+        format_violation_list(&violations)
+    );
+}
+
 /// Verifies that all required constants are defined in core/constants.rs
 #[test]
 fn test_core_constants_defined() {
