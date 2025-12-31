@@ -779,6 +779,15 @@ fn test_normalize_path_with_dot_components() {
     let temp_dir = std::env::temp_dir();
     let test_file = temp_dir.join("test_dot.sysml");
 
+    // Ensure cleanup even on panic using a guard
+    struct FileGuard(PathBuf);
+    impl Drop for FileGuard {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+    let _guard = FileGuard(test_file.clone());
+
     File::create(&test_file).expect("Failed to create temp file");
 
     let mut symbol_table = SymbolTable::new();
@@ -802,9 +811,6 @@ fn test_normalize_path_with_dot_components() {
     let path_with_dot = format!("{}/./test_dot.sysml", temp_dir.to_string_lossy());
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &path_with_dot);
 
-    // Clean up
-    let _ = std::fs::remove_file(&test_file);
-
     // Should match because both canonicalize to the same path
     assert_eq!(
         tokens.len(),
@@ -816,7 +822,9 @@ fn test_normalize_path_with_dot_components() {
 #[test]
 fn test_normalize_path_with_dotdot_components() {
     // Test paths containing ".." (parent directory) components
-    // Note: The simple normalization doesn't clean up ".." but the path is still valid
+    // Note: Since "subdir/../Test.sysml" doesn't exist, normalize_path falls through
+    // to simple normalization (lines 28-35) which preserves "..". If the file existed,
+    // canonicalize() would clean up the ".." component.
     let mut symbol_table = SymbolTable::new();
 
     let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
@@ -838,7 +846,7 @@ fn test_normalize_path_with_dotdot_components() {
     let tokens =
         SemanticTokenCollector::collect_from_symbols(&symbol_table, "subdir/../Test.sysml");
 
-    // Should match because both normalize to the same path with ".."
+    // Should match because both normalize to the same path with ".." preserved
     assert_eq!(tokens.len(), 1, "Should match path with dotdot components");
 }
 
@@ -928,11 +936,10 @@ fn test_normalize_path_very_long_path() {
 }
 
 #[test]
-fn test_normalize_path_trailing_slash() {
-    // Test paths with trailing slashes (edge case)
+fn test_normalize_path_exact_match() {
+    // Test exact path matching for non-existent files
     let mut symbol_table = SymbolTable::new();
 
-    // Store with trailing slash
     symbol_table
         .insert(
             "Test::Package".to_string(),
@@ -945,7 +952,7 @@ fn test_normalize_path_trailing_slash() {
         )
         .unwrap();
 
-    // Request without trailing slash (should match as-is since we're matching file path)
+    // Request with same path (should match exactly)
     let tokens =
         SemanticTokenCollector::collect_from_symbols(&symbol_table, "/path/to/dir/Test.sysml");
 
@@ -956,10 +963,12 @@ fn test_normalize_path_trailing_slash() {
 #[test]
 fn test_normalize_path_double_slash() {
     // Test paths with double slashes (e.g., "/path//to///file.sysml")
+    // Note: Since "/path//Test.sysml" doesn't exist, normalize_path falls through
+    // to simple normalization (lines 28-35) which preserves double slashes via
+    // PathBuf's to_string_lossy. If the file existed, canonicalize() would typically
+    // normalize consecutive slashes to single slashes on Unix systems.
     let mut symbol_table = SymbolTable::new();
 
-    // Note: PathBuf generally doesn't normalize double slashes,
-    // so we test that the behavior is consistent
     symbol_table
         .insert(
             "Test::Package".to_string(),
@@ -975,7 +984,7 @@ fn test_normalize_path_double_slash() {
     // Request with same double slash
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "/path//Test.sysml");
 
-    // Should match because both have the same double slash representation
+    // Should match because both have the same double slash representation (file doesn't exist)
     assert_eq!(tokens.len(), 1, "Should match path with double slashes");
 }
 
@@ -1193,9 +1202,34 @@ fn test_normalize_path_different_symbol_types_same_file() {
 
 #[test]
 fn test_normalize_path_case_sensitivity_non_stdlib() {
-    // Test case sensitivity for non-stdlib paths
-    // (behavior depends on OS filesystem, but code does string comparison)
+    // Test case sensitivity for non-stdlib paths.
+    //
+    // We create a real file with mixed-case path in a temporary directory so
+    // that normalize_path will exercise filesystem canonicalization where
+    // available. We then request tokens using a lowercased version of the
+    // path and assert OS-specific behavior:
+    // - On case-insensitive filesystems (Windows, macOS) we expect a match.
+    // - On case-sensitive filesystems (e.g., Linux) we expect no match.
     let mut symbol_table = SymbolTable::new();
+
+    // Create a temporary directory and mixed-case file path.
+    let temp_dir = std::env::temp_dir().join("syster_case_sensitivity_test");
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    // Ensure cleanup even on panic using a guard
+    struct DirGuard(PathBuf);
+    impl Drop for DirGuard {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _guard = DirGuard(temp_dir.clone());
+
+    let mixed_path = temp_dir.join("File.MixedCase.sysml");
+    File::create(&mixed_path).unwrap();
+
+    let mixed_path_str = mixed_path.to_string_lossy().to_string();
+    let lower_path_str = mixed_path_str.to_lowercase();
 
     symbol_table
         .insert(
@@ -1203,18 +1237,32 @@ fn test_normalize_path_case_sensitivity_non_stdlib() {
             create_package_symbol(
                 "Package",
                 "Test::Package",
-                Some("/Path/To/File.sysml"),
+                Some(&mixed_path_str),
                 Some(create_span(1, 0)),
             ),
         )
         .unwrap();
 
     // Request with different case
-    let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "/path/to/file.sysml");
+    let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &lower_path_str);
 
-    // Should NOT match on case-sensitive systems (after normalization)
-    // Note: On case-insensitive filesystems (macOS, Windows), canonicalize
-    // might make these match, but on Linux they won't
-    // This test documents the behavior is filesystem-dependent
-    assert!(tokens.len() <= 1, "Case sensitivity depends on filesystem");
+    // On case-insensitive systems, canonicalization should make these match.
+    // On case-sensitive systems, the differing case should prevent a match.
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    {
+        assert_eq!(
+            tokens.len(),
+            1,
+            "On case-insensitive filesystems, differently-cased paths should match"
+        );
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        assert_eq!(
+            tokens.len(),
+            0,
+            "On case-sensitive filesystems, differently-cased paths should not match"
+        );
+    }
 }
