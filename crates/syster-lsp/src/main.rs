@@ -199,6 +199,16 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
+    fn document_link(
+        &mut self,
+        params: DocumentLinkParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<DocumentLink>>, Self::Error>> {
+        let uri = params.text_document.uri;
+        let links = self.server.get_document_links(&uri);
+        let result = if links.is_empty() { None } else { Some(links) };
+        Box::pin(async move { Ok(result) })
+    }
+
     // Notification handlers - these are called synchronously in async-lsp!
     // This is the key difference from tower-lsp that fixes our ordering issues.
 
