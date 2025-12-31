@@ -4,3 +4,6 @@ pub mod types;
 
 pub use enums::*;
 pub use types::*;
+
+#[cfg(test)]
+mod tests;

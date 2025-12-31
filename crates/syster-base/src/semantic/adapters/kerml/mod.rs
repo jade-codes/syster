@@ -1,4 +1,4 @@
-pub mod folding;
+pub mod folding_ranges;
 mod helpers;
 pub mod inlay_hints;
 mod population;
@@ -7,4 +7,4 @@ pub mod validator;
 mod visitors;
 
 #[cfg(test)]
-mod kerml_validator_test;
+mod tests;

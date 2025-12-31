@@ -61,3 +61,6 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<KerMLFile> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
