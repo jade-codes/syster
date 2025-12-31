@@ -1676,3 +1676,64 @@ async fn test_initialize_replaces_server_instance() {
     // After initialization, the server is replaced with a new instance
     assert_eq!(state.server.workspace().file_count(), 0);
 }
+
+// =============================================================================
+// Tests for workspace/didChangeWatchedFiles notification (Issue: server crash)
+// =============================================================================
+
+#[test]
+fn test_did_change_watched_files_does_not_crash() {
+    let (mut state, _parse_rx) = create_test_server_state();
+
+    // Simulate VS Code sending didChangeWatchedFiles when a new file is created
+    let params = DidChangeWatchedFilesParams {
+        changes: vec![FileEvent {
+            uri: Url::parse("file:///workspaces/test/NewFile.sysml").unwrap(),
+            typ: FileChangeType::CREATED,
+        }],
+    };
+
+    // This should not panic - previously it crashed with "Unhandled notification"
+    let result = state.did_change_watched_files(params);
+    assert!(matches!(result, ControlFlow::Continue(())));
+}
+
+#[test]
+fn test_did_change_watched_files_file_deleted() {
+    let (mut state, _parse_rx) = create_test_server_state();
+
+    let params = DidChangeWatchedFilesParams {
+        changes: vec![FileEvent {
+            uri: Url::parse("file:///workspaces/test/DeletedFile.sysml").unwrap(),
+            typ: FileChangeType::DELETED,
+        }],
+    };
+
+    let result = state.did_change_watched_files(params);
+    assert!(matches!(result, ControlFlow::Continue(())));
+}
+
+#[test]
+fn test_did_change_watched_files_multiple_changes() {
+    let (mut state, _parse_rx) = create_test_server_state();
+
+    let params = DidChangeWatchedFilesParams {
+        changes: vec![
+            FileEvent {
+                uri: Url::parse("file:///workspaces/test/File1.sysml").unwrap(),
+                typ: FileChangeType::CREATED,
+            },
+            FileEvent {
+                uri: Url::parse("file:///workspaces/test/File2.sysml").unwrap(),
+                typ: FileChangeType::CHANGED,
+            },
+            FileEvent {
+                uri: Url::parse("file:///workspaces/test/File3.kerml").unwrap(),
+                typ: FileChangeType::DELETED,
+            },
+        ],
+    };
+
+    let result = state.did_change_watched_files(params);
+    assert!(matches!(result, ControlFlow::Continue(())));
+}

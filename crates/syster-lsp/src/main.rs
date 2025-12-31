@@ -271,6 +271,15 @@ impl LanguageServer for ServerState {
     fn did_save(&mut self, _params: DidSaveTextDocumentParams) -> Self::NotifyResult {
         ControlFlow::Continue(())
     }
+
+    fn did_change_watched_files(
+        &mut self,
+        _params: DidChangeWatchedFilesParams,
+    ) -> Self::NotifyResult {
+        // Currently we don't need to react to file system changes
+        // The workspace is updated when files are opened/changed via the editor
+        ControlFlow::Continue(())
+    }
 }
 
 impl ServerState {
