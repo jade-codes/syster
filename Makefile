@@ -1,18 +1,19 @@
-.PHONY: help build run test clean fmt lint check run-guidelines watch install
+.PHONY: help build run test clean fmt lint check run-guidelines watch install lint-test-naming
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  build         - Build the project"
-	@echo "  run           - Run the project"
-	@echo "  test          - Run tests"
-	@echo "  clean         - Clean build artifacts"
-	@echo "  fmt           - Format code with rustfmt"
-	@echo "  lint          - Run clippy linter"
-	@echo "  check         - Run fmt + lint + test"
+	@echo "  build          - Build the project"
+	@echo "  run            - Run the project"
+	@echo "  test           - Run tests"
+	@echo "  clean          - Clean build artifacts"
+	@echo "  fmt            - Format code with rustfmt"
+	@echo "  lint           - Run clippy linter"
+	@echo "  lint-test-naming - Check test file naming convention"
+	@echo "  check          - Run fmt + lint + test"
 	@echo "  run-guidelines - Run complete validation (fmt + lint + build + test)"
-	@echo "  watch         - Watch and rebuild on changes"
-	@echo "  install       - Install the binary"
+	@echo "  watch          - Watch and rebuild on changes"
+	@echo "  install        - Install the binary"
 
 # Build the project
 build:
@@ -55,7 +56,7 @@ check: fmt-check lint test
 
 # Run complete validation pipeline (format, lint, build, test)
 # Optimized: clippy already builds, so we skip separate build step
-run-guidelines:
+run-guidelines: lint-test-naming
 	@echo "=== Running Complete Validation Pipeline ==="
 	@echo ""
 	@echo "Step 1/3: Formatting code..."
@@ -102,3 +103,28 @@ watch:
 # Install the binary
 install:
 	cargo install --path .
+
+# Lint test file naming convention
+# - Test files must be in tests/ directories
+# - Test files must have tests_ prefix
+lint-test-naming:
+	@echo "Checking test file naming conventions..."
+	@errors=0; \
+	bad_pattern=$$(find crates -name "*_test.rs" -o -name "test_*.rs" 2>/dev/null | grep -v target); \
+	if [ -n "$$bad_pattern" ]; then \
+		echo "❌ Found test files with old naming pattern (*_test.rs or test_*.rs):"; \
+		echo "$$bad_pattern" | sed 's/^/  - /'; \
+		errors=1; \
+	fi; \
+	bad_prefix=$$(find crates -path "*/tests/*.rs" -type f 2>/dev/null | grep -v target | grep -v "mod.rs" | grep -v "/tests_"); \
+	if [ -n "$$bad_prefix" ]; then \
+		echo "❌ Found test files in tests/ without 'tests_' prefix:"; \
+		echo "$$bad_prefix" | sed 's/^/  - /'; \
+		errors=1; \
+	fi; \
+	if [ $$errors -eq 1 ]; then \
+		echo ""; \
+		echo "Rename to tests_*.rs"; \
+		exit 1; \
+	fi
+	@echo "✓ All test files follow naming convention"

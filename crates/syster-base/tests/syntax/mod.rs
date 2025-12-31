@@ -1,1 +1,1 @@
-mod formatter_syntax_kind_test;
+// Syntax tests - currently empty

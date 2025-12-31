@@ -1,4 +1,4 @@
-pub mod folding;
+pub mod folding_ranges;
 pub mod helpers;
 pub mod inlay_hints;
 pub mod population;
@@ -7,4 +7,4 @@ pub mod validator;
 pub mod visitors;
 
 #[cfg(test)]
-mod inlay_hints_collect_hints_test;
+mod tests;

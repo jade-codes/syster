@@ -1,3 +1,5 @@
+use super::Position;
+
 /// Result of parsing a file with detailed error information
 #[derive(Debug)]
 pub struct ParseResult<T> {
@@ -11,16 +13,8 @@ pub struct ParseResult<T> {
 #[derive(Debug, Clone)]
 pub struct ParseError {
     pub message: String,
-    pub position: ErrorPosition,
+    pub position: Position,
     pub kind: ParseErrorKind,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ErrorPosition {
-    /// 0-indexed line number
-    pub line: usize,
-    /// 0-indexed column number
-    pub column: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,7 +59,7 @@ impl ParseError {
     pub fn syntax_error(message: impl Into<String>, line: usize, column: usize) -> Self {
         Self {
             message: message.into(),
-            position: ErrorPosition { line, column },
+            position: Position::new(line, column),
             kind: ParseErrorKind::SyntaxError,
         }
     }
@@ -73,11 +67,8 @@ impl ParseError {
     pub fn ast_error(message: impl Into<String>, line: usize, column: usize) -> Self {
         Self {
             message: message.into(),
-            position: ErrorPosition { line, column },
+            position: Position::new(line, column),
             kind: ParseErrorKind::AstError,
         }
     }
 }
-
-#[cfg(test)]
-mod tests;

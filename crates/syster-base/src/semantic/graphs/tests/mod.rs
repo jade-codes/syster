@@ -1,0 +1,4 @@
+mod tests_graphs;
+mod tests_one_to_many_graph_onetomanygraph;
+mod tests_one_to_one_graph_onetoonegraph;
+mod tests_symmetric_graph_symmetricgraph;

@@ -3,6 +3,7 @@
 //! This module builds LSP SelectionRange types directly from the semantic adapters.
 
 use super::LspServer;
+use super::helpers::span_to_lsp_range;
 use async_lsp::lsp_types::{Position, Range, SelectionRange};
 use std::path::Path;
 use syster::core::Position as CorePosition;
@@ -56,32 +57,14 @@ impl LspServer {
 
         let outermost = iter.next().expect("spans should not be empty");
         let mut current = SelectionRange {
-            range: Range {
-                start: Position {
-                    line: outermost.start.line as u32,
-                    character: outermost.start.column as u32,
-                },
-                end: Position {
-                    line: outermost.end.line as u32,
-                    character: outermost.end.column as u32,
-                },
-            },
+            range: span_to_lsp_range(&outermost),
             parent: None,
         };
 
         // Build chain from outermost to innermost
         for span in iter {
             current = SelectionRange {
-                range: Range {
-                    start: Position {
-                        line: span.start.line as u32,
-                        character: span.start.column as u32,
-                    },
-                    end: Position {
-                        line: span.end.line as u32,
-                        character: span.end.column as u32,
-                    },
-                },
+                range: span_to_lsp_range(&span),
                 parent: Some(Box::new(current)),
             };
         }

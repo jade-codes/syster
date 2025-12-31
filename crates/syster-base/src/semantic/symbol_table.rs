@@ -9,17 +9,4 @@ pub use symbol::{Symbol, SymbolReference};
 pub use table::SymbolTable;
 
 #[cfg(test)]
-#[path = "symbol_table/find_in_scope_chain_test.rs"]
-mod find_in_scope_chain_test;
-#[cfg(test)]
-#[path = "symbol_table/lookup_from_scope_test.rs"]
-mod lookup_from_scope_test;
-#[cfg(test)]
-#[path = "symbol_table/lookup_global_mut_test.rs"]
-mod lookup_global_mut_test;
-#[cfg(test)]
-#[path = "symbol_table/symbol_table_test.rs"]
-mod symbol_table_test;
-#[cfg(test)]
-#[path = "symbol_table/tests.rs"]
 mod tests;
