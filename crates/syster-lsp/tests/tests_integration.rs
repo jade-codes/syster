@@ -885,3 +885,25 @@ fn test_timing_with_stdlib_loaded() {
         println!("AnalysisTooling.sysml not found in stdlib");
     }
 }
+
+#[test]
+fn test_linked_editing_range() {
+    use async_lsp::lsp_types::{Position, Url};
+
+    let server = LspServer::new();
+    let uri = Url::parse("file:///test.sysml").unwrap();
+
+    // Test that linked editing returns None for SysML files
+    let result = server.get_linked_editing_ranges(&uri, Position::new(0, 0));
+    assert!(
+        result.is_none(),
+        "Linked editing should return None for SysML (no syntactically coupled constructs)"
+    );
+
+    // Test with different positions
+    let result = server.get_linked_editing_ranges(&uri, Position::new(10, 5));
+    assert!(
+        result.is_none(),
+        "Linked editing should consistently return None"
+    );
+}
