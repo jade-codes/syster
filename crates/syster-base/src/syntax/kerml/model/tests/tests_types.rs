@@ -40,6 +40,44 @@ fn create_literal_expression() -> LiteralExpression {
     LiteralExpression { expression }
 }
 
+// Helper function to create a LiteralExpression with a specific name
+fn create_literal_expression_with_name(name: &str) -> LiteralExpression {
+    let element = Element {
+        declared_name: Some(name.to_string()),
+        declared_short_name: None,
+    };
+    let namespace = Namespace {
+        element,
+        prefixes: vec![],
+        children: vec![],
+    };
+    let type_ = Type {
+        namespace,
+        is_sufficient: false,
+        is_abstract: None,
+        heritage: vec![],
+        type_relationships: vec![],
+        multiplicity: None,
+    };
+    let feature = Feature {
+        type_,
+        is_nonunique: false,
+        is_ordered: false,
+        direction: None,
+        is_composite: None,
+        is_derived: None,
+        is_end: None,
+        is_portion: None,
+        is_readonly: None,
+        value: None,
+        write: None,
+        crossing_feature: None,
+    };
+    let step = Step { feature };
+    let expression = Expression { step, result: None };
+    LiteralExpression { expression }
+}
+
 // ============================================================================
 // Tests for Element
 // ============================================================================
@@ -887,86 +925,8 @@ fn test_literal_number_eq_different_literals() {
 
 #[test]
 fn test_literal_number_eq_different_literal_expressions() {
-    // Create two different literal expressions
-    let element1 = Element {
-        declared_name: Some("First".to_string()),
-        declared_short_name: None,
-    };
-    let namespace1 = Namespace {
-        element: element1,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type1 = Type {
-        namespace: namespace1,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature1 = Feature {
-        type_: type1,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step1 = Step { feature: feature1 };
-    let expression1 = Expression {
-        step: step1,
-        result: None,
-    };
-    let literal_expression1 = LiteralExpression {
-        expression: expression1,
-    };
-
-    let element2 = Element {
-        declared_name: Some("Second".to_string()),
-        declared_short_name: None,
-    };
-    let namespace2 = Namespace {
-        element: element2,
-        prefixes: vec![],
-        children: vec![],
-    };
-    let type2 = Type {
-        namespace: namespace2,
-        is_sufficient: false,
-        is_abstract: None,
-        heritage: vec![],
-        type_relationships: vec![],
-        multiplicity: None,
-    };
-    let feature2 = Feature {
-        type_: type2,
-        is_nonunique: false,
-        is_ordered: false,
-        direction: None,
-        is_composite: None,
-        is_derived: None,
-        is_end: None,
-        is_portion: None,
-        is_readonly: None,
-        value: None,
-        write: None,
-        crossing_feature: None,
-    };
-    let step2 = Step { feature: feature2 };
-    let expression2 = Expression {
-        step: step2,
-        result: None,
-    };
-    let literal_expression2 = LiteralExpression {
-        expression: expression2,
-    };
+    let literal_expression1 = create_literal_expression_with_name("First");
+    let literal_expression2 = create_literal_expression_with_name("Second");
 
     let literal_num1 = LiteralNumber {
         literal_expression: literal_expression1,
@@ -1113,17 +1073,6 @@ fn test_literal_number_eq_clone() {
     let literal_num2 = literal_num1.clone();
 
     assert_eq!(literal_num1, literal_num2);
-}
-
-#[test]
-fn test_literal_number_eq_self() {
-    let literal_expression = create_literal_expression();
-    let literal_num = LiteralNumber {
-        literal_expression,
-        literal: 99.99,
-    };
-
-    assert_eq!(literal_num, literal_num);
 }
 
 #[test]
