@@ -1,3 +1,4 @@
+mod code_lens;
 mod completion;
 mod core;
 mod definition;

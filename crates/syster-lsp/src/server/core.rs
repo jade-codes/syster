@@ -67,6 +67,9 @@ impl LspServer {
             folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
             selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
             inlay_hint_provider: Some(OneOf::Left(true)),
+            code_lens_provider: Some(CodeLensOptions {
+                resolve_provider: Some(false),
+            }),
             semantic_tokens_provider: Some(
                 SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
                     legend: Self::semantic_tokens_legend(),
