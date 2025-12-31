@@ -17,6 +17,20 @@ impl RelationshipGraph {
         Self::default()
     }
 
+    /// Remove all relationships where the given source is the origin.
+    /// Call this when a file is being repopulated to avoid duplicate relationships.
+    pub fn remove_relationships_for_source(&mut self, source: &str) {
+        for graph in self.one_to_many.values_mut() {
+            graph.remove_source(source);
+        }
+        for graph in self.one_to_one.values_mut() {
+            graph.remove_source(source);
+        }
+        for graph in self.symmetric.values_mut() {
+            graph.remove_element(source);
+        }
+    }
+
     pub fn add_one_to_many(
         &mut self,
         relationship_type: &str,
@@ -155,6 +169,18 @@ impl RelationshipGraph {
                 targets
                     .into_iter()
                     .map(move |target| format!("{label} `{target}`"))
+            })
+            .collect()
+    }
+
+    /// Get all relationships for a given element, grouped by relationship type.
+    /// Returns (label, targets) pairs where label is the human-readable relationship type.
+    pub fn get_relationships_grouped(&self, element: &str) -> Vec<(String, Vec<String>)> {
+        self.get_all_relationships(element)
+            .into_iter()
+            .map(|(rel_type, targets)| {
+                let label = relationship_label(&rel_type).to_string();
+                (label, targets)
             })
             .collect()
     }

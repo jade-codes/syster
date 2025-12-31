@@ -206,13 +206,14 @@ pub fn format_rich_hover(
         result.push_str(&format!("\n**Defined in:** `{file}`\n"));
     }
 
-    // Relationships (using relationship graph)
-    if let Some(relationships) = get_symbol_relationships(symbol, workspace)
-        && !relationships.is_empty()
-    {
-        result.push_str("\n**Relationships:**\n");
-        for rel in relationships {
-            result.push_str(&format!("- {rel}\n"));
+    // Relationships (using relationship graph) - grouped by type
+    let relationships = get_symbol_relationships(symbol, workspace);
+    if !relationships.is_empty() {
+        for (rel_type, targets) in relationships {
+            result.push_str(&format!("\n**{rel_type}:**\n"));
+            for target in targets {
+                result.push_str(&format!("- `{target}`\n"));
+            }
         }
     }
 
@@ -239,19 +240,13 @@ fn format_symbol_declaration(symbol: &Symbol) -> String {
     }
 }
 
-/// Get relationships for a symbol from the workspace
+/// Get relationships for a symbol from the workspace, grouped by relationship type
 fn get_symbol_relationships(
     symbol: &Symbol,
     workspace: &syster::semantic::Workspace<SyntaxFile>,
-) -> Option<Vec<String>> {
+) -> Vec<(String, Vec<String>)> {
     let qname = symbol.qualified_name();
     let graph = workspace.relationship_graph();
 
-    let relationships = graph.get_formatted_relationships(qname);
-
-    if relationships.is_empty() {
-        None
-    } else {
-        Some(relationships)
-    }
+    graph.get_relationships_grouped(qname)
 }

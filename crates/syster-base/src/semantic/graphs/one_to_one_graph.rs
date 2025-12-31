@@ -49,4 +49,9 @@ impl OneToOneGraph {
             .map(|(source, (_, span))| (source, span.as_ref()))
             .collect()
     }
+
+    /// Remove the relationship where the given source is the origin
+    pub fn remove_source(&mut self, source: &str) {
+        self.relationships.remove(source);
+    }
 }

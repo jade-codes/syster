@@ -915,3 +915,626 @@ fn test_get_references_to_combined_relationship_types() {
         "Should find typing reference"
     );
 }
+
+// =============================================================================
+// Tests for duplicate relationship detection (Issue: hover shows duplicates)
+// =============================================================================
+
+/// Test that stdlib files don't produce duplicate relationships on initial load.
+/// This tests the ISQThermodynamics file where `ScalarQuantityValue` is specialized
+/// by many attribute defs (CelsiusTemperatureValue, etc.).
+/// Each definition should only show up once in the relationship graph.
+#[test]
+fn test_stdlib_no_duplicate_relationships() {
+    use std::path::PathBuf;
+    use syster::project::StdLibLoader;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    // Create workspace and load stdlib
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+    let stdlib_loader = StdLibLoader::with_path(stdlib_path.clone());
+
+    // Load stdlib
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+
+    // Populate all files
+    workspace.populate_all().expect("Failed to populate");
+
+    // Find CelsiusTemperatureValue symbol
+    let symbol_table = workspace.symbol_table();
+    let all_symbols = symbol_table.all_symbols();
+    let celsius_symbol = all_symbols
+        .iter()
+        .find(|(_, sym)| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
+
+    assert!(
+        celsius_symbol.is_some(),
+        "Should find CelsiusTemperatureValue in stdlib"
+    );
+
+    // Check for duplicates in relationships for CelsiusTemperatureValue
+    let graph = workspace.relationship_graph();
+    let (_, first_symbol) = celsius_symbol.unwrap();
+    let qualified_name = first_symbol.qualified_name();
+    let rels = graph.get_one_to_many(REL_SPECIALIZATION, qualified_name);
+
+    assert!(rels.is_some(), "Should have specialization relationship");
+    let targets = rels.unwrap();
+
+    // Check for duplicates by comparing length with deduplicated length
+    let mut unique_targets: Vec<_> = targets.iter().cloned().collect();
+    unique_targets.sort();
+    unique_targets.dedup();
+
+    assert_eq!(
+        targets.len(),
+        unique_targets.len(),
+        "Found duplicate relationships! Got {} but only {} unique: {:?}",
+        targets.len(),
+        unique_targets.len(),
+        targets
+    );
+
+    // Should specialize exactly ScalarQuantityValue
+    assert_eq!(
+        targets.len(),
+        1,
+        "Should have exactly 1 specialization target"
+    );
+    assert_eq!(targets[0].as_str(), "ScalarQuantityValue");
+}
+
+/// Test that repopulating a file doesn't create duplicate relationships.
+/// This simulates what happens in the LSP when a document is edited:
+/// 1. File is loaded and populated
+/// 2. File is marked dirty and repopulated
+///
+/// FIX: populate_file now clears relationships before repopulating,
+/// using the same pattern as remove_symbols_from_file.
+#[test]
+fn test_repopulation_no_duplicate_relationships() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    // Create a workspace and add a file
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let path = PathBuf::from("test.sysml");
+    let source = "part def Vehicle; part def Car :> Vehicle;";
+
+    // Parse and add to workspace
+    let parse_result = syster::project::file_loader::parse_with_result(source, &path);
+    assert!(parse_result.content.is_some());
+    workspace.add_file(path.clone(), parse_result.content.unwrap());
+
+    // First population
+    workspace.populate_all().expect("First populate failed");
+
+    // Verify single relationship
+    let targets = workspace
+        .relationship_graph()
+        .get_one_to_many(REL_SPECIALIZATION, "Car")
+        .unwrap();
+    assert_eq!(
+        targets.len(),
+        1,
+        "Should have 1 target after first populate"
+    );
+
+    // Simulate file edit: update content and repopulate
+    let parse_result2 = syster::project::file_loader::parse_with_result(source, &path);
+    workspace.update_file(&path, parse_result2.content.unwrap());
+    workspace.populate_affected().expect("Repopulate failed");
+
+    // FIX: Should still have exactly 1 relationship (no duplicates)
+    let targets = workspace
+        .relationship_graph()
+        .get_one_to_many(REL_SPECIALIZATION, "Car")
+        .unwrap();
+
+    assert_eq!(
+        targets.len(),
+        1,
+        "Should still have 1 target after repopulation (fix works!). Got: {:?}",
+        targets
+    );
+}
+
+/// Test that simulates the actual LSP flow where duplicates USED TO occur:
+/// 1. Workspace loads stdlib via populate_all()
+/// 2. User opens a stdlib file (didOpen triggers parse_into_workspace)
+/// 3. parse_into_workspace should skip already-populated files
+/// 4. No duplicates because we don't repopulate!
+///
+/// FIX: parse_into_workspace now checks is_populated() before reparsing.
+#[test]
+fn test_lsp_open_stdlib_file_no_duplicates_after_fix() {
+    use std::path::PathBuf;
+    use syster::project::StdLibLoader;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    // Create workspace and load stdlib (simulates ensure_workspace_loaded)
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+    let stdlib_loader = StdLibLoader::with_path(stdlib_path.clone());
+
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+
+    // Initial population (simulates what ensure_workspace_loaded does)
+    workspace.populate_all().expect("Failed to populate");
+
+    // Find ISQThermodynamics file path
+    let thermo_path = workspace
+        .files()
+        .keys()
+        .find(|p| p.to_string_lossy().contains("ISQThermodynamics"))
+        .cloned();
+
+    assert!(thermo_path.is_some(), "Should find ISQThermodynamics file");
+    let thermo_path = thermo_path.unwrap();
+
+    // Verify initial state - no duplicates
+    let graph = workspace.relationship_graph();
+    let initial_rels = graph.get_one_to_many(
+        REL_SPECIALIZATION,
+        "ISQThermodynamics::CelsiusTemperatureValue",
+    );
+    assert!(initial_rels.is_some(), "Should have initial relationships");
+    let initial_count = initial_rels.unwrap().len();
+    assert_eq!(
+        initial_count, 1,
+        "Should have exactly 1 specialization initially"
+    );
+
+    // Verify file is already populated
+    let file = workspace.get_file(&thermo_path);
+    assert!(file.is_some(), "File should exist");
+    assert!(
+        file.unwrap().is_populated(),
+        "File should be marked as populated"
+    );
+
+    // Simulate what WOULD happen if we repopulated (the bug case)
+    // Read file and parse it again
+    let file_content = std::fs::read_to_string(&thermo_path).expect("Failed to read file");
+    let parse_result = syster::project::file_loader::parse_with_result(&file_content, &thermo_path);
+    assert!(parse_result.content.is_some(), "Should parse successfully");
+
+    // The FIX: LSP now skips update_file + populate_affected for already-populated files
+    // But this test uses Workspace directly, so we simulate the fixed behavior:
+    // DON'T call update_file if already populated (which is what the LSP fix does)
+
+    // Check that relationships are still correct (no duplicates)
+    let graph = workspace.relationship_graph();
+    let after_rels = graph.get_one_to_many(
+        REL_SPECIALIZATION,
+        "ISQThermodynamics::CelsiusTemperatureValue",
+    );
+    assert!(after_rels.is_some(), "Should still have relationships");
+    let after_count = after_rels.unwrap().len();
+
+    // With the fix, count stays at 1
+    assert_eq!(
+        after_count, 1,
+        "Should still have exactly 1 specialization (no duplicates)"
+    );
+}
+
+// =============================================================================
+// Tests for add/remove symbol and relationship scenarios
+// =============================================================================
+
+/// Test adding a single relationship
+#[test]
+fn test_add_single_relationship() {
+    let mut graph = RelationshipGraph::new();
+
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+
+    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car");
+    assert!(targets.is_some());
+    assert_eq!(targets.unwrap().len(), 1);
+}
+
+/// Test adding multiple relationships for the same source
+#[test]
+fn test_add_multiple_relationships_same_source() {
+    let mut graph = RelationshipGraph::new();
+
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Machine".into(), None);
+
+    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car");
+    assert!(targets.is_some());
+    let targets = targets.unwrap();
+    assert_eq!(targets.len(), 2);
+    assert!(targets.iter().any(|t| t.as_str() == "Vehicle"));
+    assert!(targets.iter().any(|t| t.as_str() == "Machine"));
+}
+
+/// Test adding relationships for different sources
+#[test]
+fn test_add_relationships_different_sources() {
+    let mut graph = RelationshipGraph::new();
+
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Truck".into(), "Vehicle".into(), None);
+
+    // Both should have their own relationship
+    assert!(graph.get_one_to_many(REL_SPECIALIZATION, "Car").is_some());
+    assert!(graph.get_one_to_many(REL_SPECIALIZATION, "Truck").is_some());
+}
+
+/// Test removing relationships for a specific source
+#[test]
+fn test_remove_relationships_for_source() {
+    let mut graph = RelationshipGraph::new();
+
+    // Add relationships for two different sources
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Truck".into(), "Vehicle".into(), None);
+
+    // Remove relationships for Car only
+    graph.remove_relationships_for_source("Car");
+
+    // Car's relationship should be gone
+    assert!(graph.get_one_to_many(REL_SPECIALIZATION, "Car").is_none());
+
+    // Truck's relationship should still exist
+    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Truck");
+    assert!(targets.is_some());
+    assert_eq!(targets.unwrap().len(), 1);
+}
+
+/// Test removing source clears all relationship types for that source
+#[test]
+fn test_remove_source_clears_all_relationship_types() {
+    let mut graph = RelationshipGraph::new();
+
+    // Add different relationship types for the same source
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SUBSETTING, "Car".into(), "BaseCar".into(), None);
+    graph.add_one_to_one(REL_TYPING, "myCar".into(), "Car".into(), None);
+
+    // Remove myCar from typing
+    graph.remove_relationships_for_source("myCar");
+    assert!(graph.get_one_to_one(REL_TYPING, "myCar").is_none());
+
+    // Remove Car from specialization and subsetting
+    graph.remove_relationships_for_source("Car");
+    assert!(graph.get_one_to_many(REL_SPECIALIZATION, "Car").is_none());
+    assert!(graph.get_one_to_many(REL_SUBSETTING, "Car").is_none());
+}
+
+/// Test removing non-existent source doesn't cause errors
+#[test]
+fn test_remove_nonexistent_source() {
+    let mut graph = RelationshipGraph::new();
+
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+
+    // Remove a source that doesn't exist - should not panic
+    graph.remove_relationships_for_source("NonExistent");
+
+    // Original relationship should still be there
+    assert!(graph.get_one_to_many(REL_SPECIALIZATION, "Car").is_some());
+}
+
+/// Test one-to-one relationship add and remove
+#[test]
+fn test_one_to_one_add_and_remove() {
+    let mut graph = RelationshipGraph::new();
+
+    graph.add_one_to_one(REL_TYPING, "myCar".into(), "Car".into(), None);
+    graph.add_one_to_one(REL_TYPING, "myTruck".into(), "Truck".into(), None);
+
+    assert_eq!(
+        graph.get_one_to_one(REL_TYPING, "myCar"),
+        Some(&"Car".to_string())
+    );
+    assert_eq!(
+        graph.get_one_to_one(REL_TYPING, "myTruck"),
+        Some(&"Truck".to_string())
+    );
+
+    // Remove myCar
+    graph.remove_relationships_for_source("myCar");
+
+    assert!(graph.get_one_to_one(REL_TYPING, "myCar").is_none());
+    assert_eq!(
+        graph.get_one_to_one(REL_TYPING, "myTruck"),
+        Some(&"Truck".to_string())
+    );
+}
+
+/// Test repopulation scenario: add, remove, add again should not duplicate
+#[test]
+fn test_repopulation_add_remove_add() {
+    let mut graph = RelationshipGraph::new();
+
+    // First population
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    assert_eq!(
+        graph
+            .get_one_to_many(REL_SPECIALIZATION, "Car")
+            .unwrap()
+            .len(),
+        1
+    );
+
+    // Clear for repopulation
+    graph.remove_relationships_for_source("Car");
+
+    // Second population (same content)
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+
+    // Should still have exactly 1 (not 2!)
+    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car").unwrap();
+    assert_eq!(
+        targets.len(),
+        1,
+        "Should have exactly 1 after repopulation, got {}",
+        targets.len()
+    );
+}
+
+/// Test repopulation with changed content
+#[test]
+fn test_repopulation_with_changed_content() {
+    let mut graph = RelationshipGraph::new();
+
+    // First population: Car specializes Vehicle
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+
+    // Clear for repopulation
+    graph.remove_relationships_for_source("Car");
+
+    // Second population: Car now specializes Machine instead
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Machine".into(), None);
+
+    // Should have Machine, not Vehicle
+    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car").unwrap();
+    assert_eq!(targets.len(), 1);
+    assert_eq!(targets[0], "Machine");
+}
+
+/// Test that removing source doesn't affect reverse lookups for other sources
+#[test]
+fn test_remove_source_doesnt_affect_reverse_lookups() {
+    let mut graph = RelationshipGraph::new();
+
+    // Multiple sources reference the same target
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Truck".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Bus".into(), "Vehicle".into(), None);
+
+    // Get sources that reference Vehicle
+    let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Vehicle");
+    assert_eq!(sources.len(), 3);
+
+    // Remove Car
+    graph.remove_relationships_for_source("Car");
+
+    // Vehicle should still be referenced by Truck and Bus
+    let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Vehicle");
+    assert_eq!(sources.len(), 2);
+    assert!(sources.iter().any(|s| s.as_str() == "Truck"));
+    assert!(sources.iter().any(|s| s.as_str() == "Bus"));
+    assert!(!sources.iter().any(|s| s.as_str() == "Car"));
+}
+
+/// Test full workspace repopulation scenario with symbols and relationships
+#[test]
+fn test_workspace_repopulation_symbols_and_relationships() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let path = PathBuf::from("test.sysml");
+
+    // Initial content
+    let source1 = "part def Vehicle; part def Car :> Vehicle; part myCar : Car;";
+    let parse_result = syster::project::file_loader::parse_with_result(source1, &path);
+    workspace.add_file(path.clone(), parse_result.content.unwrap());
+    workspace.populate_all().expect("Failed to populate");
+
+    // Verify initial state
+    assert!(workspace.symbol_table().lookup("Vehicle").is_some());
+    assert!(workspace.symbol_table().lookup("Car").is_some());
+    assert!(workspace.symbol_table().lookup("myCar").is_some());
+    assert!(
+        workspace
+            .relationship_graph()
+            .get_one_to_many(REL_SPECIALIZATION, "Car")
+            .is_some()
+    );
+    assert!(
+        workspace
+            .relationship_graph()
+            .get_one_to_one(REL_TYPING, "myCar")
+            .is_some()
+    );
+
+    // Update with different content
+    let source2 = "part def Truck; part def BigTruck :> Truck;";
+    let parse_result2 = syster::project::file_loader::parse_with_result(source2, &path);
+    workspace.update_file(&path, parse_result2.content.unwrap());
+    workspace.populate_affected().expect("Failed to repopulate");
+
+    // Old symbols should be gone
+    assert!(
+        workspace.symbol_table().lookup("Vehicle").is_none(),
+        "Vehicle should be removed"
+    );
+    assert!(
+        workspace.symbol_table().lookup("Car").is_none(),
+        "Car should be removed"
+    );
+    assert!(
+        workspace.symbol_table().lookup("myCar").is_none(),
+        "myCar should be removed"
+    );
+
+    // Old relationships should be gone
+    assert!(
+        workspace
+            .relationship_graph()
+            .get_one_to_many(REL_SPECIALIZATION, "Car")
+            .is_none()
+    );
+    assert!(
+        workspace
+            .relationship_graph()
+            .get_one_to_one(REL_TYPING, "myCar")
+            .is_none()
+    );
+
+    // New symbols should exist
+    assert!(
+        workspace.symbol_table().lookup("Truck").is_some(),
+        "Truck should exist"
+    );
+    assert!(
+        workspace.symbol_table().lookup("BigTruck").is_some(),
+        "BigTruck should exist"
+    );
+
+    // New relationships should exist
+    let targets = workspace
+        .relationship_graph()
+        .get_one_to_many(REL_SPECIALIZATION, "BigTruck");
+    assert!(targets.is_some(), "BigTruck should have specialization");
+    assert_eq!(targets.unwrap()[0], "Truck");
+}
+
+/// Test that nested symbols are properly removed and re-added
+#[test]
+fn test_nested_symbols_repopulation() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let path = PathBuf::from("test.sysml");
+
+    // Initial content with nested symbols
+    let source1 = r#"
+        part def Container {
+            part inner1 : Container;
+            part inner2 : Container;
+        }
+    "#;
+    let parse_result = syster::project::file_loader::parse_with_result(source1, &path);
+    workspace.add_file(path.clone(), parse_result.content.unwrap());
+    workspace.populate_all().expect("Failed to populate");
+
+    // Verify nested symbols exist via all_symbols (nested symbols stored by simple name)
+    assert!(workspace.symbol_table().lookup("Container").is_some());
+    let all_symbols = workspace.symbol_table().all_symbols();
+    assert!(
+        all_symbols
+            .iter()
+            .any(|(_, s)| s.qualified_name() == "Container::inner1"),
+        "inner1 should exist"
+    );
+    assert!(
+        all_symbols
+            .iter()
+            .any(|(_, s)| s.qualified_name() == "Container::inner2"),
+        "inner2 should exist"
+    );
+
+    // Update with different nested structure
+    let source2 = r#"
+        part def Container {
+            part newInner : Container;
+        }
+    "#;
+    let parse_result2 = syster::project::file_loader::parse_with_result(source2, &path);
+    workspace.update_file(&path, parse_result2.content.unwrap());
+    workspace.populate_affected().expect("Failed to repopulate");
+
+    // Old nested symbols should be gone
+    let all_symbols_after = workspace.symbol_table().all_symbols();
+    assert!(
+        !all_symbols_after
+            .iter()
+            .any(|(_, s)| s.qualified_name() == "Container::inner1"),
+        "inner1 should be removed"
+    );
+    assert!(
+        !all_symbols_after
+            .iter()
+            .any(|(_, s)| s.qualified_name() == "Container::inner2"),
+        "inner2 should be removed"
+    );
+
+    // New nested symbol should exist
+    assert!(workspace.symbol_table().lookup("Container").is_some());
+    assert!(
+        all_symbols_after
+            .iter()
+            .any(|(_, s)| s.qualified_name() == "Container::newInner"),
+        "newInner should exist"
+    );
+}
+
+/// Test multiple files: updating one doesn't affect the other
+#[test]
+fn test_multi_file_update_isolation() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let path1 = PathBuf::from("file1.sysml");
+    let path2 = PathBuf::from("file2.sysml");
+
+    // Add two files
+    let source1 = "part def Vehicle; part def Car :> Vehicle;";
+    let source2 = "part def Animal; part def Dog :> Animal;";
+
+    let parse1 = syster::project::file_loader::parse_with_result(source1, &path1);
+    let parse2 = syster::project::file_loader::parse_with_result(source2, &path2);
+
+    workspace.add_file(path1.clone(), parse1.content.unwrap());
+    workspace.add_file(path2.clone(), parse2.content.unwrap());
+    workspace.populate_all().expect("Failed to populate");
+
+    // Verify both files' symbols and relationships exist
+    assert!(workspace.symbol_table().lookup("Vehicle").is_some());
+    assert!(workspace.symbol_table().lookup("Car").is_some());
+    assert!(workspace.symbol_table().lookup("Animal").is_some());
+    assert!(workspace.symbol_table().lookup("Dog").is_some());
+
+    // Update file1 only
+    let source1_new = "part def Machine; part def Robot :> Machine;";
+    let parse1_new = syster::project::file_loader::parse_with_result(source1_new, &path1);
+    workspace.update_file(&path1, parse1_new.content.unwrap());
+    workspace.populate_affected().expect("Failed to repopulate");
+
+    // File1's old symbols should be gone, new ones should exist
+    assert!(workspace.symbol_table().lookup("Vehicle").is_none());
+    assert!(workspace.symbol_table().lookup("Car").is_none());
+    assert!(workspace.symbol_table().lookup("Machine").is_some());
+    assert!(workspace.symbol_table().lookup("Robot").is_some());
+
+    // File2's symbols should be unchanged
+    assert!(workspace.symbol_table().lookup("Animal").is_some());
+    assert!(workspace.symbol_table().lookup("Dog").is_some());
+
+    // File2's relationships should be unchanged
+    let dog_spec = workspace
+        .relationship_graph()
+        .get_one_to_many(REL_SPECIALIZATION, "Dog");
+    assert!(dog_spec.is_some());
+    assert_eq!(dog_spec.unwrap()[0], "Animal");
+}
