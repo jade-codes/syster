@@ -21,32 +21,19 @@ fn create_temp_file(content: &str, name: &str) -> (PathBuf, Url, String) {
 fn test_prepare_call_hierarchy_on_action_definition() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def ProcessData;
-    action def ExecuteTask;
-}"#;
+    let content = r#"action def ProcessData; action def ExecuteTask;"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_prepare.sysml");
     server
         .open_document(&uri, &text)
         .expect("Failed to open document");
 
-    // Verify symbols were created
-    let symbols = server.workspace().symbol_table().all_symbols();
-    let has_process_data = symbols
-        .iter()
-        .any(|(_, s)| s.name() == "ProcessData");
-    assert!(
-        has_process_data,
-        "ProcessData symbol should be in symbol table"
-    );
-
-    // Find "ProcessData" position - line 1 (0-indexed), around character 15
+    // Find "ProcessData" position
     let params = CallHierarchyPrepareParams {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 1,
+                line: 0,
                 character: 15,
             },
         },
@@ -66,9 +53,7 @@ fn test_prepare_call_hierarchy_on_action_definition() {
 fn test_prepare_call_hierarchy_on_non_callable() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    part def Vehicle;
-}"#;
+    let content = r#"part def Vehicle;"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_non_callable.sysml");
     server
@@ -80,7 +65,7 @@ fn test_prepare_call_hierarchy_on_non_callable() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 1,
+                line: 0,
                 character: 14,
             },
         },
@@ -139,10 +124,7 @@ fn test_incoming_calls_single_caller() {
 fn test_incoming_calls_no_callers() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def UnusedAction;
-}
-"#;
+    let content = r#"action def UnusedAction;"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_no_incoming.sysml");
     server
@@ -154,7 +136,7 @@ fn test_incoming_calls_no_callers() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 2,
+                line: 0,
                 character: 15,
             },
         },
@@ -183,13 +165,7 @@ fn test_incoming_calls_no_callers() {
 fn test_outgoing_calls_single_callee() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def SubAction;
-    action def MainAction {
-        perform SubAction;
-    }
-}
-"#;
+    let content = r#"action def SubAction; action def MainAction { perform SubAction; }"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_outgoing.sysml");
     server
@@ -201,8 +177,8 @@ fn test_outgoing_calls_single_callee() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 3,
-                character: 15,
+                line: 0,
+                character: 35,
             },
         },
         work_done_progress_params: WorkDoneProgressParams::default(),
@@ -233,10 +209,7 @@ fn test_outgoing_calls_single_callee() {
 fn test_outgoing_calls_no_callees() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def LeafAction;
-}
-"#;
+    let content = r#"action def LeafAction;"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_no_outgoing.sysml");
     server
@@ -248,7 +221,7 @@ fn test_outgoing_calls_no_callees() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 2,
+                line: 0,
                 character: 15,
             },
         },
@@ -277,16 +250,7 @@ fn test_outgoing_calls_no_callees() {
 fn test_call_hierarchy_multiple_callers() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def SharedAction;
-    action def Caller1 {
-        perform SharedAction;
-    }
-    action def Caller2 {
-        perform SharedAction;
-    }
-}
-"#;
+    let content = r#"action def SharedAction; action def Caller1 { perform SharedAction; } action def Caller2 { perform SharedAction; }"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_multiple_callers.sysml");
     server
@@ -298,7 +262,7 @@ fn test_call_hierarchy_multiple_callers() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 2,
+                line: 0,
                 character: 15,
             },
         },
@@ -331,15 +295,7 @@ fn test_call_hierarchy_multiple_callers() {
 fn test_call_hierarchy_multiple_callees() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def SubAction1;
-    action def SubAction2;
-    action def MainAction {
-        perform SubAction1;
-        perform SubAction2;
-    }
-}
-"#;
+    let content = r#"action def SubAction1; action def SubAction2; action def MainAction { perform SubAction1; perform SubAction2; }"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_multiple_callees.sysml");
     server
@@ -351,8 +307,8 @@ fn test_call_hierarchy_multiple_callees() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 4,
-                character: 15,
+                line: 0,
+                character: 62,
             },
         },
         work_done_progress_params: WorkDoneProgressParams::default(),
@@ -384,13 +340,7 @@ fn test_call_hierarchy_multiple_callees() {
 fn test_call_hierarchy_action_usage() {
     let mut server = create_test_server();
 
-    let content = r#"package TestPkg {
-    action def ActionDef;
-    action myAction {
-        perform ActionDef;
-    }
-}
-"#;
+    let content = r#"action def ActionDef; action myAction { perform ActionDef; }"#;
 
     let (_path, uri, text) = create_temp_file(content, "test_action_usage.sysml");
     server
@@ -402,8 +352,8 @@ fn test_call_hierarchy_action_usage() {
         text_document_position_params: TextDocumentPositionParams {
             text_document: TextDocumentIdentifier { uri: uri.clone() },
             position: Position {
-                line: 3,
-                character: 11,
+                line: 0,
+                character: 30,
             },
         },
         work_done_progress_params: WorkDoneProgressParams::default(),

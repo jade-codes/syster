@@ -148,7 +148,13 @@ impl LspServer {
         let callees = self
             .workspace
             .relationship_graph()
-            .get_one_to_many_with_spans(REL_PERFORM, source_qname)?;
+            .get_one_to_many_with_spans(REL_PERFORM, source_qname);
+
+        // If no callees, return empty vec (not None)
+        let callees = match callees {
+            Some(c) => c,
+            None => return Some(Vec::new()),
+        };
 
         let mut outgoing_calls = Vec::new();
 
