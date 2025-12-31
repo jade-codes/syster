@@ -1,6 +1,7 @@
 //! Inlay hint support for the LSP server
 
 use super::LspServer;
+use super::helpers::uri_to_path;
 use async_lsp::lsp_types::{
     InlayHint, InlayHintKind, InlayHintLabel, InlayHintParams, Position as LspPosition,
 };
@@ -12,9 +13,8 @@ impl LspServer {
     pub fn get_inlay_hints(&self, params: &InlayHintParams) -> Vec<InlayHint> {
         let uri = &params.text_document.uri;
 
-        let path = match uri.to_file_path() {
-            Ok(p) => p,
-            Err(_) => return vec![],
+        let Some(path) = uri_to_path(uri) else {
+            return vec![];
         };
 
         let workspace_file = match self.workspace.files().get(&path) {

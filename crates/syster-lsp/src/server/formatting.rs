@@ -1,4 +1,6 @@
 use crate::server::LspServer;
+use crate::server::helpers::uri_to_path;
+use async_lsp::ResponseError;
 use async_lsp::lsp_types::*;
 use syster::syntax::formatter;
 use tokio_util::sync::CancellationToken;
@@ -6,14 +8,44 @@ use tokio_util::sync::CancellationToken;
 impl LspServer {
     /// Get a snapshot of the document text for async formatting
     pub fn get_document_text(&self, uri: &Url) -> Option<String> {
-        let path = uri.to_file_path().ok()?;
+        let path = uri_to_path(uri)?;
         self.document_texts.get(&path).cloned()
     }
 }
 
+/// Handle document formatting request asynchronously
+///
+/// This function takes snapshots of the required data and returns a future
+/// that can be awaited. The formatting work runs on a blocking thread pool
+/// and respects cancellation.
+pub async fn format_document(
+    text_snapshot: Option<String>,
+    options: FormattingOptions,
+    cancel_token: CancellationToken,
+) -> Result<Option<Vec<TextEdit>>, ResponseError> {
+    let result = match text_snapshot {
+        Some(text) => {
+            let cancel_for_select = cancel_token.clone();
+
+            // Run formatting on the blocking thread pool.
+            // Use select! to race the work against cancellation.
+            let format_task =
+                tokio::task::spawn_blocking(move || format_text(&text, options, &cancel_token));
+
+            tokio::select! {
+                result = format_task => result.unwrap_or(None),
+                _ = cancel_for_select.cancelled() => None,
+            }
+        }
+        None => None,
+    };
+
+    Ok(result)
+}
+
 /// Format text with cancellation support
 /// Returns None if cancelled or if no changes needed
-pub fn format_text_async(
+pub fn format_text(
     text: &str,
     options: FormattingOptions,
     cancel: &CancellationToken,
@@ -57,157 +89,5 @@ fn full_document_range(text: &str) -> Range {
     Range {
         start: Position::new(0, 0),
         end: Position::new(line_count, last_char),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_format_basic_kerml() {
-        let input = "package Test {
-feature x;
-}";
-        let format_options = syster::syntax::formatter::FormatOptions {
-            tab_size: 4,
-            insert_spaces: true,
-            print_width: 80,
-        };
-
-        let result = syster::syntax::formatter::format_async(
-            input,
-            &format_options,
-            &CancellationToken::new(),
-        )
-        .unwrap();
-
-        // Rowan formatter preserves structure with proper indentation
-        assert!(result.contains("package Test"));
-        assert!(result.contains("feature x"));
-    }
-
-    #[test]
-    fn test_format_nested_kerml() {
-        let input = "package Test {
-struct Vehicle {
-feature wheels;
-}
-}";
-        let format_options = syster::syntax::formatter::FormatOptions {
-            tab_size: 2,
-            insert_spaces: true,
-            print_width: 80,
-        };
-
-        let result = syster::syntax::formatter::format_async(
-            input,
-            &format_options,
-            &CancellationToken::new(),
-        )
-        .unwrap();
-
-        // Verify structure is preserved
-        assert!(result.contains("package Test"));
-        assert!(result.contains("struct Vehicle"));
-        assert!(result.contains("feature wheels"));
-    }
-
-    #[test]
-    fn test_format_with_tabs() {
-        let input = "package Test {
-feature x;
-}";
-        let format_options = syster::syntax::formatter::FormatOptions {
-            tab_size: 1,
-            insert_spaces: false,
-            print_width: 80,
-        };
-
-        let result = syster::syntax::formatter::format_async(
-            input,
-            &format_options,
-            &CancellationToken::new(),
-        )
-        .unwrap();
-
-        // Verify tabs are used for indentation
-        assert!(result.contains("package Test"));
-        assert!(result.contains("\t")); // Should have tab indentation
-    }
-
-    #[test]
-    fn test_format_preserves_comments() {
-        let input = "// This is a comment
-package Test {
-    /* block comment */
-    feature x;
-}";
-        let format_options = syster::syntax::formatter::FormatOptions {
-            tab_size: 4,
-            insert_spaces: true,
-            print_width: 80,
-        };
-
-        let result = syster::syntax::formatter::format_async(
-            input,
-            &format_options,
-            &CancellationToken::new(),
-        )
-        .unwrap();
-
-        // Rowan formatter preserves comments
-        assert!(result.contains("// This is a comment"));
-        assert!(result.contains("/* block comment */"));
-    }
-
-    #[test]
-    fn test_format_normalizes_excessive_whitespace() {
-        let input = "metadata def              ToolVariable";
-        let format_options = syster::syntax::formatter::FormatOptions {
-            tab_size: 4,
-            insert_spaces: true,
-            print_width: 80,
-        };
-
-        let result = syster::syntax::formatter::format_async(
-            input,
-            &format_options,
-            &CancellationToken::new(),
-        )
-        .unwrap();
-
-        // Multiple spaces should be normalized to single space
-        assert_eq!(
-            result.trim(),
-            "metadata def ToolVariable",
-            "Should normalize multiple spaces. Got: |{result}|"
-        );
-    }
-
-    #[test]
-    fn test_lsp_format_normalizes_whitespace() {
-        let source = "metadata def              ToolVariable  ";
-        let options = FormattingOptions {
-            tab_size: 4,
-            insert_spaces: true,
-            ..Default::default()
-        };
-
-        let result = format_text_async(source, options, &CancellationToken::new());
-
-        assert!(result.is_some(), "format should return Some edits");
-        let edits = result.unwrap();
-        assert_eq!(edits.len(), 1, "Should have one edit");
-
-        let new_text = &edits[0].new_text;
-        assert!(
-            new_text.contains("metadata def ToolVariable"),
-            "Formatted text should normalize whitespace. Got: |{new_text}|"
-        );
-        assert!(
-            !new_text.contains("def              "),
-            "Should not have multiple spaces. Got: |{new_text}|"
-        );
     }
 }

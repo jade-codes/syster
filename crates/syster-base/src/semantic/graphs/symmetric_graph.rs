@@ -34,4 +34,17 @@ impl SymmetricGraph {
             .get(element1)
             .is_some_and(|related| related.iter().any(|e| e == element2))
     }
+
+    /// Remove the element and all its relationships (both directions)
+    pub fn remove_element(&mut self, element: &str) {
+        // Remove the element's entry
+        if let Some(related) = self.relationships.remove(element) {
+            // Also remove back-references from related elements
+            for other in related {
+                if let Some(others_related) = self.relationships.get_mut(&other) {
+                    others_related.retain(|e| e != element);
+                }
+            }
+        }
+    }
 }

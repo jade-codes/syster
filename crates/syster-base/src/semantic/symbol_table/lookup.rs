@@ -120,6 +120,15 @@ impl SymbolTable {
         })
     }
 
+    /// Resolve a symbol by name, trying qualified lookup first, then simple lookup
+    ///
+    /// This is the standard pattern for symbol resolution:
+    /// 1. Try lookup_qualified (for fully qualified names like "Package::Element")
+    /// 2. Fall back to simple lookup (for unqualified names like "Element")
+    pub fn resolve(&self, name: &str) -> Option<&Symbol> {
+        self.lookup_qualified(name).or_else(|| self.lookup(name))
+    }
+
     pub fn all_symbols(&self) -> Vec<(&String, &Symbol)> {
         self.scopes
             .iter()

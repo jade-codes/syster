@@ -77,6 +77,23 @@ impl<'a> WorkspacePopulator<'a> {
 
         let file_path_str = path.to_string_lossy().to_string();
 
+        // Collect qualified names of symbols from this file BEFORE removing them
+        // so we can also remove their relationships
+        let symbols_to_remove: Vec<String> = self
+            .symbol_table
+            .all_symbols()
+            .iter()
+            .filter(|(_, symbol)| symbol.source_file() == Some(&file_path_str))
+            .map(|(_, symbol)| symbol.qualified_name().to_string())
+            .collect();
+
+        // Remove relationships for all symbols from this file
+        for qualified_name in &symbols_to_remove {
+            self.relationship_graph
+                .remove_relationships_for_source(qualified_name);
+        }
+
+        // Remove symbols from the file
         self.symbol_table.remove_symbols_from_file(&file_path_str);
         self.symbol_table
             .set_current_file(Some(file_path_str.clone()));

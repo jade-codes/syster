@@ -5,7 +5,7 @@
 //! in the AST, collecting spans that contain a given position.
 
 use crate::core::Position;
-use crate::semantic::selection::find_sysml_selection_spans;
+use crate::semantic::adapters::selection::find_sysml_selection_spans;
 use crate::syntax::sysml::ast::{
     Definition, DefinitionKind, Element, Package, Relationships, SysMLFile,
 };

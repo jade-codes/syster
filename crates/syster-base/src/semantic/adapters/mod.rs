@@ -38,26 +38,27 @@ pub mod sysml_adapter;
 mod validator_factory;
 
 pub use kerml_adapter::KermlAdapter;
-pub use syntax_factory::populate_syntax_file;
+pub use syntax_factory::{
+    extract_folding_ranges, extract_inlay_hints, find_selection_spans, populate_syntax_file,
+};
 pub use sysml::validator::SysmlValidator;
 pub use sysml_adapter::SysmlAdapter;
 pub use validator_factory::create_validator;
 
-// Re-export folding functions for each language
+// Re-export types used by the factory functions
+pub use crate::semantic::types::FoldingRangeInfo;
+
+// Language-specific adapter functions for tests and direct access
 pub mod folding_ranges {
     pub use super::kerml::folding_ranges::extract_folding_ranges as extract_kerml_folding_ranges;
     pub use super::sysml::folding_ranges::extract_folding_ranges as extract_sysml_folding_ranges;
-    // Re-export the shared FoldingRangeInfo type
-    pub use crate::semantic::types::FoldingRangeInfo;
 }
 
-// Re-export selection range functions for each language
 pub mod selection {
     pub use super::kerml::selection::find_selection_spans as find_kerml_selection_spans;
     pub use super::sysml::selection::find_selection_spans as find_sysml_selection_spans;
 }
 
-// Re-export inlay hints adapter functions (implementation details)
 pub mod inlay_hints {
     pub use super::kerml::inlay_hints::extract_inlay_hints as extract_kerml_inlay_hints;
     pub use super::sysml::inlay_hints::extract_inlay_hints as extract_sysml_inlay_hints;

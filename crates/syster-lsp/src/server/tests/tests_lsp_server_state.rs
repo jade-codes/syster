@@ -260,7 +260,7 @@ package Auto {
 
     state.open_doc(&uri, text);
 
-    let result = state.server.get_semantic_tokens(uri.as_str());
+    let result = state.server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should return semantic tokens");
 
@@ -291,7 +291,7 @@ async fn test_semantic_tokens_full_empty_file() {
 
     state.open_doc(&uri, "");
 
-    let result = state.server.get_semantic_tokens(uri.as_str());
+    let result = state.server.get_semantic_tokens(&uri);
 
     // Empty file should return Some with empty tokens
     if let Some(SemanticTokensResult::Tokens(tokens)) = result {
@@ -315,7 +315,7 @@ part myCar : Car;
 
     state.open_doc(&uri, text);
 
-    let result = state.server.get_semantic_tokens(uri.as_str());
+    let result = state.server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should return tokens for multiline file");
 
@@ -349,7 +349,7 @@ part instance : Derived;
 
     state.open_doc(&uri, text);
 
-    let result = state.server.get_semantic_tokens(uri.as_str());
+    let result = state.server.get_semantic_tokens(&uri);
 
     assert!(result.is_some(), "Should handle relationships");
 
@@ -369,7 +369,7 @@ async fn test_semantic_tokens_full_nonexistent_file() {
     let state = TestServerState::new();
     let uri = Url::parse("file:///nonexistent.sysml").unwrap();
 
-    let result = state.server.get_semantic_tokens(uri.as_str());
+    let result = state.server.get_semantic_tokens(&uri);
 
     // Should return None for nonexistent file
     assert!(
@@ -1037,7 +1037,7 @@ async fn test_formatting_basic() {
     };
 
     let cancel_token = tokio_util::sync::CancellationToken::new();
-    let formatted = format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    let formatted = format_text(&doc_text.unwrap(), options, &cancel_token);
     assert!(formatted.is_some(), "Should format successfully");
 }
 
@@ -1057,7 +1057,7 @@ async fn test_formatting_empty_file() {
     };
 
     let cancel_token = tokio_util::sync::CancellationToken::new();
-    let formatted = format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    let formatted = format_text(&doc_text.unwrap(), options, &cancel_token);
     // Empty file should return None or empty edits
     assert!(formatted.is_none() || formatted.unwrap().is_empty());
 }
@@ -1084,7 +1084,7 @@ package Auto {
     };
 
     let cancel_token = tokio_util::sync::CancellationToken::new();
-    let formatted = format_text_async(&doc_text.unwrap(), options, &cancel_token);
+    let formatted = format_text(&doc_text.unwrap(), options, &cancel_token);
     assert!(
         formatted.is_some(),
         "Formatting should succeed for structured content"

@@ -9,7 +9,7 @@
 //! - Also tests KerML adapter for completeness
 
 use crate::core::{Position, Span};
-use crate::semantic::inlay_hints::extract_inlay_hints;
+use crate::semantic::extract_inlay_hints;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::types::InlayHintKind;
 use crate::syntax::SyntaxFile;

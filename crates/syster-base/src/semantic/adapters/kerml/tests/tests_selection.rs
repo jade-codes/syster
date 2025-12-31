@@ -11,7 +11,7 @@
 //! All tests follow the principle of testing through the public API only.
 
 use crate::core::{Position, Span};
-use crate::semantic::selection::find_kerml_selection_spans;
+use crate::semantic::adapters::selection::find_kerml_selection_spans;
 use crate::syntax::kerml::ast::{
     Annotation, Classifier, ClassifierKind, ClassifierMember, Element, Feature, FeatureMember,
     Import, ImportKind, KerMLFile, Package,

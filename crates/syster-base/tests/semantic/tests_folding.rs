@@ -1,7 +1,8 @@
 //! Tests for folding range extraction
 
 use syster::core::{Position, Span};
-use syster::semantic::{extract_kerml_folding_ranges, extract_sysml_folding_ranges};
+use syster::semantic::extract_folding_ranges;
+use syster::syntax::SyntaxFile;
 use syster::syntax::kerml::ast::{
     Comment as KerMLComment, Element as KerMLElement, KerMLFile, Package as KerMLPackage,
 };
@@ -28,18 +29,18 @@ fn make_span(start_line: usize, end_line: usize) -> Span {
 
 #[test]
 fn test_sysml_extract_folding_ranges_empty_file() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![],
-    };
-    let ranges = extract_sysml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert!(ranges.is_empty());
 }
 
 #[test]
 fn test_sysml_extract_folding_ranges_filters_single_line() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![SysMLElement::Package(SysMLPackage {
@@ -47,14 +48,14 @@ fn test_sysml_extract_folding_ranges_filters_single_line() {
             elements: vec![],
             span: Some(make_span(1, 1)), // Same line = not foldable
         })],
-    };
-    let ranges = extract_sysml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert!(ranges.is_empty());
 }
 
 #[test]
 fn test_sysml_extract_folding_ranges_includes_multiline() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![SysMLElement::Package(SysMLPackage {
@@ -62,30 +63,30 @@ fn test_sysml_extract_folding_ranges_includes_multiline() {
             elements: vec![],
             span: Some(make_span(1, 5)), // Multi-line = foldable
         })],
-    };
-    let ranges = extract_sysml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert_eq!(ranges.len(), 1);
     assert!(!ranges[0].is_comment); // Package is not a comment
 }
 
 #[test]
 fn test_sysml_extract_folding_ranges_comment_kind() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![SysMLElement::Comment(SysMLComment {
             content: "A long comment".to_string(),
             span: Some(make_span(1, 3)),
         })],
-    };
-    let ranges = extract_sysml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert_eq!(ranges.len(), 1);
     assert!(ranges[0].is_comment); // Comment should be marked as comment
 }
 
 #[test]
 fn test_sysml_extract_folding_ranges_sorted_by_line() {
-    let file = SysMLFile {
+    let file = SyntaxFile::SysML(SysMLFile {
         namespace: None,
         namespaces: vec![],
         elements: vec![
@@ -100,8 +101,8 @@ fn test_sysml_extract_folding_ranges_sorted_by_line() {
                 span: Some(make_span(1, 5)),
             }),
         ],
-    };
-    let ranges = extract_sysml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert_eq!(ranges.len(), 2);
     assert!(ranges[0].span.start.line < ranges[1].span.start.line);
 }
@@ -112,46 +113,46 @@ fn test_sysml_extract_folding_ranges_sorted_by_line() {
 
 #[test]
 fn test_kerml_extract_folding_ranges_empty_file() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![],
-    };
-    let ranges = extract_kerml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert!(ranges.is_empty());
 }
 
 #[test]
 fn test_kerml_extract_folding_ranges_filters_single_line() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![KerMLElement::Package(KerMLPackage {
             name: Some("Test".to_string()),
             elements: vec![],
             span: Some(make_span(1, 1)), // Same line = not foldable
         })],
-    };
-    let ranges = extract_kerml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert!(ranges.is_empty());
 }
 
 #[test]
 fn test_kerml_extract_folding_ranges_includes_multiline() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![KerMLElement::Package(KerMLPackage {
             name: Some("Test".to_string()),
             elements: vec![],
             span: Some(make_span(1, 5)), // Multi-line = foldable
         })],
-    };
-    let ranges = extract_kerml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert_eq!(ranges.len(), 1);
     assert!(!ranges[0].is_comment); // Package is not a comment
 }
 
 #[test]
 fn test_kerml_extract_folding_ranges_comment_kind() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![KerMLElement::Comment(KerMLComment {
             content: "A long comment".to_string(),
@@ -159,15 +160,15 @@ fn test_kerml_extract_folding_ranges_comment_kind() {
             locale: None,
             span: Some(make_span(1, 3)),
         })],
-    };
-    let ranges = extract_kerml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert_eq!(ranges.len(), 1);
     assert!(ranges[0].is_comment); // Comment should be marked as comment
 }
 
 #[test]
 fn test_kerml_extract_folding_ranges_sorted_by_line() {
-    let file = KerMLFile {
+    let file = SyntaxFile::KerML(KerMLFile {
         namespace: None,
         elements: vec![
             KerMLElement::Package(KerMLPackage {
@@ -181,8 +182,8 @@ fn test_kerml_extract_folding_ranges_sorted_by_line() {
                 span: Some(make_span(1, 5)),
             }),
         ],
-    };
-    let ranges = extract_kerml_folding_ranges(&file);
+    });
+    let ranges = extract_folding_ranges(&file);
     assert_eq!(ranges.len(), 2);
     assert!(ranges[0].span.start.line < ranges[1].span.start.line);
 }
