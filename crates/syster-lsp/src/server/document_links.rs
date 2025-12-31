@@ -18,7 +18,10 @@ impl LspServer {
 
         // Get all imports from this file using the symbol table
         let file_path_str = path.to_string_lossy();
-        let imports = self.workspace.symbol_table().get_file_imports(&file_path_str);
+        let imports = self
+            .workspace
+            .symbol_table()
+            .get_file_imports(&file_path_str);
 
         // Create document links for each import
         for (import_path, span) in imports {
@@ -61,7 +64,7 @@ impl LspServer {
 
         // Look up the symbol in the symbol table
         let symbol = self.workspace.symbol_table().resolve(&symbol_name)?;
-        
+
         // Get the source file for this symbol
         let source_file = symbol.source_file()?;
 

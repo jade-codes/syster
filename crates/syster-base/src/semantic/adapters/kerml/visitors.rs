@@ -229,7 +229,7 @@ impl<'a> KermlAdapter<'a> {
                 // Imports are handled below
             }
         }
-        
+
         // Handle imports separately to track them in symbol table
         if let Element::Import(import) = element {
             self.visit_import(import);

@@ -176,10 +176,10 @@ impl SymbolTable {
         let mut imports = Vec::new();
         for scope in &self.scopes {
             for import in &scope.imports {
-                if let (Some(import_file), Some(span)) = (&import.file, &import.span) {
-                    if import_file == file_path {
-                        imports.push((import.path.clone(), span.clone()));
-                    }
+                if let (Some(import_file), Some(span)) = (&import.file, &import.span)
+                    && import_file == file_path
+                {
+                    imports.push((import.path.clone(), *span));
                 }
             }
         }
