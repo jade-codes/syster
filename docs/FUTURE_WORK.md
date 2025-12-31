@@ -65,10 +65,10 @@
    - `match uri.to_file_path() { Ok/Err }` - diagnostics, inlay_hints
    → **Extract:** `fn require_path(uri: &Url) -> Result<PathBuf, LspError>`
 
-2. **Span → LSP Range Conversion** (exists in helpers.rs, NOT USED in 6+ places!)
-   - `span_to_lsp_range()` exists in helpers.rs (line 92)
-   - Manual conversion repeated in: references.rs, rename.rs, selection_range.rs, folding_range.rs, diagnostics.rs
-   → **Action:** Use existing helper everywhere, delete duplicates
+2. **Span → LSP Range Conversion** ✅ COMPLETE
+   - `span_to_lsp_range()` in helpers.rs is now used everywhere
+   - `position_to_lsp_position()` also available and used
+   - `span_to_folding_range()` used for folding ranges
 
 3. **Symbol Lookup Pattern** (repeated 6 times)
    ```rust
@@ -89,28 +89,17 @@
 
 #### Refactoring Plan
 
-**Phase 1: Use Existing Helpers** (quick wins)
-- [ ] Replace all manual Span→Range with `span_to_lsp_range()` (6 files)
-- [ ] Add `span_to_lsp_position()` helper for single positions
+**Phase 1: Use Existing Helpers** ✅ COMPLETE
+- [x] Replace all manual Span→Range with `span_to_lsp_range()` (all files now use helper)
+- [x] Add `span_to_lsp_position()` helper for single positions (exists and used in diagnostics)
 
 **Phase 2: Extract Cross-Cutting Utilities**
 - [ ] Create `server/uri.rs`: `require_path()`, `path_to_uri()`
 - [ ] Create `server/symbol_resolver.rs`: `resolve_symbol()`, `resolve_at_position()`
 - [ ] Create `server/reference_collector.rs`: shared logic for refs + rename
 
-**Phase 3: Split Large Files**
-- [ ] `tests.rs` → `tests/` directory with feature modules:
-  - `tests/document_tests.rs` (~10 tests)
-  - `tests/hover_tests.rs` (~6 tests)
-  - `tests/definition_tests.rs` (~4 tests)
-  - `tests/references_tests.rs` (~12 tests)
-  - `tests/rename_tests.rs` (~10 tests)
-  - `tests/completion_tests.rs` (~8 tests)
-  - `tests/symbols_tests.rs` (~4 tests)
-  - `tests/semantic_tokens_tests.rs` (~4 tests)
-  - `tests/formatting_tests.rs` (~8 tests)
-  - `tests/incremental_tests.rs` (~12 tests)
-  - `tests/cross_file_tests.rs` (~4 tests)
+**Phase 3: Split Large Files** ✅ COMPLETE
+- [x] `tests.rs` → `tests/` directory with feature modules
 - [ ] `main.rs` → extract `initialization.rs` for workspace/stdlib setup
 
 **Phase 4: Consolidate Handler Logic**

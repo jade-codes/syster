@@ -1,6 +1,15 @@
-use async_lsp::lsp_types::{Position, Range};
+use async_lsp::lsp_types::{Position, Range, Url};
+use std::path::PathBuf;
 use syster::semantic::symbol_table::Symbol;
 use syster::syntax::SyntaxFile;
+
+/// Convert a URI to a PathBuf, returning None if the conversion fails
+///
+/// This is the standard pattern for handling file URIs in LSP handlers.
+/// Use this when the handler should return None/empty on invalid URIs.
+pub fn uri_to_path(uri: &Url) -> Option<PathBuf> {
+    uri.to_file_path().ok()
+}
 
 /// Convert a character offset in a line to UTF-16 code units
 ///

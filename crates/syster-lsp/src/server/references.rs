@@ -1,5 +1,5 @@
 use super::LspServer;
-use super::helpers::span_to_lsp_range;
+use super::helpers::{span_to_lsp_range, uri_to_path};
 use async_lsp::lsp_types::{Location, Position, Url};
 
 impl LspServer {
@@ -15,7 +15,7 @@ impl LspServer {
         position: Position,
         include_declaration: bool,
     ) -> Option<Vec<Location>> {
-        let path = uri.to_file_path().ok()?;
+        let path = uri_to_path(uri)?;
 
         // Find the symbol at this position using AST
         let (element_qname, _) = self.find_symbol_at_position(&path, position)?;

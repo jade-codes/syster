@@ -1257,7 +1257,7 @@ package Auto {
     server.open_document(&uri, text).unwrap();
 
     let async_lsp::lsp_types::SemanticTokensResult::Tokens(tokens) =
-        server.get_semantic_tokens(uri.as_str()).unwrap()
+        server.get_semantic_tokens(&uri).unwrap()
     else {
         panic!("Expected SemanticTokens result");
     };
@@ -2524,7 +2524,7 @@ fn test_incremental_change_updates_semantic_tokens() {
     server.open_document(&uri, "part def Vehicle;").unwrap();
 
     // Get initial semantic tokens
-    let initial_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let initial_tokens = server.get_semantic_tokens(&uri).unwrap();
     let async_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
         panic!("Expected SemanticTokens result");
     };
@@ -2547,7 +2547,7 @@ fn test_incremental_change_updates_semantic_tokens() {
     server.parse_document(&uri);
 
     // Get updated semantic tokens
-    let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let updated_tokens = server.get_semantic_tokens(&uri).unwrap();
     let async_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
         panic!("Expected SemanticTokens result");
     };
@@ -2610,7 +2610,7 @@ fn test_open_document_provides_semantic_tokens() {
         .unwrap();
 
     // Should be able to get semantic tokens immediately
-    let tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let tokens = server.get_semantic_tokens(&uri).unwrap();
     let async_lsp::lsp_types::SemanticTokensResult::Tokens(result) = tokens else {
         panic!("Expected SemanticTokens result");
     };
@@ -2628,7 +2628,7 @@ fn test_new_file_then_incremental_update() {
     server.open_document(&uri, "part def Car;").unwrap();
 
     // Verify initial state
-    let initial_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let initial_tokens = server.get_semantic_tokens(&uri).unwrap();
     let async_lsp::lsp_types::SemanticTokensResult::Tokens(initial) = initial_tokens else {
         panic!("Expected SemanticTokens result");
     };
@@ -2648,7 +2648,7 @@ fn test_new_file_then_incremental_update() {
     server.parse_document(&uri);
 
     // Verify semantic tokens still work after update
-    let updated_tokens = server.get_semantic_tokens(uri.as_str()).unwrap();
+    let updated_tokens = server.get_semantic_tokens(&uri).unwrap();
     let async_lsp::lsp_types::SemanticTokensResult::Tokens(updated) = updated_tokens else {
         panic!("Expected SemanticTokens result");
     };
@@ -2695,7 +2695,7 @@ fn test_incremental_change_on_unopened_file() {
     assert_eq!(content.unwrap(), "part def NewPart;");
 
     // Verify semantic tokens work
-    let tokens = server.get_semantic_tokens(uri.as_str());
+    let tokens = server.get_semantic_tokens(&uri);
     assert!(
         tokens.is_some(),
         "Should have semantic tokens after first edit"

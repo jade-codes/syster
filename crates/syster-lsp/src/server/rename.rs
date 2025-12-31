@@ -1,5 +1,5 @@
 use super::LspServer;
-use super::helpers::span_to_lsp_range;
+use super::helpers::{span_to_lsp_range, uri_to_path};
 use async_lsp::lsp_types::{Position, PrepareRenameResponse, TextEdit, Url, WorkspaceEdit};
 use std::collections::HashMap;
 
@@ -7,15 +7,11 @@ impl LspServer {
     /// Prepare rename: validate that the symbol at the position can be renamed
     /// Returns the range of the symbol and its current text, or None if rename is not valid
     pub fn prepare_rename(&self, uri: &Url, position: Position) -> Option<PrepareRenameResponse> {
-        let path = uri.to_file_path().ok()?;
+        let path = uri_to_path(uri)?;
         let (element_name, range) = self.find_symbol_at_position(&path, position)?;
 
         // Look up the symbol to verify it exists and is renamable
-        let symbol = self
-            .workspace
-            .symbol_table()
-            .lookup_qualified(&element_name)
-            .or_else(|| self.workspace.symbol_table().lookup(&element_name))?;
+        let symbol = self.workspace.symbol_table().resolve(&element_name)?;
 
         // Get the simple name (last component) for display
         let simple_name = symbol.name().to_string();
@@ -37,15 +33,11 @@ impl LspServer {
         position: Position,
         new_name: &str,
     ) -> Option<WorkspaceEdit> {
-        let path = uri.to_file_path().ok()?;
+        let path = uri_to_path(uri)?;
         let (element_name, _) = self.find_symbol_at_position(&path, position)?;
 
         // Look up the symbol
-        let symbol = self
-            .workspace
-            .symbol_table()
-            .lookup_qualified(&element_name)
-            .or_else(|| self.workspace.symbol_table().lookup(&element_name))?;
+        let symbol = self.workspace.symbol_table().resolve(&element_name)?;
 
         let qualified_name = symbol.qualified_name().to_string();
 

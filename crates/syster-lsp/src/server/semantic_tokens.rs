@@ -1,8 +1,8 @@
 use crate::server::core::LspServer;
-use crate::server::helpers::{char_offset_to_byte, char_offset_to_utf16};
+use crate::server::helpers::{char_offset_to_byte, char_offset_to_utf16, uri_to_path};
 use async_lsp::lsp_types::{
     SemanticToken as LspSemanticToken, SemanticTokenType, SemanticTokens, SemanticTokensLegend,
-    SemanticTokensResult,
+    SemanticTokensResult, Url,
 };
 use syster::semantic::processors::SemanticTokenCollector;
 
@@ -10,10 +10,8 @@ impl LspServer {
     /// Get semantic tokens for a document
     ///
     /// Thin adapter that calls the semantic layer and converts to LSP format
-    pub fn get_semantic_tokens(&self, uri: &str) -> Option<SemanticTokensResult> {
-        // Parse URI and convert to file path (handles URL decoding)
-        let uri_parsed = async_lsp::lsp_types::Url::parse(uri).ok()?;
-        let path = uri_parsed.to_file_path().ok()?;
+    pub fn get_semantic_tokens(&self, uri: &Url) -> Option<SemanticTokensResult> {
+        let path = uri_to_path(uri)?;
 
         // Get the file path as a string for symbol table lookup
         let file_path_str = path.to_string_lossy();

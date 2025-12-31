@@ -167,7 +167,7 @@ impl LanguageServer for ServerState {
         params: SemanticTokensParams,
     ) -> BoxFuture<'static, Result<Option<SemanticTokensResult>, Self::Error>> {
         let uri = params.text_document.uri;
-        let result = self.server.get_semantic_tokens(uri.as_str());
+        let result = self.server.get_semantic_tokens(&uri);
         Box::pin(async move { Ok(result) })
     }
 
