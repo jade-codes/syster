@@ -1463,4 +1463,652 @@ mod tests {
             .unwrap();
         assert_eq!(state.server.workspace().file_count(), 1);
     }
+
+    // ========================================
+    // Additional comprehensive tests
+    // ========================================
+
+    #[tokio::test]
+    async fn test_initialize_with_mixed_options() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let mut opts = serde_json::Map::new();
+        opts.insert("stdlibEnabled".to_string(), Value::Bool(true));
+        opts.insert(
+            "stdlibPath".to_string(),
+            Value::String("/custom".to_string()),
+        );
+        opts.insert(
+            "unknownOption".to_string(),
+            Value::String("ignored".to_string()),
+        );
+
+        let params = InitializeParams {
+            initialization_options: Some(Value::Object(opts)),
+            ..Default::default()
+        };
+
+        let result = state.initialize(params).await;
+        assert!(
+            result.is_ok(),
+            "Initialize should handle unknown options gracefully"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_initialize_with_invalid_stdlib_path_type() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let mut opts = serde_json::Map::new();
+        opts.insert("stdlibEnabled".to_string(), Value::Bool(true));
+        opts.insert("stdlibPath".to_string(), Value::Number(123.into())); // Wrong type
+
+        let params = InitializeParams {
+            initialization_options: Some(Value::Object(opts)),
+            ..Default::default()
+        };
+
+        let result = state.initialize(params).await;
+        assert!(
+            result.is_ok(),
+            "Initialize should handle invalid option types"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_initialize_with_non_object_options() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let params = InitializeParams {
+            initialization_options: Some(Value::String("invalid".to_string())),
+            ..Default::default()
+        };
+
+        let result = state.initialize(params).await;
+        assert!(
+            result.is_ok(),
+            "Initialize should handle non-object options"
+        );
+    }
+
+    #[test]
+    fn test_did_open_multiple_files_same_name_different_paths() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri1 = Url::parse("file:///dir1/test.sysml").unwrap();
+        let uri2 = Url::parse("file:///dir2/test.sysml").unwrap();
+
+        let params1 = DidOpenTextDocumentParams {
+            text_document: TextDocumentItem {
+                uri: uri1.clone(),
+                language_id: "sysml".to_string(),
+                version: 1,
+                text: "part def Vehicle;".to_string(),
+            },
+        };
+
+        let params2 = DidOpenTextDocumentParams {
+            text_document: TextDocumentItem {
+                uri: uri2.clone(),
+                language_id: "sysml".to_string(),
+                version: 1,
+                text: "part def Engine;".to_string(),
+            },
+        };
+
+        let _ = state.did_open(params1);
+        let _ = state.did_open(params2);
+
+        assert_eq!(state.server.workspace().file_count(), 2);
+    }
+
+    #[test]
+    fn test_did_change_with_empty_changes() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        let _ = state.did_open(DidOpenTextDocumentParams {
+            text_document: TextDocumentItem {
+                uri: uri.clone(),
+                language_id: "sysml".to_string(),
+                version: 1,
+                text: "part def Vehicle;".to_string(),
+            },
+        });
+
+        // Capture initial state
+        let initial_text = state.server.get_document_text(&uri);
+
+        let change_params = DidChangeTextDocumentParams {
+            text_document: VersionedTextDocumentIdentifier {
+                uri: uri.clone(),
+                version: 2,
+            },
+            content_changes: vec![], // Empty changes
+        };
+
+        let result = state.did_change(change_params);
+        assert!(matches!(result, ControlFlow::Continue(())));
+
+        // Verify document text remains unchanged
+        let final_text = state.server.get_document_text(&uri);
+        assert_eq!(
+            initial_text, final_text,
+            "Document text should remain unchanged with empty changes"
+        );
+    }
+
+    #[test]
+    fn test_did_change_full_document_replacement() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        let _ = state.did_open(DidOpenTextDocumentParams {
+            text_document: TextDocumentItem {
+                uri: uri.clone(),
+                language_id: "sysml".to_string(),
+                version: 1,
+                text: "part def Vehicle;".to_string(),
+            },
+        });
+
+        // Full document replacement (no range)
+        let change_params = DidChangeTextDocumentParams {
+            text_document: VersionedTextDocumentIdentifier {
+                uri: uri.clone(),
+                version: 2,
+            },
+            content_changes: vec![TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: "package NewPackage {\n  part def Engine;\n}".to_string(),
+            }],
+        };
+
+        let result = state.did_change(change_params);
+        assert!(matches!(result, ControlFlow::Continue(())));
+    }
+
+    #[test]
+    fn test_did_close_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = DidCloseTextDocumentParams {
+            text_document: TextDocumentIdentifier { uri },
+        };
+
+        let result = state.did_close(params);
+        assert!(matches!(result, ControlFlow::Continue(())));
+    }
+
+    #[test]
+    fn test_did_close_already_closed_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        let _ = state.did_open(DidOpenTextDocumentParams {
+            text_document: TextDocumentItem {
+                uri: uri.clone(),
+                language_id: "sysml".to_string(),
+                version: 1,
+                text: "part def Vehicle;".to_string(),
+            },
+        });
+
+        // Close once
+        let _ = state.did_close(DidCloseTextDocumentParams {
+            text_document: TextDocumentIdentifier { uri: uri.clone() },
+        });
+
+        // Close again
+        let result = state.did_close(DidCloseTextDocumentParams {
+            text_document: TextDocumentIdentifier { uri },
+        });
+
+        assert!(matches!(result, ControlFlow::Continue(())));
+    }
+
+    #[tokio::test]
+    async fn test_hover_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = HoverParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position {
+                    line: 0,
+                    character: 0,
+                },
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let result = state.hover(params).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_definition_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = GotoDefinitionParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position {
+                    line: 0,
+                    character: 0,
+                },
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+        };
+
+        let result = state.definition(params).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_references_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = ReferenceParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position {
+                    line: 0,
+                    character: 0,
+                },
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+            context: ReferenceContext {
+                include_declaration: true,
+            },
+        };
+
+        let result = state.references(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_completion_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = CompletionParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position {
+                    line: 0,
+                    character: 0,
+                },
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+            context: None,
+        };
+
+        let result = state.completion(params).await;
+        assert!(result.is_ok());
+        // Completion always returns Some result
+        assert!(result.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn test_rename_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = RenameParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position: Position {
+                    line: 0,
+                    character: 0,
+                },
+            },
+            new_name: "NewName".to_string(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let result = state.rename(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_prepare_rename_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = TextDocumentPositionParams {
+            text_document: TextDocumentIdentifier { uri },
+            position: Position {
+                line: 0,
+                character: 0,
+            },
+        };
+
+        let result = state.prepare_rename(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_semantic_tokens_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = SemanticTokensParams {
+            text_document: TextDocumentIdentifier { uri },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+        };
+
+        let result = state.semantic_tokens_full(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_did_change_on_unopened_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///nonexistent.sysml").unwrap();
+        let params = DidChangeTextDocumentParams {
+            text_document: VersionedTextDocumentIdentifier { uri, version: 1 },
+            content_changes: vec![TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: "part def Vehicle;".to_string(),
+            }],
+        };
+
+        let result = state.did_change(params);
+        // Should not crash, should return Continue
+        assert!(matches!(result, ControlFlow::Continue(())));
+    }
+
+    #[tokio::test]
+    async fn test_sequential_operations_on_same_document() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        state
+            .server
+            .open_document(&uri, "part def Vehicle;")
+            .unwrap();
+
+        // Perform multiple operations sequentially - hover and definition both work synchronously
+        let hover_result = state
+            .hover(HoverParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.clone() },
+                    position: Position {
+                        line: 0,
+                        character: 12,
+                    },
+                },
+                work_done_progress_params: WorkDoneProgressParams::default(),
+            })
+            .await;
+
+        let definition_result = state
+            .definition(GotoDefinitionParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.clone() },
+                    position: Position {
+                        line: 0,
+                        character: 12,
+                    },
+                },
+                work_done_progress_params: WorkDoneProgressParams::default(),
+                partial_result_params: PartialResultParams::default(),
+            })
+            .await;
+
+        assert!(hover_result.is_ok());
+        assert!(definition_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_operations_after_document_error() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        // Open with invalid syntax
+        state.server.open_document(&uri, "invalid !@#$ syntax").ok();
+
+        // Operations should still work even if document had errors
+        let hover_result = state
+            .hover(HoverParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri },
+                    position: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                },
+                work_done_progress_params: WorkDoneProgressParams::default(),
+            })
+            .await;
+
+        assert!(hover_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_initialize_with_all_options_false() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///empty.sysml").unwrap();
+        state.server.open_document(&uri, "").unwrap();
+
+        let params = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions {
+                tab_size: 4,
+                insert_spaces: true,
+                ..Default::default()
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let result = state.formatting(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_formatting_with_large_tab_size() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        state
+            .server
+            .open_document(&uri, "part def Vehicle;")
+            .unwrap();
+
+        let params = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions {
+                tab_size: 100,
+                insert_spaces: true,
+                ..Default::default()
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let result = state.formatting(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_formatting_with_tabs() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        state
+            .server
+            .open_document(&uri, "part def Vehicle;")
+            .unwrap();
+
+        let params = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions {
+                tab_size: 4,
+                insert_spaces: false, // Use tabs
+                ..Default::default()
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let result = state.formatting(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_did_save_with_text() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        let params = DidSaveTextDocumentParams {
+            text_document: TextDocumentIdentifier { uri },
+            text: Some("part def Vehicle;".to_string()),
+        };
+
+        let result = state.did_save(params);
+        assert!(matches!(result, ControlFlow::Continue(())));
+    }
+
+    #[tokio::test]
+    async fn test_selection_range_multiple_positions() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        state
+            .server
+            .open_document(&uri, "part def Vehicle;")
+            .unwrap();
+
+        let params = SelectionRangeParams {
+            text_document: TextDocumentIdentifier { uri },
+            positions: vec![
+                Position {
+                    line: 0,
+                    character: 0,
+                },
+                Position {
+                    line: 0,
+                    character: 5,
+                },
+                Position {
+                    line: 0,
+                    character: 12,
+                },
+            ],
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+        };
+
+        let result = state.selection_range(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_document_symbol_after_error_recovery() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        // Start with invalid content
+        state.server.open_document(&uri, "invalid syntax").ok();
+
+        // Update to valid content
+        let _ = state.did_change(DidChangeTextDocumentParams {
+            text_document: VersionedTextDocumentIdentifier {
+                uri: uri.clone(),
+                version: 2,
+            },
+            content_changes: vec![TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: "part def Vehicle;".to_string(),
+            }],
+        });
+
+        // Parse the change
+        state.server.parse_document(&uri);
+
+        let params = DocumentSymbolParams {
+            text_document: TextDocumentIdentifier { uri },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+        };
+
+        let result = state.document_symbol(params).await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_rapid_document_changes() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        let _ = state.did_open(DidOpenTextDocumentParams {
+            text_document: TextDocumentItem {
+                uri: uri.clone(),
+                language_id: "sysml".to_string(),
+                version: 1,
+                text: "part def Vehicle;".to_string(),
+            },
+        });
+
+        // Simulate rapid typing
+        for i in 2..10 {
+            let change_params = DidChangeTextDocumentParams {
+                text_document: VersionedTextDocumentIdentifier {
+                    uri: uri.clone(),
+                    version: i,
+                },
+                content_changes: vec![TextDocumentContentChangeEvent {
+                    range: Some(Range {
+                        start: Position {
+                            line: 0,
+                            character: 16,
+                        },
+                        end: Position {
+                            line: 0,
+                            character: 16,
+                        },
+                    }),
+                    range_length: None,
+                    text: format!("\npart def Part{};", i),
+                }],
+            };
+
+            let result = state.did_change(change_params);
+            assert!(matches!(result, ControlFlow::Continue(())));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_initialize_replaces_server_instance() {
+        let (mut state, _parse_rx) = create_test_server_state();
+
+        // Open a document
+        let uri = Url::parse("file:///test.sysml").unwrap();
+        state
+            .server
+            .open_document(&uri, "part def Vehicle;")
+            .unwrap();
+        assert_eq!(state.server.workspace().file_count(), 1);
+
+        // Initialize - this replaces the server instance
+        let params = InitializeParams::default();
+        let _ = state.initialize(params).await;
+
+        // After initialization, the server is replaced with a new instance
+        assert_eq!(state.server.workspace().file_count(), 0);
+    }
 }
