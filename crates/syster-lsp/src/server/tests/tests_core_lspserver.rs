@@ -977,12 +977,10 @@ fn test_folding_ranges_only_comments() {
             .iter()
             .any(|r| r.kind == Some(FoldingRangeKind::Comment));
         // If there are ranges in comment-only file, they should be comments
-        if !ranges.is_empty() {
-            assert!(
-                has_comment || ranges.is_empty(),
-                "Comment-only file should have comment ranges if any"
-            );
-        }
+        assert!(
+            has_comment || ranges.is_empty(),
+            "Comment-only file should have comment ranges if any"
+        );
     }
 }
 
@@ -1010,7 +1008,7 @@ fn test_folding_ranges_mixed_kerml_sysml_syntax() {
 }
 
 #[test]
-fn test_folding_ranges_closure_comment_kind() {
+fn test_folding_ranges_comment_validity() {
     let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"/* Block comment
@@ -1025,7 +1023,7 @@ package Test {
     let path = Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Test that closure correctly assigns Comment kind
+    // Test that comment ranges have valid line numbers
     let comment_ranges: Vec<_> = ranges
         .iter()
         .filter(|r| r.kind == Some(FoldingRangeKind::Comment))
@@ -1038,7 +1036,7 @@ package Test {
 }
 
 #[test]
-fn test_folding_ranges_closure_region_kind() {
+fn test_folding_ranges_has_region_kinds() {
     let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"package TestPkg {
@@ -1051,7 +1049,7 @@ fn test_folding_ranges_closure_region_kind() {
     let path = Path::new(uri.path());
     let ranges = server.get_folding_ranges(path);
 
-    // Test that closure correctly assigns Region kind for non-comments
+    // Test that region ranges exist for non-comments
     let region_ranges: Vec<_> = ranges
         .iter()
         .filter(|r| r.kind == Some(FoldingRangeKind::Region))
@@ -1114,9 +1112,14 @@ package Test2 {
             let r2 = &ranges[j];
 
             // If ranges overlap, one must contain the other (nested)
-            if r1.start_line <= r2.start_line && r2.start_line <= r1.end_line {
+            let overlap = r1.start_line <= r2.end_line && r2.start_line <= r1.end_line;
+            if overlap {
+                let r1_contains_r2 =
+                    r1.start_line <= r2.start_line && r1.end_line >= r2.end_line;
+                let r2_contains_r1 =
+                    r2.start_line <= r1.start_line && r2.end_line >= r1.end_line;
                 assert!(
-                    r2.end_line <= r1.end_line,
+                    r1_contains_r2 || r2_contains_r1,
                     "Overlapping ranges must be properly nested"
                 );
             }
@@ -1177,13 +1180,17 @@ fn test_inlay_hints_multiple_files() {
     let mut server = LspServer::new();
     let uri1 = Url::parse("file:///test1.sysml").unwrap();
     let uri2 = Url::parse("file:///test2.sysml").unwrap();
-    let text = r#"package Test {
+    let text1 = r#"package Test {
     part def Vehicle;
     part car : Vehicle;
 }"#;
+    let text2 = r#"package Different {
+    part def Truck;
+    part myTruck : Truck;
+}"#;
 
-    server.open_document(&uri1, text).unwrap();
-    server.open_document(&uri2, text).unwrap();
+    server.open_document(&uri1, text1).unwrap();
+    server.open_document(&uri2, text2).unwrap();
 
     let params1 = InlayHintParams {
         text_document: TextDocumentIdentifier { uri: uri1 },
@@ -1206,8 +1213,14 @@ fn test_inlay_hints_multiple_files() {
     let hints1 = server.get_inlay_hints(&params1);
     let hints2 = server.get_inlay_hints(&params2);
 
-    // Both files should be handled independently
-    assert_eq!(hints1.len(), hints2.len());
+    // Both files should be handled independently - verify hints are returned for both
+    // and they don't interfere with each other
+    for hint in &hints1 {
+        assert!(hint.kind.is_some(), "File 1 hints should have kinds");
+    }
+    for hint in &hints2 {
+        assert!(hint.kind.is_some(), "File 2 hints should have kinds");
+    }
 }
 
 #[test]
@@ -1324,12 +1337,19 @@ fn test_inlay_hints_position_accuracy() {
 
     let hints = server.get_inlay_hints(&params);
 
+    // Compute maximum line length in the document to validate character positions
+    let max_line_length: u32 = text
+        .lines()
+        .map(|line| line.len() as u32)
+        .max()
+        .unwrap_or(0);
+
     // Verify positions are within document bounds
     for hint in &hints {
         assert!(hint.position.line <= 2, "Position should be within range");
         assert!(
-            hint.position.character < 1000,
-            "Character should be reasonable"
+            hint.position.character <= max_line_length,
+            "Character should be within line length bounds"
         );
     }
 }
@@ -1401,7 +1421,8 @@ fn test_selection_ranges_at_line_end() {
 
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
-    let positions = vec![Position::new(0, 17)]; // At semicolon
+    // Position 17 is at the semicolon - testing positions at element boundaries
+    let positions = vec![Position::new(0, 17)];
 
     let ranges = server.get_selection_ranges(path, positions);
 
@@ -1446,11 +1467,58 @@ fn test_selection_ranges_build_chain_single_span() {
     server.open_document(&uri, text).unwrap();
     let path = Path::new(uri.path());
     let positions = vec![Position::new(0, 10)];
+    let positions_copy = positions.clone();
 
     let ranges = server.get_selection_ranges(path, positions);
 
     assert_eq!(ranges.len(), 1);
-    // Single element may or may not have parent depending on AST structure
+
+    // Verify that the built selection range chain is well-formed for a single-span document.
+    let requested_pos = positions_copy[0];
+    let mut current = Some(&ranges[0]);
+    let mut prev_range: Option<Range> = None;
+    let mut depth = 0;
+
+    while let Some(sel_range) = current {
+        // Guard against cycles in the parent chain.
+        depth += 1;
+        assert!(
+            depth < 16,
+            "Selection range parent chain is unexpectedly deep or cyclic"
+        );
+
+        let range = sel_range.range;
+
+        // Range must contain the requested position.
+        let starts_before_or_at_pos = range.start.line < requested_pos.line
+            || (range.start.line == requested_pos.line
+                && range.start.character <= requested_pos.character);
+        let ends_after_or_at_pos = range.end.line > requested_pos.line
+            || (range.end.line == requested_pos.line
+                && range.end.character >= requested_pos.character);
+        assert!(
+            starts_before_or_at_pos && ends_after_or_at_pos,
+            "Each selection range in the chain should contain the requested position"
+        );
+
+        if let Some(prev) = prev_range {
+            // Parent ranges (walking up the chain) should be no smaller than their children.
+            assert!(
+                range.start.line <= prev.start.line,
+                "Parent should start before or at child"
+            );
+            assert!(
+                range.end.line >= prev.end.line,
+                "Parent should end after or at child"
+            );
+        }
+
+        prev_range = Some(range);
+        current = sel_range.parent.as_ref().map(|b| b.as_ref());
+    }
+
+    // Single element may or may not have parent depending on AST structure, but
+    // the chain must be finite and each element must contain the requested position.
 }
 
 #[test]
@@ -1515,7 +1583,20 @@ fn test_selection_ranges_multiple_positions_independence() {
     let ranges = server.get_selection_ranges(path, positions);
 
     assert_eq!(ranges.len(), 3);
-    // Each position should get its own independent chain
+
+    // Each position should get its own independent chain rooted at its line
+    assert_eq!(
+        ranges[0].range.start.line, 1,
+        "First selection range should correspond to line 1 (part def A)"
+    );
+    assert_eq!(
+        ranges[1].range.start.line, 2,
+        "Second selection range should correspond to line 2 (part def B)"
+    );
+    assert_eq!(
+        ranges[2].range.start.line, 3,
+        "Third selection range should correspond to line 3 (part def C)"
+    );
 }
 
 #[test]
@@ -1596,10 +1677,9 @@ fn test_selection_ranges_same_position_multiple_times() {
 }
 
 #[test]
-fn test_selection_ranges_unicode_positions() {
+fn test_selection_ranges_ascii_positions() {
     let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
-    // Test with ASCII only since parser may not support unicode in identifiers
     let text = "part def Vehicle;";
 
     server.open_document(&uri, text).unwrap();
