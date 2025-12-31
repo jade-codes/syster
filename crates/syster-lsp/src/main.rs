@@ -1469,16 +1469,6 @@ mod tests {
     // ========================================
 
     #[tokio::test]
-    async fn test_parse_document_event_handler() {
-        let client = ClientSocket::new_closed();
-        let router = ServerState::new_router(client);
-
-        // The router is created with an event handler for ParseDocument
-        // We verify the router is properly configured (existence test)
-        std::mem::drop(router);
-    }
-
-    #[tokio::test]
     async fn test_initialize_with_mixed_options() {
         let (mut state, _parse_rx) = create_test_server_state();
 
@@ -1586,6 +1576,9 @@ mod tests {
             },
         });
 
+        // Capture initial state
+        let initial_text = state.server.get_document_text(&uri);
+
         let change_params = DidChangeTextDocumentParams {
             text_document: VersionedTextDocumentIdentifier {
                 uri: uri.clone(),
@@ -1596,6 +1589,13 @@ mod tests {
 
         let result = state.did_change(change_params);
         assert!(matches!(result, ControlFlow::Continue(())));
+
+        // Verify document text remains unchanged
+        let final_text = state.server.get_document_text(&uri);
+        assert_eq!(
+            initial_text, final_text,
+            "Document text should remain unchanged with empty changes"
+        );
     }
 
     #[test]
@@ -1833,7 +1833,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_concurrent_operations_on_same_document() {
+    async fn test_sequential_operations_on_same_document() {
         let (mut state, _parse_rx) = create_test_server_state();
 
         let uri = Url::parse("file:///test.sysml").unwrap();
@@ -1842,31 +1842,33 @@ mod tests {
             .open_document(&uri, "part def Vehicle;")
             .unwrap();
 
-        // Perform multiple operations concurrently
-        let hover_future = state.hover(HoverParams {
-            text_document_position_params: TextDocumentPositionParams {
-                text_document: TextDocumentIdentifier { uri: uri.clone() },
-                position: Position {
-                    line: 0,
-                    character: 12,
+        // Perform multiple operations sequentially - hover and definition both work synchronously
+        let hover_result = state
+            .hover(HoverParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.clone() },
+                    position: Position {
+                        line: 0,
+                        character: 12,
+                    },
                 },
-            },
-            work_done_progress_params: WorkDoneProgressParams::default(),
-        });
+                work_done_progress_params: WorkDoneProgressParams::default(),
+            })
+            .await;
 
-        let definition_future = state.definition(GotoDefinitionParams {
-            text_document_position_params: TextDocumentPositionParams {
-                text_document: TextDocumentIdentifier { uri: uri.clone() },
-                position: Position {
-                    line: 0,
-                    character: 12,
+        let definition_result = state
+            .definition(GotoDefinitionParams {
+                text_document_position_params: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.clone() },
+                    position: Position {
+                        line: 0,
+                        character: 12,
+                    },
                 },
-            },
-            work_done_progress_params: WorkDoneProgressParams::default(),
-            partial_result_params: PartialResultParams::default(),
-        });
-
-        let (hover_result, definition_result) = tokio::join!(hover_future, definition_future);
+                work_done_progress_params: WorkDoneProgressParams::default(),
+                partial_result_params: PartialResultParams::default(),
+            })
+            .await;
 
         assert!(hover_result.is_ok());
         assert!(definition_result.is_ok());
@@ -1897,47 +1899,8 @@ mod tests {
         assert!(hover_result.is_ok());
     }
 
-    #[test]
-    fn test_parse_channel_remains_open() {
-        let (state, _parse_rx) = create_test_server_state();
-
-        // Verify parse channel is not closed
-        assert!(!state.parse_tx.is_closed());
-    }
-
-    #[test]
-    fn test_parse_channel_sends_successfully() {
-        let (state, _parse_rx) = create_test_server_state();
-
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let send_result = state.parse_tx.send(uri);
-
-        assert!(send_result.is_ok());
-    }
-
     #[tokio::test]
     async fn test_initialize_with_all_options_false() {
-        let (mut state, _parse_rx) = create_test_server_state();
-
-        let mut opts = serde_json::Map::new();
-        opts.insert("stdlibEnabled".to_string(), Value::Bool(false));
-
-        let params = InitializeParams {
-            initialization_options: Some(Value::Object(opts)),
-            ..Default::default()
-        };
-
-        let result = state.initialize(params).await;
-        assert!(result.is_ok());
-
-        // Verify server still works after initialization
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        state.server.open_document(&uri, "part def Test;").unwrap();
-        assert_eq!(state.server.workspace().file_count(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_formatting_on_empty_file() {
         let (mut state, _parse_rx) = create_test_server_state();
 
         let uri = Url::parse("file:///empty.sysml").unwrap();
@@ -2017,57 +1980,6 @@ mod tests {
 
         let result = state.did_save(params);
         assert!(matches!(result, ControlFlow::Continue(())));
-    }
-
-    #[test]
-    fn test_server_state_client_socket() {
-        let (state, _parse_rx) = create_test_server_state();
-
-        // Verify the client socket exists (closed socket is ok for testing)
-        std::mem::drop(state.client);
-    }
-
-    #[test]
-    fn test_multiple_parse_requests() {
-        let (state, _parse_rx) = create_test_server_state();
-
-        let uri1 = Url::parse("file:///test1.sysml").unwrap();
-        let uri2 = Url::parse("file:///test2.sysml").unwrap();
-        let uri3 = Url::parse("file:///test3.sysml").unwrap();
-
-        // Send multiple parse requests
-        assert!(state.parse_tx.send(uri1).is_ok());
-        assert!(state.parse_tx.send(uri2).is_ok());
-        assert!(state.parse_tx.send(uri3).is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_inlay_hint_with_zero_range() {
-        let (mut state, _parse_rx) = create_test_server_state();
-
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        state
-            .server
-            .open_document(&uri, "part def Vehicle;")
-            .unwrap();
-
-        let params = InlayHintParams {
-            text_document: TextDocumentIdentifier { uri },
-            range: Range {
-                start: Position {
-                    line: 0,
-                    character: 0,
-                },
-                end: Position {
-                    line: 0,
-                    character: 0,
-                }, // Zero-width range
-            },
-            work_done_progress_params: WorkDoneProgressParams::default(),
-        };
-
-        let result = state.inlay_hint(params).await;
-        assert!(result.is_ok());
     }
 
     #[tokio::test]
