@@ -244,7 +244,8 @@ fn test_apply_text_edit_unicode_multiline() {
 #[test]
 fn test_apply_text_edit_with_emoji() {
     let text = "Hello 😀 World";
-    // Replace the emoji (1 char, 4 bytes in UTF-8, 2 UTF-16 code units)
+    // Replace the emoji (1 Rust char / Unicode scalar value, 4 bytes in UTF-8, 2 UTF-16 code units;
+    // note: this implementation uses character-based positions, not UTF-16 code units as in strict LSP)
     let range = Range::new(Position::new(0, 6), Position::new(0, 7));
     let result = apply_text_edit(text, &range, "🎉").unwrap();
     assert_eq!(result, "Hello 🎉 World");
@@ -262,7 +263,7 @@ fn test_apply_text_edit_emoji_at_boundaries() {
 #[test]
 fn test_apply_text_edit_mixed_unicode() {
     let text = "Test: ✓ 🚀 Done";
-    // Replace from checkmark to rocket
+    // Replace "✓ 🚀" (checkmark, space, rocket)
     let range = Range::new(Position::new(0, 6), Position::new(0, 9));
     let result = apply_text_edit(text, &range, "PASS").unwrap();
     assert_eq!(result, "Test: PASS Done");
