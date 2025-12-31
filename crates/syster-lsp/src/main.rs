@@ -209,6 +209,20 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
+    fn code_lens(
+        &mut self,
+        params: CodeLensParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<CodeLens>>, Self::Error>> {
+        let uri = params.text_document.uri;
+        let lenses = self.server.get_code_lenses(&uri);
+        let result = if lenses.is_empty() {
+            None
+        } else {
+            Some(lenses)
+        };
+        Box::pin(async move { Ok(result) })
+    }
+
     // Notification handlers - these are called synchronously in async-lsp!
     // This is the key difference from tower-lsp that fixes our ordering issues.
 
