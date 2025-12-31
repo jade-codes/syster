@@ -19,7 +19,10 @@ impl LspServer {
         // Collect all symbols from this file
         for (_, symbol) in self.workspace.symbol_table().all_symbols() {
             // Only include symbols defined in this file
-            if symbol.source_file() != Some(path.to_str().unwrap_or("")) {
+            let Some(symbol_path) = symbol.source_file() else {
+                continue;
+            };
+            if symbol_path != path.to_str().unwrap_or("") {
                 continue;
             }
 
@@ -37,21 +40,33 @@ impl LspServer {
 
                 // Only show code lens if there are references
                 if reference_count > 0 {
+                    // Serialize command arguments (these are basic LSP types and should not fail)
+                    let Ok(uri_value) = serde_json::to_value(uri) else {
+                        continue;
+                    };
+                    let Ok(position_value) = serde_json::to_value(Position {
+                        line: range.start.line,
+                        character: range.start.character,
+                    }) else {
+                        continue;
+                    };
+                    let Ok(locations_value) = serde_json::to_value(collect_reference_locations(
+                        &self.workspace,
+                        qualified_name,
+                    )) else {
+                        continue;
+                    };
+
                     let lens = CodeLens {
                         range,
                         command: Some(Command {
-                            title: format!("{} reference{}", reference_count, if reference_count == 1 { "" } else { "s" }),
+                            title: format!(
+                                "{} reference{}",
+                                reference_count,
+                                if reference_count == 1 { "" } else { "s" }
+                            ),
                             command: "editor.action.showReferences".to_string(),
-                            arguments: Some(vec![
-                                serde_json::to_value(uri).unwrap(),
-                                serde_json::to_value(Position {
-                                    line: range.start.line,
-                                    character: range.start.character,
-                                }).unwrap(),
-                                serde_json::to_value(
-                                    collect_reference_locations(&self.workspace, qualified_name)
-                                ).unwrap(),
-                            ]),
+                            arguments: Some(vec![uri_value, position_value, locations_value]),
                         }),
                         data: None,
                     };
