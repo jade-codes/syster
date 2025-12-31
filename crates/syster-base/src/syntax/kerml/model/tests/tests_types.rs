@@ -40,6 +40,44 @@ fn create_literal_expression() -> LiteralExpression {
     LiteralExpression { expression }
 }
 
+// Helper function to create a LiteralExpression with a specific name
+fn create_literal_expression_with_name(name: &str) -> LiteralExpression {
+    let element = Element {
+        declared_name: Some(name.to_string()),
+        declared_short_name: None,
+    };
+    let namespace = Namespace {
+        element,
+        prefixes: vec![],
+        children: vec![],
+    };
+    let type_ = Type {
+        namespace,
+        is_sufficient: false,
+        is_abstract: None,
+        heritage: vec![],
+        type_relationships: vec![],
+        multiplicity: None,
+    };
+    let feature = Feature {
+        type_,
+        is_nonunique: false,
+        is_ordered: false,
+        direction: None,
+        is_composite: None,
+        is_derived: None,
+        is_end: None,
+        is_portion: None,
+        is_readonly: None,
+        value: None,
+        write: None,
+        crossing_feature: None,
+    };
+    let step = Step { feature };
+    let expression = Expression { step, result: None };
+    LiteralExpression { expression }
+}
+
 // ============================================================================
 // Tests for Element
 // ============================================================================
@@ -845,6 +883,253 @@ fn test_literal_number_zero() {
     };
 
     assert_eq!(literal_num.literal, 0.0);
+}
+
+// ============================================================================
+// Tests for LiteralNumber PartialEq implementation
+// ============================================================================
+
+#[test]
+fn test_literal_number_eq_same_values() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: 42.5,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: 42.5,
+    };
+
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_different_literals() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: 42.5,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: 100.0,
+    };
+
+    assert_ne!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_different_literal_expressions() {
+    let literal_expression1 = create_literal_expression_with_name("First");
+    let literal_expression2 = create_literal_expression_with_name("Second");
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: 42.5,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: 42.5,
+    };
+
+    // Should not be equal because literal_expressions are different
+    assert_ne!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_negative_zero() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: 0.0,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: -0.0,
+    };
+
+    // In IEEE 754, 0.0 == -0.0
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_infinity() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: f64::INFINITY,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: f64::INFINITY,
+    };
+
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_neg_infinity() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: f64::NEG_INFINITY,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: f64::NEG_INFINITY,
+    };
+
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_positive_vs_negative_infinity() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: f64::INFINITY,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: f64::NEG_INFINITY,
+    };
+
+    assert_ne!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_nan() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: f64::NAN,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: f64::NAN,
+    };
+
+    // NaN != NaN according to IEEE 754
+    assert_ne!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_very_small_numbers() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: f64::MIN_POSITIVE,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: f64::MIN_POSITIVE,
+    };
+
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_very_large_numbers() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: f64::MAX,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: f64::MAX,
+    };
+
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_clone() {
+    let literal_expression = create_literal_expression();
+    let literal_num1 = LiteralNumber {
+        literal_expression,
+        literal: 123.456,
+    };
+
+    let literal_num2 = literal_num1.clone();
+
+    assert_eq!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_positive_negative() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: 42.0,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: -42.0,
+    };
+
+    assert_ne!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_precision() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    // Test that the implementation uses direct f64 comparison
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: 0.1 + 0.2,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: 0.3,
+    };
+
+    // Due to floating point precision, 0.1 + 0.2 != 0.3
+    // This tests that the implementation uses == and not approximate equality
+    assert_ne!(literal_num1, literal_num2);
+}
+
+#[test]
+fn test_literal_number_eq_exact_same_precision_value() {
+    let literal_expression1 = create_literal_expression();
+    let literal_expression2 = create_literal_expression();
+
+    let value = 0.1 + 0.2;
+
+    let literal_num1 = LiteralNumber {
+        literal_expression: literal_expression1,
+        literal: value,
+    };
+    let literal_num2 = LiteralNumber {
+        literal_expression: literal_expression2,
+        literal: value,
+    };
+
+    // Same exact value should be equal
+    assert_eq!(literal_num1, literal_num2);
 }
 
 // ============================================================================
