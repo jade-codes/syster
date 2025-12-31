@@ -75,6 +75,7 @@ impl LspServer {
                     work_done_progress_options: WorkDoneProgressOptions::default(),
                 }),
             ),
+            call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
             workspace: Some(WorkspaceServerCapabilities {
                 workspace_folders: None,
                 file_operations: None,

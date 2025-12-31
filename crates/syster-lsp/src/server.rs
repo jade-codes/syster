@@ -1,3 +1,4 @@
+mod call_hierarchy;
 mod completion;
 mod core;
 mod definition;

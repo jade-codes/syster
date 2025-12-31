@@ -199,6 +199,30 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
+    fn prepare_call_hierarchy(
+        &mut self,
+        params: CallHierarchyPrepareParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<CallHierarchyItem>>, Self::Error>> {
+        let result = self.server.prepare_call_hierarchy(&params);
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn incoming_calls(
+        &mut self,
+        params: CallHierarchyIncomingCallsParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<CallHierarchyIncomingCall>>, Self::Error>> {
+        let result = self.server.incoming_calls(&params);
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn outgoing_calls(
+        &mut self,
+        params: CallHierarchyOutgoingCallsParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<CallHierarchyOutgoingCall>>, Self::Error>> {
+        let result = self.server.outgoing_calls(&params);
+        Box::pin(async move { Ok(result) })
+    }
+
     // Notification handlers - these are called synchronously in async-lsp!
     // This is the key difference from tower-lsp that fixes our ordering issues.
 
