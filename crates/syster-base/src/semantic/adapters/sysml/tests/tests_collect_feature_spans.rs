@@ -5,7 +5,7 @@
 //! in the AST, collecting spans that contain a given position.
 
 use crate::core::{Position, Span};
-use crate::semantic::selection::find_kerml_selection_spans;
+use crate::semantic::adapters::selection::find_kerml_selection_spans;
 use crate::syntax::kerml::ast::{Element, Feature, FeatureDirection, FeatureMember, KerMLFile};
 use crate::syntax::kerml::model::types::Comment;
 

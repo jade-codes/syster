@@ -1,5 +1,6 @@
 mod loader;
 
+use crate::core::constants::STDLIB_DIR;
 use crate::semantic::Workspace;
 use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
@@ -12,27 +13,43 @@ pub struct StdLibLoader {
 }
 
 impl StdLibLoader {
-    /// Creates a new eager stdlib loader (loads immediately when `load()` is called)
+    /// Creates a new stdlib loader with automatic path discovery.
+    ///
+    /// Searches for the stdlib in these locations (in order):
+    /// 1. Next to the current executable (for installed binaries)
+    /// 2. Current working directory (for development)
     pub fn new() -> Self {
         Self {
-            stdlib_path: PathBuf::from("sysml.library"),
+            stdlib_path: Self::discover_path(),
             loaded: false,
         }
     }
 
-    /// Creates a new lazy stdlib loader (loads only when `ensure_loaded()` is called)
-    pub fn lazy() -> Self {
-        Self {
-            stdlib_path: PathBuf::from("sysml.library"),
-            loaded: false,
-        }
-    }
-
+    /// Creates a new stdlib loader with a specific path.
     pub fn with_path(path: PathBuf) -> Self {
         Self {
             stdlib_path: path,
             loaded: false,
         }
+    }
+
+    /// Discover the stdlib path by searching common locations.
+    ///
+    /// Returns the first existing path, or falls back to the default.
+    fn discover_path() -> PathBuf {
+        // Try next to the executable first (for installed binaries)
+        if let Some(exe_dir) = std::env::current_exe()
+            .ok()
+            .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
+        {
+            let stdlib_next_to_exe = exe_dir.join(STDLIB_DIR);
+            if stdlib_next_to_exe.exists() && stdlib_next_to_exe.is_dir() {
+                return stdlib_next_to_exe;
+            }
+        }
+
+        // Fall back to current directory / default path
+        PathBuf::from(STDLIB_DIR)
     }
 
     /// Returns true if stdlib has been loaded by this loader

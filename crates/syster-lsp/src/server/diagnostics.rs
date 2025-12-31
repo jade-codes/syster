@@ -1,13 +1,12 @@
 use super::LspServer;
-use super::helpers::position_to_lsp_position;
+use super::helpers::{position_to_lsp_position, uri_to_path};
 use async_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
 
 impl LspServer {
     /// Get LSP diagnostics for a given file
     pub fn get_diagnostics(&self, uri: &Url) -> Vec<Diagnostic> {
-        let path = match uri.to_file_path() {
-            Ok(p) => p,
-            Err(_) => return vec![],
+        let Some(path) = uri_to_path(uri) else {
+            return vec![];
         };
 
         // Convert parse errors to LSP diagnostics
