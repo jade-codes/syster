@@ -102,6 +102,29 @@ pub fn span_to_lsp_range(span: &syster::core::Span) -> Range {
     }
 }
 
+/// Convert our Position to LSP Position
+pub fn position_to_lsp_position(pos: &syster::core::Position) -> Position {
+    Position {
+        line: pos.line as u32,
+        character: pos.column as u32,
+    }
+}
+
+/// Convert our Span to LSP FoldingRange
+pub fn span_to_folding_range(
+    span: &syster::core::Span,
+    kind: async_lsp::lsp_types::FoldingRangeKind,
+) -> async_lsp::lsp_types::FoldingRange {
+    async_lsp::lsp_types::FoldingRange {
+        start_line: span.start.line as u32,
+        start_character: Some(span.start.column as u32),
+        end_line: span.end.line as u32,
+        end_character: Some(span.end.column as u32),
+        kind: Some(kind),
+        collapsed_text: None,
+    }
+}
+
 /// Format rich hover information with relationships and documentation
 pub fn format_rich_hover(
     symbol: &Symbol,

@@ -1,5 +1,6 @@
 use super::LspServer;
-use async_lsp::lsp_types::{Position, PrepareRenameResponse, Range, TextEdit, Url, WorkspaceEdit};
+use super::helpers::span_to_lsp_range;
+use async_lsp::lsp_types::{Position, PrepareRenameResponse, TextEdit, Url, WorkspaceEdit};
 use std::collections::HashMap;
 
 impl LspServer {
@@ -55,16 +56,7 @@ impl LspServer {
         if let (Some(source_file), Some(span)) = (symbol.source_file(), symbol.span()) {
             let file_uri = Url::from_file_path(source_file).ok()?;
             edits_by_file.entry(file_uri).or_default().push(TextEdit {
-                range: Range {
-                    start: Position {
-                        line: span.start.line as u32,
-                        character: span.start.column as u32,
-                    },
-                    end: Position {
-                        line: span.end.line as u32,
-                        character: span.end.column as u32,
-                    },
-                },
+                range: span_to_lsp_range(&span),
                 new_text: new_name.to_string(),
             });
         }
@@ -88,16 +80,7 @@ impl LspServer {
                 && let Ok(file_uri) = Url::from_file_path(file)
             {
                 edits_by_file.entry(file_uri).or_default().push(TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: reference_span.start.line as u32,
-                            character: reference_span.start.column as u32,
-                        },
-                        end: Position {
-                            line: reference_span.end.line as u32,
-                            character: reference_span.end.column as u32,
-                        },
-                    },
+                    range: span_to_lsp_range(reference_span),
                     new_text: new_name.to_string(),
                 });
             }
@@ -112,16 +95,7 @@ impl LspServer {
         for (file, span) in import_refs {
             if let Ok(file_uri) = Url::from_file_path(file) {
                 edits_by_file.entry(file_uri).or_default().push(TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: span.start.line as u32,
-                            character: span.start.column as u32,
-                        },
-                        end: Position {
-                            line: span.end.line as u32,
-                            character: span.end.column as u32,
-                        },
-                    },
+                    range: span_to_lsp_range(span),
                     new_text: new_name.to_string(),
                 });
             }

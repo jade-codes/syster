@@ -72,3 +72,6 @@ impl_visitable!(Usage, visit_usage);
 impl_visitable!(Comment, visit_comment);
 impl_visitable!(Import, visit_import);
 impl_visitable!(Alias, visit_alias);
+
+#[cfg(test)]
+mod tests;

@@ -154,3 +154,6 @@ fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element
 
     None
 }
+
+#[cfg(test)]
+mod tests;
