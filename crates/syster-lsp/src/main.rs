@@ -199,6 +199,32 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
+    fn prepare_type_hierarchy(
+        &mut self,
+        params: TypeHierarchyPrepareParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<TypeHierarchyItem>>, Self::Error>> {
+        let uri = params.text_document_position_params.text_document.uri;
+        let position = params.text_document_position_params.position;
+        let result = self.server.prepare_type_hierarchy(&uri, position);
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn supertypes(
+        &mut self,
+        params: TypeHierarchySupertypesParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<TypeHierarchyItem>>, Self::Error>> {
+        let result = self.server.get_type_hierarchy_supertypes(&params.item);
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn subtypes(
+        &mut self,
+        params: TypeHierarchySubtypesParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<TypeHierarchyItem>>, Self::Error>> {
+        let result = self.server.get_type_hierarchy_subtypes(&params.item);
+        Box::pin(async move { Ok(result) })
+    }
+
     // Notification handlers - these are called synchronously in async-lsp!
     // This is the key difference from tower-lsp that fixes our ordering issues.
 
