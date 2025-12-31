@@ -1,14 +1,11 @@
 //! Selection range support for the LSP server
-//!
-//! This module builds LSP SelectionRange types directly from the semantic adapters.
 
 use super::LspServer;
 use super::helpers::span_to_lsp_range;
 use async_lsp::lsp_types::{Position, Range, SelectionRange};
 use std::path::Path;
 use syster::core::Position as CorePosition;
-use syster::semantic::selection::{find_kerml_selection_spans, find_sysml_selection_spans};
-use syster::syntax::SyntaxFile;
+use syster::semantic::find_selection_spans;
 
 impl LspServer {
     /// Get selection ranges at the given positions in a document
@@ -30,15 +27,7 @@ impl LspServer {
             .iter()
             .map(|pos| {
                 let core_pos = CorePosition::new(pos.line as usize, pos.character as usize);
-
-                let spans = match workspace_file.content() {
-                    SyntaxFile::SysML(sysml_file) => {
-                        find_sysml_selection_spans(sysml_file, core_pos)
-                    }
-                    SyntaxFile::KerML(kerml_file) => {
-                        find_kerml_selection_spans(kerml_file, core_pos)
-                    }
-                };
+                let spans = find_selection_spans(workspace_file.content(), core_pos);
 
                 if spans.is_empty() {
                     self.default_selection_range(*pos)

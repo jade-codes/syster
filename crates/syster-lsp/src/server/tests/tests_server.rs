@@ -60,9 +60,9 @@ fn test_open_kerml_file() {
     let text = "classifier Vehicle;";
 
     let result = server.open_document(&uri, text);
-    // KerML not yet supported
-    assert!(result.is_err());
-    assert!(result.unwrap_err().contains("KerML"));
+    // KerML is now supported
+    assert!(result.is_ok());
+    assert_eq!(server.workspace().file_count(), 1);
 }
 
 #[test]

@@ -14,8 +14,7 @@ impl LspServer {
         let (qualified_name, hover_range) = self.find_symbol_at_position(&path, position)?;
 
         // Look up the symbol using the qualified name
-        let resolver = self.resolver();
-        let symbol = resolver.resolve(&qualified_name)?;
+        let symbol = self.workspace.symbol_table().resolve(&qualified_name)?;
 
         // Format rich hover content with relationships
         let content = format_rich_hover(symbol, self.workspace());
