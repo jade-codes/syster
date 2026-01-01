@@ -2052,6 +2052,7 @@ fn test_cross_file_stdlib_reference_resolution() {
             Symbol::Definition { kind, .. } => kind.as_str(),
             Symbol::Usage { kind, .. } => kind.as_str(),
             Symbol::Alias { .. } => "Alias",
+            Symbol::Import { .. } => "Import",
         };
     }
 
@@ -2186,6 +2187,7 @@ fn test_measurement_references_file_directly() {
             Symbol::Classifier { .. } => "Classifier",
             Symbol::Feature { .. } => "Feature",
             Symbol::Alias { .. } => "Alias",
+            Symbol::Import { .. } => "Import",
         };
     }
 

@@ -48,6 +48,7 @@ pub struct Feature {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Import {
     pub path: String,
+    pub path_span: Option<Span>,
     pub is_recursive: bool,
     pub kind: ImportKind,
     pub span: Option<Span>,

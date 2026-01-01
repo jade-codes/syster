@@ -237,6 +237,7 @@ fn format_symbol_declaration(symbol: &Symbol) -> String {
                 .unwrap_or_default();
             format!("feature {name}{type_str}")
         }
+        Symbol::Import { path, .. } => format!("import {path}"),
     }
 }
 

@@ -13,11 +13,31 @@
       "patterns": [
         {
           "name": "keyword.control.kerml",
-          "match": "\\b(package|import|private|public|protected|abstract|alias|readonly|derived|end|specializes|subsets|redefines|conjugates|typing|featured|chaining|inverting|about|true|false|standard|library)\\b"
+          "match": "\\b(if|then|else|for|return|from|by|to|filter|first|new)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.kerml",
+          "match": "\\b(and|or|xor|not|implies|hastype|istype)\\b"
         },
         {
           "name": "storage.type.kerml",
-          "match": "\\b(classifier|class|datatype|struct|assoc|association|struct|behavior|function|predicate|expr|interaction|step|feature|type|doc)\\b"
+          "match": "\\b(classifier|datatype|class|struct|assoc|association|type|feature|metaclass|behavior|function|predicate|interaction|step|expr|bool|multiplicity|namespace|connector|binding|succession|flow)\\b"
+        },
+        {
+          "name": "storage.modifier.kerml",
+          "match": "\\b(package|library|import|alias|member|abstract|readonly|derived|composite|portion|ordered|nonunique|public|private|protected|standard|in|out|inout|end|default|of|as)\\b"
+        },
+        {
+          "name": "keyword.other.relationship.kerml",
+          "match": "\\b(specializes|specialization|subclassifier|subtype|subsets|subset|redefines|redefinition|conjugates|conjugation|conjugate|typing|typed|chains|inverting|inverse|differs|differences|disjoint|disjoining|intersects|unions|featured|featuring|dependency|reference|crosses)\\b"
+        },
+        {
+          "name": "keyword.other.metadata.kerml",
+          "match": "\\b(doc|comment|metadata|about|language|locale|rep|meta|inv)\\b"
+        },
+        {
+          "name": "constant.language.kerml",
+          "match": "\\b(true|false|null|all)\\b"
         }
       ]
     },

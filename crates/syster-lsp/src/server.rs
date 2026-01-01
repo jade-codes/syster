@@ -7,7 +7,7 @@ mod document_links;
 mod document_symbols;
 mod folding_ranges;
 pub mod formatting;
-mod helpers;
+pub mod helpers;
 mod hover;
 mod inlay_hints;
 mod position;

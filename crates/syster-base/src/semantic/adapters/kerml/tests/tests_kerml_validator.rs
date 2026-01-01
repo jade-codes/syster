@@ -84,6 +84,7 @@ fn create_alias(name: &str, target: &str) -> Symbol {
         name: name.to_string(),
         qualified_name: name.to_string(),
         target: target.to_string(),
+        target_span: None,
         scope_id: 0,
         source_file: None,
         span: None,

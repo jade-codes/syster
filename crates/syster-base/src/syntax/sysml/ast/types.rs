@@ -210,6 +210,7 @@ pub struct Comment {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Import {
     pub path: String,
+    pub path_span: Option<Span>,
     pub is_recursive: bool,
     pub span: Option<Span>,
 }
@@ -224,5 +225,6 @@ pub struct Documentation {
 pub struct Alias {
     pub name: Option<String>,
     pub target: String,
+    pub target_span: Option<Span>,
     pub span: Option<Span>,
 }

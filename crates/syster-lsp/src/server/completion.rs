@@ -145,6 +145,7 @@ impl LspServer {
                 syster::semantic::symbol_table::Symbol::Alias { .. } => {
                     (CompletionItemKind::REFERENCE, "🔗")
                 }
+                syster::semantic::symbol_table::Symbol::Import { .. } => continue, // Skip imports in completions
             };
 
             items.push(CompletionItem {

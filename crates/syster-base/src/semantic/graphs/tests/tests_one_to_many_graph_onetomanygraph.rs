@@ -484,7 +484,20 @@ fn test_duplicate_relationships() {
     graph.add("A".to_string(), "B".to_string(), None);
     graph.add("A".to_string(), "B".to_string(), None);
 
-    // Should have 2 entries (duplicates allowed)
+    // Should have 1 entry - duplicates are deduplicated by (source, target) pair
+    let targets = graph.get_targets("A").unwrap();
+    assert_eq!(targets.len(), 1);
+}
+
+#[test]
+fn test_different_targets_not_deduplicated() {
+    let mut graph = OneToManyGraph::new();
+
+    // Add different relationships from same source
+    graph.add("A".to_string(), "B".to_string(), None);
+    graph.add("A".to_string(), "C".to_string(), None);
+
+    // Should have 2 entries - different targets are not deduplicated
     let targets = graph.get_targets("A").unwrap();
     assert_eq!(targets.len(), 2);
 }

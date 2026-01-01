@@ -41,6 +41,34 @@ impl<'a> KermlAdapter<'a> {
         }
     }
 
+    pub(super) fn visit_import(&mut self, import: &Import) {
+        // Record the import in the current scope for resolution
+        let current_file = self.symbol_table.current_file().map(String::from);
+        self.symbol_table.add_import(
+            import.path.clone(),
+            import.is_recursive,
+            import.span,
+            current_file.clone(),
+        );
+
+        // Also create a Symbol::Import for semantic token highlighting
+        let scope_id = self.symbol_table.current_scope_id();
+        // Use a unique qualified name based on scope and path
+        let qualified_name = format!("import::{}::{}", scope_id, import.path);
+        let symbol = Symbol::Import {
+            path: import.path.clone(),
+            path_span: import.path_span,
+            qualified_name,
+            is_recursive: import.is_recursive,
+            scope_id,
+            source_file: current_file,
+            span: import.span,
+        };
+        // Insert with a unique key to avoid conflicts
+        let key = format!("import::{}", import.path);
+        self.insert_symbol(key, symbol);
+    }
+
     pub(super) fn visit_classifier(&mut self, classifier: &Classifier) {
         if let Some(name) = &classifier.name {
             let qualified_name = self.qualified_name(name);
@@ -121,11 +149,10 @@ impl<'a> KermlAdapter<'a> {
                 }
             }
             ClassifierMember::Import(import) => {
-                // Handle imports in classifier bodies
                 self.visit_import(import);
             }
             ClassifierMember::Comment(_) => {
-                // Skip comments
+                // Skip for now
             }
         }
     }
@@ -136,7 +163,7 @@ impl<'a> KermlAdapter<'a> {
             let scope_id = self.symbol_table.current_scope_id();
             let symbol = Symbol::Feature {
                 name: name.clone(),
-                qualified_name,
+                qualified_name: qualified_name.clone(),
                 scope_id,
                 feature_type: None,
                 source_file: self.symbol_table.current_file().map(String::from),
@@ -151,8 +178,9 @@ impl<'a> KermlAdapter<'a> {
             // Don't exit here - let the caller manage lifecycle
 
             // Process feature members (typing, redefinition, subsetting)
+            // Use qualified name so relationships match symbol table lookup
             for member in &feature.body {
-                self.visit_feature_member(name, member);
+                self.visit_feature_member(&qualified_name, member);
             }
         } else {
             // Anonymous feature - process members but don't create scope
@@ -224,26 +252,12 @@ impl<'a> KermlAdapter<'a> {
                     self.exit_namespace();
                 }
             }
-            Element::Import(_) | Element::Annotation(_) | Element::Comment(_) => {
-                // Skip annotations and comments for now
-                // Imports are handled below
+            Element::Import(import) => {
+                self.visit_import(import);
+            }
+            Element::Annotation(_) | Element::Comment(_) => {
+                // Skip for now
             }
         }
-
-        // Handle imports separately to track them in symbol table
-        if let Element::Import(import) = element {
-            self.visit_import(import);
-        }
-    }
-
-    pub(super) fn visit_import(&mut self, import: &Import) {
-        // Record the import in the current scope
-        let current_file = self.symbol_table.current_file().map(String::from);
-        self.symbol_table.add_import(
-            import.path.clone(),
-            import.is_recursive,
-            import.span,
-            current_file,
-        );
     }
 }

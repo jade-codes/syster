@@ -5,6 +5,7 @@ use super::types::{
 use super::utils::{
     extract_direction, extract_flags, find_identifier_span, find_name, to_classifier_kind, to_span,
 };
+use crate::core::Span;
 use crate::parser::kerml::Rule;
 use from_pest::{ConversionError, Void};
 use pest::iterators::Pair;
@@ -48,8 +49,10 @@ fn extract_classifier_members(pair: &Pair<Rule>, members: &mut Vec<ClassifierMem
             if let Some(path) = extract_import_path(pair) {
                 let is_recursive = detect_is_recursive(pair);
                 let kind = detect_import_kind(pair);
+                let path_span = extract_import_path_span(pair);
                 members.push(ClassifierMember::Import(Import {
                     path,
+                    path_span,
                     is_recursive,
                     kind,
                     span: Some(to_span(pair.as_span())),
@@ -163,6 +166,22 @@ fn extract_import_path(pair: &Pair<Rule>) -> Option<String> {
             Rule::element_reference => return extract_reference(&inner),
             _ => {
                 if let Some(found) = extract_import_path(&inner) {
+                    return Some(found);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Extract import path span for semantic token highlighting
+fn extract_import_path_span(pair: &Pair<Rule>) -> Option<Span> {
+    for inner in pair.clone().into_inner() {
+        match inner.as_rule() {
+            Rule::qualified_reference_chain => return Some(to_span(inner.as_span())),
+            Rule::element_reference => return Some(to_span(inner.as_span())),
+            _ => {
+                if let Some(found) = extract_import_path_span(&inner) {
                     return Some(found);
                 }
             }

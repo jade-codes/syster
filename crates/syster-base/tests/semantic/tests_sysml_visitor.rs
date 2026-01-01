@@ -202,6 +202,7 @@ fn test_comma_separated_redefinitions_do_not_create_duplicate_symbols() {
 fn test_attribute_reference_in_expression_not_treated_as_definition() {
     // Pattern: attribute :>> semiMajorAxis [1] = radius;
     // The "radius" in the expression should NOT create a symbol
+    // But attribute :>> radius creates a child scoped symbol named "radius"
     let source = r#"
         package TestPkg {
             attribute radius : Real;
@@ -236,7 +237,8 @@ fn test_attribute_reference_in_expression_not_treated_as_definition() {
         result.err()
     );
 
-    // radius should be defined exactly once at package level
+    // In SysML v2, `attribute :>> radius` creates a scoped symbol named "radius" in each child
+    // So we have: TestPkg::radius, TestPkg::Circle::radius, TestPkg::Sphere::radius
     let all_symbols = symbol_table.all_symbols();
     let radius_count = all_symbols
         .iter()
@@ -244,8 +246,8 @@ fn test_attribute_reference_in_expression_not_treated_as_definition() {
         .count();
 
     assert_eq!(
-        radius_count, 1,
-        "radius should be defined exactly once at package level, got {radius_count} definitions"
+        radius_count, 3,
+        "radius should appear 3 times (package level + Circle + Sphere), got {radius_count}"
     );
 }
 
@@ -289,7 +291,8 @@ fn test_inline_attribute_definitions_with_same_name_create_duplicates() {
 #[test]
 fn test_radius_redefinition_in_multiple_items_no_duplicates() {
     // Test case from ShapeItems.sysml: multiple item definitions each redefine "radius"
-    // This should NOT create duplicate symbols because they're in different scopes
+    // This should NOT create duplicate symbol errors because they're in different scopes
+    // In SysML v2, `attribute :>> radius` creates a scoped symbol named "radius" in each child
     let source = r#"
         package ShapeItems {
             item def CircularDisc {
@@ -317,7 +320,8 @@ fn test_radius_redefinition_in_multiple_items_no_duplicates() {
         result.err()
     );
 
-    // Check that "radius" doesn't appear as a symbol at all (it's redefined, not defined)
+    // Each redefinition creates a symbol in the child's scope
+    // So we have: ShapeItems::CircularDisc::radius, ShapeItems::Sphere::radius
     let all_symbols = symbol_table.all_symbols();
     let radius_count = all_symbols
         .iter()
@@ -325,15 +329,16 @@ fn test_radius_redefinition_in_multiple_items_no_duplicates() {
         .count();
 
     assert_eq!(
-        radius_count, 0,
-        "radius should not appear as a symbol (it's only redefined), got {radius_count} definitions"
+        radius_count, 2,
+        "Should have 2 radius symbols (one in each item def), got {radius_count}"
     );
 }
 
 #[test]
-fn test_simple_redefinition_creates_no_new_symbol() {
+fn test_simple_redefinition_creates_child_symbol() {
     // When you redefine without giving it a new name: attribute :>> radius [1];
-    // This should NOT create a new symbol named "radius"
+    // In SysML v2, this DOES create a symbol named "radius" in the child's scope
+    // Child::radius redefines Parent::radius
     let source = r#"
         package TestPkg {
             item def Parent {
@@ -360,7 +365,6 @@ fn test_simple_redefinition_creates_no_new_symbol() {
         .iter()
         .filter(|(name, _)| *name == "radius")
         .collect();
-    for (_name, _symbol) in &radius_symbols {}
 
     assert!(
         result.is_ok(),
@@ -368,12 +372,11 @@ fn test_simple_redefinition_creates_no_new_symbol() {
         result.err()
     );
 
-    // Should have exactly 1 radius: the one in Parent
-    // The redefinition in Child should NOT create a new symbol
+    // Should have exactly 2: Parent::radius and Child::radius
     assert_eq!(
         radius_symbols.len(),
-        1,
-        "Should have 1 radius symbol (in Parent only), got {}",
+        2,
+        "Should have 2 radius symbols (Parent::radius and Child::radius), got {}",
         radius_symbols.len()
     );
 }

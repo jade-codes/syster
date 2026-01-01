@@ -390,6 +390,7 @@ fn test_lookup_from_scope_with_alias() {
                 name: "AliasSymbol".to_string(),
                 qualified_name: "AliasSymbol".to_string(),
                 target: "RealSymbol".to_string(),
+                target_span: None,
             },
         )
         .unwrap();

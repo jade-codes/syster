@@ -13,6 +13,7 @@ use crate::syntax::sysml::visitor::{AstVisitor, Visitable};
 fn test_import_creation() {
     let import = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -34,6 +35,7 @@ fn test_import_with_span() {
 
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: Some(span),
     };
@@ -47,6 +49,7 @@ fn test_import_with_span() {
 fn test_import_recursive() {
     let import = Import {
         path: "Package::*::**".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -59,6 +62,7 @@ fn test_import_recursive() {
 fn test_import_non_recursive() {
     let import = Import {
         path: "Package::Member".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -71,6 +75,7 @@ fn test_import_non_recursive() {
 fn test_import_simple_path() {
     let import = Import {
         path: "SimplePackage".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -83,6 +88,7 @@ fn test_import_simple_path() {
 fn test_import_wildcard_path() {
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -95,6 +101,7 @@ fn test_import_wildcard_path() {
 fn test_import_recursive_wildcard_path() {
     let import = Import {
         path: "Package::*::**".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -107,6 +114,7 @@ fn test_import_recursive_wildcard_path() {
 fn test_import_empty_path() {
     let import = Import {
         path: String::new(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -119,6 +127,7 @@ fn test_import_empty_path() {
 fn test_import_clone() {
     let import1 = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -134,12 +143,14 @@ fn test_import_clone() {
 fn test_import_partial_eq() {
     let import1 = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
 
     let import2 = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -151,12 +162,14 @@ fn test_import_partial_eq() {
 fn test_import_not_eq_different_path() {
     let import1 = Import {
         path: "Package1::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
 
     let import2 = Import {
         path: "Package2::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -168,12 +181,14 @@ fn test_import_not_eq_different_path() {
 fn test_import_not_eq_different_recursive() {
     let import1 = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
 
     let import2 = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -201,12 +216,14 @@ fn test_import_not_eq_different_span() {
 
     let import1 = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: Some(span1),
     };
 
     let import2 = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: Some(span2),
     };
@@ -218,6 +235,7 @@ fn test_import_not_eq_different_span() {
 fn test_import_debug_trait() {
     let import = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -235,6 +253,7 @@ fn test_import_debug_trait() {
 fn test_import_as_element() {
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -255,6 +274,7 @@ fn test_import_as_element() {
 fn test_import_element_pattern_matching() {
     let import = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -291,6 +311,7 @@ impl AstVisitor for GenericTestVisitor {
 fn test_import_visitable_accept_generic() {
     let import = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -320,6 +341,7 @@ fn test_import_visitable_accept_generic() {
 fn test_import_visitable_with_multiple_visitors() {
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -360,6 +382,7 @@ fn test_import_visitable_with_span() {
 
     let import = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: Some(span),
     };
@@ -380,6 +403,7 @@ fn test_import_visitable_with_span() {
 fn test_import_visitable_recursive() {
     let import = Import {
         path: "Package::*::**".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -401,6 +425,7 @@ fn test_import_visitable_recursive() {
 fn test_import_visitable_non_recursive() {
     let import = Import {
         path: "Package::Member".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -445,6 +470,7 @@ impl AstVisitor for ImportCountingVisitor {
 fn test_import_visitable_accept_counting_visitor() {
     let import = Import {
         path: "Package::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -467,16 +493,19 @@ fn test_import_visitable_accept_counting_visitor() {
 fn test_import_visitable_counting_multiple_imports() {
     let import1 = Import {
         path: "Package1::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
     let import2 = Import {
         path: "Package2::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
     let import3 = Import {
         path: "Package3::*::**".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -498,6 +527,7 @@ fn test_import_visitable_counting_multiple_imports() {
 fn test_import_element_with_counting_visitor() {
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -536,11 +566,13 @@ fn test_import_counting_visitor_zero_initial() {
 fn test_import_in_file_with_counting_visitor() {
     let import1 = Import {
         path: "Package1::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
     let import2 = Import {
         path: "Package2::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -574,6 +606,7 @@ fn test_import_very_long_path() {
     let long_path = format!("{}::Element", "Package".repeat(100));
     let import = Import {
         path: long_path.clone(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -586,6 +619,7 @@ fn test_import_very_long_path() {
 fn test_import_complex_qualified_path() {
     let import = Import {
         path: "RootPackage::SubPackage::NestedPackage::Element".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -601,6 +635,7 @@ fn test_import_complex_qualified_path() {
 fn test_import_with_special_characters() {
     let import = Import {
         path: "Package_123::Element_456".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -616,6 +651,7 @@ fn test_import_unicode_path() {
     let unicode_path = "Package::元素".to_string();
     let import = Import {
         path: unicode_path.clone(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -627,6 +663,7 @@ fn test_import_unicode_path() {
 fn test_import_wildcard_only() {
     let import = Import {
         path: "*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };
@@ -646,6 +683,7 @@ fn test_import_both_flags_and_span() {
 
     let import = Import {
         path: "Package::*::**".to_string(),
+        path_span: None,
         is_recursive: true,
         span: Some(span),
     };
@@ -659,6 +697,7 @@ fn test_import_both_flags_and_span() {
 fn test_import_in_package_with_counting_visitor() {
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };

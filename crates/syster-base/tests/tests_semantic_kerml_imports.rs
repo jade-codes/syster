@@ -22,6 +22,7 @@ fn test_extract_kerml_imports_single_import() {
         }),
         elements: vec![Element::Import(Import {
             path: "Base::DataValue".to_string(),
+            path_span: None,
             is_recursive: false,
             kind: ImportKind::Normal,
             span: None,
@@ -42,13 +43,15 @@ fn test_extract_kerml_imports_multiple_imports() {
         elements: vec![
             Element::Import(Import {
                 path: "Base::DataValue".to_string(),
-                is_recursive: false,
+                path_span: None,
+            is_recursive: false,
                 kind: ImportKind::Normal,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Standard::Functions".to_string(),
-                is_recursive: true,
+                path_span: None,
+            is_recursive: true,
                 kind: ImportKind::Recursive,
                 span: None,
             }),
@@ -71,7 +74,8 @@ fn test_extract_kerml_imports_mixed_elements() {
         elements: vec![
             Element::Import(Import {
                 path: "Base::DataValue".to_string(),
-                is_recursive: false,
+                path_span: None,
+            is_recursive: false,
                 kind: ImportKind::Normal,
                 span: None,
             }),
@@ -88,7 +92,8 @@ fn test_extract_kerml_imports_mixed_elements() {
             }),
             Element::Import(Import {
                 path: "Standard::Functions".to_string(),
-                is_recursive: false,
+                path_span: None,
+            is_recursive: false,
                 kind: ImportKind::Normal,
                 span: None,
             }),

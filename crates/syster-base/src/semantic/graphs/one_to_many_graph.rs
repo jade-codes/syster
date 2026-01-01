@@ -1,4 +1,8 @@
 //! One-to-many directed graph (e.g., specialization, subsetting)
+//!
+//! Relationships are deduplicated by (source, target) pair - if the same
+//! relationship is added multiple times (e.g., from duplicate file loads),
+//! only one is kept.
 
 use crate::core::Span;
 use std::collections::{HashMap, HashSet};
@@ -15,11 +19,15 @@ impl OneToManyGraph {
         }
     }
 
+    /// Add a relationship from source to target.
+    ///
+    /// Deduplicates by (source, target) - if this exact relationship already
+    /// exists, the call is a no-op (keeps the original span).
     pub fn add(&mut self, source: String, target: String, span: Option<Span>) {
-        self.relationships
-            .entry(source)
-            .or_default()
-            .push((target, span));
+        let targets = self.relationships.entry(source).or_default();
+        if !targets.iter().any(|(t, _)| t == &target) {
+            targets.push((target, span));
+        }
     }
 
     pub fn get_targets(&self, source: &str) -> Option<Vec<&String>> {

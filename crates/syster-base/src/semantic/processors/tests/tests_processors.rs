@@ -798,6 +798,7 @@ fn test_collect_alias_tokens() {
     let alias = Alias {
         name: Some("myAlias".to_string()),
         target: "SomeTarget".to_string(),
+        target_span: None,
         span: Some(Span::new(Position::new(3, 6), Position::new(3, 13))),
     };
     let sysml_file = SysMLFile {
@@ -1486,5 +1487,941 @@ fn test_allocation_definition_parsing() {
         tokens.len() >= 2,
         "Should have at least 2 tokens (package + allocation def), got {}",
         tokens.len()
+    );
+}
+
+// =============================================================================
+// Semantic Token Collector - Relationship Type Coverage Tests
+// =============================================================================
+
+/// Test that typing relationships (`:`) generate semantic tokens
+#[test]
+fn test_semantic_tokens_typing_relationship() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+part def Vehicle;
+part myCar : Vehicle;
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // The typing relationship should have a span for "Vehicle"
+    let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, "myCar");
+    assert!(
+        typing.is_some(),
+        "Should have typing relationship for myCar"
+    );
+    let (target, span) = typing.unwrap();
+    assert_eq!(target, "Vehicle");
+    assert!(span.is_some(), "Typing relationship should have a span");
+}
+
+/// Test that specialization relationships (`:>`) generate semantic tokens
+#[test]
+fn test_semantic_tokens_specialization_relationship() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+part def Vehicle;
+part def Car :> Vehicle;
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // The specialization relationship should have a span for "Vehicle"
+    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "Car");
+    assert!(
+        specs.is_some(),
+        "Should have specialization relationship for Car"
+    );
+    let specs = specs.unwrap();
+    assert_eq!(specs.len(), 1);
+    assert_eq!(specs[0].0, "Vehicle");
+    assert!(
+        specs[0].1.is_some(),
+        "Specialization relationship should have a span"
+    );
+}
+
+/// Test that multiple specializations all get semantic tokens
+#[test]
+fn test_semantic_tokens_multiple_specializations() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+part def Vehicle;
+part def Motorized;
+part def Car :> Vehicle, Motorized;
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "Car");
+    assert!(specs.is_some(), "Should have specialization relationships");
+    let specs = specs.unwrap();
+    assert_eq!(specs.len(), 2, "Should have 2 specializations");
+
+    // Both should have spans
+    for (target, span) in &specs {
+        assert!(
+            span.is_some(),
+            "Specialization to {} should have a span",
+            target
+        );
+    }
+}
+
+/// Test that subsetting relationships (`subsets`) generate semantic tokens via the collector
+#[test]
+fn test_semantic_tokens_subsetting_relationship() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+part def Vehicle {
+    part components : Component[*];
+}
+part def Car :> Vehicle {
+    part wheels : Wheel[4] subsets components;
+}
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    // Collect tokens using the collector
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Subsetting targets are Property tokens (they reference features, not types)
+    let property_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Property)
+        .collect();
+
+    // The subsetting relationship "subsets components" should produce a Property token on line 6
+    // "components" is 10 characters long
+    let subsetting_token = property_tokens
+        .iter()
+        .find(|t| t.line == 5 && t.length == 10); // line 6 is 0-indexed as 5
+
+    assert!(
+        subsetting_token.is_some(),
+        "Should have Property semantic token for 'components' from subsetting relationship. Got Property tokens: {:?}",
+        property_tokens
+    );
+}
+
+/// Test that redefinition relationships (`redefines`) generate semantic tokens via the collector
+#[test]
+fn test_semantic_tokens_redefinition_relationship() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+part def Vehicle {
+    part engine : Engine;
+}
+part def ElectricVehicle :> Vehicle {
+    part engine : ElectricEngine redefines engine;
+}
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    // Collect tokens using the collector
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Redefinition targets are Property tokens (they reference features, not types)
+    let property_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Property)
+        .collect();
+
+    // The redefinition "redefines engine" should produce a Property token on line 6
+    // "engine" is 6 characters long
+    let redef_token = property_tokens
+        .iter()
+        .find(|t| t.line == 5 && t.length == 6); // line 6 is 0-indexed as 5
+
+    assert!(
+        redef_token.is_some(),
+        "Should have Property semantic token for 'engine' from redefinition relationship. Got Property tokens: {:?}",
+        property_tokens
+    );
+}
+
+/// Test redefinition with named attribute (:>> pattern with explicit name)
+#[test]
+fn test_semantic_tokens_redefinition_with_value_assignment() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    // Note: Anonymous redefinitions (`:>> dimensions` without a name) don't create
+    // symbols because they have no name to register. We test named redefinitions here.
+    let content = r#"
+package MeasurementReferences {
+    attribute def TensorMeasurementReference {
+        attribute dimensions: Natural[*];
+    }
+}
+package Tensors {
+    attribute def TensorQuantityValue {
+        attribute mRef: MeasurementReferences::TensorMeasurementReference;
+        attribute order redefines rank;
+    }
+}
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let result = parse_content(content, &path);
+
+    // First check if it parses
+    assert!(
+        result.is_ok(),
+        "Should parse redefinition: {:?}",
+        result.err()
+    );
+
+    let syntax_file = result.unwrap();
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    // Collect tokens
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+    let type_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Type)
+        .collect();
+
+    // Check we have tokens for the typing relationship
+    // Based on 0-indexed lines in the heredoc:
+    // Line 8 (0-indexed): attribute mRef: ... (typing token for qualified ref)
+    let line8_tokens: Vec<_> = type_tokens.iter().filter(|t| t.line == 8).collect();
+
+    // Line 8 should have token for the qualified type reference
+    assert!(
+        !line8_tokens.is_empty(),
+        "Should have semantic token for typing relationship on line 8. Type tokens: {:?}",
+        type_tokens
+    );
+}
+
+/// Test that collect_from_workspace includes all relationship types
+#[test]
+fn test_semantic_tokens_collect_from_workspace_includes_all_relationships() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+part def Vehicle;
+part def Car :> Vehicle;
+part myCar : Car;
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Should have tokens for:
+    // - Vehicle (definition)
+    // - Car (definition)
+    // - Vehicle (specialization target)
+    // - myCar (usage)
+    // - Car (typing target)
+    assert!(
+        tokens.len() >= 5,
+        "Should have at least 5 tokens (definitions + usages + relationship targets), got {}",
+        tokens.len()
+    );
+
+    // Check that we have Type tokens (from relationships)
+    let type_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Type)
+        .collect();
+    assert!(
+        type_tokens.len() >= 2,
+        "Should have at least 2 Type tokens (specialization + typing targets), got {}",
+        type_tokens.len()
+    );
+}
+
+/// Test that KerML specializations also generate semantic tokens
+#[test]
+fn test_semantic_tokens_kerml_specialization() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+classifier Base;
+classifier Derived specializes Base;
+"#;
+
+    let path = Path::new("test.kerml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.kerml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "Derived");
+    assert!(
+        specs.is_some(),
+        "Should have specialization relationship for Derived"
+    );
+}
+
+/// Test that KerML features with typing generate semantic tokens
+#[test]
+fn test_semantic_tokens_kerml_feature_typing() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+classifier MyClass {
+    feature myFeature : SomeType;
+}
+"#;
+
+    let path = Path::new("test.kerml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.kerml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Find the feature's qualified name
+    let feature_qname = symbol_table
+        .all_symbols()
+        .iter()
+        .find(|(_, s)| s.name() == "myFeature")
+        .map(|(_, s)| s.qualified_name().to_string());
+
+    assert!(feature_qname.is_some(), "Should find myFeature symbol");
+    let qname = feature_qname.unwrap();
+
+    // The relationship should use the qualified name
+    let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, &qname);
+    assert!(
+        typing.is_some(),
+        "Should have typing relationship for feature using qualified name: {}",
+        qname
+    );
+}
+
+/// Test that qualified type references (like Package::Type) generate semantic tokens
+#[test]
+fn test_semantic_tokens_qualified_type_reference() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+package References {
+    part def MyRef;
+}
+package Main {
+    attribute mRef : References::MyRef;
+}
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Find the mRef attribute's qualified name
+    let mref_qname = symbol_table
+        .all_symbols()
+        .iter()
+        .find(|(_, s)| s.name() == "mRef")
+        .map(|(_, s)| s.qualified_name().to_string());
+
+    if let Some(qname) = mref_qname {
+        let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, &qname);
+        assert!(typing.is_some(), "Should have typing relationship for mRef");
+        // The span should exist for the qualified type reference
+        let (target, span) = typing.unwrap();
+        assert!(target.contains("MyRef"), "Target should reference MyRef");
+        assert!(
+            span.is_some(),
+            "Qualified type reference should have a span"
+        );
+    }
+}
+
+/// Test that attribute definitions with specializations generate semantic tokens
+#[test]
+fn test_semantic_tokens_attribute_def_specialization() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    // This is similar to the stdlib TensorQuantityValue :> Array case
+    let content = r#"
+attribute def Array;
+attribute def TensorQuantityValue :> Array;
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    let specs =
+        relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "TensorQuantityValue");
+    assert!(
+        specs.is_some(),
+        "Should have specialization for TensorQuantityValue"
+    );
+    let specs = specs.unwrap();
+    assert_eq!(specs.len(), 1);
+    assert_eq!(specs[0].0, "Array");
+    assert!(specs[0].1.is_some(), "Should have span for Array");
+}
+
+/// Test that nested elements in packages get proper qualified names for relationships
+#[test]
+fn test_semantic_tokens_nested_package_relationships() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+package Vehicles {
+    part def Vehicle;
+    part def Car :> Vehicle;
+}
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Find the Car definition
+    let car_qname = symbol_table
+        .all_symbols()
+        .iter()
+        .find(|(_, s)| s.name() == "Car")
+        .map(|(_, s)| s.qualified_name().to_string());
+
+    assert!(car_qname.is_some(), "Should find Car symbol");
+    let qname = car_qname.unwrap();
+
+    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, &qname);
+    assert!(specs.is_some(), "Should have specialization for {}", qname);
+}
+
+/// Test that import statements generate semantic tokens
+#[test]
+fn test_semantic_tokens_imports() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+package TestPkg {
+    import OtherPackage::*;
+    import SpecificPackage::SpecificElement;
+}
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Check that import symbols were created
+    let all_symbols = symbol_table.all_symbols();
+    let import_count = all_symbols
+        .iter()
+        .filter(|(_, s)| matches!(s, Symbol::Import { .. }))
+        .count();
+
+    assert_eq!(import_count, 2, "Should have 2 import symbols");
+}
+
+/// Test semantic tokens for complex nested structure
+#[test]
+fn test_semantic_tokens_complex_nested_structure() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+package Systems {
+    part def System {
+        part subsystem : Subsystem;
+    }
+    
+    part def Subsystem :> System {
+        attribute name : String;
+    }
+    
+    part mySystem : System {
+        part mySubsystem : Subsystem;
+    }
+}
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Should have tokens for all definitions, usages, and their type references
+    assert!(
+        tokens.len() >= 8,
+        "Complex structure should generate many tokens, got {}",
+        tokens.len()
+    );
+}
+
+/// Test that tokens are sorted by position
+#[test]
+fn test_semantic_tokens_sorted_by_position() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+part def A;
+part def B;
+part def C;
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Verify tokens are sorted
+    for i in 1..tokens.len() {
+        assert!(
+            (tokens[i - 1].line, tokens[i - 1].column) <= (tokens[i].line, tokens[i].column),
+            "Tokens should be sorted by position"
+        );
+    }
+}
+
+/// Test reference subsetting generates semantic tokens
+#[test]
+fn test_semantic_tokens_reference_subsetting() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    let content = r#"
+part def Container {
+    ref part contents : Item[*];
+}
+part def SpecialContainer :> Container {
+    ref part specialContents : SpecialItem[*] references contents;
+}
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Verify parsing succeeded
+    let symbols_count = symbol_table.all_symbols().len();
+    assert!(symbols_count >= 2, "Should have parsed some symbols");
+}
+
+/// Test that empty file produces no tokens
+#[test]
+fn test_semantic_tokens_empty_file() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = "";
+
+    let path = PathBuf::from("empty.sysml");
+    // Empty file may fail to parse, which is expected
+    if let Ok(syntax_file) = parse_content(content, &path) {
+        let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+        workspace.add_file(path.clone(), syntax_file);
+        workspace.populate_all().ok();
+
+        let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "empty.sysml");
+        assert!(tokens.is_empty(), "Empty file should have no tokens");
+    }
+    // If parsing fails, that's also acceptable for empty content
+}
+
+/// Test tokens for file with only comments
+#[test]
+fn test_semantic_tokens_only_comments() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+// This is a comment
+/* This is a block comment */
+"#;
+
+    let path = PathBuf::from("comments.sysml");
+    // Comments-only file may fail to parse, which is expected
+    if let Ok(syntax_file) = parse_content(content, &path) {
+        let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+        workspace.add_file(path.clone(), syntax_file);
+        workspace.populate_all().ok();
+
+        let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "comments.sysml");
+        // Comments don't generate semantic tokens (handled by TextMate grammar)
+        assert!(
+            tokens.is_empty(),
+            "Comments-only file should have no semantic tokens"
+        );
+    }
+    // If parsing fails, that's also acceptable
+}
+
+/// Test that qualified type references (with ::) have proper spans in relationship graph
+#[test]
+fn test_qualified_type_reference_has_span() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    // Test qualified type reference in typing relationship
+    let content = r#"
+package MeasurementReferences {
+    attribute def VectorMeasurementReference;
+}
+package Quantities {
+    attribute def VectorQuantityValue {
+        attribute mRef: MeasurementReferences::VectorMeasurementReference;
+    }
+}
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Find the mRef symbol
+    let mref_qname = symbol_table
+        .all_symbols()
+        .iter()
+        .find(|(_, s)| s.name() == "mRef")
+        .map(|(_, s)| s.qualified_name().to_string());
+
+    assert!(mref_qname.is_some(), "Should find mRef symbol");
+    let qname = mref_qname.unwrap();
+
+    // Check that typing relationship was created with span
+    let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, &qname);
+    assert!(
+        typing.is_some(),
+        "Should have typing relationship for mRef (got: {:?})",
+        typing
+    );
+
+    let (target, span) = typing.unwrap();
+    assert!(
+        target.contains("VectorMeasurementReference"),
+        "Target should contain VectorMeasurementReference, got: {}",
+        target
+    );
+    assert!(
+        span.is_some(),
+        "Typing relationship should have a span for qualified type reference"
+    );
+}
+
+/// Test semantic tokens for nested usage with redefinition (:>>)
+#[test]
+fn test_semantic_tokens_redefinition_with_typing() {
+    use crate::semantic::adapters::syntax_factory::populate_syntax_file;
+    use crate::semantic::graphs::RelationshipGraph;
+    use crate::semantic::symbol_table::SymbolTable;
+    use crate::syntax::parser::parse_content;
+    use std::path::Path;
+
+    // Test :>> which is redefinition with typing
+    let content = r#"
+package Types {
+    attribute def BaseRef;
+    attribute def DerivedRef :> BaseRef;
+}
+package Values {
+    attribute def BaseValue {
+        attribute baseRef: Types::BaseRef;
+    }
+    attribute def DerivedValue :> BaseValue {
+        attribute :>> baseRef: Types::DerivedRef;
+    }
+}
+"#;
+
+    let path = Path::new("test.sysml");
+    let syntax_file = parse_content(content, path).expect("Should parse");
+
+    let mut symbol_table = SymbolTable::new();
+    let mut relationship_graph = RelationshipGraph::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
+
+    // Find all symbols from this file
+    let all_syms = symbol_table.all_symbols();
+    let ref_symbols: Vec<_> = all_syms
+        .iter()
+        .filter(|(_, s)| s.name() == "baseRef")
+        .collect();
+
+    // Should have ref in both BaseValue and DerivedValue
+    assert!(
+        !ref_symbols.is_empty(),
+        "Should have at least one ref symbol, found: {:?}",
+        ref_symbols
+            .iter()
+            .map(|(_, s)| s.qualified_name())
+            .collect::<Vec<_>>()
+    );
+
+    // Check that relationships exist
+    for (_, sym) in &ref_symbols {
+        let qname = sym.qualified_name();
+
+        // Check for typing
+        if let Some((target, span)) = relationship_graph.get_one_to_one_with_span(REL_TYPING, qname)
+        {
+            assert!(
+                span.is_some(),
+                "Typing for {} -> {} should have span",
+                qname,
+                target
+            );
+        }
+
+        // Check for redefinition (one-to-many)
+        if let Some(redefs) = relationship_graph.get_one_to_many_with_spans(REL_REDEFINITION, qname)
+        {
+            for (target, span) in redefs {
+                assert!(
+                    span.is_some(),
+                    "Redefinition {} -> {} should have span",
+                    qname,
+                    target
+                );
+            }
+        }
+    }
+}
+
+/// Test that all tokens from workspace collection include relationship spans
+#[test]
+fn test_semantic_tokens_workspace_includes_qualified_refs() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+package Pkg {
+    part def Base;
+    part def Derived :> Base;
+    part instance : Derived;
+}
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Count Type tokens (should come from relationships)
+    let type_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Type)
+        .collect();
+
+    // Should have Type tokens for:
+    // - Base (specialization target from Derived)
+    // - Derived (typing target from instance)
+    assert!(
+        type_tokens.len() >= 2,
+        "Should have at least 2 Type tokens from relationships, got: {:?}",
+        type_tokens
+    );
+}
+
+/// Test that anonymous redefinition creates a symbol and generates semantic tokens
+/// This is the pattern: `attribute :>> num: Real[3]` - no explicit name, but inherits from redefinition
+#[test]
+fn test_semantic_tokens_anonymous_redefinition_creates_symbol() {
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::parser::parse_content;
+    use std::path::PathBuf;
+
+    let content = r#"
+part def Parent {
+    attribute num: Real;
+}
+part def Child :> Parent {
+    attribute :>> num: Real[3];
+}
+"#;
+
+    let path = PathBuf::from("test.sysml");
+    let syntax_file = parse_content(content, &path).expect("Should parse");
+
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_all().ok();
+
+    // First, verify the symbol was created
+    let symbols = workspace.symbol_table().all_symbols();
+    let num_symbols: Vec<_> = symbols.iter().filter(|(name, _)| *name == "num").collect();
+
+    assert_eq!(
+        num_symbols.len(),
+        2,
+        "Should have 2 'num' symbols (Parent::num and Child::num), got: {:?}",
+        num_symbols
+            .iter()
+            .map(|(_, s)| s.qualified_name())
+            .collect::<Vec<_>>()
+    );
+
+    // Collect tokens
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // The redefinition creates a symbol for "num" in Child's scope
+    // Redefinition targets are Property tokens (they reference features, not types)
+    // We should have:
+    // - Type tokens for: Real (typing target from Parent::num), Real (typing target from Child::num)
+    // - Property token for: num (redefinition target from Child::num)
+    let property_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Property)
+        .collect();
+
+    // Check we have Property token for redefinition target "num" (3 chars, on line 5)
+    let redef_token = property_tokens
+        .iter()
+        .find(|t| t.line == 5 && t.length == 3);
+
+    assert!(
+        redef_token.is_some(),
+        "Should have Property semantic token for 'num' from redefinition (:>> num). Property tokens: {:?}",
+        property_tokens
     );
 }

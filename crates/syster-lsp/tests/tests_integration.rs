@@ -885,3 +885,450 @@ fn test_timing_with_stdlib_loaded() {
         println!("AnalysisTooling.sysml not found in stdlib");
     }
 }
+
+/// Test that replicates the duplicate relationship bug for TemperatureDifferenceValue
+/// User reported: hovering over TemperatureDifferenceValue in ISQ.sysml shows
+/// two relationships for ScalarQuantityValue
+#[test]
+fn test_hover_temperature_difference_value_no_duplicate_specialization() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    // Create workspace and load stdlib
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
+
+    // Load and populate stdlib
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate");
+
+    // Find ISQ::TemperatureDifferenceValue symbol
+    let symbol_table = workspace.symbol_table();
+    let all_symbols = symbol_table.all_symbols();
+    let temp_diff_symbol = all_symbols
+        .iter()
+        .find(|(_, sym)| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
+
+    assert!(
+        temp_diff_symbol.is_some(),
+        "Should find TemperatureDifferenceValue"
+    );
+    let (_, symbol) = temp_diff_symbol.unwrap();
+
+    // Get relationships the same way hover does
+    let graph = workspace.relationship_graph();
+    let grouped_rels = graph.get_relationships_grouped(symbol.qualified_name());
+
+    println!(
+        "Grouped relationships for TemperatureDifferenceValue: {:?}",
+        grouped_rels
+    );
+
+    // Find the "Specializes" group
+    let specializes_group = grouped_rels
+        .iter()
+        .find(|(label, _)| label == "Specializes");
+    assert!(
+        specializes_group.is_some(),
+        "Should have Specializes relationship"
+    );
+
+    let (_, targets) = specializes_group.unwrap();
+    println!("Specializes targets: {:?}", targets);
+
+    // Check for duplicates
+    let mut unique_targets: Vec<_> = targets.clone();
+    unique_targets.sort();
+    unique_targets.dedup();
+
+    assert_eq!(
+        targets.len(),
+        unique_targets.len(),
+        "Found duplicate relationships in hover! Got {} but only {} unique: {:?}",
+        targets.len(),
+        unique_targets.len(),
+        targets
+    );
+
+    // Should specialize exactly 1 type (ScalarQuantityValue)
+    assert_eq!(
+        targets.len(),
+        1,
+        "Should have exactly 1 specialization target in hover, got: {:?}",
+        targets
+    );
+}
+
+/// Test that hover for TemperatureDifferenceValue doesn't show duplicate relationships
+#[test]
+fn test_hover_output_temperature_difference_value() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+    use syster_lsp::server::helpers::format_rich_hover;
+
+    // Create workspace and load stdlib
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
+
+    // Load and populate stdlib
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate");
+
+    // Find ISQ::TemperatureDifferenceValue symbol
+    let symbol_table = workspace.symbol_table();
+    let all_symbols = symbol_table.all_symbols();
+    let temp_diff_symbol = all_symbols
+        .iter()
+        .find(|(_, sym)| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
+
+    assert!(
+        temp_diff_symbol.is_some(),
+        "Should find TemperatureDifferenceValue"
+    );
+    let (_, symbol) = temp_diff_symbol.unwrap();
+
+    // Generate the actual hover output
+    let hover_output = format_rich_hover(symbol, &workspace);
+
+    println!("=== HOVER OUTPUT ===");
+    println!("{}", hover_output);
+    println!("=== END HOVER OUTPUT ===");
+
+    // Check that ScalarQuantityValue only appears once
+    let scalar_count = hover_output.matches("ScalarQuantityValue").count();
+    assert_eq!(
+        scalar_count, 1,
+        "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
+        scalar_count, hover_output
+    );
+}
+
+#[test]
+fn test_hover_output_celsius_temperature_value() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+    use syster_lsp::server::helpers::format_rich_hover;
+
+    // Create workspace and load stdlib
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
+
+    // Load and populate stdlib
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate");
+
+    // Find ISQThermodynamics::CelsiusTemperatureValue symbol
+    let symbol_table = workspace.symbol_table();
+    let all_symbols = symbol_table.all_symbols();
+    let celsius_symbol = all_symbols
+        .iter()
+        .find(|(_, sym)| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
+
+    assert!(
+        celsius_symbol.is_some(),
+        "Should find CelsiusTemperatureValue"
+    );
+    let (_, symbol) = celsius_symbol.unwrap();
+
+    // Generate the actual hover output
+    let hover_output = format_rich_hover(symbol, &workspace);
+
+    println!("=== HOVER OUTPUT (CelsiusTemperatureValue) ===");
+    println!("{}", hover_output);
+    println!("=== END HOVER OUTPUT ===");
+
+    // Check that ScalarQuantityValue only appears once
+    let scalar_count = hover_output.matches("ScalarQuantityValue").count();
+    assert_eq!(
+        scalar_count, 1,
+        "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
+        scalar_count, hover_output
+    );
+}
+
+#[test]
+fn test_hover_at_position_temperature_difference_value() {
+    use std::path::PathBuf;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+    use syster_lsp::server::helpers::format_rich_hover;
+
+    // Create workspace and load stdlib
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
+
+    // Load and populate stdlib
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate");
+
+    // Check: are there multiple symbols with name "TemperatureDifferenceValue"?
+    let symbol_table = workspace.symbol_table();
+    let all_symbols = symbol_table.all_symbols();
+    let matching_symbols: Vec<_> = all_symbols
+        .iter()
+        .filter(|(_, sym)| sym.name() == "TemperatureDifferenceValue")
+        .collect();
+
+    println!("=== Symbols named 'TemperatureDifferenceValue' ===");
+    for (key, sym) in &matching_symbols {
+        println!("  Key: {}, QName: {}", key, sym.qualified_name());
+    }
+    println!("Total: {}", matching_symbols.len());
+
+    // Now generate hover for each and check
+    for (_, sym) in &matching_symbols {
+        let hover = format_rich_hover(sym, &workspace);
+        let count = hover.matches("ScalarQuantityValue").count();
+        println!("\n--- Hover for {} ---\n{}", sym.qualified_name(), hover);
+        assert_eq!(
+            count,
+            1,
+            "Should have exactly 1 ScalarQuantityValue in hover for {}",
+            sym.qualified_name()
+        );
+    }
+}
+
+#[test]
+fn test_lsp_hover_isq_temperature_difference_value() {
+    use async_lsp::lsp_types::{HoverContents, MarkedString, Position, Url};
+    use std::path::PathBuf;
+    use syster_lsp::LspServer;
+
+    // Create LSP server
+    let mut server = LspServer::new();
+
+    // Load stdlib
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
+    stdlib_loader
+        .load(server.workspace_mut())
+        .expect("Failed to load stdlib");
+    server
+        .workspace_mut()
+        .populate_all()
+        .expect("Failed to populate");
+
+    // Find ISQ.sysml file
+    let isq_path = server
+        .workspace()
+        .files()
+        .keys()
+        .find(|p| p.to_string_lossy().ends_with("ISQ.sysml"))
+        .expect("Should have ISQ.sysml in stdlib")
+        .clone();
+
+    // Open the document
+    let abs_path = std::fs::canonicalize(&isq_path).expect("Should canonicalize path");
+    let uri = Url::from_file_path(&abs_path).expect("Should convert to URL");
+    let text = std::fs::read_to_string(&isq_path).expect("Should read file");
+
+    server
+        .open_document(&uri, &text)
+        .expect("Should open document");
+
+    // Find line containing "TemperatureDifferenceValue" definition (line 26, 0-indexed = 25)
+    let lines: Vec<&str> = text.lines().collect();
+    let (line_index, col_index) = lines
+        .iter()
+        .enumerate()
+        .find_map(|(i, line)| {
+            if line.contains("attribute def TemperatureDifferenceValue") {
+                line.find("TemperatureDifferenceValue").map(|pos| (i, pos))
+            } else {
+                None
+            }
+        })
+        .expect("Should find TemperatureDifferenceValue definition");
+
+    println!(
+        "Found TemperatureDifferenceValue at line {}, col {}",
+        line_index, col_index
+    );
+    println!("Line content: {}", lines[line_index]);
+
+    // Hover at the position
+    let position = Position {
+        line: line_index as u32,
+        character: (col_index + 10) as u32, // Middle of "TemperatureDifferenceValue"
+    };
+
+    let hover_result = server.get_hover(&uri, position);
+
+    assert!(hover_result.is_some(), "Should get hover result");
+    let hover = hover_result.unwrap();
+
+    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+        println!("=== LSP HOVER OUTPUT ===");
+        println!("{}", content);
+        println!("=== END LSP HOVER OUTPUT ===");
+
+        // Check that ScalarQuantityValue only appears once
+        let scalar_count = content.matches("ScalarQuantityValue").count();
+        assert_eq!(
+            scalar_count, 1,
+            "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
+            scalar_count, content
+        );
+    } else {
+        panic!("Hover content should be a string");
+    }
+}
+
+/// Tests for the actual runtime scenario where:
+/// 1. Stdlib is loaded from target/release/sysml.library (auto-discovered)
+/// 2. User opens ISQ.sysml from that same path
+/// 3. Hover is requested
+///
+/// This replicates the exact production flow.
+#[test]
+fn test_lsp_hover_with_auto_discovered_stdlib() {
+    use async_lsp::lsp_types::{HoverContents, MarkedString, Position, Url};
+    use syster_lsp::LspServer;
+
+    // Use the target/release/sysml.library path like production
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("target")
+        .join("release")
+        .join("sysml.library");
+
+    // Skip test if stdlib doesn't exist there (CI might not have it)
+    if !stdlib_path.exists() {
+        println!(
+            "Skipping test - stdlib not found at: {}",
+            stdlib_path.display()
+        );
+        return;
+    }
+
+    println!("Using stdlib from: {:?}", stdlib_path);
+
+    // Create LSP server and set up stdlib explicitly at production path
+    let mut server = LspServer::new();
+    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
+    stdlib_loader
+        .load(server.workspace_mut())
+        .expect("Failed to load stdlib");
+    server
+        .workspace_mut()
+        .populate_all()
+        .expect("Failed to populate");
+
+    // Find ISQ.sysml in the loaded workspace
+    let isq_path = server
+        .workspace()
+        .files()
+        .keys()
+        .find(|p| p.to_string_lossy().ends_with("ISQ.sysml"))
+        .expect("Should have ISQ.sysml in stdlib")
+        .clone();
+
+    println!("ISQ.sysml path from workspace: {:?}", isq_path);
+
+    // THE BUG: User opens ISQ.sysml from crates/syster-base/sysml.library
+    // but stdlib was loaded from target/release/sysml.library
+    // These are DIFFERENT paths to the SAME logical file!
+    let user_opened_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library")
+        .join("Domain Libraries")
+        .join("Quantities and Units")
+        .join("ISQ.sysml");
+
+    println!("User opens file from: {:?}", user_opened_path);
+
+    let abs_path = std::fs::canonicalize(&user_opened_path).expect("Should canonicalize path");
+    let uri = Url::from_file_path(&abs_path).expect("Should convert to URL");
+    let text = std::fs::read_to_string(&user_opened_path).expect("Should read file");
+
+    server
+        .open_document(&uri, &text)
+        .expect("Should open document");
+
+    // Find line containing "TemperatureDifferenceValue" definition
+    let lines: Vec<&str> = text.lines().collect();
+    let (line_index, col_index) = lines
+        .iter()
+        .enumerate()
+        .find_map(|(i, line)| {
+            if line.contains("attribute def TemperatureDifferenceValue") {
+                line.find("TemperatureDifferenceValue").map(|pos| (i, pos))
+            } else {
+                None
+            }
+        })
+        .expect("Should find TemperatureDifferenceValue definition");
+
+    println!(
+        "Found TemperatureDifferenceValue at line {}, col {}",
+        line_index, col_index
+    );
+
+    // Hover at the position
+    let position = Position {
+        line: line_index as u32,
+        character: (col_index + 10) as u32,
+    };
+
+    let hover_result = server.get_hover(&uri, position);
+
+    assert!(hover_result.is_some(), "Should get hover result");
+    let hover = hover_result.unwrap();
+
+    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+        println!("=== LSP HOVER OUTPUT (auto-discovered stdlib) ===");
+        println!("{}", content);
+        println!("=== END LSP HOVER OUTPUT ===");
+
+        // Check that ScalarQuantityValue only appears once
+        let scalar_count = content.matches("ScalarQuantityValue").count();
+        assert_eq!(
+            scalar_count, 1,
+            "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
+            scalar_count, content
+        );
+    } else {
+        panic!("Hover content should be a string");
+    }
+}
