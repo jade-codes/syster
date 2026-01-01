@@ -3,6 +3,7 @@ mod core;
 mod definition;
 mod diagnostics;
 mod document;
+mod document_links;
 mod document_symbols;
 mod folding_ranges;
 pub mod formatting;
