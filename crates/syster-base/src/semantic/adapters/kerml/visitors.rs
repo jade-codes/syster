@@ -1,7 +1,7 @@
 use crate::core::constants::{REL_REDEFINITION, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING};
 use crate::semantic::symbol_table::Symbol;
 use crate::syntax::kerml::ast::{
-    Classifier, ClassifierKind, ClassifierMember, Element, Feature, FeatureMember,
+    Classifier, ClassifierKind, ClassifierMember, Element, Feature, FeatureMember, Import,
     NamespaceDeclaration, Package,
 };
 
@@ -120,8 +120,12 @@ impl<'a> KermlAdapter<'a> {
                     }
                 }
             }
-            ClassifierMember::Comment(_) | ClassifierMember::Import(_) => {
-                // Skip for now
+            ClassifierMember::Import(import) => {
+                // Handle imports in classifier bodies
+                self.visit_import(import);
+            }
+            ClassifierMember::Comment(_) => {
+                // Skip comments
             }
         }
     }
@@ -221,8 +225,25 @@ impl<'a> KermlAdapter<'a> {
                 }
             }
             Element::Import(_) | Element::Annotation(_) | Element::Comment(_) => {
-                // Skip for now
+                // Skip annotations and comments for now
+                // Imports are handled below
             }
         }
+
+        // Handle imports separately to track them in symbol table
+        if let Element::Import(import) = element {
+            self.visit_import(import);
+        }
+    }
+
+    pub(super) fn visit_import(&mut self, import: &Import) {
+        // Record the import in the current scope
+        let current_file = self.symbol_table.current_file().map(String::from);
+        self.symbol_table.add_import(
+            import.path.clone(),
+            import.is_recursive,
+            import.span,
+            current_file,
+        );
     }
 }

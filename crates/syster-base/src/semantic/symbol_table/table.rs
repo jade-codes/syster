@@ -168,6 +168,23 @@ impl SymbolTable {
         }
         refs
     }
+
+    /// Get all imports from a specific file
+    ///
+    /// Returns a vector of (import_path, span) tuples for all imports in the given file
+    pub fn get_file_imports(&self, file_path: &str) -> Vec<(String, Span)> {
+        let mut imports = Vec::new();
+        for scope in &self.scopes {
+            for import in &scope.imports {
+                if let (Some(import_file), Some(span)) = (&import.file, &import.span)
+                    && import_file == file_path
+                {
+                    imports.push((import.path.clone(), *span));
+                }
+            }
+        }
+        imports
+    }
 }
 
 impl Default for SymbolTable {

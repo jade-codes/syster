@@ -1,5 +1,6 @@
 // Test modules
 mod tests_core_lspserver;
+mod tests_document_links;
 mod tests_formatting;
 mod tests_helpers;
 mod tests_helpers_apply_text_edit;
