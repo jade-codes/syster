@@ -154,17 +154,29 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     fn visit_usage(&mut self, usage: &Usage) {
         // Get the name: explicit name, or inferred from first redefinition target
         // In SysML v2, `attribute :>> num` creates a feature named "num" that redefines the inherited one
-        let name = if let Some(name) = &usage.name {
-            name.clone()
+        let (name, is_anonymous) = if let Some(name) = &usage.name {
+            (name.clone(), false)
         } else if let Some(first_redef) = usage.relationships.redefines.first() {
             // Anonymous redefinition inherits name from redefined feature
-            first_redef.target.clone()
+            (first_redef.target.clone(), true)
         } else {
             // No name and no redefinition - skip
             return;
         };
 
         let qualified_name = self.qualified_name(&name);
+
+        // For anonymous redefinitions, avoid symbol table collisions by checking if a symbol
+        // with this qualified name already exists. This prevents duplicate symbols when the
+        // same redefinition is processed multiple times (e.g., from different file paths).
+        if is_anonymous
+            && self
+                .symbol_table
+                .lookup_qualified(&qualified_name)
+                .is_some()
+        {
+            return;
+        }
 
         // Create a symbol for all usages (named and inferred from redefinition)
         let kind = Self::map_usage_kind(&usage.kind);
