@@ -82,7 +82,7 @@ fn make_import(path: &str, span: Option<Span>) -> Import {
     Import {
         path: path.to_string(),
         path_span: None,
-            is_recursive: false,
+        is_recursive: false,
         kind: ImportKind::Normal,
         span,
     }

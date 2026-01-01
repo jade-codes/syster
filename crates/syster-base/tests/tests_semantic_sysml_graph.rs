@@ -1652,7 +1652,10 @@ fn test_temperature_difference_value_no_duplicate_specialization() {
     let graph = workspace.relationship_graph();
     let rels = graph.get_one_to_many(REL_SPECIALIZATION, "ISQ::TemperatureDifferenceValue");
 
-    assert!(rels.is_some(), "Should have specialization relationship for ISQ::TemperatureDifferenceValue");
+    assert!(
+        rels.is_some(),
+        "Should have specialization relationship for ISQ::TemperatureDifferenceValue"
+    );
     let targets = rels.unwrap();
 
     println!("TemperatureDifferenceValue specializes: {:?}", targets);

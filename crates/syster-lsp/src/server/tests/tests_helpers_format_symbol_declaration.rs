@@ -700,7 +700,7 @@ fn test_format_all_symbol_variants_produce_output() {
             name: "A".to_string(),
             qualified_name: "A".to_string(),
             target: "B".to_string(),
-        target_span: None,
+            target_span: None,
             scope_id: 0,
             source_file: None,
             span: None,

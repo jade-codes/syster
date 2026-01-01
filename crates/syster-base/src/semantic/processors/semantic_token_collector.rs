@@ -198,17 +198,21 @@ impl SemanticTokenCollector {
             }
 
             // Handle alias targets (the "for X" part of "alias Y for X")
-            if let Symbol::Alias { target_span, .. } = symbol {
-                if let Some(span) = target_span {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Type));
-                }
+            if let Symbol::Alias {
+                target_span: Some(span),
+                ..
+            } = symbol
+            {
+                tokens.push(SemanticToken::from_span(span, TokenType::Type));
             }
 
             // Handle import paths (the path in "import X::Y::*")
-            if let Symbol::Import { path_span, .. } = symbol {
-                if let Some(span) = path_span {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Namespace));
-                }
+            if let Symbol::Import {
+                path_span: Some(span),
+                ..
+            } = symbol
+            {
+                tokens.push(SemanticToken::from_span(span, TokenType::Namespace));
             }
         }
 
