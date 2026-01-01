@@ -293,8 +293,8 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         // Note: Two different identifier formats are used here:
         // 1. qualified_name: "import::scope_id::path" - Globally unique identifier for the symbol,
         //    includes scope_id to distinguish same import path used in different scopes
-        // 2. key: "import::path" - Symbol table key for lookup, simpler format without scope_id
-        //    allows finding imports by path alone
+        // 2. key: "import::path" - Symbol table insertion key, simpler format without scope_id
+        //    used to store the symbol in the current scope without conflicts
         let qualified_name = format!("import::{}::{}", scope_id, import.path);
         let key = format!("import::{}", import.path);
         
