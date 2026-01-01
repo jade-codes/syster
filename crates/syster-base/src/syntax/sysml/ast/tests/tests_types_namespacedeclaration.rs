@@ -543,7 +543,7 @@ fn test_namespacedeclaration_in_file_with_mixed_elements() {
             }),
             Element::Import(Import {
                 path: "External::*".to_string(),
-        path_span: None,
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),

@@ -952,19 +952,19 @@ fn test_extract_multiple_imports() {
             Element::Import(Import {
                 path: "Base::Vehicle".to_string(),
                 path_span: None,
-            is_recursive: false,
+                is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
                 path_span: None,
-            is_recursive: false,
+                is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Utils::*".to_string(),
                 path_span: None,
-            is_recursive: true,
+                is_recursive: true,
                 span: None,
             }),
         ],
@@ -1011,7 +1011,7 @@ fn test_extract_imports_mixed_elements() {
             Element::Import(Import {
                 path: "Base::Vehicle".to_string(),
                 path_span: None,
-            is_recursive: false,
+                is_recursive: false,
                 span: None,
             }),
             Element::Comment(syster::syntax::sysml::ast::Comment {
@@ -1021,7 +1021,7 @@ fn test_extract_imports_mixed_elements() {
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
                 path_span: None,
-            is_recursive: false,
+                is_recursive: false,
                 span: None,
             }),
         ],
