@@ -6,12 +6,6 @@ import { resolve } from 'path';
 const PORT = 3000;
 const ALLOWED_DIR = resolve(process.cwd());
 
-// Validate that the resolved path is within the allowed directory
-function isPathSafe(requestedPath: string, baseDir: string = ALLOWED_DIR): boolean {
-  const resolvedPath = resolve(baseDir, requestedPath);
-  return resolvedPath.startsWith(baseDir);
-}
-
 const server = Bun.serve({
   port: PORT,
   async fetch(req) {
@@ -27,9 +21,10 @@ const server = Bun.serve({
     
     // Transpile and serve TypeScript/TSX files
     if (url.pathname.endsWith('.tsx') || url.pathname.endsWith('.ts')) {
-      const filePath = `./src${url.pathname}`;
+      const srcDir = resolve(ALLOWED_DIR, 'src');
+      const filePath = resolve(srcDir, `.${url.pathname}`);
       
-      if (!isPathSafe(filePath)) {
+      if (!filePath.startsWith(srcDir)) {
         return new Response('Forbidden', { status: 403 });
       }
       
@@ -55,8 +50,10 @@ const server = Bun.serve({
     
     // Serve CSS files
     if (url.pathname.endsWith('.css')) {
-      const filePath = `./src${url.pathname}`;      
-      if (!isPathSafe(filePath)) {
+      const srcDir = resolve(ALLOWED_DIR, 'src');
+      const filePath = resolve(srcDir, `.${url.pathname}`);
+      
+      if (!filePath.startsWith(srcDir)) {
         return new Response('Forbidden', { status: 403 });
       }
       
@@ -71,10 +68,10 @@ const server = Bun.serve({
     
     // Serve from node_modules with whitelist-based security
     if (url.pathname.startsWith('/node_modules/')) {
-      const nodeModulesPath = resolve(ALLOWED_DIR, 'node_modules');
-      const filePath = `.${url.pathname}`;
+      const nodeModulesDir = resolve(ALLOWED_DIR, 'node_modules');
+      const filePath = resolve(nodeModulesDir, url.pathname.slice('/node_modules/'.length));
       
-      if (!isPathSafe(filePath, nodeModulesPath)) {
+      if (!filePath.startsWith(nodeModulesDir)) {
         return new Response('Forbidden', { status: 403 });
       }
       
