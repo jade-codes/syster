@@ -6,8 +6,14 @@ The web packages have been configured with Bun's built-in test runner.
 
 ### Structure Created:
 - `/packages/` - Root directory for web packages
-- `/packages/core/` - Example core package
-- `/packages/utils/` - Example utils package
+- `/packages/core/` - Example core package with Bun test infrastructure
+- `/packages/utils/` - Example utils package with Bun test infrastructure
+- `/packages/diagram-core/` - Additional package (no Bun test infrastructure yet)
+- `/packages/modeller/` - Additional package (no Bun test infrastructure yet)
+- `/packages/viewer/` - Additional package (no Bun test infrastructure yet)
+
+> Note: Bun-based testing is currently set up only for the `core` and `utils` packages as concrete examples.  
+> The other packages listed above do not yet have Bun test infrastructure and are out of scope for this guide.
 
 ### Configuration Files:
 - Each package has `bunfig.toml` with test and coverage configuration

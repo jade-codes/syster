@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "test": "bun test --recursive",
-    "test:coverage": "bun test --coverage"
+    "test:coverage": "bun test --recursive --coverage"
   },
   "devDependencies": {
     "bun-types": "latest"

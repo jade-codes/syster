@@ -1,6 +1,6 @@
 # Syster Web Packages
 
-This directory contains the web packages for the Syster project, configured with Bun's built-in test runner.
+This document describes the web-related packages for the Syster project, located under the `packages/` directory and configured with Bun's built-in test runner.
 
 ## Prerequisites
 
