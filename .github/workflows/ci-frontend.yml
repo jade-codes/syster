@@ -54,9 +54,7 @@ jobs:
           for package in packages/*/; do
             if [ -f "${package}tsconfig.json" ]; then
               echo "Type checking $package"
-              cd "$package"
-              bun x tsc --noEmit
-              cd ../..
+              (cd "$package" && bun x tsc --noEmit)
             fi
           done
       
@@ -80,7 +78,12 @@ jobs:
       
       - name: Build packages
         run: |
-          # Build each package
-          cd packages/diagram-core && bun run build && cd ../..
-          cd packages/modeller && bun run build && cd ../..
-          cd packages/viewer && bun run build && cd ../..
+          # Build each package that has a build script
+          for package in packages/*/; do
+            if [ -f "${package}package.json" ]; then
+              if grep -q '"build"' "${package}package.json"; then
+                echo "Building $package"
+                (cd "$package" && bun run build)
+              fi
+            fi
+          done
