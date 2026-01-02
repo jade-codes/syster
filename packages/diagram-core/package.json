@@ -1,14 +1,17 @@
 {
   "name": "@syster/diagram-core",
   "version": "0.1.0",
-  "module": "index.ts",
+  "description": "Core diagram types and utilities for Syster SysML v2 modeller",
+  "main": "src/index.ts",
   "type": "module",
-  "private": true,
-  "description": "Core diagram types and utilities for SysML v2",
-  "devDependencies": {
-    "@types/bun": "latest"
+  "scripts": {
+    "build": "echo 'No build needed - stub package'"
   },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+  "keywords": [
+    "sysml",
+    "diagram",
+    "modelling"
+  ],
+  "author": "jade-codes",
+  "license": "MIT"
 }

@@ -16,8 +16,8 @@ export const Viewer: React.FC<ViewerProps> = ({ diagram }) => {
   const nodes = diagram?.nodes.map(node => ({
     id: node.id,
     type: node.type,
-    data: { label: node.label || node.id },
-    position: { x: 0, y: 0 }, // TODO: Add positioning logic
+    data: node.data,
+    position: node.position,
   })) || [];
 
   const edges = diagram?.edges.map(edge => ({

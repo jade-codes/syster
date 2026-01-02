@@ -1,18 +1,25 @@
 # @syster/diagram-core
 
-Core types and utilities for SysML v2 diagrams.
+Core diagram types and utilities for Syster SysML v2 modeller.
 
 ## Overview
 
-This package provides shared types and interfaces used across the Syster diagram ecosystem.
+This package provides the core types and utilities for working with SysML v2 diagrams.
+
+## Status
+
+This is currently a stub package with minimal types defined. It will be expanded as the modeller implementation progresses.
 
 ## Types
 
 - `DiagramNode` - Represents a node in a diagram
-- `DiagramEdge` - Represents an edge/connection in a diagram  
-- `Diagram` - Complete diagram structure with nodes and edges
+- `DiagramEdge` - Represents an edge between nodes
+- `Diagram` - Represents a complete diagram with nodes and edges
 
-## Status
+## Usage
 
-⚠️ **Placeholder**: This package is a minimal placeholder for future diagram core implementation.
+```typescript
+import { createEmptyDiagram, DiagramNode, DiagramEdge } from '@syster/diagram-core';
 
+const diagram = createEmptyDiagram();
+```
