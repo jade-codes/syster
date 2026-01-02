@@ -25,6 +25,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         context.subscriptions.push(restartCommand);
 
+        // Register code lens command handler
+        // This converts JSON-serialized arguments from LSP to proper VS Code objects
+        const showReferencesCommand = vscode.commands.registerCommand(
+            'syster.showReferences',
+            async (uriString: string, position: { line: number; character: number }, locations: Array<{ uri: string; range: { start: { line: number; character: number }; end: { line: number; character: number } } }>) => {
+                const uri = vscode.Uri.parse(uriString);
+                const pos = new vscode.Position(position.line, position.character);
+                const locs = locations.map(loc => new vscode.Location(
+                    vscode.Uri.parse(loc.uri),
+                    new vscode.Range(
+                        new vscode.Position(loc.range.start.line, loc.range.start.character),
+                        new vscode.Position(loc.range.end.line, loc.range.end.character)
+                    )
+                ));
+                await vscode.commands.executeCommand('editor.action.showReferences', uri, pos, locs);
+            }
+        );
+
+        context.subscriptions.push(showReferencesCommand);
+
         // Create status bar item
         const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
         statusBar.text = '$(check) SysML';
