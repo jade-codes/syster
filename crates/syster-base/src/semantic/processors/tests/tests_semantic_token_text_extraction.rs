@@ -296,3 +296,44 @@ fn test_semantic_token_text_extraction() {
         );
     }
 }
+
+#[test]
+fn test_kerml_nested_packages_semantic_tokens() {
+    // Test that KerML packages properly recurse into nested elements for type references
+    let source = r#"package Outer {
+    package Inner {
+        classifier Nested;
+        feature myFeature : SomeType;
+    }
+}"#;
+    let path = PathBuf::from("test.kerml");
+    let syntax_file = parse_content(source, &path).expect("Parse should succeed");
+
+    // Create a workspace to test the full extraction (including AST traversal)
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_file(&path).expect("Failed to populate");
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    // We should have tokens for:
+    // - Outer package
+    // - Inner package
+    // - Nested classifier
+    // - myFeature
+    // - SomeType (type reference) - this is what the fix enables
+
+    // At minimum, we should have tokens for the packages and classifier
+    assert!(
+        tokens.len() >= 3,
+        "Expected at least 3 tokens for KerML nested packages, got {}",
+        tokens.len()
+    );
+
+    // Verify we're getting tokens from the nested structure
+    let has_nested_token = tokens.iter().any(|t| t.line >= 2);
+    assert!(
+        has_nested_token,
+        "Should have tokens from nested elements (line 2+)"
+    );
+}

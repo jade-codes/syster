@@ -28,6 +28,26 @@ pub const REL_INCLUDE: &str = "include";
 pub const REL_ASSERT: &str = "assert";
 pub const REL_VERIFY: &str = "verify";
 
+/// Relationship types that reference properties/features (for semantic token highlighting)
+/// These should use TokenType::Property
+pub const PROPERTY_REFERENCE_RELATIONSHIPS: &[&str] = &[
+    REL_REDEFINITION,
+    REL_SUBSETTING,
+    REL_REFERENCE_SUBSETTING,
+    REL_CROSS_SUBSETTING,
+];
+
+/// Relationship types that refer to types (for semantic token highlighting)
+/// These should use TokenType::Type
+/// Note: REL_TYPING is handled separately as a one-to-one relationship
+pub const TYPE_REFERENCE_RELATIONSHIPS: &[&str] = &[
+    REL_SPECIALIZATION,
+    REL_SATISFY,
+    REL_PERFORM,
+    REL_EXHIBIT,
+    REL_INCLUDE,
+];
+
 // Semantic role names for validation messages
 pub const ROLE_REQUIREMENT: &str = "requirement";
 pub const ROLE_ACTION: &str = "action";

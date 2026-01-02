@@ -152,89 +152,116 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     }
 
     fn visit_usage(&mut self, usage: &Usage) {
-        if let Some(name) = &usage.name {
-            let qualified_name = self.qualified_name(name);
-            let kind = Self::map_usage_kind(&usage.kind);
-            let semantic_role = Self::usage_kind_to_semantic_role(&usage.kind);
-            let scope_id = self.symbol_table.current_scope_id();
-            let symbol = Symbol::Usage {
-                name: name.clone(),
-                qualified_name: qualified_name.clone(),
-                kind,
-                semantic_role: Some(semantic_role),
-                usage_type: usage.relationships.typed_by.clone(),
-                scope_id,
-                source_file: self.symbol_table.current_file().map(String::from),
-                // Use name_span if available, fallback to full span
-                span: usage.span,
-                references: Vec::new(),
-            };
-            self.insert_symbol(name.clone(), symbol);
+        // Get the name: explicit name, or inferred from first redefinition target
+        // In SysML v2, `attribute :>> num` creates a feature named "num" that redefines the inherited one
+        let (name, is_anonymous) = if let Some(name) = &usage.name {
+            (name.clone(), false)
+        } else if let Some(first_redef) = usage.relationships.redefines.first() {
+            // Anonymous redefinition inherits name from redefined feature
+            (first_redef.target.clone(), true)
+        } else {
+            // No name and no redefinition - skip
+            return;
+        };
 
-            if let Some(ref mut graph) = self.relationship_graph {
-                // Redefinitions (:>>)
-                for rel in &usage.relationships.redefines {
-                    graph.add_one_to_many(
-                        REL_REDEFINITION,
-                        qualified_name.clone(),
-                        rel.target.clone(),
-                        rel.span,
-                    );
-                }
-                // Subsetting (:>)
-                for subset in &usage.relationships.subsets {
-                    graph.add_one_to_many(
-                        REL_SUBSETTING,
-                        qualified_name.clone(),
-                        subset.target.clone(),
-                        subset.span,
-                    );
-                }
-                // Feature typing (:)
-                if let Some(ref target) = usage.relationships.typed_by {
-                    // Resolve target to fully qualified name using symbol table lookup
-                    let resolved_target = self
-                        .symbol_table
-                        .lookup(target)
-                        .or_else(|| self.symbol_table.lookup_qualified(target))
-                        .map(|s| s.qualified_name().to_string())
-                        .unwrap_or_else(|| {
-                            // If lookup fails and target contains ::, try prepending current namespace
-                            if target.contains("::") {
-                                format!("{}::{}", self.current_namespace.join("::"), target)
-                            } else {
-                                target.clone()
-                            }
-                        });
+        let qualified_name = self.qualified_name(&name);
 
-                    graph.add_one_to_one(
-                        REL_TYPING,
-                        qualified_name.clone(),
-                        resolved_target,
-                        usage.relationships.typed_by_span,
-                    );
-                }
-                // References (::>)
-                for reference in &usage.relationships.references {
-                    graph.add_one_to_many(
-                        REL_REFERENCE_SUBSETTING,
-                        qualified_name.clone(),
-                        reference.target.clone(),
-                        reference.span,
-                    );
-                }
-                // Cross (=>)
-                for cross in &usage.relationships.crosses {
-                    graph.add_one_to_many(
-                        REL_CROSS_SUBSETTING,
-                        qualified_name.clone(),
-                        cross.target.clone(),
-                        cross.span,
-                    );
-                }
+        // For anonymous redefinitions, avoid symbol table collisions by checking if a symbol
+        // with this qualified name already exists. This prevents duplicate symbols when the
+        // same redefinition is processed multiple times (e.g., from different file paths).
+        if is_anonymous
+            && self
+                .symbol_table
+                .lookup_qualified(&qualified_name)
+                .is_some()
+        {
+            return;
+        }
+
+        // Create a symbol for all usages (named and inferred from redefinition)
+        let kind = Self::map_usage_kind(&usage.kind);
+        let semantic_role = Self::usage_kind_to_semantic_role(&usage.kind);
+        let scope_id = self.symbol_table.current_scope_id();
+
+        let symbol = Symbol::Usage {
+            name: name.clone(),
+            qualified_name: qualified_name.clone(),
+            kind,
+            semantic_role: Some(semantic_role),
+            usage_type: usage.relationships.typed_by.clone(),
+            scope_id,
+            source_file: self.symbol_table.current_file().map(String::from),
+            span: usage.span,
+            references: Vec::new(),
+        };
+        self.insert_symbol(name.clone(), symbol);
+
+        // Store relationships for both named and anonymous usages
+        if let Some(ref mut graph) = self.relationship_graph {
+            // Redefinitions (:>>)
+            for rel in &usage.relationships.redefines {
+                graph.add_one_to_many(
+                    REL_REDEFINITION,
+                    qualified_name.clone(),
+                    rel.target.clone(),
+                    rel.span,
+                );
             }
+            // Subsetting (:>)
+            for subset in &usage.relationships.subsets {
+                graph.add_one_to_many(
+                    REL_SUBSETTING,
+                    qualified_name.clone(),
+                    subset.target.clone(),
+                    subset.span,
+                );
+            }
+            // Feature typing (:)
+            if let Some(ref target) = usage.relationships.typed_by {
+                // Resolve target to fully qualified name using symbol table lookup
+                let resolved_target = self
+                    .symbol_table
+                    .lookup(target)
+                    .or_else(|| self.symbol_table.lookup_qualified(target))
+                    .map(|s| s.qualified_name().to_string())
+                    .unwrap_or_else(|| {
+                        // If lookup fails and target contains ::, try prepending current namespace
+                        if target.contains("::") {
+                            format!("{}::{}", self.current_namespace.join("::"), target)
+                        } else {
+                            target.clone()
+                        }
+                    });
 
-            // Visit nested members in the usage body
+                graph.add_one_to_one(
+                    REL_TYPING,
+                    qualified_name.clone(),
+                    resolved_target,
+                    usage.relationships.typed_by_span,
+                );
+            }
+            // References (::>)
+            for reference in &usage.relationships.references {
+                graph.add_one_to_many(
+                    REL_REFERENCE_SUBSETTING,
+                    qualified_name.clone(),
+                    reference.target.clone(),
+                    reference.span,
+                );
+            }
+            // Cross (=>)
+            for cross in &usage.relationships.crosses {
+                graph.add_one_to_many(
+                    REL_CROSS_SUBSETTING,
+                    qualified_name.clone(),
+                    cross.target.clone(),
+                    cross.span,
+                );
+            }
+        }
+
+        // Visit nested members in the usage body (only for named usages)
+        if let Some(name) = &usage.name {
             self.enter_namespace(name.clone());
             for member in &usage.body {
                 match member {
@@ -251,15 +278,36 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     }
 
     fn visit_import(&mut self, import: &Import) {
-        // Record the import in the current scope
+        // Record the import in the current scope for resolution
         let current_file = self.symbol_table.current_file().map(String::from);
         self.symbol_table.add_import(
             import.path.clone(),
             import.is_recursive,
             import.span,
-            current_file,
+            current_file.clone(),
         );
-        // Note: We don't create semantic tokens for imports - let TextMate grammar handle keywords
+
+        // Also create a Symbol::Import for semantic token highlighting
+        let scope_id = self.symbol_table.current_scope_id();
+
+        // Note: Two different identifier formats are used here:
+        // 1. qualified_name: "import::scope_id::path" - Globally unique identifier for the symbol,
+        //    includes scope_id to distinguish same import path used in different scopes
+        // 2. key: "import::path" - Symbol table insertion key, simpler format without scope_id
+        //    used to store the symbol in the current scope without conflicts
+        let qualified_name = format!("import::{}::{}", scope_id, import.path);
+        let key = format!("import::{}", import.path);
+
+        let symbol = Symbol::Import {
+            path: import.path.clone(),
+            path_span: import.path_span,
+            qualified_name,
+            is_recursive: import.is_recursive,
+            scope_id,
+            source_file: current_file,
+            span: import.span,
+        };
+        self.insert_symbol(key, symbol);
     }
 
     fn visit_comment(&mut self, _comment: &Comment) {
@@ -274,6 +322,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 name: name.clone(),
                 qualified_name,
                 target: alias.target.clone(),
+                target_span: alias.target_span,
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: alias.span,

@@ -386,6 +386,7 @@ fn test_collect_hints_import_element_ignored() {
 
     let import = Import {
         path: "SomePackage::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: Some(Span::from_coords(1, 0, 1, 20)),
     };
@@ -409,6 +410,7 @@ fn test_collect_hints_alias_element_ignored() {
     let alias = Alias {
         name: Some("MyAlias".to_string()),
         target: "OriginalName".to_string(),
+        target_span: None,
         span: Some(Span::from_coords(1, 0, 1, 25)),
     };
 
@@ -452,6 +454,7 @@ fn test_collect_hints_mixed_element_types() {
 
     let import = Import {
         path: "Package::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: Some(Span::from_coords(2, 0, 2, 15)),
     };
@@ -469,6 +472,7 @@ fn test_collect_hints_mixed_element_types() {
     let alias = Alias {
         name: Some("A".to_string()),
         target: "B".to_string(),
+        target_span: None,
         span: Some(Span::from_coords(4, 0, 4, 10)),
     };
 
@@ -1231,6 +1235,7 @@ fn test_collect_hints_multiple_element_types_in_package() {
 
     let import = Import {
         path: "SomePackage::*".to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     };

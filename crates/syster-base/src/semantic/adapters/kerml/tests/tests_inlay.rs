@@ -388,6 +388,7 @@ fn test_extract_inlay_hints_package_with_mixed_elements() {
                 // Other element types are ignored by collect_hints
                 Element::Import(crate::syntax::kerml::ast::Import {
                     path: "SomePackage".to_string(),
+                    path_span: None,
                     is_recursive: false,
                     kind: crate::syntax::kerml::ast::ImportKind::Normal,
                     span: None,

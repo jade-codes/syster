@@ -25,6 +25,7 @@ impl LspServer {
                     Symbol::Classifier { .. } | Symbol::Definition { .. } => SymbolKind::CLASS,
                     Symbol::Feature { .. } | Symbol::Usage { .. } => SymbolKind::PROPERTY,
                     Symbol::Alias { .. } => SymbolKind::VARIABLE,
+                    Symbol::Import { .. } => continue, // Skip imports in document symbols
                 };
 
                 let doc_symbol = DocumentSymbol {

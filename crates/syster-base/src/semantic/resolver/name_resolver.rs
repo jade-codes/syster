@@ -45,12 +45,13 @@ impl<'a> Resolver<'a> {
     pub(super) fn find_in_scope(&self, qualified_name: &str) -> Option<&Symbol> {
         for (_, symbol) in self.symbol_table.all_symbols() {
             let symbol_qname = match symbol {
-                Symbol::Package { qualified_name, .. } => qualified_name,
-                Symbol::Classifier { qualified_name, .. } => qualified_name,
-                Symbol::Feature { qualified_name, .. } => qualified_name,
-                Symbol::Definition { qualified_name, .. } => qualified_name,
-                Symbol::Usage { qualified_name, .. } => qualified_name,
-                Symbol::Alias { qualified_name, .. } => qualified_name,
+                Symbol::Package { qualified_name, .. }
+                | Symbol::Classifier { qualified_name, .. }
+                | Symbol::Feature { qualified_name, .. }
+                | Symbol::Definition { qualified_name, .. }
+                | Symbol::Usage { qualified_name, .. }
+                | Symbol::Alias { qualified_name, .. }
+                | Symbol::Import { qualified_name, .. } => qualified_name,
             };
             if symbol_qname == qualified_name {
                 return Some(symbol);

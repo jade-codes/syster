@@ -40,6 +40,7 @@ fn make_comment(content: &str, span: Option<Span>) -> Comment {
 fn make_import(path: &str, span: Option<Span>) -> Import {
     Import {
         path: path.to_string(),
+        path_span: None,
         is_recursive: false,
         span,
     }
@@ -49,6 +50,7 @@ fn make_alias(name: &str, span: Option<Span>) -> Alias {
     Alias {
         name: Some(name.to_string()),
         target: "Target".to_string(),
+        target_span: None,
         span,
     }
 }

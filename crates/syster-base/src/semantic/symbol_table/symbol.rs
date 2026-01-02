@@ -63,10 +63,24 @@ pub enum Symbol {
         name: String,
         qualified_name: String,
         target: String,
+        target_span: Option<Span>,
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
         references: Vec<SymbolReference>,
+    },
+    /// An import statement (e.g., `import ScalarValues::*`)
+    Import {
+        /// The import path (e.g., "ScalarValues::*")
+        path: String,
+        /// Span of the import path for semantic highlighting
+        path_span: Option<Span>,
+        /// Unique key for this import (path + scope)
+        qualified_name: String,
+        is_recursive: bool,
+        scope_id: usize,
+        source_file: Option<String>,
+        span: Option<Span>,
     },
 }
 
@@ -79,7 +93,8 @@ impl Symbol {
             | Symbol::Feature { qualified_name, .. }
             | Symbol::Definition { qualified_name, .. }
             | Symbol::Usage { qualified_name, .. }
-            | Symbol::Alias { qualified_name, .. } => qualified_name,
+            | Symbol::Alias { qualified_name, .. }
+            | Symbol::Import { qualified_name, .. } => qualified_name,
         }
     }
 
@@ -92,6 +107,7 @@ impl Symbol {
             | Symbol::Definition { name, .. }
             | Symbol::Usage { name, .. }
             | Symbol::Alias { name, .. } => name,
+            Symbol::Import { path, .. } => path,
         }
     }
 
@@ -103,7 +119,8 @@ impl Symbol {
             | Symbol::Feature { scope_id, .. }
             | Symbol::Definition { scope_id, .. }
             | Symbol::Usage { scope_id, .. }
-            | Symbol::Alias { scope_id, .. } => *scope_id,
+            | Symbol::Alias { scope_id, .. }
+            | Symbol::Import { scope_id, .. } => *scope_id,
         }
     }
 
@@ -115,7 +132,8 @@ impl Symbol {
             | Symbol::Feature { source_file, .. }
             | Symbol::Definition { source_file, .. }
             | Symbol::Usage { source_file, .. }
-            | Symbol::Alias { source_file, .. } => source_file.as_deref(),
+            | Symbol::Alias { source_file, .. }
+            | Symbol::Import { source_file, .. } => source_file.as_deref(),
         }
     }
 
@@ -127,7 +145,8 @@ impl Symbol {
             | Symbol::Feature { span, .. }
             | Symbol::Definition { span, .. }
             | Symbol::Usage { span, .. }
-            | Symbol::Alias { span, .. } => *span,
+            | Symbol::Alias { span, .. }
+            | Symbol::Import { span, .. } => *span,
         }
     }
 
@@ -153,6 +172,7 @@ impl Symbol {
             | Symbol::Definition { references, .. }
             | Symbol::Usage { references, .. }
             | Symbol::Alias { references, .. } => references,
+            Symbol::Import { .. } => &[],
         }
     }
 
@@ -165,6 +185,7 @@ impl Symbol {
             | Symbol::Definition { references, .. }
             | Symbol::Usage { references, .. }
             | Symbol::Alias { references, .. } => references.push(reference),
+            Symbol::Import { .. } => {} // Imports don't track references
         }
     }
 }

@@ -191,6 +191,7 @@ fn test_visit_import_single() {
         namespaces: vec![],
         elements: vec![Element::Import(Import {
             path: "SomePackage::*".to_string(),
+            path_span: None,
             is_recursive: false,
             span: None,
         })],
@@ -216,16 +217,19 @@ fn test_visit_import_multiple() {
         elements: vec![
             Element::Import(Import {
                 path: "Package1::*".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Package2::Element".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Package3::*::**".to_string(),
+                path_span: None,
                 is_recursive: true,
                 span: None,
             }),
@@ -245,6 +249,7 @@ fn test_visit_import_recursive() {
         namespaces: vec![],
         elements: vec![Element::Import(Import {
             path: "Package::*::**".to_string(),
+            path_span: None,
             is_recursive: true,
             span: None,
         })],
@@ -266,11 +271,13 @@ fn test_visit_import_in_package() {
             elements: vec![
                 Element::Import(Import {
                     path: "External::Type".to_string(),
+                    path_span: None,
                     is_recursive: false,
                     span: None,
                 }),
                 Element::Import(Import {
                     path: "Another::Package::*".to_string(),
+                    path_span: None,
                     is_recursive: false,
                     span: None,
                 }),
@@ -446,6 +453,7 @@ fn test_visit_alias_single() {
         elements: vec![Element::Alias(Alias {
             name: Some("MyAlias".to_string()),
             target: "Target::Element".to_string(),
+            target_span: None,
             span: None,
         })],
     };
@@ -471,11 +479,13 @@ fn test_visit_alias_multiple() {
             Element::Alias(Alias {
                 name: Some("Alias1".to_string()),
                 target: "Target1".to_string(),
+                target_span: None,
                 span: None,
             }),
             Element::Alias(Alias {
                 name: Some("Alias2".to_string()),
                 target: "Target2".to_string(),
+                target_span: None,
                 span: None,
             }),
         ],
@@ -495,6 +505,7 @@ fn test_visit_alias_anonymous() {
         elements: vec![Element::Alias(Alias {
             name: None,
             target: "Target::Element".to_string(),
+            target_span: None,
             span: None,
         })],
     };
@@ -513,6 +524,7 @@ fn test_visit_alias_qualified_target() {
         elements: vec![Element::Alias(Alias {
             name: Some("LongAlias".to_string()),
             target: "Package::SubPackage::Element".to_string(),
+            target_span: None,
             span: None,
         })],
     };
@@ -558,6 +570,7 @@ fn test_visit_all_element_types() {
         elements: vec![
             Element::Import(Import {
                 path: "External::*".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
@@ -568,6 +581,7 @@ fn test_visit_all_element_types() {
             Element::Alias(Alias {
                 name: Some("MyAlias".to_string()),
                 target: "External::Type".to_string(),
+                target_span: None,
                 span: None,
             }),
             Element::Package(Package {
@@ -622,6 +636,7 @@ fn test_visit_nested_elements_in_package() {
                 }),
                 Element::Import(Import {
                     path: "External::Type".to_string(),
+                    path_span: None,
                     is_recursive: false,
                     span: None,
                 }),
@@ -646,6 +661,7 @@ fn test_visit_nested_elements_in_package() {
                 Element::Alias(Alias {
                     name: Some("InnerAlias".to_string()),
                     target: "Target".to_string(),
+                    target_span: None,
                     span: None,
                 }),
             ],
@@ -775,22 +791,26 @@ fn test_visit_multiple_of_each_type() {
             }),
             Element::Import(Import {
                 path: "Import1::*".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Import2::Element".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
             Element::Alias(Alias {
                 name: Some("Alias1".to_string()),
                 target: "Target1".to_string(),
+                target_span: None,
                 span: None,
             }),
             Element::Alias(Alias {
                 name: Some("Alias2".to_string()),
                 target: "Target2".to_string(),
+                target_span: None,
                 span: None,
             }),
         ],
@@ -860,6 +880,7 @@ fn test_visit_large_file() {
     for i in 0..8 {
         elements.push(Element::Import(Import {
             path: format!("Package{}::*", i),
+            path_span: None,
             is_recursive: false,
             span: None,
         }));
@@ -870,6 +891,7 @@ fn test_visit_large_file() {
         elements.push(Element::Alias(Alias {
             name: Some(format!("Alias{}", i)),
             target: format!("Target{}", i),
+            target_span: None,
             span: None,
         }));
     }

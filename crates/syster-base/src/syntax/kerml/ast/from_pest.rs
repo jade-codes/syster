@@ -101,43 +101,33 @@ impl_from_pest!(Feature, |pest: &mut Pairs<Rule>| {
 });
 
 impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
-    let pair = pest.next().ok_or(ConversionError::NoMatch)?;
     let mut path = String::new();
+    let mut path_span = None;
     let mut is_recursive = false;
     let mut span = None;
 
-    for inner in pair.into_inner() {
-        match inner.as_rule() {
-            Rule::imported_reference => {
-                // Capture the span of the imported path
-                span = Some(to_span(inner.as_span()));
-                // imported_reference contains element_reference and optional import_kind
-                for child in inner.into_inner() {
-                    match child.as_rule() {
-                        Rule::element_reference => {
-                            path = child.as_str().to_string();
-                        }
-                        Rule::import_kind => {
-                            is_recursive = child.as_str().contains("**");
-                        }
-                        _ => {}
+    for pair in pest {
+        if pair.as_rule() == Rule::imported_reference {
+            span = Some(to_span(pair.as_span()));
+            // imported_reference contains element_reference and optional import_kind
+            for child in pair.into_inner() {
+                match child.as_rule() {
+                    Rule::element_reference => {
+                        path = child.as_str().to_string();
+                        path_span = Some(to_span(child.as_span()));
                     }
+                    Rule::import_kind => {
+                        is_recursive = child.as_str().contains("**");
+                    }
+                    _ => {}
                 }
             }
-            Rule::element_reference => {
-                if path.is_empty() {
-                    path = inner.as_str().to_string();
-                }
-            }
-            Rule::import_kind => {
-                is_recursive = inner.as_str().contains("**");
-            }
-            _ => {}
         }
     }
 
     Ok(Import {
         path,
+        path_span,
         is_recursive,
         kind: ImportKind::Normal,
         span,

@@ -195,7 +195,9 @@ fn test_kerml_derived_feature() {
 fn test_kerml_import() {
     let input = "import MyPackage::*;";
     let mut pairs = KerMLParser::parse(Rule::import, input).unwrap();
-    let import = Import::from_pest(&mut pairs).unwrap();
+    // Import::from_pest expects the children of the import rule
+    let import_pair = pairs.next().unwrap();
+    let import = Import::from_pest(&mut import_pair.into_inner()).unwrap();
     assert!(!import.path.is_empty());
 }
 

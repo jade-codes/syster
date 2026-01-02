@@ -1,4 +1,8 @@
 use crate::core::Span;
+use crate::core::constants::{
+    PROPERTY_REFERENCE_RELATIONSHIPS, REL_TYPING, TYPE_REFERENCE_RELATIONSHIPS,
+};
+use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::workspace::Workspace;
 use crate::syntax::SyntaxFile;
@@ -118,182 +122,101 @@ impl SemanticTokenCollector {
         tokens
     }
 
-    /// Collect semantic tokens from workspace (includes type references from AST)
+    /// Collect semantic tokens from workspace (includes type references from relationship graph)
     pub fn collect_from_workspace(
         workspace: &Workspace<SyntaxFile>,
         file_path: &str,
     ) -> Vec<SemanticToken> {
         let mut tokens = Self::collect_from_symbols(workspace.symbol_table(), file_path);
 
-        // Add type reference tokens by extracting from syntax tree
-        if let Some(workspace_file) = workspace.files().get(Path::new(file_path)) {
-            let type_tokens = Self::extract_type_references(workspace_file.content(), file_path);
-            tokens.extend(type_tokens);
-            tokens.sort_by_key(|t| (t.line, t.column));
-        }
+        // Add type reference tokens from relationship graph
+        let type_tokens = Self::extract_type_references_from_graph(
+            workspace.symbol_table(),
+            workspace.relationship_graph(),
+            file_path,
+        );
+        tokens.extend(type_tokens);
+        tokens.sort_by_key(|t| (t.line, t.column));
 
         tokens
     }
 
-    /// Extract type references from syntax tree (for typing relationships like `: String`)
-    fn extract_type_references(syntax_file: &SyntaxFile, _file_path: &str) -> Vec<SemanticToken> {
+    /// Extract type reference tokens from the relationship graph.
+    /// This replaces AST traversal with semantic data lookup.
+    fn extract_type_references_from_graph(
+        symbol_table: &SymbolTable,
+        relationship_graph: &RelationshipGraph,
+        file_path: &str,
+    ) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
+        let normalized_path = normalize_path(file_path);
 
-        match syntax_file {
-            SyntaxFile::SysML(file) => {
-                for element in &file.elements {
-                    Self::extract_type_refs_from_sysml_element(element, &mut tokens);
+        // For each symbol in this file, check if it has relationships with spans
+        for (_name, symbol) in symbol_table.all_symbols() {
+            // Only check symbols from this file
+            if let Some(source_file) = symbol.source_file() {
+                if normalize_path(source_file) != normalized_path {
+                    continue;
                 }
+            } else {
+                continue;
             }
-            SyntaxFile::KerML(file) => {
-                for element in &file.elements {
-                    Self::extract_type_refs_from_kerml_element(element, &mut tokens);
-                }
-            }
-        }
 
-        tokens
-    }
+            let qname = symbol.qualified_name();
 
-    fn extract_type_refs_from_sysml_element(
-        element: &crate::syntax::sysml::ast::enums::Element,
-        tokens: &mut Vec<SemanticToken>,
-    ) {
-        use crate::syntax::sysml::ast::enums::Element;
-
-        match element {
-            Element::Package(pkg) => {
-                for elem in &pkg.elements {
-                    Self::extract_type_refs_from_sysml_element(elem, tokens);
-                }
-            }
-            Element::Import(import) => {
-                // Highlight the imported path (e.g., "ScalarValues::Real")
-                if let Some(span) = &import.span {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Namespace));
-                }
-            }
-            Element::Definition(def) => {
-                // Check if this definition has a typed_by relationship with a span
-                if let (Some(_type_name), Some(span)) = (
-                    &def.relationships.typed_by,
-                    &def.relationships.typed_by_span,
-                ) {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Type));
-                }
-                // Recursively check body members
-                for member in &def.body {
-                    Self::extract_type_refs_from_def_member(member, tokens);
-                }
-            }
-            Element::Usage(usage) => {
-                if let (Some(_type_name), Some(span)) = (
-                    &usage.relationships.typed_by,
-                    &usage.relationships.typed_by_span,
-                ) {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Type));
-                }
-            }
-            _ => {}
-        }
-    }
-
-    fn extract_type_refs_from_def_member(
-        member: &crate::syntax::sysml::ast::enums::DefinitionMember,
-        tokens: &mut Vec<SemanticToken>,
-    ) {
-        use crate::syntax::sysml::ast::enums::DefinitionMember;
-
-        if let DefinitionMember::Usage(usage) = member {
-            if let (Some(_type_name), Some(span)) = (
-                &usage.relationships.typed_by,
-                &usage.relationships.typed_by_span,
-            ) {
+            // Typing (one-to-one relationship) → Type token
+            if let Some((_target, Some(span))) =
+                relationship_graph.get_one_to_one_with_span(REL_TYPING, qname)
+            {
                 tokens.push(SemanticToken::from_span(span, TokenType::Type));
             }
-            // Recursively check nested usage body
-            for nested in &usage.body {
-                Self::extract_type_refs_from_usage_member(nested, tokens);
-            }
-        }
-    }
 
-    fn extract_type_refs_from_usage_member(
-        member: &crate::syntax::sysml::ast::enums::UsageMember,
-        _tokens: &mut [SemanticToken],
-    ) {
-        use crate::syntax::sysml::ast::enums::UsageMember;
-
-        match member {
-            UsageMember::Comment(_) => {
-                // Comments don't have type references
-            }
-            UsageMember::Usage(_) => {
-                // Nested usages are handled by the main visitor
-            }
-        }
-    }
-
-    fn extract_type_refs_from_kerml_element(
-        element: &crate::syntax::kerml::ast::enums::Element,
-        tokens: &mut Vec<SemanticToken>,
-    ) {
-        use crate::syntax::kerml::ast::enums::Element;
-
-        match element {
-            Element::Import(import) => {
-                // Highlight the imported path
-                if let Some(span) = &import.span {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Namespace));
+            // Type reference relationships (specialization, satisfy, etc.) → Type tokens
+            for rel_type in TYPE_REFERENCE_RELATIONSHIPS {
+                if let Some(targets_with_spans) =
+                    relationship_graph.get_one_to_many_with_spans(rel_type, qname)
+                {
+                    for (_target, span_opt) in targets_with_spans {
+                        if let Some(span) = span_opt {
+                            tokens.push(SemanticToken::from_span(span, TokenType::Type));
+                        }
+                    }
                 }
             }
-            Element::Classifier(classifier) => {
-                // Recursively check body members
-                for member in &classifier.body {
-                    Self::extract_type_refs_from_classifier_member(member, tokens);
+
+            // Property reference relationships (redefinition, subsetting, etc.) → Property tokens
+            for rel_type in PROPERTY_REFERENCE_RELATIONSHIPS {
+                if let Some(targets_with_spans) =
+                    relationship_graph.get_one_to_many_with_spans(rel_type, qname)
+                {
+                    for (_target, span_opt) in targets_with_spans {
+                        if let Some(span) = span_opt {
+                            tokens.push(SemanticToken::from_span(span, TokenType::Property));
+                        }
+                    }
                 }
             }
-            Element::Feature(feature) => {
-                // Check feature body for typing relationships
-                for member in &feature.body {
-                    Self::extract_type_refs_from_feature_member(member, tokens);
-                }
+
+            // Handle alias targets (the "for X" part of "alias Y for X")
+            if let Symbol::Alias {
+                target_span: Some(span),
+                ..
+            } = symbol
+            {
+                tokens.push(SemanticToken::from_span(span, TokenType::Type));
             }
-            _ => {}
-        }
-    }
 
-    fn extract_type_refs_from_classifier_member(
-        member: &crate::syntax::kerml::ast::enums::ClassifierMember,
-        tokens: &mut Vec<SemanticToken>,
-    ) {
-        use crate::syntax::kerml::ast::enums::ClassifierMember;
-
-        if let ClassifierMember::Feature(feature) = member {
-            // Check feature body for typing relationships
-            for nested in &feature.body {
-                Self::extract_type_refs_from_feature_member(nested, tokens);
+            // Handle import paths (the path in "import X::Y::*")
+            if let Symbol::Import {
+                path_span: Some(span),
+                ..
+            } = symbol
+            {
+                tokens.push(SemanticToken::from_span(span, TokenType::Namespace));
             }
         }
-    }
 
-    fn extract_type_refs_from_feature_member(
-        member: &crate::syntax::kerml::ast::enums::FeatureMember,
-        tokens: &mut Vec<SemanticToken>,
-    ) {
-        use crate::syntax::kerml::ast::enums::FeatureMember;
-
-        match member {
-            FeatureMember::Typing(typing) => {
-                // Extract the type reference span from the typing relationship
-                if let Some(span) = &typing.span {
-                    tokens.push(SemanticToken::from_span(span, TokenType::Type));
-                }
-            }
-            FeatureMember::Comment(_) => {}
-            FeatureMember::Subsetting(_) => {}
-            FeatureMember::Redefinition(_) => {}
-        }
+        tokens
     }
 
     /// Map a Symbol to its corresponding TokenType
@@ -304,6 +227,7 @@ impl SemanticTokenCollector {
             Symbol::Usage { .. } | Symbol::Feature { .. } => TokenType::Property,
             Symbol::Definition { .. } => TokenType::Type,
             Symbol::Alias { .. } => TokenType::Variable,
+            Symbol::Import { .. } => TokenType::Namespace,
         }
     }
 }

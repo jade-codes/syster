@@ -280,6 +280,7 @@ fn test_lookup_global_mut_different_symbol_types() {
                 qualified_name: "Package::Classifier::Feature::Definition::Usage::Alias"
                     .to_string(),
                 target: "Package".to_string(),
+                target_span: None,
             },
         )
         .unwrap();

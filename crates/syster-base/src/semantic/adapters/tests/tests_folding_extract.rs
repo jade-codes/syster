@@ -229,6 +229,7 @@ fn test_kerml_import_and_annotation_ignored() {
         elements: vec![
             KerMLElement::Import(crate::syntax::kerml::ast::Import {
                 path: "Some::Path".to_string(),
+                path_span: None,
                 is_recursive: false,
                 kind: crate::syntax::kerml::ast::ImportKind::Normal,
                 span: Some(make_span(1, 1)),
@@ -621,12 +622,14 @@ fn test_sysml_import_and_alias_ignored() {
         elements: vec![
             SysMLElement::Import(crate::syntax::sysml::ast::Import {
                 path: "Some::Path".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: Some(make_span(1, 1)),
             }),
             SysMLElement::Alias(crate::syntax::sysml::ast::Alias {
                 name: Some("MyAlias".to_string()),
                 target: "Target".to_string(),
+                target_span: None,
                 span: Some(make_span(2, 2)),
             }),
             SysMLElement::Package(SysMLPackage {

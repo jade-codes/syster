@@ -931,6 +931,7 @@ fn test_extract_single_import() {
         namespace: None,
         elements: vec![Element::Import(Import {
             path: "Base::Vehicle".to_string(),
+            path_span: None,
             is_recursive: false,
             span: None,
         })],
@@ -950,16 +951,19 @@ fn test_extract_multiple_imports() {
         elements: vec![
             Element::Import(Import {
                 path: "Base::Vehicle".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Utils::*".to_string(),
+                path_span: None,
                 is_recursive: true,
                 span: None,
             }),
@@ -981,6 +985,7 @@ fn test_extract_recursive_imports() {
         namespace: None,
         elements: vec![Element::Import(Import {
             path: "SysML::*".to_string(),
+            path_span: None,
             is_recursive: true,
             span: None,
         })],
@@ -1005,6 +1010,7 @@ fn test_extract_imports_mixed_elements() {
         elements: vec![
             Element::Import(Import {
                 path: "Base::Vehicle".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),
@@ -1014,6 +1020,7 @@ fn test_extract_imports_mixed_elements() {
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
+                path_span: None,
                 is_recursive: false,
                 span: None,
             }),

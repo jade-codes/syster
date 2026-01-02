@@ -35,6 +35,7 @@ fn create_kerml_file(elements: Vec<KerMLElement>) -> KerMLFile {
 fn create_sysml_import(path: &str) -> SysMLElement {
     SysMLElement::Import(SysMLImport {
         path: path.to_string(),
+        path_span: None,
         is_recursive: false,
         span: None,
     })
@@ -44,6 +45,7 @@ fn create_sysml_import(path: &str) -> SysMLElement {
 fn create_kerml_import(path: &str, kind: ImportKind) -> KerMLElement {
     KerMLElement::Import(KerMLImport {
         path: path.to_string(),
+        path_span: None,
         is_recursive: false,
         kind,
         span: None,
@@ -286,6 +288,7 @@ fn test_extract_imports_with_wildcard_import_kerml() {
 fn test_extract_imports_with_recursive_import_sysml() {
     let import_element = SysMLImport {
         path: "Base::Package".to_string(),
+        path_span: None,
         is_recursive: true,
         span: None,
     };
@@ -302,6 +305,7 @@ fn test_extract_imports_with_recursive_import_sysml() {
 fn test_extract_imports_with_recursive_import_kerml() {
     let import_element = KerMLImport {
         path: "Base::Package".to_string(),
+        path_span: None,
         is_recursive: true,
         kind: ImportKind::Normal,
         span: None,

@@ -1626,3 +1626,59 @@ fn test_cross_language_sysml_specializes_kerml() {
         targets
     );
 }
+
+/// Test that replicates the duplicate relationship bug for TemperatureDifferenceValue
+/// User reported: hovering over TemperatureDifferenceValue in ISQ.sysml shows
+/// two relationships for ScalarQuantityValue
+#[test]
+fn test_temperature_difference_value_no_duplicate_specialization() {
+    use std::path::PathBuf;
+    use syster::project::StdLibLoader;
+    use syster::semantic::Workspace;
+    use syster::syntax::file::SyntaxFile;
+
+    // Create workspace and load stdlib
+    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+    let stdlib_loader = StdLibLoader::with_path(stdlib_path.clone());
+
+    // Load and populate stdlib
+    stdlib_loader
+        .load(&mut workspace)
+        .expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate");
+
+    // Find ISQ::TemperatureDifferenceValue
+    let graph = workspace.relationship_graph();
+    let rels = graph.get_one_to_many(REL_SPECIALIZATION, "ISQ::TemperatureDifferenceValue");
+
+    assert!(
+        rels.is_some(),
+        "Should have specialization relationship for ISQ::TemperatureDifferenceValue"
+    );
+    let targets = rels.unwrap();
+
+    println!("TemperatureDifferenceValue specializes: {:?}", targets);
+
+    // Check for duplicates
+    let mut unique_targets: Vec<_> = targets.to_vec();
+    unique_targets.sort();
+    unique_targets.dedup();
+
+    assert_eq!(
+        targets.len(),
+        unique_targets.len(),
+        "Found duplicate relationships! Got {} but only {} unique: {:?}",
+        targets.len(),
+        unique_targets.len(),
+        targets
+    );
+
+    // Should specialize exactly 1 type (ScalarQuantityValue)
+    assert_eq!(
+        targets.len(),
+        1,
+        "Should have exactly 1 specialization target, got: {:?}",
+        targets
+    );
+}

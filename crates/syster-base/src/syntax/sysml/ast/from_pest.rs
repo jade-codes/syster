@@ -80,6 +80,7 @@ impl_from_pest!(Comment, |pest: &mut Pairs<Rule>| {
 impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
     let mut is_recursive = false;
     let mut path = String::new();
+    let mut path_span = None;
     let mut span = None;
 
     for pair in pest {
@@ -87,6 +88,8 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
             path = pair.as_str().to_string();
             // Capture the span of the imported path, not the whole import statement
             span = Some(to_span(pair.as_span()));
+            // Also capture the path_span for semantic tokens
+            path_span = Some(to_span(pair.as_span()));
             is_recursive = pair
                 .clone()
                 .into_inner()
@@ -96,6 +99,7 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
 
     Ok(Import {
         path,
+        path_span,
         is_recursive,
         span,
     })
@@ -104,18 +108,27 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
 impl_from_pest!(Alias, |pest: &mut Pairs<Rule>| {
     let mut name = None;
     let mut target = String::new();
+    let mut target_span = None;
     let mut span = None;
 
     for pair in pest {
         span.get_or_insert_with(|| to_span(pair.as_span()));
         match pair.as_rule() {
             Rule::identification => name = Some(pair.as_str().to_string()),
-            Rule::element_reference => target = pair.as_str().to_string(),
+            Rule::element_reference => {
+                target = pair.as_str().to_string();
+                target_span = Some(to_span(pair.as_span()));
+            }
             _ => {}
         }
     }
 
-    Ok(Alias { name, target, span })
+    Ok(Alias {
+        name,
+        target,
+        target_span,
+        span,
+    })
 });
 
 impl_from_pest!(Element, |pest: &mut Pairs<Rule>| {

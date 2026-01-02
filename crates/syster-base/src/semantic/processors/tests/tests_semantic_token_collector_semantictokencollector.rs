@@ -65,7 +65,7 @@ fn test_extract_type_refs_from_def_member_with_typed_usage() {
         .filter(|t| t.token_type == TokenType::Type)
         .collect();
 
-    // Should have at least 2 type tokens for ": Real" occurrences
+    // Should have at least 2 type tokens for ": Real" occurrences (plus Vehicle definition)
     assert!(
         type_tokens.len() >= 2,
         "Expected at least 2 type tokens for Real, got {}",
@@ -733,5 +733,146 @@ fn test_usage_member_nested_recursion() {
     assert!(
         !type_tokens.is_empty(),
         "Should have type token from nested usage"
+    );
+}
+
+// ============================================================================
+// Tests for KerML Import Semantic Tokens (Issue: imports not highlighting)
+// ============================================================================
+
+/// Test that KerML import paths generate Namespace semantic tokens
+/// This is the core test for the "imports not working for KerML" issue
+#[test]
+fn test_kerml_import_generates_namespace_token() {
+    // This mimics the ScalarValues.kerml stdlib pattern
+    let source = r#"package ScalarValues {
+    private import Base::DataValue;
+    datatype Boolean;
+}"#;
+
+    let workspace = create_kerml_workspace(source, "ScalarValues.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "ScalarValues.kerml");
+
+    // Should have a Namespace token for "Base::DataValue" on line 1 (0-indexed)
+    let namespace_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Namespace)
+        .collect();
+
+    assert!(
+        !namespace_tokens.is_empty(),
+        "Should have Namespace token for import path 'Base::DataValue'. All tokens: {:?}",
+        tokens
+    );
+
+    // The import is on line 1 (0-indexed), "Base::DataValue" is 15 chars
+    let import_token = namespace_tokens
+        .iter()
+        .find(|t| t.line == 1 && t.length == 15);
+
+    assert!(
+        import_token.is_some(),
+        "Should have Namespace token for 'Base::DataValue' on line 1 with length 15. Namespace tokens: {:?}",
+        namespace_tokens
+    );
+}
+
+/// Test that multiple KerML imports all get semantic tokens
+#[test]
+fn test_kerml_multiple_imports_generate_tokens() {
+    let source = r#"package TestPackage {
+    import Base::DataValue;
+    import ScalarValues::*;
+    import Collections::Array;
+    classifier MyClass;
+}"#;
+
+    let workspace = create_kerml_workspace(source, "test.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    let namespace_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Namespace)
+        .collect();
+
+    // Should have 3 namespace tokens for the 3 imports
+    assert!(
+        namespace_tokens.len() >= 3,
+        "Should have at least 3 Namespace tokens for 3 imports. Got: {:?}",
+        namespace_tokens
+    );
+}
+
+/// Test KerML import with wildcard (::*) generates token for the path
+#[test]
+fn test_kerml_wildcard_import_generates_token() {
+    let source = r#"package Test {
+    import ScalarValues::*;
+    classifier MyClass;
+}"#;
+
+    let workspace = create_kerml_workspace(source, "test.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    let namespace_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Namespace)
+        .collect();
+
+    assert!(
+        !namespace_tokens.is_empty(),
+        "Should have Namespace token for wildcard import. All tokens: {:?}",
+        tokens
+    );
+}
+
+/// Test KerML import inside classifier body generates token
+#[test]
+fn test_kerml_import_in_classifier_body_generates_token() {
+    let source = r#"package Outer {
+    classifier MyClass {
+        import Inner::*;
+        feature myFeature;
+    }
+}"#;
+
+    let workspace = create_kerml_workspace(source, "test.kerml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.kerml");
+
+    let namespace_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Namespace)
+        .collect();
+
+    // The import inside classifier body should also get a token
+    let inner_import_token = namespace_tokens.iter().find(|t| t.line == 2);
+
+    assert!(
+        inner_import_token.is_some(),
+        "Should have Namespace token for import inside classifier body on line 2. Namespace tokens: {:?}",
+        namespace_tokens
+    );
+}
+
+/// Test that SysML imports also generate semantic tokens (for comparison)
+#[test]
+fn test_sysml_import_generates_namespace_token() {
+    let source = r#"package TestPkg {
+    import ScalarValues::Real;
+    part def MyPart;
+}"#;
+
+    let workspace = create_sysml_workspace(source, "test.sysml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    let namespace_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Namespace)
+        .collect();
+
+    assert!(
+        !namespace_tokens.is_empty(),
+        "Should have Namespace token for SysML import path. All tokens: {:?}",
+        tokens
     );
 }
