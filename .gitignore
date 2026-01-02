@@ -30,3 +30,10 @@ tarpaulin-report.html
 tarpaulin-report.json
 cobertura.xml
 lcov.info
+
+# Node.js / TypeScript
+node_modules/
+dist/
+*.tsbuildinfo
+.turbo/
+*.log
