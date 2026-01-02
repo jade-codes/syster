@@ -1,4 +1,14 @@
 // Simple development server using Bun
+import { resolve, normalize } from 'path';
+
+const ALLOWED_DIR = resolve(process.cwd());
+
+// Validate that the resolved path is within the allowed directory
+function isPathSafe(requestedPath: string): boolean {
+  const resolvedPath = resolve(ALLOWED_DIR, requestedPath);
+  return resolvedPath.startsWith(ALLOWED_DIR);
+}
+
 const server = Bun.serve({
   port: 3000,
   async fetch(req) {
@@ -9,8 +19,13 @@ const server = Bun.serve({
       return new Response(Bun.file('index.html'));
     }
     
-    // Serve static files
+    // Serve static files with path validation
     const filePath = url.pathname.slice(1);
+    
+    if (!isPathSafe(filePath)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    
     const file = Bun.file(filePath);
     
     if (await file.exists()) {

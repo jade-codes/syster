@@ -32,8 +32,7 @@ bun run build
 ```
 
 Output will be in the `dist/` directory:
-- `Viewer.js` - Main library bundle
-- `Viewer.css` - Styles
+- `Viewer.js` - Main library bundle (including styles)
 - `Viewer.js.map` - Source map
 
 ## Usage

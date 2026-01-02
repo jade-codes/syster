@@ -1,8 +1,16 @@
 /**
  * Simple development server for the Syster Modeller
  */
+import { resolve } from 'path';
 
 const PORT = 3000;
+const ALLOWED_DIR = resolve(process.cwd());
+
+// Validate that the resolved path is within the allowed directory
+function isPathSafe(requestedPath: string, baseDir: string = ALLOWED_DIR): boolean {
+  const resolvedPath = resolve(baseDir, requestedPath);
+  return resolvedPath.startsWith(baseDir);
+}
 
 const server = Bun.serve({
   port: PORT,
@@ -20,6 +28,11 @@ const server = Bun.serve({
     // Transpile and serve TypeScript/TSX files
     if (url.pathname.endsWith('.tsx') || url.pathname.endsWith('.ts')) {
       const filePath = `./src${url.pathname}`;
+      
+      if (!isPathSafe(filePath)) {
+        return new Response('Forbidden', { status: 403 });
+      }
+      
       const file = Bun.file(filePath);
       
       if (await file.exists()) {
@@ -43,6 +56,11 @@ const server = Bun.serve({
     // Serve CSS files
     if (url.pathname.endsWith('.css')) {
       const filePath = `./src${url.pathname}`;
+      
+      if (!isPathSafe(filePath)) {
+        return new Response('Forbidden', { status: 403 });
+      }
+      
       const file = Bun.file(filePath);
       
       if (await file.exists()) {
@@ -52,10 +70,16 @@ const server = Bun.serve({
       }
     }
     
-    // Serve from node_modules
-    // TODO: Implement whitelist-based serving for security
+    // Serve from node_modules with whitelist-based security
     if (url.pathname.startsWith('/node_modules/')) {
-      const file = Bun.file(`.${url.pathname}`);
+      const nodeModulesPath = resolve(ALLOWED_DIR, 'node_modules');
+      const filePath = `.${url.pathname}`;
+      
+      if (!isPathSafe(filePath, nodeModulesPath)) {
+        return new Response('Forbidden', { status: 403 });
+      }
+      
+      const file = Bun.file(filePath);
       if (await file.exists()) {
         return new Response(file);
       }
