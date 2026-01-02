@@ -31,8 +31,11 @@ tarpaulin-report.json
 cobertura.xml
 lcov.info
 
-# Web workspace
-web/node_modules/
-web/packages/*/dist/
-web/packages/*/node_modules/
-web/pnpm-lock.yaml
+# Node/Bun artifacts
+node_modules/
+dist/
+*.log
+package-lock.json
+bun.lockb
+.bun/
+
