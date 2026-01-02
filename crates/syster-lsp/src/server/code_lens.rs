@@ -40,10 +40,11 @@ impl LspServer {
 
                 // Only show code lens if there are references
                 if reference_count > 0 {
-                    // Serialize command arguments (these are basic LSP types and should not fail)
-                    let Ok(uri_value) = serde_json::to_value(uri) else {
-                        continue;
-                    };
+                    // VS Code's editor.action.showReferences expects:
+                    // 1. URI as a string
+                    // 2. Position object
+                    // 3. Array of Location objects
+                    let uri_value = serde_json::Value::String(uri.to_string());
                     let Ok(position_value) = serde_json::to_value(Position {
                         line: range.start.line,
                         character: range.start.character,
@@ -65,7 +66,7 @@ impl LspServer {
                                 reference_count,
                                 if reference_count == 1 { "" } else { "s" }
                             ),
-                            command: "editor.action.showReferences".to_string(),
+                            command: "syster.showReferences".to_string(),
                             arguments: Some(vec![uri_value, position_value, locations_value]),
                         }),
                         data: None,
