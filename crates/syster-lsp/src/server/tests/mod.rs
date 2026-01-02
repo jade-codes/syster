@@ -1,4 +1,5 @@
 // Test modules
+mod tests_code_lens;
 mod tests_core_lspserver;
 mod tests_document_links;
 mod tests_formatting;
