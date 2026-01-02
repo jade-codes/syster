@@ -7,9 +7,6 @@
     },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
-    },
-    "ghcr.io/oven-sh/features/bun:1": {
-      "version": "latest"
     }
   },
   "customizations": {
@@ -31,7 +28,7 @@
       }
     }
   },
-  "postCreateCommand": "rustc --version && cargo --version && cd editors/vscode && npm install && cd ../.. && ([ -d packages ] && cd packages && bun install || true)",
+  "postCreateCommand": "rustc --version && cargo --version && curl -fsSL https://bun.sh/install | bash && export PATH=\"$HOME/.bun/bin:$PATH\" && cd editors/vscode && npm install && cd ../.. && ([ -d packages ] && cd packages && bun install || true)",
   "forwardPorts": [3000, 5173],
   "remoteUser": "vscode"
 }
