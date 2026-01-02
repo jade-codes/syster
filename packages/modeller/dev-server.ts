@@ -55,8 +55,7 @@ const server = Bun.serve({
     
     // Serve CSS files
     if (url.pathname.endsWith('.css')) {
-      const filePath = `./src${url.pathname}`;
-      
+      const filePath = `./src${url.pathname}`;      
       if (!isPathSafe(filePath)) {
         return new Response('Forbidden', { status: 403 });
       }
