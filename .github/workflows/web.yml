@@ -1,0 +1,61 @@
+name: Web CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  pull-requests: read
+  statuses: read
+
+jobs:
+  web:
+    name: Web Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('web/**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      
+      - name: Install dependencies
+        run: bun install
+        working-directory: ./web
+      
+      - name: Lint
+        run: bun run lint
+        working-directory: ./web
+      
+      - name: Type check
+        run: bun run type-check
+        working-directory: ./web
+      
+      - name: Test
+        run: bun run test
+        working-directory: ./web
+      
+      - name: Build
+        run: bun run build
+        working-directory: ./web

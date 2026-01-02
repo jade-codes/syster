@@ -1,0 +1,16 @@
+{
+  "name": "@syster/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web packages for Syster - SysML v2 tooling",
+  "scripts": {
+    "lint": "echo 'No linting configured yet' && exit 0",
+    "type-check": "echo 'No type checking configured yet' && exit 0",
+    "test": "echo 'No tests configured yet' && exit 0",
+    "build": "echo 'No build configured yet' && exit 0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
