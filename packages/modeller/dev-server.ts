@@ -53,6 +53,7 @@ const server = Bun.serve({
     }
     
     // Serve from node_modules
+    // TODO: Implement whitelist-based serving for security
     if (url.pathname.startsWith('/node_modules/')) {
       const file = Bun.file(`.${url.pathname}`);
       if (await file.exists()) {

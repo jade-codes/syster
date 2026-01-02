@@ -23,6 +23,7 @@ import './Modeller.css';
 export const Modeller: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  // TODO: Use lspConnection to sync diagram state with LSP server
   const lspConnection = useLspConnection();
 
   const onConnect = useCallback(
