@@ -21,10 +21,10 @@ import './Modeller.css';
  * for SysML v2 diagrams with editing capabilities.
  */
 export const Modeller: React.FC = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [nodes, , onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  // TODO: Use lspConnection to sync diagram state with LSP server
-  const lspConnection = useLspConnection();
+  // Initialize LSP connection (currently no direct usage in this component)
+  useLspConnection();
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
