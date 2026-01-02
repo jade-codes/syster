@@ -1,0 +1,25 @@
+{
+  "name": "@syster/viewer",
+  "version": "0.1.0",
+  "description": "Read-only, embeddable viewer for SysML diagrams",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "echo \"No tests yet\"",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": [
+    "sysml",
+    "viewer",
+    "visualization"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@syster/diagram-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

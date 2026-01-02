@@ -30,3 +30,9 @@ tarpaulin-report.html
 tarpaulin-report.json
 cobertura.xml
 lcov.info
+
+# Web workspace
+web/node_modules/
+web/packages/*/dist/
+web/packages/*/node_modules/
+web/pnpm-lock.yaml
