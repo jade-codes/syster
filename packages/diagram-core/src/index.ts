@@ -9,7 +9,7 @@ export interface DiagramNode {
   id: string;
   type: string;
   position: { x: number; y: number };
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface DiagramEdge {
