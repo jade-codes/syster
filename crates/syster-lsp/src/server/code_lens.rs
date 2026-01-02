@@ -89,7 +89,8 @@ impl LspServer {
             | Symbol::Definition { .. }
             | Symbol::Feature { .. }
             | Symbol::Usage { .. }
-            | Symbol::Alias { .. } => true,
+            | Symbol::Alias { .. }
+            | Symbol::Import { .. } => true,
         }
     }
 
