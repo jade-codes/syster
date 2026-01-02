@@ -21,8 +21,30 @@ impl OneToManyGraph {
 
     /// Add a relationship from source to target.
     ///
-    /// Deduplicates by (source, target) - if this exact relationship already
-    /// exists, the call is a no-op (keeps the original span).
+    /// Deduplicates by (source, target) pair - if this exact relationship already
+    /// exists, the call is a no-op and the original span is preserved.
+    ///
+    /// # Span Handling
+    ///
+    /// When duplicate relationships are added (e.g., from the same file loaded via
+    /// different paths), only the first occurrence is stored. This means:
+    /// - The span from the first `add()` call is kept
+    /// - Subsequent `add()` calls with different spans are ignored
+    /// - This is semantically correct: the relationship represents the same logical
+    ///   fact regardless of which file path was used to discover it
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use syster_base::semantic::graphs::OneToManyGraph;
+    /// # use syster_base::core::Span;
+    /// let mut graph = OneToManyGraph::new();
+    /// let span1 = Some(Span::new(0, 10));
+    /// let span2 = Some(Span::new(20, 30));
+    ///
+    /// graph.add("A".to_string(), "B".to_string(), span1);
+    /// graph.add("A".to_string(), "B".to_string(), span2); // Ignored, keeps span1
+    /// ```
     pub fn add(&mut self, source: String, target: String, span: Option<Span>) {
         let targets = self.relationships.entry(source).or_default();
         if !targets.iter().any(|(t, _)| t == &target) {
