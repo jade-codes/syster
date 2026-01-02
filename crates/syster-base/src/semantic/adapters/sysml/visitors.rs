@@ -289,7 +289,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
 
         // Also create a Symbol::Import for semantic token highlighting
         let scope_id = self.symbol_table.current_scope_id();
-        
+
         // Note: Two different identifier formats are used here:
         // 1. qualified_name: "import::scope_id::path" - Globally unique identifier for the symbol,
         //    includes scope_id to distinguish same import path used in different scopes
@@ -297,7 +297,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         //    used to store the symbol in the current scope without conflicts
         let qualified_name = format!("import::{}::{}", scope_id, import.path);
         let key = format!("import::{}", import.path);
-        
+
         let symbol = Symbol::Import {
             path: import.path.clone(),
             path_span: import.path_span,
