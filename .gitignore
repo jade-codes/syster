@@ -30,3 +30,11 @@ tarpaulin-report.html
 tarpaulin-report.json
 cobertura.xml
 lcov.info
+
+# Node/Bun dependencies and build artifacts
+node_modules/
+dist/
+*.log
+.bun/
+bun.lockb
+
