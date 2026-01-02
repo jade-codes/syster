@@ -31,9 +31,11 @@ tarpaulin-report.json
 cobertura.xml
 lcov.info
 
-# Web packages (Bun)
-/node_modules/
-packages/**/node_modules/
-packages/**/coverage/
-packages/**/*.log
-/bun.lockb
+# Node/Bun artifacts
+node_modules/
+dist/
+*.log
+package-lock.json
+bun.lockb
+.bun/
+
