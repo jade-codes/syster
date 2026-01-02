@@ -54,7 +54,7 @@ jobs:
           for package in packages/*/; do
             if [ -f "${package}tsconfig.json" ]; then
               echo "Type checking $package"
-              (cd "$package" && bun x tsc --noEmit)
+              (cd "$package" && bunx tsc --noEmit)
             fi
           done
       
@@ -63,7 +63,7 @@ jobs:
           # Run linting for each package that has a lint script
           for package in packages/*/; do
             if [ -f "${package}package.json" ]; then
-              if grep -q '"lint"' "${package}package.json"; then
+              if grep -q '"lint"[[:space:]]*:' "${package}package.json"; then
                 echo "Linting $package"
                 (cd "$package" && bun run lint)
               fi
@@ -75,7 +75,7 @@ jobs:
           # Run tests for each package that has a test script
           for package in packages/*/; do
             if [ -f "${package}package.json" ]; then
-              if grep -q '"test"' "${package}package.json"; then
+              if grep -q '"test"[[:space:]]*:' "${package}package.json"; then
                 echo "Testing $package"
                 (cd "$package" && bun test)
               fi
@@ -87,7 +87,7 @@ jobs:
           # Build each package that has a build script
           for package in packages/*/; do
             if [ -f "${package}package.json" ]; then
-              if grep -q '"build"' "${package}package.json"; then
+              if grep -q '"build"[[:space:]]*:' "${package}package.json"; then
                 echo "Building $package"
                 (cd "$package" && bun run build)
               fi
