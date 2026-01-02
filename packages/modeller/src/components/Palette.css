@@ -1,0 +1,22 @@
+.palette {
+  width: 200px;
+  height: 100%;
+  background-color: white;
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+}
+
+.palette-header {
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+}
+
+.palette-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+}
