@@ -60,21 +60,27 @@ jobs:
       
       - name: Lint
         run: |
-          # Run linting if lint script exists, otherwise skip
-          if grep -q '"lint"' package.json 2>/dev/null; then
-            bun run lint
-          else
-            echo "No lint script found, skipping"
-          fi
+          # Run linting for each package that has a lint script
+          for package in packages/*/; do
+            if [ -f "${package}package.json" ]; then
+              if grep -q '"lint"' "${package}package.json"; then
+                echo "Linting $package"
+                (cd "$package" && bun run lint)
+              fi
+            fi
+          done
       
       - name: Run tests
         run: |
-          # Run tests if test script exists, otherwise skip
-          if grep -q '"test"' package.json 2>/dev/null; then
-            bun test
-          else
-            echo "No tests found, skipping"
-          fi
+          # Run tests for each package that has a test script
+          for package in packages/*/; do
+            if [ -f "${package}package.json" ]; then
+              if grep -q '"test"' "${package}package.json"; then
+                echo "Testing $package"
+                (cd "$package" && bun test)
+              fi
+            fi
+          done
       
       - name: Build packages
         run: |
