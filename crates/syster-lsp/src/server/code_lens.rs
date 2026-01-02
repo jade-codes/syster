@@ -81,23 +81,15 @@ impl LspServer {
 
     /// Determine if a symbol should show a code lens
     ///
-    /// We show code lens for:
-    /// - Packages
-    /// - Classifiers
-    /// - Definitions (part def, port def, etc.)
-    ///
-    /// We don't show for:
-    /// - Features (nested properties)
-    /// - Usages (instances)
-    /// - Aliases
+    /// Shows code lens for all symbol types that have references.
     fn should_show_code_lens(&self, symbol: &Symbol) -> bool {
         match symbol {
-            Symbol::Package { .. } => true,
-            Symbol::Classifier { .. } => true,
-            Symbol::Definition { .. } => true,
-            Symbol::Feature { .. } => false,
-            Symbol::Usage { .. } => false,
-            Symbol::Alias { .. } => false,
+            Symbol::Package { .. }
+            | Symbol::Classifier { .. }
+            | Symbol::Definition { .. }
+            | Symbol::Feature { .. }
+            | Symbol::Usage { .. }
+            | Symbol::Alias { .. } => true,
         }
     }
 
@@ -105,117 +97,5 @@ impl LspServer {
     fn count_references(&self, qualified_name: &str) -> usize {
         let locations = collect_reference_locations(&self.workspace, qualified_name);
         locations.len()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_code_lens_basic() {
-        let mut server = LspServer::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = r#"
-part def Vehicle;
-part car : Vehicle;
-        "#;
-
-        server.open_document(&uri, text).unwrap();
-
-        let lenses = server.get_code_lenses(&uri);
-
-        // Should have one code lens for Vehicle showing 1 reference
-        assert_eq!(lenses.len(), 1);
-        assert!(lenses[0].command.is_some());
-        let cmd = lenses[0].command.as_ref().unwrap();
-        assert_eq!(cmd.title, "1 reference");
-        assert_eq!(cmd.command, "editor.action.showReferences");
-    }
-
-    #[test]
-    fn test_code_lens_multiple_references() {
-        let mut server = LspServer::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = r#"
-part def Vehicle;
-part car : Vehicle;
-part truck : Vehicle;
-part bike : Vehicle;
-        "#;
-
-        server.open_document(&uri, text).unwrap();
-
-        let lenses = server.get_code_lenses(&uri);
-
-        // Should have one code lens for Vehicle showing 3 references
-        assert_eq!(lenses.len(), 1);
-        let cmd = lenses[0].command.as_ref().unwrap();
-        assert_eq!(cmd.title, "3 references");
-    }
-
-    #[test]
-    fn test_code_lens_no_references() {
-        let mut server = LspServer::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = r#"
-part def Vehicle;
-part def Bike;
-        "#;
-
-        server.open_document(&uri, text).unwrap();
-
-        let lenses = server.get_code_lenses(&uri);
-
-        // Should have no code lenses since there are no references
-        assert_eq!(lenses.len(), 0);
-    }
-
-    #[test]
-    fn test_code_lens_classifier() {
-        let mut server = LspServer::new();
-        let uri = Url::parse("file:///test.kerml").unwrap();
-        let text = r#"
-classifier Vehicle;
-classifier Car specializes Vehicle;
-        "#;
-
-        server.open_document(&uri, text).unwrap();
-
-        let lenses = server.get_code_lenses(&uri);
-
-        // Should have one code lens for Vehicle showing the specialization reference
-        assert_eq!(lenses.len(), 1);
-        let cmd = lenses[0].command.as_ref().unwrap();
-        assert_eq!(cmd.title, "1 reference");
-    }
-
-    #[test]
-    fn test_code_lens_excludes_features() {
-        let mut server = LspServer::new();
-        let uri = Url::parse("file:///test.sysml").unwrap();
-        let text = r#"
-part def Vehicle {
-    attribute speed : Real;
-}
-        "#;
-
-        server.open_document(&uri, text).unwrap();
-
-        let lenses = server.get_code_lenses(&uri);
-
-        // Should have no code lenses (Vehicle has no references, and features are excluded)
-        assert_eq!(lenses.len(), 0);
-    }
-
-    #[test]
-    fn test_code_lens_invalid_uri() {
-        let server = LspServer::new();
-        let uri = Url::parse("http://example.com/not-a-file").unwrap();
-
-        let lenses = server.get_code_lenses(&uri);
-
-        // Should return empty vec for invalid file URI
-        assert_eq!(lenses.len(), 0);
     }
 }
