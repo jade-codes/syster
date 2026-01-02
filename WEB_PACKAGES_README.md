@@ -11,7 +11,7 @@ curl -fsSL https://bun.sh/install | bash
 
 ## Running Tests
 
-From the `web/` directory:
+From the repository root:
 
 ```bash
 # Run all tests
@@ -24,11 +24,11 @@ bun test --coverage
 From individual package directories:
 
 ```bash
-# In web/packages/core/
-bun test
+# In packages/core/
+cd packages/core && bun test
 
-# In web/packages/utils/
-bun test
+# In packages/utils/
+cd packages/utils && bun test
 ```
 
 ## Package Structure
@@ -48,7 +48,7 @@ Tests are configured via `bunfig.toml` in each package with:
 ## Workspace Structure
 
 ```
-web/
+/ (repository root)
 ├── bunfig.toml           # Root test configuration
 ├── package.json          # Root package with workspace config
 └── packages/

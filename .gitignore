@@ -32,8 +32,8 @@ cobertura.xml
 lcov.info
 
 # Web packages (Bun)
-web/node_modules/
-web/**/node_modules/
-web/coverage/
-web/**/coverage/
-web/**/*.log
+/node_modules/
+packages/**/node_modules/
+packages/**/coverage/
+packages/**/*.log
+/bun.lockb

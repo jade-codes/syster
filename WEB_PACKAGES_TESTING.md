@@ -5,19 +5,19 @@
 The web packages have been configured with Bun's built-in test runner.
 
 ### Structure Created:
-- `/web/` - Root directory for web packages
-- `/web/packages/core/` - Example core package
-- `/web/packages/utils/` - Example utils package
+- `/packages/` - Root directory for web packages
+- `/packages/core/` - Example core package
+- `/packages/utils/` - Example utils package
 
 ### Configuration Files:
 - Each package has `bunfig.toml` with test and coverage configuration
 - Each package has `package.json` with test script
-- Root `/web/package.json` configured as workspace with test scripts
+- Root `/package.json` configured as workspace with test scripts
 - Test files created: `src/__tests__/index.test.ts` in each package
 
 ### Running Tests:
 
-From `/web/` directory:
+From repository root:
 ```bash
 bun test              # Run all tests
 bun test --coverage   # Run with coverage
