@@ -17,12 +17,39 @@ const server = Bun.serve({
       });
     }
     
-    // Serve static files from src directory
-    const filePath = `./src${url.pathname}`;
-    const file = Bun.file(filePath);
+    // Transpile and serve TypeScript/TSX files
+    if (url.pathname.endsWith('.tsx') || url.pathname.endsWith('.ts')) {
+      const filePath = `./src${url.pathname}`;
+      const file = Bun.file(filePath);
+      
+      if (await file.exists()) {
+        const transpiled = await Bun.build({
+          entrypoints: [filePath],
+          target: 'browser',
+          format: 'esm',
+        });
+        
+        if (transpiled.outputs[0]) {
+          return new Response(await transpiled.outputs[0].text(), {
+            headers: { 
+              'Content-Type': 'application/javascript',
+              'Access-Control-Allow-Origin': '*',
+            },
+          });
+        }
+      }
+    }
     
-    if (await file.exists()) {
-      return new Response(file);
+    // Serve CSS files
+    if (url.pathname.endsWith('.css')) {
+      const filePath = `./src${url.pathname}`;
+      const file = Bun.file(filePath);
+      
+      if (await file.exists()) {
+        return new Response(file, {
+          headers: { 'Content-Type': 'text/css' },
+        });
+      }
     }
     
     // Serve from node_modules
