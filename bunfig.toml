@@ -1,0 +1,5 @@
+[test]
+# Root test configuration for all web packages
+coverage = true
+coverageDir = "coverage"
+coverageReporter = ["text", "lcov", "html"]
