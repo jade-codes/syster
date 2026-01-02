@@ -1,0 +1,16 @@
+{
+  "name": "syster-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web packages for Syster",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "bun test --recursive",
+    "test:coverage": "bun test --coverage"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

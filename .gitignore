@@ -30,3 +30,10 @@ tarpaulin-report.html
 tarpaulin-report.json
 cobertura.xml
 lcov.info
+
+# Web packages (Bun)
+web/node_modules/
+web/**/node_modules/
+web/coverage/
+web/**/coverage/
+web/**/*.log
