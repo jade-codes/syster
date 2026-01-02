@@ -36,11 +36,11 @@ impl OneToManyGraph {
     /// # Example
     ///
     /// ```
-    /// # use syster_base::semantic::graphs::OneToManyGraph;
-    /// # use syster_base::core::Span;
+    /// # use syster::semantic::graphs::OneToManyGraph;
+    /// # use syster::core::{Span, Position};
     /// let mut graph = OneToManyGraph::new();
-    /// let span1 = Some(Span::new(0, 10));
-    /// let span2 = Some(Span::new(20, 30));
+    /// let span1 = Some(Span::new(Position::new(0, 0), Position::new(0, 10)));
+    /// let span2 = Some(Span::new(Position::new(0, 20), Position::new(0, 30)));
     ///
     /// graph.add("A".to_string(), "B".to_string(), span1);
     /// graph.add("A".to_string(), "B".to_string(), span2); // Ignored, keeps span1
