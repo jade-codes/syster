@@ -1,5 +1,5 @@
 import { describe, test, expect, mock } from 'bun:test';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { NODE_TYPES } from '@syster/diagram-core';
 
 // Mock reactflow Handle before importing component
@@ -20,9 +20,9 @@ describe('PartDefNode', () => {
       features: [],
     };
 
-    render(<PartDefNode id="test-1" data={mockData} />);
+    const { getByText } = render(<PartDefNode id="test-1" data={mockData} />);
     
-    const nameElement = screen.getByText('Car');
+    const nameElement = getByText('Car');
     expect(nameElement).not.toBeNull();
   });
 
@@ -35,11 +35,11 @@ describe('PartDefNode', () => {
       features: ['speed', 'mass', 'color'],
     };
 
-    render(<PartDefNode id="test-2" data={mockData} />);
+    const { getByText } = render(<PartDefNode id="test-2" data={mockData} />);
     
-    expect(screen.getByText('speed')).not.toBeNull();
-    expect(screen.getByText('mass')).not.toBeNull();
-    expect(screen.getByText('color')).not.toBeNull();
+    expect(getByText('speed')).not.toBeNull();
+    expect(getByText('mass')).not.toBeNull();
+    expect(getByText('color')).not.toBeNull();
   });
 
   test('renders with empty features array', () => {
@@ -51,9 +51,9 @@ describe('PartDefNode', () => {
       features: [],
     };
 
-    render(<PartDefNode id="test-3" data={mockData} />);
+    const { getByText } = render(<PartDefNode id="test-3" data={mockData} />);
     
-    const nameElement = screen.getByText('EmptyPart');
+    const nameElement = getByText('EmptyPart');
     expect(nameElement).not.toBeNull();
   });
 

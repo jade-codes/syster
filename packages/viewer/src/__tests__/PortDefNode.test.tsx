@@ -1,5 +1,5 @@
 import { describe, test, expect, mock } from 'bun:test';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { NODE_TYPES, FEATURE_DIRECTIONS } from '@syster/diagram-core';
 
 // Mock reactflow Handle before importing component
@@ -20,9 +20,9 @@ describe('PortDefNode', () => {
       direction: FEATURE_DIRECTIONS.INOUT,
     };
 
-    render(<PortDefNode id="test-1" data={mockData} />);
+    const { getByText } = render(<PortDefNode id="test-1" data={mockData} />);
     
-    const nameElement = screen.getByText('DataPort');
+    const nameElement = getByText('DataPort');
     expect(nameElement).not.toBeNull();
   });
 
@@ -35,10 +35,10 @@ describe('PortDefNode', () => {
       direction: FEATURE_DIRECTIONS.IN,
     };
 
-    render(<PortDefNode id="test-2" data={mockData} />);
+    const { getByText } = render(<PortDefNode id="test-2" data={mockData} />);
     
-    expect(screen.getByText('InputPort')).not.toBeNull();
-    expect(screen.getByText('in')).not.toBeNull();
+    expect(getByText('InputPort')).not.toBeNull();
+    expect(getByText('in')).not.toBeNull();
   });
 
   test('renders with out direction', () => {
@@ -50,10 +50,10 @@ describe('PortDefNode', () => {
       direction: FEATURE_DIRECTIONS.OUT,
     };
 
-    render(<PortDefNode id="test-3" data={mockData} />);
+    const { getByText } = render(<PortDefNode id="test-3" data={mockData} />);
     
-    expect(screen.getByText('OutputPort')).not.toBeNull();
-    expect(screen.getByText('out')).not.toBeNull();
+    expect(getByText('OutputPort')).not.toBeNull();
+    expect(getByText('out')).not.toBeNull();
   });
 
   test('renders with inout direction', () => {
@@ -65,9 +65,9 @@ describe('PortDefNode', () => {
       direction: FEATURE_DIRECTIONS.INOUT,
     };
 
-    const { container } = render(<PortDefNode id="test-4" data={mockData} />);
+    const { container, getByText } = render(<PortDefNode id="test-4" data={mockData} />);
     
-    expect(screen.getByText('BidirectionalPort')).not.toBeNull();
+    expect(getByText('BidirectionalPort')).not.toBeNull();
     const directionElement = container.querySelector('div[style*="#7c3aed"][style*="font-weight"]');
     expect(directionElement).not.toBeNull();
     expect(directionElement?.textContent).toBe('inout');
