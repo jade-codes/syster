@@ -84,8 +84,8 @@ impl LanguageServer for ServerState {
         params: DocumentSymbolParams,
     ) -> BoxFuture<'static, Result<Option<DocumentSymbolResponse>, Self::Error>> {
         let uri = params.text_document.uri;
-        let path = std::path::Path::new(uri.path());
-        let symbols = self.server.get_document_symbols(path);
+        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let symbols = self.server.get_document_symbols(&path);
         let result = if symbols.is_empty() {
             None
         } else {
@@ -109,8 +109,8 @@ impl LanguageServer for ServerState {
     ) -> BoxFuture<'static, Result<Option<CompletionResponse>, Self::Error>> {
         let uri = params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
-        let path = std::path::Path::new(uri.path());
-        let result = Some(self.server.get_completions(path, position));
+        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let result = Some(self.server.get_completions(&path, position));
         Box::pin(async move { Ok(result) })
     }
 
@@ -164,8 +164,8 @@ impl LanguageServer for ServerState {
         params: FoldingRangeParams,
     ) -> BoxFuture<'static, Result<Option<Vec<FoldingRange>>, Self::Error>> {
         let uri = params.text_document.uri;
-        let path = std::path::Path::new(uri.path());
-        let ranges = self.server.get_folding_ranges(path);
+        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let ranges = self.server.get_folding_ranges(&path);
         let result = if ranges.is_empty() {
             None
         } else {
@@ -180,8 +180,8 @@ impl LanguageServer for ServerState {
     ) -> BoxFuture<'static, Result<Option<Vec<SelectionRange>>, Self::Error>> {
         let uri = params.text_document.uri;
         let positions = params.positions;
-        let path = std::path::Path::new(uri.path());
-        let ranges = self.server.get_selection_ranges(path, positions);
+        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let ranges = self.server.get_selection_ranges(&path, positions);
         let result = if ranges.is_empty() {
             None
         } else {
