@@ -22,6 +22,24 @@ export interface SysMLEdgeProps extends EdgeProps {
 }
 
 /**
+ * Generate a unique displayName for an edge type.
+ * Converts SCREAMING_SNAKE_CASE to PascalCase with "Edge" suffix.
+ * 
+ * @param edgeType - Edge type in SCREAMING_SNAKE_CASE format
+ * @returns Display name in PascalCase format (e.g., "SpecializationEdge")
+ * 
+ * @example
+ * generateDisplayName('SPECIALIZATION') // => 'SpecializationEdge'
+ * generateDisplayName('CROSS_SUBSETTING') // => 'CrossSubsettingEdge'
+ */
+function generateDisplayName(edgeType: string): string {
+  return edgeType
+    .split('_')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('') + 'Edge';
+}
+
+/**
  * Factory function to create a styled SysML edge component.
  *
  * @param config - Visual configuration for the edge
@@ -100,11 +118,7 @@ export function createSysMLEdge(config: EdgeConfig, edgeType?: string): React.FC
   };
 
   // Create unique displayName for debugging
-  const displayName = edgeType 
-    ? `${edgeType.split('_').map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join('')}Edge`
-    : 'SysMLEdge';
-  
-  SysMLEdge.displayName = displayName;
+  SysMLEdge.displayName = edgeType ? generateDisplayName(edgeType) : 'SysMLEdge';
   return SysMLEdge;
 }
 
