@@ -1,8 +1,16 @@
 import { FC } from 'react';
-import { NodeProps } from '@xyflow/react';
 import { DefinitionNode } from './DefinitionNode';
 import { NodeConfig, NODE_CONFIGS } from './nodeConfig';
-import type { SysMLNodeData } from '@syster/diagram-core';
+import type { SymbolData } from '@syster/diagram-core';
+
+/**
+ * Props for SysML node components.
+ * Compatible with React Flow's node component requirements.
+ */
+interface SysMLNodeProps {
+  id: string;
+  data: SymbolData;
+}
 
 /**
  * Creates a definition node component from configuration.
@@ -23,8 +31,8 @@ import type { SysMLNodeData } from '@syster/diagram-core';
  * });
  * ```
  */
-export function createDefinitionNode(config: NodeConfig): FC<NodeProps<SysMLNodeData>> {
-  const NodeComponent: FC<NodeProps<SysMLNodeData>> = ({ id, data }) => (
+export function createDefinitionNode(config: NodeConfig): FC<SysMLNodeProps> {
+  const NodeComponent: FC<SysMLNodeProps> = ({ id, data }) => (
     <DefinitionNode
       id={id}
       data={data}
@@ -55,7 +63,7 @@ export function createDefinitionNode(config: NodeConfig): FC<NodeProps<SysMLNode
  * />
  * ```
  */
-export const nodeTypes: Record<string, FC<NodeProps<SysMLNodeData>>> = Object.fromEntries(
+export const nodeTypes: Record<string, FC<SysMLNodeProps>> = Object.fromEntries(
   Object.entries(NODE_CONFIGS).map(([type, config]) => [type, createDefinitionNode(config)])
 );
 

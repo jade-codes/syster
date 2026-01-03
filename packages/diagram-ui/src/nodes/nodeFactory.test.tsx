@@ -11,7 +11,13 @@ mock.module('@xyflow/react', () => ({
 
 import { createDefinitionNode, nodeTypes, getNodeConfig } from './nodeFactory';
 import { NODE_CONFIGS } from './nodeConfig';
-import type { SysMLNodeData } from '@syster/diagram-core';
+
+// Minimal test data - only includes fields the components actually use
+interface TestNodeData {
+  name: string;
+  features?: string[];
+  direction?: string;
+}
 
 describe('createDefinitionNode', () => {
   test('creates a component with the specified stereotype', () => {
@@ -21,12 +27,11 @@ describe('createDefinitionNode', () => {
       showFeatures: true,
     });
 
-    const data: SysMLNodeData = {
+    const data: TestNodeData = {
       name: 'TestElement',
-      type: 'test-type',
     };
 
-    render(<TestNode id="test-1" data={data} />);
+    render(<TestNode id="test-1" data={data as any} />);
 
     expect(screen.getByText('«test def»')).toBeDefined();
     expect(screen.getByText('TestElement')).toBeDefined();
@@ -39,13 +44,12 @@ describe('createDefinitionNode', () => {
       showFeatures: true,
     });
 
-    const data: SysMLNodeData = {
+    const data: TestNodeData = {
       name: 'TestElement',
-      type: 'test-type',
       features: ['myFeature: Integer'],
     };
 
-    render(<TestNode id="test-1" data={data} />);
+    render(<TestNode id="test-1" data={data as any} />);
 
     expect(screen.getByText('myFeature: Integer')).toBeDefined();
   });
@@ -57,13 +61,12 @@ describe('createDefinitionNode', () => {
       showDirection: true,
     });
 
-    const data: SysMLNodeData = {
+    const data: TestNodeData = {
       name: 'DataPort',
-      type: 'port-def',
       direction: 'in',
     };
 
-    render(<TestNode id="test-1" data={data} />);
+    render(<TestNode id="test-1" data={data as any} />);
 
     expect(screen.getByText('in')).toBeDefined();
   });
@@ -124,13 +127,12 @@ describe('nodeTypes', () => {
   test('renders a part def node correctly', () => {
     const PartDefNode = nodeTypes[NODE_TYPES.PART_DEF];
     
-    const data: SysMLNodeData = {
+    const data: TestNodeData = {
       name: 'Vehicle',
-      type: NODE_TYPES.PART_DEF,
       features: ['engine: Engine'],
     };
 
-    render(<PartDefNode id="vehicle-1" data={data} />);
+    render(<PartDefNode id="vehicle-1" data={data as any} />);
 
     expect(screen.getByText('«part def»')).toBeDefined();
     expect(screen.getByText('Vehicle')).toBeDefined();
@@ -140,13 +142,12 @@ describe('nodeTypes', () => {
   test('renders a port def node with direction', () => {
     const PortDefNode = nodeTypes[NODE_TYPES.PORT_DEF];
     
-    const data: SysMLNodeData = {
+    const data: TestNodeData = {
       name: 'DataPort',
-      type: NODE_TYPES.PORT_DEF,
       direction: 'out',
     };
 
-    render(<PortDefNode id="port-1" data={data} />);
+    render(<PortDefNode id="port-1" data={data as any} />);
 
     expect(screen.getByText('«port def»')).toBeDefined();
     expect(screen.getByText('DataPort')).toBeDefined();
