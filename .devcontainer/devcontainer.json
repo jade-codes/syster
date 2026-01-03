@@ -5,10 +5,10 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
     },
-    "ghcr.io/devcontainers/features/github-cli:1": {
+    "ghcr.io/oven-sh/features/bun:1": {
       "version": "latest"
     },
-    "ghcr.io/oven-sh/features/bun:1": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
     }
   },
