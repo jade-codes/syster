@@ -1,18 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "target": "ESNext",
     "module": "ESNext",
-    "jsx": "react-jsx",
     "moduleResolution": "bundler",
+    "lib": ["ESNext"],
+    "types": ["bun-types"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "types": ["bun-types"]
+    "isolatedModules": true,
+    "noEmit": true,
+    "paths": {
+      "@syster/diagram-core": ["./src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "coverage"]
 }

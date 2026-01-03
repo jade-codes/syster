@@ -1,5 +1,5 @@
-// Simple development server using Bun
-import { resolve, normalize } from 'path';
+// Simple development server using Bun with hot module reloading
+import { resolve } from 'path';
 
 const ALLOWED_DIR = resolve(process.cwd());
 
@@ -17,6 +17,37 @@ const server = Bun.serve({
     // Serve index.html for root
     if (url.pathname === '/') {
       return new Response(Bun.file('index.html'));
+    }
+    
+    // Handle TypeScript/TSX files - transpile on the fly
+    if (url.pathname.endsWith('.tsx') || url.pathname.endsWith('.ts')) {
+      const filePath = url.pathname.slice(1);
+      
+      if (!isPathSafe(filePath)) {
+        return new Response('Forbidden', { status: 403 });
+      }
+      
+      const file = Bun.file(filePath);
+      
+      if (await file.exists()) {
+        const transpiled = await Bun.build({
+          entrypoints: [filePath],
+          minify: false,
+          sourcemap: 'inline',
+          target: 'browser',
+          format: 'esm',
+        });
+        
+        if (transpiled.outputs.length > 0) {
+          return new Response(await transpiled.outputs[0].text(), {
+            headers: {
+              'Content-Type': 'application/javascript',
+            },
+          });
+        }
+      }
+      
+      return new Response('Not Found', { status: 404 });
     }
     
     // Serve static files with path validation

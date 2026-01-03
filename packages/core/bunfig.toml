@@ -1,5 +1,0 @@
-[test]
-# Test configuration for @syster/core package
-coverage = true
-coverageDir = "coverage"
-coverageReporter = ["text", "lcov", "html"]
