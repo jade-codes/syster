@@ -18,19 +18,20 @@ const nodeTypes = {
 
 /**
  * Map SysML edge types to appropriate React Flow marker styles.
- * Different SysML relationships have different standard notations:
- * - Specialization: hollow triangle
- * - Typing: open arrow
- * - Composition: filled diamond
- * - Others: standard arrow
+ * Different SysML relationships have different standard notations.
+ * Note: React Flow has limited built-in marker types. For full SysML compliance,
+ * custom markers would be needed (e.g., hollow triangles, filled diamonds).
+ * Currently using available marker types as semantic indicators:
+ * - Specialization: ArrowClosed (represents inheritance)
+ * - Composition: ArrowClosed (represents containment)
+ * - Typing/Subsetting/Redefinition: Arrow (represents refinement relationships)
+ * - Others: ArrowClosed (default for relationships)
  */
 const getMarkerEnd = (edgeType?: string) => {
   switch (edgeType) {
     case EDGE_TYPES.SPECIALIZATION:
-      // Hollow triangle for inheritance
-      return { type: MarkerType.ArrowClosed, color: '#64748b' };
     case EDGE_TYPES.COMPOSITION:
-      // Filled diamond for composition
+      // Closed arrow for inheritance and composition relationships
       return { type: MarkerType.ArrowClosed, color: '#64748b' };
     case EDGE_TYPES.TYPING:
     case EDGE_TYPES.SUBSETTING:
