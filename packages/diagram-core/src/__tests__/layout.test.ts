@@ -2,15 +2,13 @@ import { describe, it, expect } from "bun:test";
 import {
   LAYOUT_DIRECTIONS,
   LAYOUT_ALGORITHMS,
-  type LayoutDirection,
-  type LayoutAlgorithm,
   type LayoutConfig,
   type Position,
   type Dimensions,
   type PositionedNode,
   type PositionedEdge,
   type LayoutResult
-} from "../layout";
+} from "@diagram-core/layout";
 
 describe("Layout Constants", () => {
   it("should define all layout directions", () => {

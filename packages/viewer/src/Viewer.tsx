@@ -2,10 +2,19 @@ import React, { useMemo } from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { Diagram } from '@syster/diagram-core';
+import { NODE_TYPES } from '@syster/diagram-core';
+import { PartDefNode } from './nodes/PartDefNode';
+import { PortDefNode } from './nodes/PortDefNode';
 
 interface ViewerProps {
   diagram?: Diagram;
 }
+
+// Register custom node types with React Flow
+const nodeTypes = {
+  [NODE_TYPES.PART_DEF]: PartDefNode,
+  [NODE_TYPES.PORT_DEF]: PortDefNode,
+};
 
 /**
  * Read-only viewer component for SysML v2 diagrams.
@@ -24,7 +33,10 @@ export const Viewer: React.FC<ViewerProps> = ({ diagram }) => {
     id: edge.id,
     source: edge.source,
     target: edge.target,
-    type: edge.type,
+    type: 'smoothstep',
+    animated: true,
+    style: { stroke: '#64748b', strokeWidth: 2 },
+    markerEnd: 'arrowclosed' as const,
   })) || [], [diagram]);
 
   return (
@@ -32,6 +44,7 @@ export const Viewer: React.FC<ViewerProps> = ({ diagram }) => {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         fitView
         nodesDraggable={false}
         nodesConnectable={false}
