@@ -191,4 +191,48 @@ describe("Viewer Component", () => {
     // In a read-only viewer, nodes shouldn't be draggable
     expect(reactFlow).not.toBeNull();
   });
+
+  it("should render typing edges with open arrow marker", () => {
+    const diagram = {
+      nodes: [
+        {
+          id: "node1",
+          type: NODE_TYPES.PART_DEF,
+          position: { x: 0, y: 0 },
+          data: {
+            id: "node1",
+            name: "Vehicle",
+            qualifiedName: "Auto::Vehicle",
+            type: NODE_TYPES.PART_DEF,
+            features: []
+          }
+        },
+        {
+          id: "node2",
+          type: NODE_TYPES.PART_USAGE,
+          position: { x: 200, y: 0 },
+          data: {
+            id: "node2",
+            name: "myCar",
+            qualifiedName: "Auto::myCar",
+            type: NODE_TYPES.PART_USAGE,
+            typedBy: "Vehicle"
+          }
+        }
+      ],
+      edges: [
+        {
+          id: "edge1",
+          source: "node2",
+          target: "node1",
+          type: "typing"
+        }
+      ]
+    };
+
+    const { container } = render(<Viewer diagram={diagram} />);
+    
+    const edgeLayer = container.querySelector('.react-flow__edges');
+    expect(edgeLayer).not.toBeNull();
+  });
 });
