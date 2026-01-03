@@ -1,9 +1,11 @@
 /**
  * @syster/diagram-ui
- * 
+ *
  * Shared React components for SysML v2 diagram visualization.
  * Used by both the viewer (read-only) and modeller (editable) packages.
  */
+
+// ========== Nodes ==========
 
 // Base component
 export { DefinitionNode } from './nodes';
@@ -18,3 +20,9 @@ export {
   nodeTypes,
   getNodeConfig,
 } from './nodes/nodeFactory';
+
+// ========== Edges ==========
+
+// Edge factory and configuration
+export { EDGE_CONFIGS, getEdgeConfig, createSysMLEdge, edgeTypes } from './edges';
+export type { EdgeConfig, SysMLEdgeProps } from './edges';

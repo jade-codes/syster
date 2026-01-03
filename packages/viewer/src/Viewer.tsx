@@ -1,41 +1,12 @@
 import React, { useMemo } from 'react';
-import { ReactFlow, Background, Controls, MarkerType } from '@xyflow/react';
+import { ReactFlow, Background, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Diagram } from '@syster/diagram-core';
-import { EDGE_TYPES } from '@syster/diagram-core';
-import { nodeTypes } from '@syster/diagram-ui';
+import { nodeTypes, edgeTypes } from '@syster/diagram-ui';
 
 interface ViewerProps {
   diagram?: Diagram;
 }
-
-/**
- * Map SysML edge types to appropriate React Flow marker styles.
- * Different SysML relationships have different standard notations.
- * Note: React Flow has limited built-in marker types. For full SysML compliance,
- * custom markers would be needed (e.g., hollow triangles, filled diamonds).
- * Currently using available marker types as semantic indicators:
- * - Specialization: ArrowClosed (represents inheritance)
- * - Composition: ArrowClosed (represents containment)
- * - Typing/Subsetting/Redefinition: Arrow (represents refinement relationships)
- * - Others: ArrowClosed (default for relationships)
- */
-const getMarkerEnd = (edgeType?: string) => {
-  switch (edgeType) {
-    case EDGE_TYPES.SPECIALIZATION:
-    case EDGE_TYPES.COMPOSITION:
-      // Closed arrow for inheritance and composition relationships
-      return { type: MarkerType.ArrowClosed, color: '#64748b' };
-    case EDGE_TYPES.TYPING:
-    case EDGE_TYPES.SUBSETTING:
-    case EDGE_TYPES.REDEFINITION:
-      // Open arrow for typing and refinement relationships
-      return { type: MarkerType.Arrow, color: '#64748b' };
-    default:
-      // Standard closed arrow for other relationships
-      return { type: MarkerType.ArrowClosed, color: '#64748b' };
-  }
-};
 
 /**
  * Read-only viewer component for SysML v2 diagrams.
@@ -54,10 +25,11 @@ export const Viewer: React.FC<ViewerProps> = ({ diagram }) => {
     id: edge.id,
     source: edge.source,
     target: edge.target,
-    type: edge.type ?? 'smoothstep',
-    animated: true,
-    style: { stroke: '#64748b', strokeWidth: 2 },
-    markerEnd: getMarkerEnd(edge.type),
+    type: edge.type,
+    data: {
+      label: edge.label,
+      multiplicity: 'multiplicity' in edge ? edge.multiplicity : undefined,
+    },
   })) || [], [diagram]);
 
   return (
@@ -66,6 +38,7 @@ export const Viewer: React.FC<ViewerProps> = ({ diagram }) => {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         nodesDraggable={false}
         nodesConnectable={false}

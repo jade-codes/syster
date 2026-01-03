@@ -17,6 +17,10 @@ export interface DiagramEdge {
   source: string;
   target: string;
   type?: string;
+  /** Optional label to display on edge */
+  label?: string;
+  /** Multiplicity for composition edges (e.g., "4", "*") */
+  multiplicity?: string;
 }
 
 export interface Diagram {
