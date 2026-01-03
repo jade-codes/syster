@@ -1,19 +1,13 @@
 import React, { useMemo } from 'react';
-import ReactFlow, { Background, Controls, MarkerType } from 'reactflow';
-import 'reactflow/dist/style.css';
+import { ReactFlow, Background, Controls, MarkerType } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import type { Diagram } from '@syster/diagram-core';
-import { NODE_TYPES, EDGE_TYPES } from '@syster/diagram-core';
-import { PartDefNode, PortDefNode } from '@syster/diagram-ui';
+import { EDGE_TYPES } from '@syster/diagram-core';
+import { nodeTypes } from '@syster/diagram-ui';
 
 interface ViewerProps {
   diagram?: Diagram;
 }
-
-// Register custom node types with React Flow
-const nodeTypes = {
-  [NODE_TYPES.PART_DEF]: PartDefNode,
-  [NODE_TYPES.PORT_DEF]: PortDefNode,
-};
 
 /**
  * Map SysML edge types to appropriate React Flow marker styles.

@@ -17,8 +17,8 @@
       "version": "0.1.0",
       "dependencies": {
         "@syster/diagram-core": "workspace:*",
+        "@xyflow/react": "^12.10.0",
         "react": "^18.2.0",
-        "reactflow": "^11.11.4",
       },
       "devDependencies": {
         "@testing-library/react": "^16.3.1",
@@ -29,7 +29,6 @@
       },
       "peerDependencies": {
         "react": "^18.2.0",
-        "reactflow": "^11.11.4",
       },
     },
     "packages/modeller": {
@@ -52,9 +51,9 @@
       "dependencies": {
         "@syster/diagram-core": "workspace:*",
         "@syster/diagram-ui": "workspace:*",
+        "@xyflow/react": "^12.10.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "reactflow": "^11.10.0",
       },
       "devDependencies": {
         "@testing-library/dom": "^10.4.1",
@@ -185,6 +184,10 @@
     "@types/react-dom": ["@types/react-dom@18.3.7", "", { "peerDependencies": { "@types/react": "^18.0.0" } }, "sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ=="],
 
     "@types/whatwg-mimetype": ["@types/whatwg-mimetype@3.0.2", "", {}, "sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA=="],
+
+    "@xyflow/react": ["@xyflow/react@12.10.0", "", { "dependencies": { "@xyflow/system": "0.0.74", "classcat": "^5.0.3", "zustand": "^4.4.0" }, "peerDependencies": { "react": ">=17", "react-dom": ">=17" } }, "sha512-eOtz3whDMWrB4KWVatIBrKuxECHqip6PfA8fTpaS2RUGVpiEAe+nqDKsLqkViVWxDGreq0lWX71Xth/SPAzXiw=="],
+
+    "@xyflow/system": ["@xyflow/system@0.0.74", "", { "dependencies": { "@types/d3-drag": "^3.0.7", "@types/d3-interpolate": "^3.0.4", "@types/d3-selection": "^3.0.10", "@types/d3-transition": "^3.0.8", "@types/d3-zoom": "^3.0.8", "d3-drag": "^3.0.0", "d3-interpolate": "^3.0.1", "d3-selection": "^3.0.0", "d3-zoom": "^3.0.0" } }, "sha512-7v7B/PkiVrkdZzSbL+inGAo6tkR/WQHHG0/jhSvLQToCsfa8YubOGmBYd1s08tpKpihdHDZFwzQZeR69QSBb4Q=="],
 
     "ansi-regex": ["ansi-regex@5.0.1", "", {}, "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ=="],
 

@@ -2,8 +2,8 @@ import { describe, test, expect, mock } from 'bun:test';
 import { render } from '@testing-library/react';
 import { NODE_TYPES, FEATURE_DIRECTIONS } from '@syster/diagram-core';
 
-// Mock reactflow Handle before importing component
-mock.module('reactflow', () => ({
+// Mock @xyflow/react Handle before importing component
+mock.module('@xyflow/react', () => ({
   Handle: () => null,
   Position: { Top: 'top', Bottom: 'bottom', Left: 'left', Right: 'right' },
 }));

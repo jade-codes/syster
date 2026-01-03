@@ -17,3 +17,13 @@ export type {
   PartDefNodeProps,
   PortDefNodeProps,
 } from './nodes';
+
+// Node factory and configuration
+export { NODE_CONFIGS } from './nodes/nodeConfig';
+export type { NodeConfig } from './nodes/nodeConfig';
+
+export {
+  createDefinitionNode,
+  nodeTypes,
+  getNodeConfig,
+} from './nodes/nodeFactory';
