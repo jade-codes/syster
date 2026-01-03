@@ -17,6 +17,7 @@ use tracing::{Level, info};
 mod server;
 use server::LspServer;
 use server::background_tasks::{debounce, events::ParseDocument};
+use server::helpers::uri_to_path;
 
 /// Server state that owns the LspServer and client socket
 struct ServerState {
@@ -84,7 +85,9 @@ impl LanguageServer for ServerState {
         params: DocumentSymbolParams,
     ) -> BoxFuture<'static, Result<Option<DocumentSymbolResponse>, Self::Error>> {
         let uri = params.text_document.uri;
-        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let Some(path) = uri_to_path(&uri) else {
+            return Box::pin(async { Ok(None) });
+        };
         let symbols = self.server.get_document_symbols(&path);
         let result = if symbols.is_empty() {
             None
@@ -109,7 +112,9 @@ impl LanguageServer for ServerState {
     ) -> BoxFuture<'static, Result<Option<CompletionResponse>, Self::Error>> {
         let uri = params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
-        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let Some(path) = uri_to_path(&uri) else {
+            return Box::pin(async { Ok(None) });
+        };
         let result = Some(self.server.get_completions(&path, position));
         Box::pin(async move { Ok(result) })
     }
@@ -164,7 +169,9 @@ impl LanguageServer for ServerState {
         params: FoldingRangeParams,
     ) -> BoxFuture<'static, Result<Option<Vec<FoldingRange>>, Self::Error>> {
         let uri = params.text_document.uri;
-        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let Some(path) = uri_to_path(&uri) else {
+            return Box::pin(async { Ok(None) });
+        };
         let ranges = self.server.get_folding_ranges(&path);
         let result = if ranges.is_empty() {
             None
@@ -180,7 +187,9 @@ impl LanguageServer for ServerState {
     ) -> BoxFuture<'static, Result<Option<Vec<SelectionRange>>, Self::Error>> {
         let uri = params.text_document.uri;
         let positions = params.positions;
-        let path = uri.to_file_path().unwrap_or_else(|_| std::path::PathBuf::from(uri.path()));
+        let Some(path) = uri_to_path(&uri) else {
+            return Box::pin(async { Ok(None) });
+        };
         let ranges = self.server.get_selection_ranges(&path, positions);
         let result = if ranges.is_empty() {
             None
