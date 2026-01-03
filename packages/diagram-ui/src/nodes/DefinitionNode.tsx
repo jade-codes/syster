@@ -1,8 +1,8 @@
 import React from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position } from '@xyflow/react';
 import type { SymbolData } from '@syster/diagram-core';
 
-interface DefinitionNodeProps {
+export interface DefinitionNodeProps {
   id: string;
   data: SymbolData;
   borderColor: string;

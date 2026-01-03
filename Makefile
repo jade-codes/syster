@@ -1,4 +1,4 @@
-.PHONY: help build run test clean fmt lint check run-guidelines watch install lint-test-naming
+.PHONY: help build run test clean fmt lint check run-guidelines watch install lint-test-naming run-frontend-guidelines
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  lint-test-naming - Check test file naming convention"
 	@echo "  check          - Run fmt + lint + test"
 	@echo "  run-guidelines - Run complete validation (fmt + lint + build + test)"
+	@echo "  run-frontend-guidelines - Run frontend validation (typecheck + lint + test + build)"
 	@echo "  watch          - Watch and rebuild on changes"
 	@echo "  install        - Install the binary"
 
@@ -128,3 +129,51 @@ lint-test-naming:
 		exit 1; \
 	fi
 	@echo "✓ All test files follow naming convention"
+
+# Run frontend validation pipeline (matches ci-frontend.yml)
+run-frontend-guidelines:
+	@echo "=== Running Frontend Validation Pipeline ==="
+	@echo ""
+	@echo "Step 1/4: Type checking packages..."
+	@for package in packages/*/; do \
+		if [ -f "$${package}tsconfig.json" ]; then \
+			echo "  Type checking $$package"; \
+			(cd "$$package" && bunx tsc --noEmit) || exit 1; \
+		fi; \
+	done
+	@echo "✓ Type check passed"
+	@echo ""
+	@echo "Step 2/4: Linting packages..."
+	@for package in packages/*/; do \
+		if [ -f "$${package}package.json" ]; then \
+			if grep -q '"lint"[[:space:]]*:' "$${package}package.json"; then \
+				echo "  Linting $$package"; \
+				(cd "$$package" && bun run lint) || exit 1; \
+			fi; \
+		fi; \
+	done
+	@echo "✓ Linting passed"
+	@echo ""
+	@echo "Step 3/4: Running tests..."
+	@for package in packages/*/; do \
+		if [ -f "$${package}package.json" ]; then \
+			if grep -q '"test"[[:space:]]*:' "$${package}package.json"; then \
+				echo "  Testing $$package"; \
+				(cd "$$package" && bun test) || exit 1; \
+			fi; \
+		fi; \
+	done
+	@echo "✓ Tests passed"
+	@echo ""
+	@echo "Step 4/4: Building packages..."
+	@for package in packages/*/; do \
+		if [ -f "$${package}package.json" ]; then \
+			if grep -q '"build"[[:space:]]*:' "$${package}package.json"; then \
+				echo "  Building $$package"; \
+				(cd "$$package" && bun run build) || exit 1; \
+			fi; \
+		fi; \
+	done
+	@echo "✓ Build passed"
+	@echo ""
+	@echo "=== ✓ All frontend guidelines passed! ==="
