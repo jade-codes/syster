@@ -1,5 +1,5 @@
-import { describe, test, expect, mock } from 'bun:test';
-import { render, screen } from '@testing-library/react';
+import { describe, test, expect, mock, afterEach } from 'bun:test';
+import { render, screen, cleanup } from '@testing-library/react';
 import { NODE_TYPES } from '@syster/diagram-core';
 
 // Mock @xyflow/react before importing components
@@ -11,6 +11,11 @@ mock.module('@xyflow/react', () => ({
 
 import { createDefinitionNode, nodeTypes, getNodeConfig } from './nodeFactory';
 import { NODE_CONFIGS } from './nodeConfig';
+
+// Clean up after each test to prevent DOM pollution
+afterEach(() => {
+  cleanup();
+});
 
 // Minimal test data - only includes fields the components actually use
 interface TestNodeData {
