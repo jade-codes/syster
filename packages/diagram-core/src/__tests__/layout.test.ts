@@ -8,7 +8,7 @@ import {
   type PositionedNode,
   type PositionedEdge,
   type LayoutResult
-} from "@diagram-core/layout";
+} from "../layout";
 
 describe("Layout Constants", () => {
   it("should define all layout directions", () => {
