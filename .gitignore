@@ -38,4 +38,4 @@ dist/
 package-lock.json
 bun.lockb
 .bun/
-
+coverage/

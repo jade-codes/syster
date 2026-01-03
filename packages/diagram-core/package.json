@@ -5,7 +5,9 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build": "echo 'No build needed - stub package'"
+    "build": "echo 'No build needed - stub package'",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage"
   },
   "keywords": [
     "sysml",

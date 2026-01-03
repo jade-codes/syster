@@ -28,3 +28,32 @@ export const createEmptyDiagram = (): Diagram => ({
   nodes: [],
   edges: [],
 });
+
+// Re-export SysML types for convenience
+export { NODE_TYPES, FEATURE_DIRECTIONS } from "./sysml-nodes";
+export { EDGE_TYPES } from "./sysml-edges";
+export type { SysMLNode } from "./sysml-nodes";
+export type { SysMLEdge } from "./sysml-edges";
+
+// Re-export converter functions
+export { 
+  convertSymbolToNode, 
+  convertRelationshipToEdge, 
+  createDiagramFromWorkspace 
+} from "./converter";
+export type { 
+  SymbolData, 
+  RelationshipData, 
+  WorkspaceData 
+} from "./converter";
+
+// Re-export layout types
+export type { 
+  LayoutConfig, 
+  Position, 
+  Dimensions, 
+  PositionedNode, 
+  PositionedEdge, 
+  LayoutResult 
+} from "./layout";
+export { LAYOUT_DIRECTIONS, LAYOUT_ALGORITHMS, createDefaultLayoutConfig } from "./layout";
