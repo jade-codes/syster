@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { Viewer } from "../Viewer";
 import { NODE_TYPES } from "@syster/diagram-core";
 
