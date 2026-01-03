@@ -12,6 +12,25 @@
       "name": "@syster/diagram-core",
       "version": "0.1.0",
     },
+    "packages/diagram-ui": {
+      "name": "@syster/diagram-ui",
+      "version": "0.1.0",
+      "dependencies": {
+        "@syster/diagram-core": "workspace:*",
+        "@xyflow/react": "^12.10.0",
+        "react": "^18.2.0",
+      },
+      "devDependencies": {
+        "@testing-library/react": "^16.3.1",
+        "@types/bun": "^1.2.14",
+        "@types/react": "^18.2.0",
+        "happy-dom": "^20.0.11",
+        "typescript": "^5.0.0",
+      },
+      "peerDependencies": {
+        "react": "^18.2.0",
+      },
+    },
     "packages/modeller": {
       "name": "@syster/modeller",
       "version": "0.1.0",
@@ -30,10 +49,11 @@
       "name": "@syster/viewer",
       "version": "0.1.0",
       "dependencies": {
-        "@syster/diagram-core": "file:../diagram-core",
+        "@syster/diagram-core": "workspace:*",
+        "@syster/diagram-ui": "workspace:*",
+        "@xyflow/react": "^12.10.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "reactflow": "^11.10.0",
       },
       "devDependencies": {
         "@testing-library/dom": "^10.4.1",
@@ -72,6 +92,8 @@
     "@reactflow/node-toolbar": ["@reactflow/node-toolbar@1.3.14", "", { "dependencies": { "@reactflow/core": "11.11.4", "classcat": "^5.0.3", "zustand": "^4.4.1" }, "peerDependencies": { "react": ">=17", "react-dom": ">=17" } }, "sha512-rbynXQnH/xFNu4P9H+hVqlEUafDCkEoCy0Dg9mG22Sg+rY/0ck6KkrAQrYrTgXusd+cEJOMK0uOOFCK2/5rSGQ=="],
 
     "@syster/diagram-core": ["@syster/diagram-core@workspace:packages/diagram-core"],
+
+    "@syster/diagram-ui": ["@syster/diagram-ui@workspace:packages/diagram-ui"],
 
     "@syster/modeller": ["@syster/modeller@workspace:packages/modeller"],
 
@@ -163,6 +185,10 @@
 
     "@types/whatwg-mimetype": ["@types/whatwg-mimetype@3.0.2", "", {}, "sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA=="],
 
+    "@xyflow/react": ["@xyflow/react@12.10.0", "", { "dependencies": { "@xyflow/system": "0.0.74", "classcat": "^5.0.3", "zustand": "^4.4.0" }, "peerDependencies": { "react": ">=17", "react-dom": ">=17" } }, "sha512-eOtz3whDMWrB4KWVatIBrKuxECHqip6PfA8fTpaS2RUGVpiEAe+nqDKsLqkViVWxDGreq0lWX71Xth/SPAzXiw=="],
+
+    "@xyflow/system": ["@xyflow/system@0.0.74", "", { "dependencies": { "@types/d3-drag": "^3.0.7", "@types/d3-interpolate": "^3.0.4", "@types/d3-selection": "^3.0.10", "@types/d3-transition": "^3.0.8", "@types/d3-zoom": "^3.0.8", "d3-drag": "^3.0.0", "d3-interpolate": "^3.0.1", "d3-selection": "^3.0.0", "d3-zoom": "^3.0.0" } }, "sha512-7v7B/PkiVrkdZzSbL+inGAo6tkR/WQHHG0/jhSvLQToCsfa8YubOGmBYd1s08tpKpihdHDZFwzQZeR69QSBb4Q=="],
+
     "ansi-regex": ["ansi-regex@5.0.1", "", {}, "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ=="],
 
     "ansi-styles": ["ansi-styles@5.2.0", "", {}, "sha512-Cxwpt2SfTzTtXcfOlzGEee8O+c+MmUgGrNiBcXnuWxuFJHe6a5Hz7qwhwe5OgaSYI0IJvkLqWX1ASG+cJOkEiA=="],
@@ -240,8 +266,6 @@
     "zustand": ["zustand@4.5.7", "", { "dependencies": { "use-sync-external-store": "^1.2.2" }, "peerDependencies": { "@types/react": ">=16.8", "immer": ">=9.0.6", "react": ">=16.8" }, "optionalPeers": ["immer"] }, "sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw=="],
 
     "@syster/modeller/@syster/diagram-core": ["@syster/diagram-core@file:packages/diagram-core", {}],
-
-    "@syster/viewer/@syster/diagram-core": ["@syster/diagram-core@file:packages/diagram-core", {}],
 
     "@testing-library/jest-dom/aria-query": ["aria-query@5.3.2", "", {}, "sha512-COROpnaoap1E2F000S62r6A60uHZnmlvomhfyT2DlTcrY1OrBKn2UhH7qn5wTC9zMvD0AY7csdPSNwKP+7WiQw=="],
 
