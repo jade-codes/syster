@@ -70,6 +70,15 @@ describe('EDGE_CONFIGS', () => {
     expect(config.strokeColor).toBe('#059669');
     expect(config.label).toBe('«perform»');
   });
+
+  test('subsetting and cross-subsetting have different labels', () => {
+    const subsettingConfig = EDGE_CONFIGS[EDGE_TYPES.SUBSETTING];
+    const crossSubsettingConfig = EDGE_CONFIGS[EDGE_TYPES.CROSS_SUBSETTING];
+
+    expect(subsettingConfig.label).toBe('subsets');
+    expect(crossSubsettingConfig.label).toBe('cross-subsets');
+    expect(subsettingConfig.label).not.toBe(crossSubsettingConfig.label);
+  });
 });
 
 describe('getEdgeConfig', () => {
@@ -101,6 +110,42 @@ describe('createSysMLEdge', () => {
     const EdgeComponent = createSysMLEdge(config);
     expect(EdgeComponent).toBeDefined();
     expect(typeof EdgeComponent).toBe('function');
+  });
+
+  test('created edge has correct displayName without edgeType', () => {
+    const config: EdgeConfig = {
+      strokeColor: '#ff0000',
+      strokeWidth: 3,
+      markerEnd: MarkerType.Arrow,
+      label: 'test',
+    };
+
+    const EdgeComponent = createSysMLEdge(config);
+    expect(EdgeComponent.displayName).toBe('SysMLEdge');
+  });
+
+  test('created edge has unique displayName with edgeType', () => {
+    const config: EdgeConfig = {
+      strokeColor: '#ff0000',
+      strokeWidth: 3,
+      markerEnd: MarkerType.Arrow,
+      label: 'test',
+    };
+
+    const EdgeComponent = createSysMLEdge(config, 'SPECIALIZATION');
+    expect(EdgeComponent.displayName).toBe('SpecializationEdge');
+  });
+
+  test('created edge has unique displayName for multi-word edge types', () => {
+    const config: EdgeConfig = {
+      strokeColor: '#ff0000',
+      strokeWidth: 3,
+      markerEnd: MarkerType.Arrow,
+      label: 'test',
+    };
+
+    const EdgeComponent = createSysMLEdge(config, 'CROSS_SUBSETTING');
+    expect(EdgeComponent.displayName).toBe('CrossSubsettingEdge');
   });
 
   test('created edge renders with correct styles', () => {

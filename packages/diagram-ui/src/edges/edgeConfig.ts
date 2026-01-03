@@ -15,8 +15,6 @@ export interface EdgeConfig {
   label?: string;
   /** Marker type at the end of the edge */
   markerEnd: MarkerType;
-  /** Whether the edge should be animated */
-  animated?: boolean;
 }
 
 /**
@@ -84,7 +82,7 @@ export const EDGE_CONFIGS: Record<string, EdgeConfig> = {
     strokeWidth: 2,
     strokeDasharray: '5 5',
     markerEnd: MarkerType.Arrow,
-    label: 'subsets',
+    label: 'cross-subsets',
   },
 
   // ========== Structural ==========

@@ -28,7 +28,7 @@ export const Viewer: React.FC<ViewerProps> = ({ diagram }) => {
     type: edge.type,
     data: {
       label: edge.label,
-      multiplicity: 'multiplicity' in edge ? edge.multiplicity : undefined,
+      multiplicity: edge.multiplicity !== undefined ? edge.multiplicity : undefined,
     },
   })) || [], [diagram]);
 
