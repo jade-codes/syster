@@ -5,18 +5,9 @@
  * Used by both the viewer (read-only) and modeller (editable) packages.
  */
 
-// Node components
-export {
-  DefinitionNode,
-  PartDefNode,
-  PortDefNode,
-} from './nodes';
-
-export type {
-  DefinitionNodeProps,
-  PartDefNodeProps,
-  PortDefNodeProps,
-} from './nodes';
+// Base component
+export { DefinitionNode } from './nodes';
+export type { DefinitionNodeProps } from './nodes';
 
 // Node factory and configuration
 export { NODE_CONFIGS } from './nodes/nodeConfig';

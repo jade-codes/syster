@@ -16,26 +16,37 @@ bun add @syster/diagram-ui
 
 ## Components
 
-### Node Components
+### nodeTypes
 
-- **DefinitionNode** - Base node component for SysML definitions
-- **PartDefNode** - Part definition node (`«part def»`)
-- **PortDefNode** - Port definition node (`«port def»`)
+Pre-configured React Flow node types for all 39 SysML element types:
+
+- **Definitions**: part def, port def, action def, state def, requirement def, etc.
+- **Usages**: part, port, action, requirement, etc.
+
+### DefinitionNode
+
+Base component used by all node types. Customizable via props.
 
 ## Usage
 
 ```tsx
-import { PartDefNode, PortDefNode } from '@syster/diagram-ui';
-import { NODE_TYPES } from '@syster/diagram-core';
+import { nodeTypes } from '@syster/diagram-ui';
 
-// Register with React Flow
-const nodeTypes = {
-  [NODE_TYPES.PART_DEF]: PartDefNode,
-  [NODE_TYPES.PORT_DEF]: PortDefNode,
-};
-
-// Use in ReactFlow
+// Use directly with React Flow - all 39 node types are registered
 <ReactFlow nodes={nodes} nodeTypes={nodeTypes} />
+```
+
+### Custom Node Types
+
+```tsx
+import { createDefinitionNode, NODE_CONFIGS } from '@syster/diagram-ui';
+
+// Create a custom node type
+const MyCustomNode = createDefinitionNode({
+  borderColor: '#ff0000',
+  stereotype: 'custom def',
+  showFeatures: true,
+});
 ```
 
 ## Development
@@ -52,4 +63,4 @@ bun run typecheck
 
 - `@syster/diagram-core` - Types and converters
 - `react` - React library
-- `reactflow` - React Flow library
+- `@xyflow/react` - React Flow library (v12+)
