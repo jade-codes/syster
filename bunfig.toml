@@ -1,5 +1,6 @@
 [test]
 # Root test configuration for all web packages
+preload = ["@testing-library/jest-dom", "./packages/viewer/test-setup.ts"]
 coverage = true
 coverageDir = "coverage"
-coverageReporter = ["text", "lcov", "html"]
+coverageReporter = ["text", "lcov"]
