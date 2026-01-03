@@ -20,10 +20,12 @@ describe('PartDefNode', () => {
       features: [],
     };
 
-    const { getByText } = render(<PartDefNode id="test-1" data={mockData} />);
+    const { container } = render(<PartDefNode id="test-1" data={mockData} />);
     
-    const nameElement = getByText('Car');
+    // Check for the name in a bold element (the name display)
+    const nameElement = container.querySelector('div[style*="font-weight: bold"]');
     expect(nameElement).not.toBeNull();
+    expect(nameElement?.textContent).toBe('Car');
   });
 
   test('renders node with features list', () => {
