@@ -15,7 +15,7 @@ on:
       - '.github/workflows/ci-frontend.yml'
 
 env:
-  BUN_VERSION: '1.1.0'
+  BUN_VERSION: '1.2.0'
 
 permissions:
   contents: read
