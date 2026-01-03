@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@syster/diagram-core": "file:../diagram-core",
+    "@syster/diagram-ui": "file:../diagram-ui",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "reactflow": "^11.10.0"

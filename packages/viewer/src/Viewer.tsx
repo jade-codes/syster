@@ -3,8 +3,7 @@ import ReactFlow, { Background, Controls, MarkerType } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { Diagram } from '@syster/diagram-core';
 import { NODE_TYPES, EDGE_TYPES } from '@syster/diagram-core';
-import { PartDefNode } from './nodes/PartDefNode';
-import { PortDefNode } from './nodes/PortDefNode';
+import { PartDefNode, PortDefNode } from '@syster/diagram-ui';
 
 interface ViewerProps {
   diagram?: Diagram;

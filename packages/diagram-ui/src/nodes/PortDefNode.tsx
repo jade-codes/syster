@@ -2,7 +2,7 @@ import React from 'react';
 import type { SymbolData } from '@syster/diagram-core';
 import { DefinitionNode } from './DefinitionNode';
 
-interface PortDefNodeProps {
+export interface PortDefNodeProps {
   id: string;
   data: SymbolData;
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import type { SymbolData } from '@syster/diagram-core';
 import { DefinitionNode } from './DefinitionNode';
 
-interface PartDefNodeProps {
+export interface PartDefNodeProps {
   id: string;
   data: SymbolData;
 }
