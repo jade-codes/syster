@@ -1,5 +1,5 @@
 [test]
-preload = ["@testing-library/jest-dom", "./test-setup.ts"]
+preload = ["./test-setup.ts"]
 coverage = true
 coverageDir = "coverage"
 coverageReporter = ["text", "lcov"]
