@@ -1,5 +1,6 @@
 import { describe, test, expect, mock } from 'bun:test';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen } from '@testing-library/dom';
 import { NODE_TYPES } from '@syster/diagram-core';
 
 // Mock reactflow Handle before importing component
