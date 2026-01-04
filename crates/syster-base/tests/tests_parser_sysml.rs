@@ -1573,6 +1573,33 @@ fn test_parse_feature_direction_kind(#[case] input: &str, #[case] desc: &str) {
     );
 }
 
+// =============================================================================
+// Issue #617: feature_direction_kind should not match prefix of other keywords
+// =============================================================================
+
+/// Tests that feature_direction_kind does NOT match when followed by alphanumeric chars
+/// This prevents "in" from matching the start of "interface", "interaction", etc.
+#[rstest]
+#[case("interface")]
+#[case("interaction")]
+#[case("input")]
+#[case("internal")]
+#[case("inout_extended")]
+#[case("output")]
+#[case("outer")]
+fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::feature_direction_kind, input);
+    // The parse should either fail or not consume the entire input
+    if let Ok(pairs) = result {
+        let parsed = pairs.as_str();
+        assert_ne!(
+            parsed, input,
+            "'{}' should not fully match as feature_direction_kind",
+            input
+        );
+    }
+}
+
 #[rstest]
 #[case("", "empty")]
 #[case("in", "with direction")]
@@ -2631,6 +2658,33 @@ fn test_parse_interface_usage_keyword(#[case] input: &str, #[case] desc: &str) {
 #[case("portA to portB", "binary interface part only")]
 fn test_parse_interface_usage_declaration(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::interface_usage_declaration, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Issue #617: Ensure 'in' from 'interface' isn't consumed as a prefix
+#[rstest]
+#[case("interface connect left to right;", "simple interface usage")]
+#[case("interface connect left to right{}", "interface with empty body")]
+#[case(
+    "readonly interface connect left to right;",
+    "interface with readonly prefix"
+)]
+#[case(
+    "readonly interface interfaceA connect left to right;",
+    "named interface with prefix"
+)]
+#[case(
+    "interface leftFrontMount: Mounting connect frontAxle.leftMountingPoint to leftFrontWheel.hub;",
+    "interface with typing"
+)]
+fn test_parse_interface_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::interface_usage, input);
 
     assert!(
         result.is_ok(),

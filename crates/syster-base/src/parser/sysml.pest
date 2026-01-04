@@ -1444,7 +1444,9 @@ usage_element = {
 readonly = { "readonly" }
 derived = { "derived" }
 end_marker = { "end" }
-feature_direction_kind = @{ "inout" | "in" | "out" }
+// Use negative lookahead to ensure direction kinds are complete words
+// This prevents "in" from matching the start of "interface"
+feature_direction_kind = @{ ("inout" | "in" | "out") ~ !(ASCII_ALPHANUMERIC | "_") }
 
 ref_prefix = {
     feature_direction_kind?

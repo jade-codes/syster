@@ -69,7 +69,7 @@ conjugates_token = @{ "~" | "conjugates" }
 
 // Enum Types
 visibility_kind = @{ "protected" | "private" | "public" }
-feature_direction_kind = @{ "inout" | "in" | "out" }
+feature_direction_kind = @{ ("inout" | "in" | "out") ~ !(ASCII_ALPHANUMERIC | "_") }
 unary_operator = @{ "+" | "-" ~ !(">" | "->") | "not" | "~" }
 classification_test_operator = @{ "@@" | "hastype" | "istype" | "@" }
 equality_operator = @{ "!==" | "!=" | "===" | "==" }
