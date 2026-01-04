@@ -962,10 +962,10 @@ interface_end_member = {
 }
 
 // Interface end per spec: optional multiplicity, optional local name with references,
-// and the target feature. The (identifier references_token) pattern must be guarded
+// and the target feature. The (identifier references_operator) pattern must be guarded
 // to avoid consuming an identifier that's part of a feature chain.
 interface_end = {
-    owned_cross_multiplicity_member? ~ (identifier ~ references_token ~ owned_reference_subsetting | owned_reference_subsetting)
+    owned_cross_multiplicity_member? ~ (identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
 }
 
 allocation_definition = {
