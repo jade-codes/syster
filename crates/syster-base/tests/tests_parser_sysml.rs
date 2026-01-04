@@ -6081,3 +6081,75 @@ fn test_port_usage_with_regular_type(#[case] input: &str) {
         result.err()
     );
 }
+
+// =============================================================================
+// Issue #624: Support ::> (references) operator in connector/interface ends
+// =============================================================================
+
+/// Tests that interface_end supports ::> syntax for reference subsetting
+#[rstest]
+#[case("transDrive ::> transmission.drive")]
+#[case("axleDrive ::> rearAxle.drive")]
+#[case("p ::> port1")]
+fn test_interface_end_with_references_operator(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::interface_end, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface end with ::> operator '{}': {:?}",
+        input,
+        result.err()
+    );
+}
+
+/// Tests full interface usage with ::> syntax
+#[test]
+fn test_interface_usage_with_references_operator() {
+    let source = r#"
+        interface driveShaft connect 
+            transDrive ::> transmission.drive to axleDrive ::> rearAxle.drive;
+    "#;
+    let result = SysMLParser::parse(Rule::interface_usage, source.trim());
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface usage with ::> operator: {:?}",
+        result.err()
+    );
+}
+
+/// Tests interface usage patterns from SysML v2 spec 8.2.2.14.2
+#[rstest]
+// Pattern 1: declaration + connect + ends
+#[case("interface fuelLine : FuelingInterface connect fuelTank.fuelingPort to engine.fuelingPort;")]
+// Pattern 2: shorthand - just ends (no connect keyword when declaration empty)
+#[case("interface fuelTank.fuelingPort to engine.fuelingPort;")]
+// Pattern 3: name + connect (no type specialization)
+#[case("interface myInterface connect portA to portB;")]
+// Pattern 4: with body
+#[case("interface conn connect a.p to b.p { }")]
+// Pattern 5: simple feature chains as ends
+#[case("interface system.input to system.output;")]
+fn test_interface_usage_patterns(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::interface_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface usage '{}': {:?}",
+        input,
+        result.err()
+    );
+}
+
+/// Tests interface definition with end features (from spec)
+#[rstest]
+#[case(
+    "interface def FuelingInterface { end fuelOutPort : FuelingPort; end fuelInPort : ~FuelingPort; }"
+)]
+#[case("interface def DataIF { end sender : DataPort; end receiver : ~DataPort; }")]
+fn test_interface_definition_with_ends(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::interface_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface definition with ends '{}': {:?}",
+        input,
+        result.err()
+    );
+}

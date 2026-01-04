@@ -790,10 +790,18 @@ interface_usage = {
     occurrence_usage_prefix ~ interface_usage_keyword ~ interface_usage_declaration ~ interface_body
 }
 
+// InterfaceUsageDeclaration per spec:
+// UsageDeclaration ValuePart? ('connect' InterfacePart)?
+// | InterfacePart
+// 
+// Ordering matters for PEG parsing:
+// 1. interface_part - handles shorthand "interface a.b to c.d" (no name, no connect keyword)
+// 2. usage_declaration? ~ connector_keyword ~ interface_part - handles "connect a to b" and "name connect a to b"
+// 3. usage_declaration ~ value_part? - handles "name = value" cases without connector
 interface_usage_declaration = {
-    usage_declaration? ~ connector_keyword ~ interface_part
-    | usage_declaration
-    | interface_part
+    interface_part
+    | usage_declaration? ~ connector_keyword ~ interface_part
+    | usage_declaration ~ value_part?
 }
 
 interface_part = {
@@ -813,8 +821,11 @@ interface_end_member = {
     interface_end
 }
 
+// Interface end per spec: optional multiplicity, optional local name with references,
+// and the target feature. The (identifier references_token) pattern must be guarded
+// to avoid consuming an identifier that's part of a feature chain.
 interface_end = {
-    owned_cross_multiplicity_member? ~ (identifier ~ references_keyword)? ~ owned_reference_subsetting
+    owned_cross_multiplicity_member? ~ (identifier ~ references_token ~ owned_reference_subsetting | owned_reference_subsetting)
 }
 
 allocation_definition = {
@@ -1831,9 +1842,20 @@ flow_connection_usage = {
     occurrence_usage_prefix ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body
 }
 
+// FlowConnectionUsageDeclaration per spec 8.2.2.9.5:
+// ( UsageDeclaration? 'of'? FlowPart )?
+// Where FlowPart = FlowEndMember 'to' FlowEndMember
+//
+// Ordering matters for PEG parsing:
+// 1. flow_part - handles shorthand "flow X.Y to A.B" (no name)
+// 2. usage_declaration ~ "of"? ~ flow_part? - handles named "flow myFlow: Type of X.Y to A.B"
 flow_connection_usage_declaration = {
-    usage_declaration? ~ connector_keyword ~ connector_part
-    | usage_declaration
+    flow_part
+    | usage_declaration ~ "of"? ~ flow_part?
+}
+
+flow_part = {
+    flow_end_member ~ "to" ~ flow_end_member
 }
 
 succession_flow_connection_usage = { "succession" ~ "flow" ~ identifier ~ ";" }
