@@ -635,7 +635,7 @@ fn test_parse_requirement_constraint_kind(#[case] input: &str) {
 #[case("individual")]
 fn test_parse_markers(#[case] input: &str) {
     let rule = if input == "variation" {
-        Rule::variation_marker
+        Rule::variation_token
     } else {
         Rule::individual_marker
     };
@@ -1185,9 +1185,22 @@ fn test_parse_usage_element(#[case] input: &str, #[case] desc: &str) {
 
 #[rstest]
 #[case("specializes", "specializes keyword")]
-#[case(":>", "specializes symbol")]
 fn test_parse_specializes_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::specializes_token, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(":>", "specializes symbol")]
+#[case("specializes", "specializes keyword")]
+fn test_parse_specializes_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::specializes_operator, input);
 
     assert!(
         result.is_ok(),
@@ -1257,7 +1270,6 @@ fn test_parse_typed_by_token(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case(":>", "subsets symbol")]
 #[case("subsets", "subsets keyword")]
 fn test_parse_subsets_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::subsets_token, input);
@@ -1271,7 +1283,20 @@ fn test_parse_subsets_token(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("::>", "references symbol")]
+#[case(":>", "subsets symbol")]
+#[case("subsets", "subsets keyword")]
+fn test_parse_subsets_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::subsets_operator, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
 #[case("references", "references keyword")]
 fn test_parse_references_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::references_token, input);
@@ -1285,10 +1310,37 @@ fn test_parse_references_token(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case(":>>", "redefines symbol")]
+#[case("::>", "references symbol")]
+#[case("references", "references keyword")]
+fn test_parse_references_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::references_operator, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
 #[case("redefines", "redefines keyword")]
 fn test_parse_redefines_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::redefines_token, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(":>>", "redefines symbol")]
+#[case("redefines", "redefines keyword")]
+fn test_parse_redefines_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::redefines_operator, input);
 
     assert!(
         result.is_ok(),
@@ -1546,8 +1598,8 @@ fn test_parse_definition_member(#[case] input: &str, #[case] desc: &str) {
 #[case("readonly", "readonly")]
 #[case("derived", "derived")]
 fn test_parse_usage_modifiers(#[case] input: &str, #[case] desc: &str) {
-    let readonly_result = SysMLParser::parse(Rule::readonly, input);
-    let derived_result = SysMLParser::parse(Rule::derived, input);
+    let readonly_result = SysMLParser::parse(Rule::readonly_token, input);
+    let derived_result = SysMLParser::parse(Rule::derived_token, input);
 
     assert!(
         readonly_result.is_ok() || derived_result.is_ok(),
@@ -5377,7 +5429,7 @@ fn test_parse_viewpoint_usage(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("rendering", "rendering keyword")]
 fn test_parse_rendering_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::rendering_keyword, input);
+    let result = SysMLParser::parse(Rule::rendering_token, input);
 
     assert!(
         result.is_ok(),
@@ -5390,7 +5442,7 @@ fn test_parse_rendering_keyword(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("rendering def", "rendering def keyword")]
 fn test_parse_rendering_def_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::rendering_def_keyword, input);
+    let result = SysMLParser::parse(Rule::rendering_def, input);
 
     assert!(
         result.is_ok(),
@@ -5422,7 +5474,7 @@ fn test_parse_rendering_definition(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("rendering", "rendering usage keyword")]
 fn test_parse_rendering_usage_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::rendering_usage_keyword, input);
+    let result = SysMLParser::parse(Rule::rendering_token, input);
 
     assert!(
         result.is_ok(),
