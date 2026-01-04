@@ -6523,6 +6523,10 @@ fn test_send_node_declaration(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("succession flow x.p to a.b;", "succession flow with chains")]
 #[case("succession flow a to b;", "succession flow simple")]
+#[case(
+    "succession flow onOffCmdFlow from sendOnOffCmd.onOffCmd to produceDirectedLight.onOffCmd;",
+    "succession flow with name and from-to"
+)]
 fn test_succession_flow_connection_usage(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::succession_flow_connection_usage, input);
     assert!(

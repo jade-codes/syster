@@ -1992,18 +1992,23 @@ flow_connection_usage = {
 
 // FlowConnectionUsageDeclaration per spec 8.2.2.9.5:
 // ( UsageDeclaration? 'of'? FlowPart )?
-// Where FlowPart = FlowEndMember 'to' FlowEndMember
+// Where FlowPart = ('from' FlowEndMember)? 'to' FlowEndMember
 //
 // Ordering matters for PEG parsing:
-// 1. flow_part - handles shorthand "flow X.Y to A.B" (no name)
+// 1. flow_part - handles shorthand "flow X.Y to A.B" or "flow from X.Y to A.B" (no name)
 // 2. usage_declaration ~ of_token? ~ flow_part? - handles named "flow myFlow: Type of X.Y to A.B"
+//    or "flow myFlow from X.Y to A.B"
 flow_connection_usage_declaration = {
     flow_part
     | usage_declaration ~ of_token? ~ flow_part?
 }
 
+// FlowPart supports both:
+// - "from X to Y" (explicit source with from keyword)
+// - "X to Y" (source without from keyword)
 flow_part = {
-    flow_end_member ~ to_token ~ flow_end_member
+    from_token ~ flow_end_member ~ to_token ~ flow_end_member
+    | flow_end_member ~ to_token ~ flow_end_member
 }
 
 succession_flow_connection_usage = { 
@@ -2458,7 +2463,7 @@ import_prefix = { visibility? ~ import_token ~ import_all? }
 import_all = { all_token }
 imported_reference = {
     qualified_name
-    ~ (recursive_marker | namespace_marker)?
+    ~ (recursive_marker | namespace_marker ~ recursive_marker | namespace_marker)?
 }
 
 qualified_name = { (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
