@@ -3122,7 +3122,9 @@ fn test_parse_action_node_member(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("nextNode", "action target succession")]
+#[case("then nextNode;", "simple target succession")]
+#[case("if true then nextNode;", "guarded target succession")]
+#[case("else defaultNode;", "default target succession")]
 fn test_parse_action_target_succession(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::action_target_succession, input);
 
@@ -3135,7 +3137,7 @@ fn test_parse_action_target_succession(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
-#[case("nextNode", "target succession member")]
+#[case("then nextNode;", "target succession member with then")]
 fn test_parse_target_succession_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::target_succession_member, input);
 

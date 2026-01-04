@@ -1149,9 +1149,11 @@ payload_parameter_member = {
     payload_parameter
 }
 
+// Note: Order matters (PEG ordered choice) - check trigger pattern first since it's more specific
+// Otherwise `accept sig after 10` would match `sig` as payload and fail on `after`
 payload_parameter = {
-    payload
-    | identification? ~ payload_feature_specialization_part? ~ trigger_value_part
+    identification? ~ payload_feature_specialization_part? ~ trigger_value_part
+    | payload
 }
 
 trigger_value_part = {
@@ -1322,8 +1324,25 @@ target_succession_member = {
     member_prefix ~ action_target_succession
 }
 
+// ActionTargetSuccession = TargetSuccession | GuardedTargetSuccession | DefaultTargetSuccession
+// With UsageBody (;) at the end
 action_target_succession = {
-    identifier
+    (target_succession | guarded_target_succession | default_target_succession) ~ usage_body
+}
+
+// TargetSuccession: source end, then, target end (basic "then X")
+target_succession = {
+    multiplicity_source_end_member ~ then_token ~ connector_end_member
+}
+
+// GuardedTargetSuccession: "if <expr> then <target>"
+guarded_target_succession = {
+    empty_parameter_member ~ guard_expression_member ~ then_token ~ transition_succession_member
+}
+
+// DefaultTargetSuccession: "else <target>"
+default_target_succession = {
+    empty_parameter_member ~ else_token ~ transition_succession_member
 }
 
 guarded_succession_member = {
@@ -1902,10 +1921,10 @@ message = {
 
 message_declaration = {
     message_event_member ~ to_token ~ message_event_member
-    | usage_declaration ~ value_part? ~ ("of" ~ payload_feature_member)? ~ ("from" ~ message_event_member ~ to_token ~ message_event_member)?
-    | value_part ~ ("of" ~ payload_feature_member)? ~ ("from" ~ message_event_member ~ to_token ~ message_event_member)?
-    | ("of" ~ payload_feature_member) ~ ("from" ~ message_event_member ~ to_token ~ message_event_member)?
-    | "from" ~ message_event_member ~ to_token ~ message_event_member
+    | usage_declaration ~ value_part? ~ (of_token ~ payload_feature_member)? ~ (from_token ~ message_event_member ~ to_token ~ message_event_member)?
+    | value_part ~ (of_token ~ payload_feature_member)? ~ (from_token ~ message_event_member ~ to_token ~ message_event_member)?
+    | (of_token ~ payload_feature_member) ~ (from_token ~ message_event_member ~ to_token ~ message_event_member)?
+    | from_token ~ message_event_member ~ to_token ~ message_event_member
 }
 
 // Flow Members - PayloadFeature
@@ -2398,7 +2417,6 @@ prefix_metadata = { prefix_metadata_member+ }
 prefix_metadata_usage = { "#" ~ metadata_typing }
 
 // State-related placeholder rules
-guarded_target_succession = { identifier }
 metadata_typing = { identifier | "meta" }
 metadata_usage = {
     prefix_metadata?

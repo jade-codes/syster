@@ -2962,7 +2962,11 @@ fn test_parse_message_event(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("dataRef", "payload feature")]
+#[case("dataRef", "payload - identifier")]
+#[case("S", "payload - bare type name (OwnedFeatureTyping)")]
+#[case("msg : Type", "payload - with typing")]
+#[case("msg = value", "payload - with value")]
+#[case("[1..*] S", "payload - multiplicity then type")]
 fn test_parse_payload(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::payload, input);
 
@@ -3203,7 +3207,9 @@ fn test_parse_action_node_member(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("nextNode", "action target succession")]
+#[case("then nextNode;", "simple target succession")]
+#[case("if true then nextNode;", "guarded target succession")]
+#[case("else defaultNode;", "default target succession")]
 fn test_parse_action_target_succession(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::action_target_succession, input);
 
@@ -3216,7 +3222,7 @@ fn test_parse_action_target_succession(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
-#[case("nextNode", "target succession member")]
+#[case("then nextNode;", "target succession member with then")]
 fn test_parse_target_succession_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::target_succession_member, input);
 
@@ -3324,8 +3330,200 @@ fn test_parse_action_node_prefix(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("accept msg;", "accept node declaration")]
+#[case("accept msg", "accept node declaration with identifier")]
+#[case("accept S", "accept node declaration with bare type name")]
+#[case(
+    "accept signal : SignalType",
+    "accept node declaration with typed payload"
+)]
 fn test_parse_accept_node_declaration(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::accept_node_declaration, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case("accept msg;", "accept node with identifier")]
+#[case("accept S;", "accept node with bare type name")]
+#[case("accept signal : SignalType;", "accept node with typed payload")]
+fn test_parse_accept_node(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::accept_node, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test action body with then accept patterns - this is the failing case from ActionTest.sysml
+#[rstest]
+#[case(
+    "action a { first start; then accept S; }",
+    "action with then accept bare type"
+)]
+#[case(
+    "action a { first start; then merge m; then accept S; }",
+    "action with merge then accept"
+)]
+#[case(
+    r#"action a1 {
+                first start;
+                then merge m;
+                then accept S;
+        }"#,
+    "action from ActionTest.sysml lines 14-18"
+)]
+fn test_parse_action_body_with_accept(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::action_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test package with action containing then accept - isolate ActionTest.sysml issue
+#[rstest]
+#[case(
+    r#"package ActionTest {
+        attribute def S;
+        action a1 {
+                first start;
+                then merge m;
+                then accept S;
+        }
+}"#,
+    "package with action from ActionTest.sysml - minimal"
+)]
+#[case(
+    r#"package ActionTest {
+        action def A{ in x; }
+        action a: A { 
+                first start;
+                action b { in y = x; }
+                bind x = b.y;
+        }
+        attribute def S;
+        action a1 {
+                first start;
+                then merge m;
+                then accept S;
+        }
+}"#,
+    "package with action from ActionTest.sysml - with action def"
+)]
+fn test_parse_package_with_accept_action(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::package, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test full action a1 from ActionTest.sysml - this is the exact failing case
+#[test]
+fn test_parse_action_a1_full() {
+    let input = r#"action a1 {
+        first start;		
+        then merge m;
+        then accept S;
+        then accept sig after 10[SI::s]; 
+        then accept at new Time::Iso8601DateTime("2022-01-30T01:00:00Z");
+        
+        then send new S() to b;
+        then accept when b.f;
+        then decide;
+            if true then m;
+            else done;
+    }"#;
+
+    let result = SysMLParser::parse(Rule::action_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse full action a1: {:?}",
+        result.err()
+    );
+}
+
+// Isolate failing pattern: accept sig after ...
+#[rstest]
+#[case("accept sig after 10[SI::s];", "accept with sig after time")]
+#[case("accept S after 10;", "accept with S after simple number")]
+#[case("accept after 10;", "accept with after (no name)")]
+fn test_parse_accept_node_with_after(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::accept_node, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test just the trigger value part in isolation
+#[rstest]
+#[case("after 10", "after with simple number")]
+#[case("at 5", "at with simple number")]
+fn test_parse_trigger_value_part(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::trigger_value_part, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test payload_parameter with trigger
+#[rstest]
+#[case("after 10", "trigger only (no name)")]
+#[case("sig after 10", "name + trigger")]
+fn test_parse_payload_parameter_with_trigger(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::payload_parameter, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test accept_parameter_part with trigger
+#[rstest]
+#[case("after 10", "trigger only (no name)")]
+#[case("sig after 10", "name + trigger")]
+fn test_parse_accept_parameter_part_with_trigger(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::accept_parameter_part, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Test accept_node_declaration with trigger
+#[rstest]
+#[case("accept after 10", "accept + trigger only")]
+#[case("accept sig after 10", "accept + name + trigger")]
+fn test_parse_accept_node_declaration_with_trigger(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::accept_node_declaration, input);
 
     assert!(
@@ -3351,7 +3549,13 @@ fn test_parse_accept_parameter_part(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("data", "payload parameter")]
+#[case("data", "payload parameter - identifier")]
+#[case("S", "payload parameter - bare type name")]
+#[case("msg : MessageType", "payload parameter - typed")]
+#[case(
+    "msg : MessageType = defaultValue",
+    "payload parameter - typed with value"
+)]
 fn test_parse_payload_parameter(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::payload_parameter, input);
 
