@@ -28,6 +28,7 @@
         "typescript": "^5.0.0",
       },
       "peerDependencies": {
+        "@xyflow/react": "^12.0.0",
         "react": "^18.2.0",
       },
     },

@@ -18,5 +18,5 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "coverage"]
+  "exclude": ["node_modules", "coverage", "src/**/*.test.tsx", "src/**/*.test.ts"]
 }
