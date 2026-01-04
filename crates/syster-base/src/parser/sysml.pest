@@ -2006,7 +2006,9 @@ flow_part = {
     flow_end_member ~ to_token ~ flow_end_member
 }
 
-succession_flow_connection_usage = { "succession" ~ flow_token ~ identifier ~ semi_colon }
+succession_flow_connection_usage = { 
+    succession_keyword ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body 
+}
 
 // Action Usages
 action_usage_keyword = { action_keyword }

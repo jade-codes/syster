@@ -6518,3 +6518,18 @@ fn test_send_node_declaration(#[case] input: &str, #[case] desc: &str) {
         result.err()
     );
 }
+
+/// Tests succession_flow_connection_usage (succession flow x to y;)
+#[rstest]
+#[case("succession flow x.p to a.b;", "succession flow with chains")]
+#[case("succession flow a to b;", "succession flow simple")]
+fn test_succession_flow_connection_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::succession_flow_connection_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse succession_flow_connection_usage '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
