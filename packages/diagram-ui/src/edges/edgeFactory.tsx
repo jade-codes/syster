@@ -86,11 +86,7 @@ export function createSysMLEdge(config: EdgeConfig, edgeType?: string): React.FC
             strokeWidth,
             strokeDasharray: config.strokeDasharray,
           }}
-          markerEnd={
-            config.markerEnd
-              ? { type: config.markerEnd, color: strokeColor }
-              : undefined
-          }
+          markerEnd={config.markerEnd ? `url(#${config.markerEnd})` : undefined}
         />
         {(label || multiplicity) && (
           <EdgeLabelRenderer>
