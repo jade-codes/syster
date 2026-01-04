@@ -2191,6 +2191,7 @@ fn test_parse_part_definition(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("part myPart;", "simple part usage")]
 #[case("part myPart { }", "part usage with body")]
+#[case("part myPart:Type { }", "part usage with body")]
 #[case(
     "ref individual part uniquePart;",
     "part usage with ref and individual marker"
@@ -2639,6 +2640,51 @@ fn test_parse_interface_usage_declaration(#[case] input: &str, #[case] desc: &st
         result.err()
     );
 }
+
+#[rstest]
+#[case("inconstant", "", "No space, so no match")]
+#[case("constantreadonly", "", "No space, so no match")]
+#[case("constant ", "constant ", "Simple prefix")]
+#[case("readonly ", "readonly ", "Simple prefix")]
+#[case("constant ref", "constant ref", "multi-token prefix")]
+#[case("interface", "", "Confirm 'in' token isn't consumed")]
+fn test_parse_occurrence_usage_prefix(#[case] input: &str, #[case] expected: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::occurrence_usage_prefix, input);
+    let pairs = result.clone().unwrap_or_else(|e| panic!("{}", e));
+    let parsed = pairs.into_iter().fold("".to_string(), |mut acc, item| {acc.push_str(item.as_str()); acc});
+
+    assert_eq!(expected, parsed.as_str());
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case("interface connect left to right;", "interface usage")]
+#[case("readonly interface connect left to right{}", "interface with prefix and body")]
+#[case("readonly interface interfaceA connect left to right;", "named interface with prefix and body")]
+// Ensure 'in' from 'interface' isn't consumed as a prefix by 'feature_direction_kind'
+#[case("interface leftFrontMount: Mounting connect frontAxle.leftMountingPoint to leftFrontWheel.hub;", "Example from sysml reference")] // Interface with Typing
+// Referencing within a type (interface driveShaft connect transDrive ::> transmission.drive to axleDrive ::> rearAxleAssembly.rearAxle.drive) doesn't parse.
+fn test_parse_interface_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::interface_usage, input);
+    let pairs = result.clone().unwrap_or_else(|e| panic!("{}", e));
+    let parsed = pairs.into_iter().fold("".to_string(), |mut acc, item| {acc.push_str(item.as_str()); acc});
+
+    assert_eq!(input, parsed.as_str());
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
 
 #[rstest]
 #[case("portA to portB", "binary interface part")]

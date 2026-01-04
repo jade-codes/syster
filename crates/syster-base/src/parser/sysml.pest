@@ -1446,12 +1446,12 @@ derived = { "derived" }
 end_marker = { "end" }
 feature_direction_kind = @{ "inout" | "in" | "out" }
 
-ref_prefix = {
-    feature_direction_kind?
-    ~ basic_definition_prefix?
-    ~ ("constant")?
-    ~ readonly?
-    ~ derived?
+ref_prefix = ${
+    (feature_direction_kind ~ WHITESPACE)?
+    ~ (basic_definition_prefix ~ WHITESPACE)?
+    ~ ("constant" ~ WHITESPACE)?
+    ~ (readonly ~ WHITESPACE)?
+    ~ (derived ~WHITESPACE)?
 }
 
 reference = { "ref" }
