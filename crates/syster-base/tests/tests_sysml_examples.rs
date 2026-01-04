@@ -15,7 +15,7 @@
 #![allow(clippy::unwrap_used)]
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use syster::project::file_loader;
 
 fn get_examples_dir() -> PathBuf {
@@ -23,7 +23,7 @@ fn get_examples_dir() -> PathBuf {
 }
 
 /// Recursively collect all .sysml files from a directory
-fn collect_sysml_files(dir: &PathBuf, files: &mut Vec<PathBuf>) {
+fn collect_sysml_files(dir: &Path, files: &mut Vec<PathBuf>) {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();

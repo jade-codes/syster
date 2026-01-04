@@ -501,13 +501,13 @@ fn test_parse_requirement_verification_membership() {
 // Port and Conjugation Tests
 
 #[test]
-fn test_parse_conjugated_port_reference() {
+fn test_parse_conjugated_port_type_reference() {
     let input = "~MyPort";
-    let result = SysMLParser::parse(Rule::conjugated_port_reference, input);
+    let result = SysMLParser::parse(Rule::owned_feature_typing, input);
 
     assert!(
         result.is_ok(),
-        "Failed to parse conjugated port reference: {:?}",
+        "Failed to parse conjugated port typing: {:?}",
         result.err()
     );
 }

@@ -501,13 +501,13 @@ fn test_parse_requirement_verification_membership() {
 // Port and Conjugation Tests
 
 #[test]
-fn test_parse_conjugated_port_reference() {
+fn test_parse_conjugated_port_type_reference() {
     let input = "~MyPort";
-    let result = SysMLParser::parse(Rule::conjugated_port_reference, input);
+    let result = SysMLParser::parse(Rule::owned_feature_typing, input);
 
     assert!(
         result.is_ok(),
-        "Failed to parse conjugated port reference: {:?}",
+        "Failed to parse conjugated port typing: {:?}",
         result.err()
     );
 }
@@ -6006,5 +6006,78 @@ fn test_parse_abstract_attribute_def() {
     assert!(
         def.is_abstract,
         "Should be marked as abstract - THIS IS THE BUG!"
+    );
+}
+
+// =============================================================================
+// Issue #619: Support conjugated port type syntax (~TypeName)
+// =============================================================================
+
+/// Tests that owned_feature_typing supports conjugated types with ~ prefix
+#[rstest]
+#[case("~DriveIF", "DriveIF")]
+#[case("~MyPort", "MyPort")]
+#[case("~Qualified::Name", "Qualified::Name")]
+fn test_conjugated_port_typing_in_owned_feature_typing(
+    #[case] input: &str,
+    #[case] _expected_type: &str,
+) {
+    let result = SysMLParser::parse(Rule::owned_feature_typing, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse conjugated type '{}': {:?}",
+        input,
+        result.err()
+    );
+    let pairs = result.unwrap();
+    assert_eq!(
+        pairs.as_str(),
+        input,
+        "Should consume entire conjugated type"
+    );
+}
+
+/// Tests that port usages can have conjugated types
+#[rstest]
+#[case("port drive: ~DriveIF;")]
+#[case("port input: ~InputPort;")]
+#[case("port p: ~Pkg::PortDef;")]
+fn test_port_usage_with_conjugated_type(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::port_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse port with conjugated type '{}': {:?}",
+        input,
+        result.err()
+    );
+}
+
+/// Tests a part definition containing a port with conjugated type
+#[test]
+fn test_part_def_with_conjugated_port() {
+    let source = r#"
+        part def Transmission {
+            port drive: ~DriveIF;
+        }
+    "#;
+    let result = SysMLParser::parse(Rule::part_definition, source.trim());
+    assert!(
+        result.is_ok(),
+        "Failed to parse part def with conjugated port: {:?}",
+        result.err()
+    );
+}
+
+/// Tests that regular (non-conjugated) port types still work
+#[rstest]
+#[case("port drive: DriveIF;")]
+#[case("port p: MyPort;")]
+fn test_port_usage_with_regular_type(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::port_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse port with regular type '{}': {:?}",
+        input,
+        result.err()
     );
 }

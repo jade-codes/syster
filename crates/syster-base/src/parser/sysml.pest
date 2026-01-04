@@ -134,7 +134,7 @@ namespace_expose = { "expose" ~ identifier ~ "::*" ~ ";" }
 
 // Port and Conjugation
 
-conjugated_port_reference = { "~" ~ identifier }
+conjugation_operator = { "~" }
 variant_membership = { "variant" ~ identifier ~ ";" }
 
 // Requirement Constraint Memberships
@@ -2134,8 +2134,8 @@ feature_typing = {
     | conjugated_port_typing
 }
 
-// OwnedFeatureTyping inherited from Expression syntax (to be expanded)
-owned_feature_typing = { feature_reference }
+// OwnedFeatureTyping - supports optional ~ prefix for conjugated port types
+owned_feature_typing = { conjugation_operator? ~ feature_reference }
 
 // Feature subsetting and redefinition rules
 owned_subsetting = {
