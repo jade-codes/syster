@@ -9,8 +9,8 @@ mock.module('@xyflow/react', () => ({
   ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-import { createDefinitionNode, nodeTypes, getNodeConfig } from './nodeFactory';
-import { NODE_CONFIGS } from './nodeConfig';
+import { createDefinitionNode, nodeTypes, getNodeConfig } from '../nodes/nodeFactory';
+import { NODE_CONFIGS } from '../nodes/nodeConfig';
 
 // Clean up after each test to prevent DOM pollution
 afterEach(() => {
@@ -57,6 +57,59 @@ describe('createDefinitionNode', () => {
     render(<TestNode id="test-1" data={data as any} />);
 
     expect(screen.getByText('myFeature: Integer')).toBeDefined();
+  });
+
+  test('shows multiple features correctly', () => {
+    const TestNode = createDefinitionNode({
+      borderColor: '#ff0000',
+      stereotype: 'test def',
+      showFeatures: true,
+    });
+
+    const data: TestNodeData = {
+      name: 'TestElement',
+      features: ['feature1: String', 'feature2: Integer', 'feature3: Boolean'],
+    };
+
+    render(<TestNode id="test-1" data={data as any} />);
+
+    expect(screen.getByText('feature1: String')).toBeDefined();
+    expect(screen.getByText('feature2: Integer')).toBeDefined();
+    expect(screen.getByText('feature3: Boolean')).toBeDefined();
+  });
+
+  test('hides features when showFeatures is false', () => {
+    const TestNode = createDefinitionNode({
+      borderColor: '#ff0000',
+      stereotype: 'test def',
+      showFeatures: false,
+    });
+
+    const data: TestNodeData = {
+      name: 'TestElement',
+      features: ['hiddenFeature: Integer'],
+    };
+
+    render(<TestNode id="test-1" data={data as any} />);
+
+    expect(screen.queryByText('hiddenFeature: Integer')).toBeNull();
+  });
+
+  test('hides direction when showDirection is false', () => {
+    const TestNode = createDefinitionNode({
+      borderColor: '#ff0000',
+      stereotype: 'port def',
+      showDirection: false,
+    });
+
+    const data: TestNodeData = {
+      name: 'DataPort',
+      direction: 'in',
+    };
+
+    render(<TestNode id="test-1" data={data as any} />);
+
+    expect(screen.queryByText('in')).toBeNull();
   });
 
   test('shows direction when showDirection is true', () => {
