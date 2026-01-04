@@ -2451,8 +2451,7 @@ import_prefix = { visibility? ~ import_token ~ import_all? }
 import_all = { all_token }
 imported_reference = {
     qualified_name
-    ~ namespace_marker?
-    ~ recursive_marker?
+    ~ (recursive_marker | namespace_marker)?
 }
 
 qualified_name = { (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }

@@ -238,7 +238,6 @@ fn test_no_regressions() {
 macro_rules! example_test {
     ($name:ident, $path:expr) => {
         #[test]
-        #[ignore = "Grammar not yet complete for this example"]
         fn $name() {
             let examples_dir = get_examples_dir();
             let file_path = examples_dir.join($path);

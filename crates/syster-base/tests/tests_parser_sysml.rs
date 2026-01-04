@@ -6441,6 +6441,32 @@ fn test_flow_part(#[case] input: &str, #[case] desc: &str) {
     );
 }
 
+/// Tests recursive import syntax (q::**)
+#[rstest]
+#[case("q::**", "single-char recursive import")]
+#[case("myPackage::**", "named recursive import")]
+#[case("A::B::**", "qualified recursive import")]
+#[case("pkg::*", "namespace import")]
+#[case("A::B::*", "qualified namespace import")]
+fn test_imported_reference_recursive(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::imported_reference, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse imported_reference '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+    // Verify full consumption
+    let pairs = result.unwrap();
+    let consumed: String = pairs.map(|p| p.as_str()).collect();
+    assert_eq!(
+        consumed, input,
+        "imported_reference only consumed '{}', expected '{}'",
+        consumed, input
+    );
+}
+
 /// Tests flow_connection_usage with feature chain paths (from FeaturePathTest.sysml)
 #[rstest]
 #[case("flow a to b;", "simple identifiers")]
