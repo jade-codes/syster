@@ -51,7 +51,7 @@ requirement_constraint_kind = @{ "assume" | "require" }
 
 variation_marker = { "variation" }
 individual_marker = { "individual" }
-abstract_marker = { "abstract" }
+abstract_marker = @{ "abstract" ~ !(ASCII_ALPHANUMERIC | "_") }
 standard_marker = { "standard" }
 
 // Visibility
@@ -1452,19 +1452,23 @@ usage_element = {
 // Usages
 
 // Markers and keywords (matching KerML)
-readonly = { "readonly" }
-derived = { "derived" }
+// Use negative lookahead to ensure keywords are complete words
+readonly = @{ "readonly" ~ !(ASCII_ALPHANUMERIC | "_") }
+derived = @{ "derived" ~ !(ASCII_ALPHANUMERIC | "_") }
+constant = @{ "constant" ~ !(ASCII_ALPHANUMERIC | "_") }
 end_marker = { "end" }
 // Use negative lookahead to ensure direction kinds are complete words
 // This prevents "in" from matching the start of "interface"
 feature_direction_kind = @{ ("inout" | "in" | "out") ~ !(ASCII_ALPHANUMERIC | "_") }
 
+// RefPrefix per SysML v2 spec 8.2.2.6.2:
+// RefPrefix = (FeatureDirection)? ('derived')? (BasicDefinitionPrefix)? ('constant')? ('readonly')?
 ref_prefix = {
     feature_direction_kind?
-    ~ basic_definition_prefix?
-    ~ ("constant")?
-    ~ readonly?
     ~ derived?
+    ~ basic_definition_prefix?
+    ~ constant?
+    ~ readonly?
 }
 
 reference = { "ref" }

@@ -1606,7 +1606,11 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
 #[case("abstract", "with abstract")]
 #[case("readonly", "with readonly")]
 #[case("derived", "with derived")]
-#[case("in abstract readonly derived", "all modifiers")]
+#[case("constant", "with constant")]
+// Per spec 8.2.2.6.2: FeatureDirection? derived? BasicDefinitionPrefix? constant? readonly?
+#[case("derived constant", "derived constant (spec order)")]
+#[case("derived constant readonly", "derived constant readonly (spec order)")]
+#[case("in derived abstract constant readonly", "all modifiers (spec order)")]
 fn test_parse_ref_prefix(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::ref_prefix, input);
 
@@ -1616,6 +1620,24 @@ fn test_parse_ref_prefix(#[case] input: &str, #[case] desc: &str) {
         desc,
         result.err()
     );
+}
+
+// Issue #634: ref_prefix should NOT allow concatenated keywords without whitespace
+#[rstest]
+#[case("constantreadonly", "constantreadonly should not fully parse")]
+#[case("derivedconstant", "derivedconstant should not fully parse")]
+#[case("abstractconstant", "abstractconstant should not fully parse")]
+fn test_ref_prefix_rejects_concatenated_keywords(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::ref_prefix, input);
+    // The parse should either fail or not consume the entire input
+    if let Ok(pairs) = result {
+        let parsed = pairs.as_str();
+        assert_ne!(
+            parsed, input,
+            "{}: '{}' should not fully match as ref_prefix",
+            desc, input
+        );
+    }
 }
 
 #[rstest]
