@@ -6487,3 +6487,34 @@ fn test_flow_connection_usage_with_feature_chains(#[case] input: &str, #[case] d
         result.err()
     );
 }
+
+/// Tests state_action_usage patterns (for entry/do/exit actions)
+#[rstest]
+#[case("action myAction;", "action with identifier")]
+#[case(";", "empty action")]
+#[case("someAction;", "qualified name reference")]
+fn test_state_action_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::state_action_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse state_action_usage '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests send_node_declaration for state entry actions
+#[rstest]
+#[case("send msg", "send with parameter")]
+#[case("send msg via port", "send with via")]
+fn test_send_node_declaration(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::send_node_declaration, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse send_node_declaration '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}

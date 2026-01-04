@@ -1044,8 +1044,12 @@ entry_transition_member = {
 // - semicolon (empty)
 // - qualified name reference
 // - assign action (issue #623)
+// - send node (for entry/do/exit actions)
+// - accept node (for entry/do/exit actions)
 state_action_usage = {
     action_keyword ~ (identifier ~ semi_colon | usage_declaration? ~ action_body)
+    | send_node_declaration ~ semi_colon
+    | accept_node_declaration ~ semi_colon
     | assignment_node_declaration ~ semi_colon
     | ";"
     | qualified_name ~ semi_colon
