@@ -3018,46 +3018,6 @@ fn test_parse_flow_end(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("parent.", "flow end subsetting with dot")]
-#[case("a.b.", "feature chain prefix")]
-fn test_parse_flow_end_subsetting(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::flow_end_subsetting, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("a.b.", "feature chain prefix")]
-fn test_parse_feature_chain_prefix(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::feature_chain_prefix, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("myFeature", "owned feature chaining")]
-fn test_parse_owned_feature_chaining(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::owned_feature_chaining, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
 #[case("flowRef", "flow feature member")]
 fn test_parse_flow_feature_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::flow_feature_member, input);
@@ -6433,6 +6393,71 @@ fn test_interface_definition_with_ends(#[case] input: &str) {
         result.is_ok(),
         "Failed to parse interface definition with ends '{}': {:?}",
         input,
+        result.err()
+    );
+}
+
+/// Tests flow_end rule for parsing feature chain paths in flow connections
+/// This is the core issue: `b.f.a` should parse as a flow end with chained features
+#[rstest]
+#[case("a", "simple identifier")]
+#[case("a.b", "two-part feature chain")]
+#[case("b.f.a", "three-part feature chain")]
+#[case("x.y.z.w", "four-part feature chain")]
+fn test_flow_end_feature_chains(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_end, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse flow_end '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+    // Verify the entire input was consumed
+    let pairs = result.unwrap();
+    let consumed: String = pairs.map(|p| p.as_str()).collect();
+    assert_eq!(
+        consumed, input,
+        "flow_end '{}' ({}) only consumed '{}', expected full input",
+        input, desc, consumed
+    );
+}
+
+/// Tests flow_part rule - source to target
+#[rstest]
+#[case("a to b", "simple identifiers")]
+#[case("a.b to c", "two-part source")]
+#[case("a to b.c", "two-part target")]
+#[case("a.b to c.d", "two-part on both")]
+#[case("b.f.a to c.aa", "three-part source, two-part target")]
+fn test_flow_part(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_part, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse flow_part '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests flow_connection_usage with feature chain paths (from FeaturePathTest.sysml)
+#[rstest]
+#[case("flow a to b;", "simple identifiers")]
+#[case("flow a.b to c;", "two-part source chain")]
+#[case("flow a to b.c;", "two-part target chain")]
+#[case("flow a.b to c.d;", "two-part chains on both sides")]
+#[case(
+    "flow b.f.a to c.aa;",
+    "three-part source, two-part target - from FeaturePathTest"
+)]
+fn test_flow_connection_usage_with_feature_chains(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_connection_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse flow_connection_usage '{}' ({}): {:?}",
+        input,
+        desc,
         result.err()
     );
 }

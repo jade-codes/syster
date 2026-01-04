@@ -1961,21 +1961,11 @@ flow_end_member = {
     flow_end
 }
 
+// FlowEnd: Either a feature chain (a.b.c) or a single feature reference
+// The semantic layer will handle splitting the chain into subsetting + final feature
 flow_end = {
-    flow_end_subsetting? ~ flow_feature_member
-}
-
-flow_end_subsetting = {
-    feature_reference ~ "."
-    | feature_chain_prefix
-}
-
-feature_chain_prefix = {
-    identifier ~ ("." ~ identifier)+ ~ "."
-}
-
-owned_feature_chaining = {
-    identifier
+    owned_feature_chain
+    | flow_feature_member
 }
 
 flow_feature_member = {

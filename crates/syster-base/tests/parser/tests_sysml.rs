@@ -2933,46 +2933,6 @@ fn test_parse_flow_end(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("parent.", "flow end subsetting with dot")]
-#[case("a.b.", "feature chain prefix")]
-fn test_parse_flow_end_subsetting(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::flow_end_subsetting, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("a.b.", "feature chain prefix")]
-fn test_parse_feature_chain_prefix(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::feature_chain_prefix, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("myFeature", "owned feature chaining")]
-fn test_parse_owned_feature_chaining(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::owned_feature_chaining, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
 #[case("flowRef", "flow feature member")]
 fn test_parse_flow_feature_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::flow_feature_member, input);
