@@ -851,6 +851,11 @@ fn test_parse_dependency_with_comment_in_body() {
     Rule::metadata_body_usage,
     "metadata body usage"
 )]
+#[case(
+    "metadata InterfaceCompatibilityIssue : Issue about engineToTransmissionInterface { text = \"issue\"; }",
+    Rule::metadata_usage,
+    "metadata usage with name, typing, about, and body"
+)]
 fn test_parse_metadata(#[case] input: &str, #[case] rule: Rule, #[case] desc: &str) {
     let result = SysMLParser::parse(rule, input);
 

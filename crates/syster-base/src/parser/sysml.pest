@@ -1686,7 +1686,8 @@ variant_reference = {
 // Body Elements
 
 non_occurrence_usage_element = {
-    reference_usage
+    metadata_usage
+    | reference_usage
     | attribute_usage
     | enumeration_usage
     | binding_connector_as_usage
@@ -2422,9 +2423,12 @@ metadata_body_items = {
 }
 
 metadata_body_usage_member = { metadata_body_usage }
+// MetadataBodyUsage follows spec: 'ref'? (':>>' | 'redefines')? OwnedRedefinition FeatureSpecializationPart? ValuePart? MetadataBody
+// OwnedRedefinition is a required identifier (the feature being redefined)
 metadata_body_usage = {
     ref_token?
-    ~ (redefines_operator ~ identifier)?
+    ~ redefines_operator?
+    ~ identifier
     ~ feature_specialization_part?
     ~ value_part?
     ~ metadata_body

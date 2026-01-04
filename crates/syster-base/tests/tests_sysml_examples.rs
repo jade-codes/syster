@@ -229,3 +229,201 @@ fn test_no_regressions() {
         );
     }
 }
+
+// ============================================================================
+// Individual tests for each failing example file
+// These tests are marked #[ignore] and will fail until the grammar supports them
+// ============================================================================
+
+macro_rules! example_test {
+    ($name:ident, $path:expr) => {
+        #[test]
+        #[ignore = "Grammar not yet complete for this example"]
+        fn $name() {
+            let examples_dir = get_examples_dir();
+            let file_path = examples_dir.join($path);
+
+            if !file_path.exists() {
+                eprintln!("Skipping: file not found at {:?}", file_path);
+                return;
+            }
+
+            let content = std::fs::read_to_string(&file_path)
+                .unwrap_or_else(|e| panic!("Failed to read {}: {}", $path, e));
+
+            let parse_result = file_loader::parse_with_result(&content, &file_path);
+
+            assert!(
+                parse_result.content.is_some() && parse_result.errors.is_empty(),
+                "Failed to parse {}:\n{}",
+                $path,
+                parse_result
+                    .errors
+                    .iter()
+                    .map(|e| format!("  Line {}: {}", e.position.line, e.message))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
+        }
+    };
+}
+
+// Analysis Examples
+example_test!(
+    example_analysis_annotation,
+    "Analysis Examples/AnalysisAnnotation.sysml"
+);
+example_test!(
+    example_turbojet_stage_analysis,
+    "Analysis Examples/Turbojet Stage Analysis.sysml"
+);
+example_test!(
+    example_vehicle_analysis_demo,
+    "Analysis Examples/Vehicle Analysis Demo.sysml"
+);
+
+// Arrowhead Framework Example
+example_test!(
+    example_ahf_sequences,
+    "Arrowhead Framework Example/AHFSequences.sysml"
+);
+example_test!(
+    example_ahf_norway_topics,
+    "Arrowhead Framework Example/AHFNorwayTopics.sysml"
+);
+
+// Association Examples
+example_test!(
+    example_product_selection_unowned_ends,
+    "Association Examples/ProductSelection_UnownedEnds.sysml"
+);
+
+// Camera Example
+example_test!(example_picture_taking, "Camera Example/PictureTaking.sysml");
+
+// Cause and Effect Examples
+example_test!(
+    example_cause_and_effect,
+    "Cause and Effect Examples/CauseAndEffectExample.sysml"
+);
+
+// Flashlight Example
+example_test!(
+    example_flashlight,
+    "Flashlight Example/Flashlight Example.sysml"
+);
+
+// Geometry Examples
+example_test!(
+    example_external_shape_ref,
+    "Geometry Examples/ExternalShapeRefExample.sysml"
+);
+example_test!(
+    example_vehicle_geometry_coords,
+    "Geometry Examples/VehicleGeometryAndCoordinateFrames.sysml"
+);
+
+// Interaction Sequencing Examples
+example_test!(
+    example_server_sequence_outside_realization_3,
+    "Interaction Sequencing Examples/ServerSequenceOutsideRealization-3.sysml"
+);
+example_test!(
+    example_server_sequence_realization_3,
+    "Interaction Sequencing Examples/ServerSequenceRealization-3.sysml"
+);
+
+// Mass Roll-up Example
+example_test!(example_mass_rollup, "Mass Roll-up Example/MassRollup.sysml");
+
+// Metadata Examples
+example_test!(
+    example_issue_metadata,
+    "Metadata Examples/IssueMetadataExample.sysml"
+);
+example_test!(
+    example_requirement_metadata,
+    "Metadata Examples/RequirementMetadataExample.sysml"
+);
+example_test!(
+    example_risk_metadata,
+    "Metadata Examples/RiskMetadataExample.sysml"
+);
+example_test!(
+    example_verification_metadata,
+    "Metadata Examples/VerificationMetadataExample.sysml"
+);
+
+// Requirements Examples
+example_test!(
+    example_requirement_derivation,
+    "Requirements Examples/RequirementDerivationExample.sysml"
+);
+
+// Room Model
+example_test!(example_room_model, "Room Model/RoomModel.sysml");
+
+// Simple Tests
+example_test!(example_action_test, "Simple Tests/ActionTest.sysml");
+example_test!(example_allocation_test, "Simple Tests/AllocationTest.sysml");
+example_test!(example_analysis_test, "Simple Tests/AnalysisTest.sysml");
+example_test!(example_assignment_test, "Simple Tests/AssignmentTest.sysml");
+example_test!(example_comment_test, "Simple Tests/CommentTest.sysml");
+example_test!(example_connection_test, "Simple Tests/ConnectionTest.sysml");
+example_test!(
+    example_control_node_test,
+    "Simple Tests/ControlNodeTest.sysml"
+);
+example_test!(example_decision_test, "Simple Tests/DecisionTest.sysml");
+example_test!(
+    example_feature_path_test,
+    "Simple Tests/FeaturePathTest.sysml"
+);
+example_test!(example_part_test, "Simple Tests/PartTest.sysml");
+example_test!(
+    example_requirement_test,
+    "Simple Tests/RequirementTest.sysml"
+);
+example_test!(example_state_test, "Simple Tests/StateTest.sysml");
+example_test!(
+    example_textual_representation_test,
+    "Simple Tests/TextualRepresentationTest.sysml"
+);
+example_test!(example_use_case_test, "Simple Tests/UseCaseTest.sysml");
+example_test!(
+    example_variability_test,
+    "Simple Tests/VariabilityTest.sysml"
+);
+example_test!(
+    example_verification_test,
+    "Simple Tests/VerificationTest.sysml"
+);
+example_test!(example_view_test, "Simple Tests/ViewTest.sysml");
+
+// State Space Representation Examples
+example_test!(
+    example_cart_sample,
+    "State Space Representation Examples/CartSample.sysml"
+);
+
+// Timeslice and Snapshot Examples
+example_test!(
+    example_time_varying_attribute,
+    "Timeslice and Snapshot Examples/TimeVaryingAttribute.sysml"
+);
+
+// Variability Examples
+example_test!(
+    example_vehicle_variability_model,
+    "Variability Examples/VehicleVariabilityModel.sysml"
+);
+
+// Vehicle Example
+example_test!(
+    example_vehicle_individuals,
+    "Vehicle Example/VehicleIndividuals.sysml"
+);
+example_test!(
+    example_sysml_spec_annex_a,
+    "Vehicle Example/SysML v2 Spec Annex A SimpleVehicleModel.sysml"
+);
