@@ -2393,7 +2393,8 @@ comment_annotation = { comment_token ~ identifier? ~ (locale_token ~ quoted_name
 
 documentation = { doc_token ~ identifier? ~ (locale_token ~ quoted_name)? ~ (block_comment | semi_colon)? }
 
-textual_representation = { rep_token ~ language_token ~ quoted_name ~ block_comment? }
+textual_representation = { rep_token ~ textual_rep_name? ~ language_token ~ string_value ~ block_comment? }
+textual_rep_name = { !language_token ~ identifier }
 
 metadata_usage_annotation = { "#" ~ identifier ~ semi_colon }
 

@@ -6533,3 +6533,18 @@ fn test_succession_flow_connection_usage(#[case] input: &str, #[case] desc: &str
         result.err()
     );
 }
+
+/// Tests textual_representation with optional name
+#[rstest]
+#[case("rep language \"ocl\" /* code */", "rep without name")]
+#[case("rep inOCL language \"ocl\" /* code */", "rep with name")]
+fn test_textual_representation(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::textual_representation, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse textual_representation '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
