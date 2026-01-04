@@ -6,7 +6,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 import { EDGE_TYPES } from '@syster/diagram-core';
-import { EDGE_CONFIGS, getEdgeConfig, type EdgeConfig } from './edgeConfig';
+import { getEdgeConfig, type EdgeConfig } from './edgeConfig';
 
 /**
  * Props for SysML edge components.
@@ -22,12 +22,31 @@ export interface SysMLEdgeProps extends EdgeProps {
 }
 
 /**
+ * Generate a unique displayName for an edge type.
+ * Converts SCREAMING_SNAKE_CASE to PascalCase with "Edge" suffix.
+ * 
+ * @param edgeType - Edge type in SCREAMING_SNAKE_CASE format
+ * @returns Display name in PascalCase format (e.g., "SpecializationEdge")
+ * 
+ * @example
+ * generateDisplayName('SPECIALIZATION') // => 'SpecializationEdge'
+ * generateDisplayName('CROSS_SUBSETTING') // => 'CrossSubsettingEdge'
+ */
+function generateDisplayName(edgeType: string): string {
+  return edgeType
+    .split('_')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('') + 'Edge';
+}
+
+/**
  * Factory function to create a styled SysML edge component.
  *
  * @param config - Visual configuration for the edge
+ * @param edgeType - Type of edge for displayName
  * @returns A React component for rendering the edge
  */
-export function createSysMLEdge(config: EdgeConfig): React.FC<SysMLEdgeProps> {
+export function createSysMLEdge(config: EdgeConfig, edgeType?: string): React.FC<SysMLEdgeProps> {
   const SysMLEdge: React.FC<SysMLEdgeProps> = ({
     id,
     sourceX,
@@ -67,7 +86,11 @@ export function createSysMLEdge(config: EdgeConfig): React.FC<SysMLEdgeProps> {
             strokeWidth,
             strokeDasharray: config.strokeDasharray,
           }}
-          markerEnd={`url(#${config.markerEnd})`}
+          markerEnd={
+            config.markerEnd
+              ? { type: config.markerEnd, color: strokeColor }
+              : undefined
+          }
         />
         {(label || multiplicity) && (
           <EdgeLabelRenderer>
@@ -94,7 +117,8 @@ export function createSysMLEdge(config: EdgeConfig): React.FC<SysMLEdgeProps> {
     );
   };
 
-  SysMLEdge.displayName = 'SysMLEdge';
+  // Create unique displayName for debugging
+  SysMLEdge.displayName = edgeType ? generateDisplayName(edgeType) : 'SysMLEdge';
   return SysMLEdge;
 }
 
@@ -115,8 +139,6 @@ export function createSysMLEdge(config: EdgeConfig): React.FC<SysMLEdgeProps> {
 export const edgeTypes: Record<string, React.FC<SysMLEdgeProps>> = Object.fromEntries(
   Object.values(EDGE_TYPES).map((edgeType) => [
     edgeType,
-    createSysMLEdge(getEdgeConfig(edgeType)),
+    createSysMLEdge(getEdgeConfig(edgeType), edgeType),
   ])
 );
-
-export { getEdgeConfig } from './edgeConfig';
