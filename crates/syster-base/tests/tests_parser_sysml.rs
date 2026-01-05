@@ -7307,5 +7307,28 @@ fn test_parse_full_requirement_derivation_example() {
     );
 }
 
+// =============================================================================
+// TextualRepresentationTest.sysml patterns - language/rep textual representation
+// =============================================================================
+
+/// Tests action def with textual representation (language "alf")
+#[test]
+fn test_parse_action_with_textual_rep() {
+    let input = r#"action def setX {
+        in c : C;
+        in newX : Real;
+        
+        language "alf" 
+            /* c.x = newX; */
+    }"#;
+    let result = SysMLParser::parse(Rule::action_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse action def with textual representation: {:?}",
+        result.err()
+    );
+}
+
+
 
 
