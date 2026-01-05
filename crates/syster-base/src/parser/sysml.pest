@@ -1350,11 +1350,7 @@ default_target_succession = {
 }
 
 guarded_succession_member = {
-    guarded_succession
-}
-
-guarded_succession = {
-    !(domain_usage_keyword) ~ identifier
+    guarded_target_succession
 }
 
 // Domain-specific usage keywords that should not be matched as guarded successions
@@ -1526,7 +1522,6 @@ case_action_body_item = {
     | non_occurrence_usage_member
     | structure_usage_member
     | action_node_member
-    | guarded_succession_member
 }
 
 objective_member = {
@@ -1737,6 +1732,7 @@ structure_usage_element = {
     | connection_usage
     | interface_usage
     | allocation_usage
+    | allocate_usage
     | message
     | flow_connection_usage
     | succession_flow_connection_usage
@@ -1912,8 +1908,44 @@ empty_source_end_member = { empty_source_end }
 
 empty_source_end = { "" }
 
+// Allocate keyword part - shared between allocation_usage and allocate_usage
+// "allocate X to Y" or "allocate (X, Y, Z)"
+allocate_keyword_part = {
+    allocate_token ~ allocate_part
+}
+
+// Allocate part - the "X to Y" or "(nary)" portion after allocate keyword
+allocate_part = {
+    nary_allocate_part
+    | binary_allocate_part
+}
+
+binary_allocate_part = {
+    connector_end_member ~ to_token ~ connector_end_member
+}
+
+nary_allocate_part = {
+    "(" ~ allocate_end_member ~ "," ~ allocate_end_member ~ ("," ~ allocate_end_member)* ~ ")"
+}
+
+allocate_end_member = {
+    allocate_end
+}
+
+allocate_end = {
+    owned_cross_multiplicity_member? ~ (identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
+}
+
+// Allocation usage with optional allocate part
+// "allocation name : Type allocate X to Y;"
 allocation_usage = {
-    occurrence_usage_prefix ~ allocation_token ~ usage_declaration? ~ usage_body
+    occurrence_usage_prefix ~ allocation_token ~ usage_declaration? ~ allocate_keyword_part? ~ usage_body
+}
+
+// Allocate usage - shorthand form
+// "allocate X to Y;"
+allocate_usage = {
+    allocate_keyword_part ~ usage_body
 }
 
 // Messages

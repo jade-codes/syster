@@ -757,7 +757,7 @@ fn test_parse_documentation_variants(#[case] input: &str) {
 
 #[test]
 fn test_parse_textual_representation() {
-    let input = "rep language 'Python' /* code */";
+    let input = "rep language \"Python\" /* code */";
     let result = SysMLParser::parse(Rule::textual_representation, input);
 
     assert!(
@@ -3110,9 +3110,9 @@ fn test_parse_target_succession_member(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
-#[case("guardedNode", "guarded succession")]
-fn test_parse_guarded_succession(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::guarded_succession, input);
+#[case("if x then y;", "guarded target succession")]
+fn test_parse_guarded_target_succession(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::guarded_target_succession, input);
 
     assert!(
         result.is_ok(),
@@ -3123,7 +3123,7 @@ fn test_parse_guarded_succession(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("guardedNode", "guarded succession member")]
+#[case("if x then y;", "guarded succession member")]
 fn test_parse_guarded_succession_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::guarded_succession_member, input);
 

@@ -3195,9 +3195,9 @@ fn test_parse_target_succession_member(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
-#[case("guardedNode", "guarded succession")]
-fn test_parse_guarded_succession(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::guarded_succession, input);
+#[case("if x then y;", "guarded target succession")]
+fn test_parse_guarded_target_succession(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::guarded_target_succession, input);
 
     assert!(
         result.is_ok(),
@@ -3208,7 +3208,7 @@ fn test_parse_guarded_succession(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("guardedNode", "guarded succession member")]
+#[case("if x then y;", "guarded succession member")]
 fn test_parse_guarded_succession_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::guarded_succession_member, input);
 
@@ -3635,6 +3635,8 @@ fn test_parse_feature_binding(#[case] input: &str, #[case] desc: &str) {
 
 #[rstest]
 #[case("expr", "owned expression")]
+#[case("v.m", "feature chain expression")]
+#[case("a.b.c", "longer feature chain")]
 fn test_parse_owned_expression(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::owned_expression, input);
 
@@ -4587,6 +4589,48 @@ fn test_parse_transition_usage(#[case] input: &str, #[case] desc: &str) {
     );
 }
 
+// Allocate Usage Tests
+
+#[rstest]
+#[case("allocate a to b;", "simple allocate")]
+#[case(
+    "allocate l.component to assembly.element;",
+    "allocate with feature chains"
+)]
+fn test_parse_allocate_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::allocate_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Allocation Usage Tests (full form with allocation keyword)
+
+#[rstest]
+#[case("allocation myAlloc;", "simple allocation usage")]
+#[case(
+    "allocation allocation1 : Logical_to_Physical allocate l to p;",
+    "allocation with name, type and allocate"
+)]
+#[case(
+    "allocation allocation2 : Logical_to_Physical allocate (\n    logical ::> l,\n    physical ::> p\n);",
+    "allocation with nary allocate"
+)]
+fn test_parse_allocation_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::allocation_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
 // Calculation Definition Tests
 
 #[rstest]
@@ -4671,6 +4715,8 @@ fn test_parse_return_parameter_member(#[case] input: &str, #[case] desc: &str) {
 
 #[rstest]
 #[case("result", "result expression member")]
+#[case("v.m", "simple expression")]
+#[case("a.b.c", "chained expression")]
 fn test_parse_result_expression_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::result_expression_member, input);
 
@@ -5192,8 +5238,43 @@ fn test_parse_case_definition(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
+#[case("v;", "identifier with semicolon")]
+#[case("v {}", "identifier with empty body")]
+fn test_parse_case_body_item(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::case_body_item, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[test]
+fn test_case_body_item_does_not_match_expression() {
+    // v.m should NOT match case_body_item because it doesn't end with ; or {}
+    let result = SysMLParser::parse(Rule::case_body_item, "v.m");
+    if let Ok(pairs) = &result {
+        for pair in pairs.clone() {
+            println!("Matched: {:?} = '{}'", pair.as_rule(), pair.as_str());
+            for inner in pair.into_inner() {
+                println!("  Inner: {:?} = '{}'", inner.as_rule(), inner.as_str());
+            }
+        }
+    }
+    assert!(
+        result.is_err(),
+        "case_body_item should NOT match v.m, but got: {:?}",
+        result
+    );
+}
+
+#[rstest]
 #[case(";", "semicolon body")]
 #[case("{}", "empty body")]
+#[case("{ v.m }", "body with result expression")]
+#[case("{ subject v : V; v.m }", "body with subject and result expression")]
 fn test_parse_case_body(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::case_body, input);
 
