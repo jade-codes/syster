@@ -2381,7 +2381,7 @@ owned_redefinition = {
 // Feature references and chains (matching KerML structure)
 feature_reference = { qualified_name | identifier | quoted_name | all_token}
 
-owned_feature_chain = { identifier ~ ("." ~ identifier)+ }
+owned_feature_chain = { (identifier | quoted_name) ~ ("." ~ (identifier | quoted_name))+ }
 
 // Multiplicity (matching KerML structure)
 owned_multiplicity = { "[" ~ multiplicity_range ~ "]" }
