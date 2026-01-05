@@ -1933,7 +1933,7 @@ allocate_part = {
 }
 
 binary_allocate_part = {
-    connector_end_member ~ to_token ~ connector_end_member
+    allocate_end_member ~ to_token ~ allocate_end_member
 }
 
 nary_allocate_part = {
@@ -1944,8 +1944,13 @@ allocate_end_member = {
     allocate_end
 }
 
+// Local qualified reference chain for allocate - matches both :: and . separators
+allocate_qualified_reference = @{
+    identifier ~ ("::" ~ identifier | "." ~ identifier)*
+}
+
 allocate_end = {
-    owned_cross_multiplicity_member? ~ (owned_feature_chain | identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
+    owned_cross_multiplicity_member? ~ allocate_qualified_reference
 }
 
 // Allocation usage with optional allocate part

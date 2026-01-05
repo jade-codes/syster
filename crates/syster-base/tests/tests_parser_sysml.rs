@@ -7720,6 +7720,103 @@ fn test_parse_bind_interface_allocate_sequence() {
     );
 }
 
+/// Tests parsing feature chain for allocate
+#[test]
+fn test_parse_allocate_feature_chain() {
+    let input = "ActionTree::providePower.generateToAmplify";
+    let result = SysMLParser::parse(Rule::feature_reference, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse feature_reference: {:?}",
+        result.err()
+    );
+}
+
+/// Tests parsing short feature reference
+#[test]
+fn test_parse_short_feature_reference() {
+    let input = "ActionTree::providePower";
+    let result = SysMLParser::parse(Rule::feature_reference, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse short feature_reference: {:?}",
+        result.err()
+    );
+}
+
+/// Tests parsing connector_end_member for allocate
+#[test]
+fn test_parse_connector_end_for_allocate() {
+    let input = "ActionTree::providePower.generateToAmplify";
+    let result = SysMLParser::parse(Rule::connector_end_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse connector_end_member: {:?}",
+        result.err()
+    );
+}
+
+/// Tests parsing allocate_end_member
+#[test]
+fn test_parse_allocate_end_member() {
+    let input = "ActionTree::providePower.generateToAmplify";
+    let result = SysMLParser::parse(Rule::allocate_end_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse allocate_end_member: {:?}",
+        result.err()
+    );
+}
+
+/// Tests binary allocate with simple identifiers
+#[test]
+fn test_parse_binary_allocate_simple() {
+    let input = "a to b";
+    let result = SysMLParser::parse(Rule::binary_allocate_part, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse simple binary_allocate_part: {:?}",
+        result.err()
+    );
+}
+
+/// Tests the exact allocate statement from line 705 of SimpleVehicleModel
+#[test]
+fn test_parse_allocate_from_line_705() {
+    let input =
+        "allocate ActionTree::providePower.generateToAmplify to engineToTransmissionInterface;";
+    let result = SysMLParser::parse(Rule::allocate_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse allocate from line 705: {:?}",
+        result.err()
+    );
+}
+
+/// Tests allocate_end directly
+#[test]
+fn test_parse_allocate_end() {
+    let input = "ActionTree::providePower.generateToAmplify";
+    let result = SysMLParser::parse(Rule::allocate_end, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse allocate_end: {:?}",
+        result.err()
+    );
+}
+
+/// Tests allocate binary part
+#[test]
+fn test_parse_binary_allocate_part() {
+    let input = "ActionTree::providePower.generateToAmplify to engineInterface";
+    let result = SysMLParser::parse(Rule::binary_allocate_part, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse binary_allocate_part: {:?}",
+        result.err()
+    );
+}
+
 /// Tests allocate with qualified name and feature chain
 #[test]
 fn test_parse_allocate_with_qualified_feature_chain() {
@@ -7770,6 +7867,45 @@ fn test_parse_part_with_two_interfaces() {
     assert!(
         result.is_ok(),
         "Failed to parse part with two interfaces: {:?}",
+        result.err()
+    );
+}
+
+/// Tests larger context from actual file (lines 690-715)
+#[test]
+fn test_parse_full_context_with_interfaces() {
+    let input = r#"part vehicle {
+                        part seatBelt[2] {@Safety{isMandatory = true;}}
+                        part frontSeat[2];
+                        part driverAirBag {@Safety{isMandatory = false;}}
+                    }
+                    
+                    //connections
+                    bind engine.fuelCmdPort=fuelCmdPort;
+
+                    interface engineToTransmissionInterface:EngineToTransmissionInterface
+                        connect engine.drivePwrPort to transmission.clutchPort;
+                
+                    interface fuelInterface:FuelInterface
+                        connect fuelTank.fuelOutPort to engine.fuelInPort;
+
+                    allocate ActionTree::providePower.generateToAmplify to engineToTransmissionInterface;
+                    
+                    bind engine.ignitionCmdPort=ignitionCmdPort;
+                    connect starterMotor.gearPort to engine.flyWheelPort;
+                    connect vehicleSoftware.vehicleController.controlPort to engine.engineControlPort;
+                    bind vehicle_b.setSpeedPort = vehicleSoftware.vehicleController.cruiseController.setSpeedPort;
+                    connect speedSensor.speedSensorPort to vehicleSoftware.vehicleController.cruiseController.speedSensorPort;
+                    bind vehicleSoftware.vehicleController.cruiseController.cruiseControlPort = vehicleSoftware.vehicleController.controlPort;
+                    connect transmission.shaftPort_a to driveshaft.shaftPort_b; 
+                    connect driveshaft.shaftPort_c to rearAxleAssembly.shaftPort_d;
+                    bind rearAxleAssembly.rearWheel1.wheelToRoadPort=vehicleToRoadPort.wheelToRoadPort1;
+                    bind rearAxleAssembly.rearWheel2.wheelToRoadPort=vehicleToRoadPort.wheelToRoadPort2;
+    }"#;
+    let result = SysMLParser::parse(Rule::part_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse full context with interfaces: {:?}",
         result.err()
     );
 }
