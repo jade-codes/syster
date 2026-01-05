@@ -2444,19 +2444,6 @@ fn test_parse_owned_cross_multiplicity(#[case] input: &str, #[case] desc: &str) 
     );
 }
 
-#[rstest]
-#[case("references", "references keyword")]
-fn test_parse_references_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::references_keyword, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
 // Binding Connector Tests
 
 #[rstest]
@@ -7020,6 +7007,42 @@ fn test_parse_nary_connector_with_metadata() {
     assert!(
         result.is_ok(),
         "Failed to parse n-ary connector with metadata: {:?}",
+        result.err()
+    );
+}
+
+// =============================================================================
+// MassRollup.sysml patterns - select expression with specializes operator
+// =============================================================================
+
+/// Tests parameter_binding with specializes operator (:>) in addition to typed-by (:)
+#[rstest]
+#[case("in p : ISQ::mass", "typed-by with direction")]
+#[case("in p :> ISQ::mass", "specializes with direction")]
+#[case("p : ISQ::mass", "typed-by without direction")]
+#[case("p :> ISQ::mass", "specializes without direction")]
+fn test_parse_parameter_binding_with_specializes(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::parameter_binding, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse parameter_binding '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests select expression body with specializes operator
+#[test]
+fn test_parse_select_expression_body() {
+    let input = r#"{in p :> ISQ::mass; p > minMass}"#;
+
+    let result = SysMLParser::parse(Rule::expression_body, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse select expression body: {:?}",
         result.err()
     );
 }

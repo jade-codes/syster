@@ -355,8 +355,8 @@ parameter_binding_with_terminator = {
 }
 
 parameter_binding = {
-    feature_direction_kind ~ ref_token? ~ identifier? ~ (colon ~ owned_feature_typing)? ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
-    | ref_token? ~ identifier ~ colon ~ owned_feature_typing ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
+    feature_direction_kind ~ ref_token? ~ identifier? ~ ((specializes_operator | colon) ~ owned_feature_typing)? ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
+    | ref_token? ~ identifier ~ (specializes_operator | colon) ~ owned_feature_typing ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
 }
 
 owned_expression_member = {
