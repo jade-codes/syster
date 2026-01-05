@@ -8165,3 +8165,87 @@ fn test_parse_verification_with_actions() {
         result.err()
     );
 }
+
+// Test for SimpleVehicleModel.sysml line 1232: nested function call
+#[test]
+fn test_parse_nested_function_call() {
+    let input = "PassIf(vehicleSpecification.vehicleMassRequirement(vehicle_uut))";
+    let result = SysMLParser::parse(Rule::owned_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse nested function call: {:?}",
+        result.err()
+    );
+}
+
+// Test for SimpleVehicleModel.sysml line 1232: out parameter with nested function call
+#[test]
+fn test_parse_out_param_nested_function_call() {
+    let input = "out verdict = PassIf(vehicleSpecification.vehicleMassRequirement(vehicle_uut));";
+    let result = SysMLParser::parse(Rule::directed_parameter_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse out param with nested function call: {:?}",
+        result.err()
+    );
+}
+
+// Test parsing the feature_value part
+#[test]
+fn test_parse_feature_value_nested_call() {
+    let input = "= PassIf(vehicleSpecification.vehicleMassRequirement(vehicle_uut))";
+    let result = SysMLParser::parse(Rule::feature_value, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse feature_value with nested call: {:?}",
+        result.err()
+    );
+}
+
+// Test simple directed parameter
+#[test]
+fn test_parse_simple_directed_parameter() {
+    let input = "out verdict = 5;";
+    let result = SysMLParser::parse(Rule::directed_parameter_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse simple directed parameter: {:?}",
+        result.err()
+    );
+}
+
+// Test directed parameter with function call
+#[test]
+fn test_parse_directed_parameter_func_call() {
+    let input = "out verdict = foo(x);";
+    let result = SysMLParser::parse(Rule::directed_parameter_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse directed parameter with func call: {:?}",
+        result.err()
+    );
+}
+
+// Test directed parameter with dotted function call
+#[test]
+fn test_parse_directed_parameter_dotted_func_call() {
+    let input = "out verdict = foo.bar(x);";
+    let result = SysMLParser::parse(Rule::directed_parameter_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse directed parameter with dotted func call: {:?}",
+        result.err()
+    );
+}
+
+// Test expression: foo.bar(x)
+#[test]
+fn test_parse_expression_dotted_func_call() {
+    let input = "foo.bar(x)";
+    let result = SysMLParser::parse(Rule::owned_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse dotted func call expression: {:?}",
+        result.err()
+    );
+}

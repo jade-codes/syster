@@ -1091,11 +1091,18 @@ action_body_item = {
     | visible_annotating_member
     | definition_member
     | variant_usage_member
+    | directed_parameter_member
     | non_occurrence_usage_member
     | empty_succession_member? ~ structure_usage_member
     | initial_node_member ~ target_succession_member*
     | empty_succession_member? ~ (behavior_usage_member | action_node_member) ~ target_succession_member*
     | guarded_succession_member
+}
+
+// Directed parameter member: in/out/inout name :type = value;
+// This is a shorthand for in/out/inout attribute name :type = value
+directed_parameter_member = {
+    member_prefix ~ feature_direction_kind ~ attribute_token? ~ usage_suffix
 }
 
 structure_usage_member = {
