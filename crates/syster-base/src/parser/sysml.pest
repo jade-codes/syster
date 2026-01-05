@@ -2165,9 +2165,13 @@ exhibit_state_usage = {
 // Transition Usage
 transition_usage_keyword = { transition_token }
 
+// TransitionUsage grammar:
+// 'transition' UsageDeclaration? ('first' TransitionSourceMember | TransitionSourceMember) ...
+// The 'first' keyword indicates this is not a self-loop.
+// Order matters: try 'first' variant before bare source to avoid 'first' being consumed as identifier.
 transition_usage = {
-    transition_usage_keyword ~ (usage_declaration? ~ first_token)?
-    ~ transition_source_member
+    transition_usage_keyword ~ usage_declaration?
+    ~ (first_token ~ transition_source_member | transition_source_member)
     ~ empty_parameter_member
     ~ (empty_parameter_member ~ trigger_action_member)?
     ~ guard_expression_member?
@@ -2193,8 +2197,8 @@ target_transition_usage = {
 }
 
 transition_source_member = {
-    feature_reference
-    | owned_feature_chain
+    owned_feature_chain
+    | feature_reference
 }
 
 trigger_action_member = {

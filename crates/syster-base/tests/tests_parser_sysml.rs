@@ -4563,6 +4563,30 @@ fn test_parse_transition_succession_member(#[case] input: &str, #[case] desc: &s
     );
 }
 
+// Full Transition Usage Tests
+
+#[rstest]
+#[case("transition first S1 then S2;", "anonymous transition")]
+#[case("transition T first S1 then S2;", "named transition with first")]
+#[case(
+    "transition\n    first S1\n    then S2;",
+    "anonymous transition with first on new line"
+)]
+#[case(
+    "transition T\n    first S2.S3\n    accept s : Sig via p\n    if true\n    do send s to p\n    then S1;",
+    "named transition with first on new line"
+)]
+fn test_parse_transition_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::transition_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
 // Calculation Definition Tests
 
 #[rstest]
