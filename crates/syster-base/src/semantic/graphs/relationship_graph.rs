@@ -109,6 +109,29 @@ impl RelationshipGraph {
             .and_then(|g| g.get_related(element))
     }
 
+    /// Get all outgoing relationships for an element, including spans.
+    /// Returns (target, span) pairs for all relationship types.
+    /// Used for document links and navigation features.
+    pub fn get_all_targets_with_spans(&self, element: &str) -> Vec<(&String, Option<&Span>)> {
+        let mut results = Vec::new();
+
+        // One-to-many relationships (specialization, subsetting, etc.)
+        for graph in self.one_to_many.values() {
+            if let Some(targets) = graph.get_targets_with_spans(element) {
+                results.extend(targets);
+            }
+        }
+
+        // One-to-one relationships (typing)
+        for graph in self.one_to_one.values() {
+            if let Some(target_with_span) = graph.get_target_with_span(element) {
+                results.push(target_with_span);
+            }
+        }
+
+        results
+    }
+
     pub fn has_transitive_path(&self, relationship_type: &str, from: &str, to: &str) -> bool {
         self.one_to_many
             .get(relationship_type)

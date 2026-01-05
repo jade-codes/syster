@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::core::Span;
 use crate::core::events::EventEmitter;
 use crate::core::operation::{EventBus, OperationResult};
@@ -11,6 +13,8 @@ pub struct SymbolTable {
     pub(super) current_scope: usize,
     current_file: Option<String>,
     pub events: EventEmitter<SymbolTableEvent, SymbolTable>,
+    /// Index mapping file paths to qualified names of symbols defined in that file
+    symbols_by_file: HashMap<String, Vec<String>>,
 }
 
 impl SymbolTable {
@@ -20,6 +24,7 @@ impl SymbolTable {
             current_scope: 0,
             current_file: None,
             events: EventEmitter::new(),
+            symbols_by_file: HashMap::new(),
         }
     }
 
@@ -58,6 +63,7 @@ impl SymbolTable {
     pub fn insert(&mut self, name: String, symbol: Symbol) -> Result<(), String> {
         {
             let qualified_name = symbol.qualified_name().to_string();
+            let source_file = symbol.source_file().map(|s| s.to_string());
             let symbol_id = self.scopes.iter().map(|s| s.symbols.len()).sum::<usize>();
 
             let scope = &mut self.scopes[self.current_scope];
@@ -69,6 +75,14 @@ impl SymbolTable {
             }
 
             scope.symbols.insert(name, symbol);
+
+            // Update the file -> symbols index
+            if let Some(file_path) = source_file {
+                self.symbols_by_file
+                    .entry(file_path)
+                    .or_default()
+                    .push(qualified_name.clone());
+            }
 
             let event = SymbolTableEvent::SymbolInserted {
                 qualified_name,
@@ -184,6 +198,18 @@ impl SymbolTable {
             }
         }
         imports
+    }
+
+    /// Get all symbols defined in a specific file
+    ///
+    /// Returns an iterator of symbols whose source_file matches the given path.
+    /// Uses an internal index for O(1) file lookup instead of iterating all symbols.
+    pub fn get_symbols_for_file(&self, file_path: &str) -> impl Iterator<Item = &Symbol> {
+        self.symbols_by_file
+            .get(file_path)
+            .into_iter()
+            .flatten()
+            .filter_map(|qname| self.lookup_qualified(qname))
     }
 }
 

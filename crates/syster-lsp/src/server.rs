@@ -16,6 +16,7 @@ mod references;
 mod rename;
 mod selection_range;
 mod semantic_tokens;
+pub mod type_references;
 
 pub mod background_tasks;
 
