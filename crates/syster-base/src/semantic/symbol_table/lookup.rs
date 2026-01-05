@@ -3,7 +3,11 @@ use super::table::SymbolTable;
 
 impl SymbolTable {
     pub fn lookup(&self, name: &str) -> Option<&Symbol> {
-        let mut current = self.current_scope;
+        self.lookup_in(name, self.current_scope)
+    }
+
+    fn lookup_in(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
+        let mut current = scope_id;
         loop {
             if let Some(symbol) = self.scopes[current].symbols.get(name) {
                 return self.resolve_alias(symbol);
@@ -109,6 +113,15 @@ impl SymbolTable {
             }
             current = self.scopes[current].parent?;
         }
+    }
+
+    /// Resolve a name using imports from a specific scope
+    ///
+    /// This is useful when you need to resolve a name in the context of
+    /// a specific file's imports without modifying current_scope.
+    pub fn resolve_in_scope(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
+        self.lookup_qualified(name)
+            .or_else(|| self.lookup_in(name, scope_id))
     }
 
     pub fn lookup_qualified(&self, qualified_name: &str) -> Option<&Symbol> {
