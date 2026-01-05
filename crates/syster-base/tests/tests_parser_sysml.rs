@@ -7903,6 +7903,21 @@ fn test_parse_interface_decl_with_connect_v2() {
     );
 }
 
+/// Tests metadata usage with about clause and qualified name
+#[test]
+fn test_parse_metadata_with_about_qualified() {
+    let input = r#"@Rationale about engineTradeOffAnalysis::vehicle_b_engine4cyl{
+        explanation = VehicleAnalysis::VehicleTradeOffAnalysis::engineTradeOffAnalysis;          
+        text = "the engine4cyl was evaluated";
+    }"#;
+    let result = SysMLParser::parse(Rule::metadata_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse metadata with about and qualified name: {:?}",
+        result.err()
+    );
+}
+
 /// Tests parsing part body with two interfaces (from actual file)
 #[test]
 fn test_parse_part_with_two_interfaces() {
@@ -7996,6 +8011,23 @@ fn test_parse_refinement_dependency() {
     assert!(
         result.is_ok(),
         "Failed to parse refinement dependency: {:?}",
+        result.err()
+    );
+}
+
+// Test for SimpleVehicleModel.sysml line 1117-1124: @Rationale about qualified::name
+#[test]
+fn test_parse_metadata_about_qualified_name() {
+    let input = r#"package VehicleTradeOffAnalysis{
+            @Rationale about engineTradeOffAnalysis::vehicle_b_engine4cyl{
+                explanation = VehicleAnalysis::VehicleTradeOffAnalysis::engineTradeOffAnalysis;          
+                text = "the engine4cyl was evaluated to have a higher objective function compared to the engine6cyl based on the trade-off analyiss"; 
+            }
+        }"#;
+    let result = SysMLParser::parse(Rule::package, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse metadata about qualified name: {:?}",
         result.err()
     );
 }

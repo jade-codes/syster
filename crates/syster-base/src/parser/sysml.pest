@@ -2515,7 +2515,7 @@ metadata_usage = {
 metadata_usage_declaration = {
     (identification? ~ defined_by_token)? ~ metadata_typing
 }
-annotation = { identifier }
+annotation = { qualified_name | identifier }
 metadata_body = { ";" | ( forward_curl_brace ~ metadata_body_items ~ backward_curl_brace ) }
 metadata_body_items = {
     (definition_member
