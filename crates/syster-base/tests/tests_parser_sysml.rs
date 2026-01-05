@@ -7645,3 +7645,56 @@ fn test_parse_wheel_part_def_with_forall() {
         result.err()
     );
 }
+
+// =============================================================================
+// SysMLv2SpecAnnexA SimpleVehicleModel - transition from initial state
+// =============================================================================
+
+/// Tests transition from initial pseudostate
+#[test]
+fn test_parse_transition_from_initial() {
+    let input = "transition initial then off;";
+    let result = SysMLParser::parse(Rule::transition_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse transition from initial: {:?}",
+        result.err()
+    );
+}
+
+/// Tests entry action with name
+#[test]
+fn test_parse_entry_action_initial() {
+    let input = "entry action initial;";
+    let result = SysMLParser::parse(Rule::entry_action_member, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse entry action: {:?}",
+        result.err()
+    );
+}
+
+/// Tests state with entry action and do action
+#[test]
+fn test_parse_state_with_entry_and_do() {
+    let input = r#"
+        state healthStates {
+            entry action initial;
+            do senseTemperature{
+                out temp;
+            }
+
+            state normal;
+            state maintenance;
+            state degraded;                    
+
+            transition initial then normal;
+        }
+    "#;
+    let result = SysMLParser::parse(Rule::state_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse state with entry and do: {:?}",
+        result.err()
+    );
+}

@@ -1048,6 +1048,7 @@ entry_transition_member = {
 // - accept node (for entry/do/exit actions)
 state_action_usage = {
     action_keyword ~ (identifier ~ semi_colon | usage_declaration? ~ action_body)
+    | identifier ~ (semi_colon | action_body)
     | send_node_declaration ~ semi_colon
     | accept_node_declaration ~ semi_colon
     | assignment_node_declaration ~ semi_colon
@@ -2214,8 +2215,14 @@ transition_usage_keyword = { transition_token }
 // The 'first' keyword indicates this is not a self-loop.
 // Order matters: try 'first' variant before bare source to avoid 'first' being consumed as identifier.
 transition_usage = {
-    transition_usage_keyword ~ usage_declaration?
-    ~ (first_token ~ transition_source_member | transition_source_member)
+    transition_usage_keyword
+    ~ (
+        // Named transition with source: "transition name first source ..." or "transition name source ..."
+        usage_declaration ~ (first_token ~ transition_source_member | transition_source_member)
+        // Anonymous transition with source: "transition first source ..." or "transition source ..."
+        | first_token ~ transition_source_member
+        | transition_source_member
+    )
     ~ empty_parameter_member
     ~ (empty_parameter_member ~ trigger_action_member)?
     ~ guard_expression_member?
