@@ -2188,7 +2188,7 @@ verification_case_usage = {
 }
 
 use_case_usage = {
-    occurrence_usage_prefix ~ use_token ~ case_token ~ usage_declaration? ~ usage_body
+    occurrence_usage_prefix ~ use_token ~ case_token ~ usage_declaration? ~ case_body
 }
 
 // Viewpoint Usage
@@ -2279,7 +2279,9 @@ transition_succession = {
     empty_source_end_member ~ connector_end_member
 }
 
-include_use_case_usage = { include_token ~ identifier ~ semi_colon }
+include_use_case_usage = {
+    include_token ~ (use_token ~ case_token)? ~ (owned_feature_chain | usage_declaration) ~ case_body
+}
 
 // Classifiers (reusing KerML rules with same names for compatibility)
 // Note: specializes_token and other feature relationship tokens are defined 

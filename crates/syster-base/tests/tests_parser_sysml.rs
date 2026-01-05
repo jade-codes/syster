@@ -7406,3 +7406,58 @@ fn test_parse_anonymous_redefinition_in_snapshot() {
         result.err()
     );
 }
+
+// =============================================================================
+// UseCaseTest.sysml patterns - include use case with typing
+// =============================================================================
+
+/// Tests include use case with typing
+#[test]
+fn test_parse_include_use_case_with_typing() {
+    let input = "include use case uc1 : UC1;";
+    let result = SysMLParser::parse(Rule::include_use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse include use case with typing: {:?}",
+        result.err()
+    );
+}
+
+/// Tests include use case with body
+#[test]
+fn test_parse_include_use_case_with_body() {
+    let input = r#"include use case uc2 {
+        subject = system;
+        actor user = UseSystem::user;
+    }"#;
+    let result = SysMLParser::parse(Rule::include_use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse include use case with body: {:?}",
+        result.err()
+    );
+}
+
+/// Tests shortened include form
+#[test]
+fn test_parse_include_shorthand() {
+    let input = "include uc2;";
+    let result = SysMLParser::parse(Rule::include_use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse include shorthand: {:?}",
+        result.err()
+    );
+}
+
+/// Tests include with feature chain
+#[test]
+fn test_parse_include_with_feature_chain() {
+    let input = "include system.uc1;";
+    let result = SysMLParser::parse(Rule::include_use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse include with feature chain: {:?}",
+        result.err()
+    );
+}
