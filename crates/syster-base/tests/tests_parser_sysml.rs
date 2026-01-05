@@ -6947,3 +6947,43 @@ fn test_parse_decision_test_action_def() {
         result.err()
     );
 }
+
+// =============================================================================
+// PictureTaking.sysml patterns - flow of Type from X to Y
+// =============================================================================
+
+/// Tests flow_connection_usage_declaration with typed flow pattern
+#[rstest]
+#[case("of Exposure from focus.xrsl to shoot.xsf", "typed flow with from-to")]
+#[case("from focus.xrsl to shoot.xsf", "flow with from-to")]
+#[case("focus.xrsl to shoot.xsf", "flow with to only")]
+#[case("myFlow : Exposure from x to y", "named typed flow")]
+fn test_parse_flow_connection_usage_declaration(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_connection_usage_declaration, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse flow_connection_usage_declaration '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests the full PictureTaking action pattern
+#[test]
+fn test_parse_picture_taking_action() {
+    let input = r#"action takePicture {
+        action focus: Focus[1];
+        flow of Exposure from focus.xrsl to shoot.xsf;
+        action shoot: Shoot[1];
+    }"#;
+
+    let result = SysMLParser::parse(Rule::action_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse takePicture action: {:?}",
+        result.err()
+    );
+}

@@ -2031,11 +2031,13 @@ flow_connection_usage = {
 // Where FlowPart = ('from' FlowEndMember)? 'to' FlowEndMember
 //
 // Ordering matters for PEG parsing:
-// 1. flow_part - handles shorthand "flow X.Y to A.B" or "flow from X.Y to A.B" (no name)
-// 2. usage_declaration ~ of_token? ~ flow_part? - handles named "flow myFlow: Type of X.Y to A.B"
+// 1. of_token ~ owned_feature_typing ~ flow_part - handles "flow of Exposure from X to Y" (typed, no name)
+// 2. flow_part - handles shorthand "flow X.Y to A.B" or "flow from X.Y to A.B" (no name)
+// 3. usage_declaration ~ of_token? ~ flow_part? - handles named "flow myFlow: Type of X.Y to A.B"
 //    or "flow myFlow from X.Y to A.B"
 flow_connection_usage_declaration = {
-    flow_part
+    of_token ~ owned_feature_typing ~ flow_part
+    | flow_part
     | usage_declaration ~ of_token? ~ flow_part?
 }
 
