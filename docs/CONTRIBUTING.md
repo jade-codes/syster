@@ -54,6 +54,13 @@ We follow strict TDD practices:
 
 5. **Refactor while keeping tests green**
 
+6. **Verify all guidelines pass **
+   ```bash
+   make run-guidelines
+   ```
+
+cargo test test_concern_def_parsing
+
 ### 2. Incremental Development - STRICT LIMITS
 
 - **One function at a time:** Complete the full TDD cycle for one function before moving to the next

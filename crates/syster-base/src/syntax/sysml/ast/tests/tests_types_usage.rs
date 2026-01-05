@@ -779,7 +779,7 @@ fn test_usage_counting_anonymous_usages() {
 
 #[test]
 fn test_usage_counting_all_kinds() {
-    let kinds = vec![
+    let kinds = [
         UsageKind::Part,
         UsageKind::Port,
         UsageKind::Action,
