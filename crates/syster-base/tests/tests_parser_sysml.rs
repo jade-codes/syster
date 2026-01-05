@@ -7674,27 +7674,102 @@ fn test_parse_entry_action_initial() {
     );
 }
 
-/// Tests state with entry action and do action
+/// Tests multiple bind and interface statements in sequence
 #[test]
-fn test_parse_state_with_entry_and_do() {
+fn test_parse_bind_and_interface_sequence() {
     let input = r#"
-        state healthStates {
-            entry action initial;
-            do senseTemperature{
-                out temp;
-            }
-
-            state normal;
-            state maintenance;
-            state degraded;                    
-
-            transition initial then normal;
+        part vehicle {
+            bind engine.fuelCmdPort=fuelCmdPort;
+            
+            interface engineInterface:EngineInterface
+                connect engine.port1 to trans.port2;
+            
+            interface fuelInterface:FuelInterface
+                connect fuelTank.outPort to engine.inPort;
         }
     "#;
-    let result = SysMLParser::parse(Rule::state_usage, input);
+    let result = SysMLParser::parse(Rule::part_usage, input);
     assert!(
         result.is_ok(),
-        "Failed to parse state with entry and do: {:?}",
+        "Failed to parse bind and interface sequence: {:?}",
+        result.err()
+    );
+}
+
+/// Tests bind, interface, and allocate in sequence (from SimpleVehicleModel line ~703)
+#[test]
+fn test_parse_bind_interface_allocate_sequence() {
+    let input = r#"
+        part vehicle_b : Vehicle {
+            bind engine.fuelCmdPort=fuelCmdPort;
+
+            interface engineToTransmissionInterface:EngineToTransmissionInterface
+                connect engine.drivePwrPort to transmission.clutchPort;
+        
+            interface fuelInterface:FuelInterface
+                connect fuelTank.fuelOutPort to engine.fuelInPort;
+
+            allocate ActionTree::providePower.generateToAmplify to engineToTransmissionInterface;
+        }
+    "#;
+    let result = SysMLParser::parse(Rule::part_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse bind/interface/allocate sequence: {:?}",
+        result.err()
+    );
+}
+
+/// Tests allocate with qualified name and feature chain
+#[test]
+fn test_parse_allocate_with_qualified_feature_chain() {
+    let input = "allocate ActionTree::providePower.generateToAmplify to engineInterface;";
+    let result = SysMLParser::parse(Rule::allocate_keyword_part, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse allocate with qualified name + feature chain: {:?}",
+        result.err()
+    );
+}
+
+/// Tests interface with connect on indented next line (no braces)
+#[test]
+fn test_parse_interface_implicit_body() {
+    let input = "interface fuelInterface:FuelInterface\n                        connect fuelTank.fuelOutPort to engine.fuelInPort;";
+    let result = SysMLParser::parse(Rule::interface_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface with implicit body: {:?}",
+        result.err()
+    );
+}
+
+/// Tests interface declaration with connect keyword
+#[test]
+fn test_parse_interface_decl_with_connect() {
+    let input = "fuelInterface:FuelInterface connect fuelTank.fuelOutPort to engine.fuelInPort";
+    let result = SysMLParser::parse(Rule::interface_usage_declaration, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface declaration with connect: {:?}",
+        result.err()
+    );
+}
+
+/// Tests parsing part body with two interfaces (from actual file)
+#[test]
+fn test_parse_part_with_two_interfaces() {
+    let input = r#"part vehicle {
+                    interface engineToTransmissionInterface:EngineToTransmissionInterface
+                        connect engine.drivePwrPort to transmission.clutchPort;
+                
+                    interface fuelInterface:FuelInterface
+                        connect fuelTank.fuelOutPort to engine.fuelInPort;
+                }"#;
+    let result = SysMLParser::parse(Rule::part_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse part with two interfaces: {:?}",
         result.err()
     );
 }

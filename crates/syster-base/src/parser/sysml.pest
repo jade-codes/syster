@@ -885,6 +885,7 @@ interface_definition = {
 interface_body = {
     semi_colon
     | forward_curl_brace ~ interface_body_item* ~ backward_curl_brace
+    | connector_keyword ~ connector_part ~ semi_colon
 }
 
 interface_body_item = {
@@ -1944,7 +1945,7 @@ allocate_end_member = {
 }
 
 allocate_end = {
-    owned_cross_multiplicity_member? ~ (identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
+    owned_cross_multiplicity_member? ~ (owned_feature_chain | identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
 }
 
 // Allocation usage with optional allocate part
