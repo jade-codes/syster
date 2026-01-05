@@ -6886,3 +6886,64 @@ fn test_parse_action_with_state_and_calc_invocation() {
         result.err()
     );
 }
+
+// =============================================================================
+// DecisionTest.sysml patterns - succession with guarded transitions
+// =============================================================================
+
+/// Tests succession_as_usage with guarded target succession (if ... then ...)
+#[rstest]
+#[case("first A1 then A2;", "simple succession")]
+#[case("succession S first A1 then A2;", "named succession")]
+#[case("first A1 if x == 0 then A2;", "succession with guard")]
+#[case(
+    "succession S first A1 if x == 0 then A2;",
+    "named succession with guard"
+)]
+#[case("first A1 else A2;", "succession with default")]
+fn test_parse_succession_with_guarded_transitions(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::succession_as_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse succession_as_usage '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests the full DecisionTest action def pattern
+#[test]
+fn test_parse_decision_test_action_def() {
+    let input = r#"action def DecisionTest {
+        attribute x = 1;
+
+        decide 'test x';
+        if x == 1 then A1; 
+        if x > 1 then A2;
+        else A3; 
+
+        then decide D; 
+        if true then A1;
+        if false then A2;
+
+        action A1;
+        action A2;
+        action A3;
+
+        succession S first A1 
+                if x == 0 then A2;
+
+        first A3;
+                if x > 0 then 'test x';
+}"#;
+
+    let result = SysMLParser::parse(Rule::action_definition, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse DecisionTest action def: {:?}",
+        result.err()
+    );
+}

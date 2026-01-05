@@ -267,8 +267,7 @@ succession_as_usage = {
     ~ (succession_keyword ~ usage_declaration?)?
     ~ first_token
     ~ connector_end_member
-    ~ then_token
-    ~ connector_end_member
+    ~ (then_token ~ connector_end_member | guarded_target_succession | default_target_succession)
     ~ definition_body
 }
 
