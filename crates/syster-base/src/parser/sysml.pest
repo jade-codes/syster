@@ -1644,8 +1644,15 @@ unextended_usage_prefix = {
 
 owned_crossing_feature_member = { owned_crossing_feature }
 
+// Usage keywords that can follow 'end' - used for negative lookahead
+end_usage_keyword = {
+    item_token | part_token | port_token | connection_token | interface_token
+    | flow_token | action_token | state_token | constraint_token
+    | requirement_token | occurrence_token | attribute_token | ref_token
+}
+
 owned_crossing_feature = {
-    basic_usage_prefix? ~ usage_declaration
+    !end_usage_keyword ~ basic_usage_prefix? ~ usage_declaration
 }
 
 usage_prefix = {
@@ -2359,8 +2366,8 @@ owned_reference_subsetting = {
 }
 
 owned_cross_subsetting = {
-    feature_reference
-    | owned_feature_chain
+    owned_feature_chain
+    | feature_reference
 }
 
 owned_redefinition = {

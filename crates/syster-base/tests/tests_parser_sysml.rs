@@ -770,7 +770,7 @@ fn test_parse_locale_annotation(#[case] input: &str, #[case] desc: &str) {
 
 #[test]
 fn test_parse_textual_representation() {
-    let input = "rep language 'Python' /* code */";
+    let input = "rep language \"Python\" /* code */";
     let result = SysMLParser::parse(Rule::textual_representation, input);
 
     assert!(
@@ -1420,6 +1420,7 @@ fn test_parse_multiplicity_part(#[case] input: &str, #[case] desc: &str) {
 #[case(":> BaseFeature", "subsets")]
 #[case("::> ReferencedFeature", "references")]
 #[case(":>> RedefinedFeature", "redefines")]
+#[case("crosses other.feature", "crosses")]
 fn test_parse_feature_specialization(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::feature_specialization, input);
 
@@ -1436,6 +1437,10 @@ fn test_parse_feature_specialization(#[case] input: &str, #[case] desc: &str) {
 #[case(": Type1 [1]", "typing with multiplicity")]
 #[case("[0..*] ordered", "multiplicity with properties")]
 #[case(": Type1 [1] :> Base", "typing, multiplicity, and subsetting")]
+#[case(
+    ": ShoppingCart[1] crosses selectedProduct.inCart",
+    "typing, multiplicity, and crosses"
+)]
 fn test_parse_feature_specialization_part(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::feature_specialization_part, input);
 
@@ -1444,6 +1449,73 @@ fn test_parse_feature_specialization_part(#[case] input: &str, #[case] desc: &st
         "Failed to parse {}: {:?}",
         desc,
         result.err()
+    );
+}
+
+#[rstest]
+#[case(
+    "cart: ShoppingCart[1] crosses selectedProduct.inCart",
+    "identification with typing, multiplicity, and crosses"
+)]
+fn test_parse_feature_declaration(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::feature_declaration, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(
+    "cart: ShoppingCart[1] crosses selectedProduct.inCart",
+    "identification with typing, multiplicity, and crosses"
+)]
+fn test_parse_usage_declaration(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::usage_declaration, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+
+    // Check how much was consumed
+    let pair = result.clone().unwrap().next().unwrap();
+    println!(
+        "{}: consumed '{}' from input len {}",
+        desc,
+        pair.as_str(),
+        input.len()
+    );
+}
+
+#[rstest]
+#[case("end", "end prefix")]
+#[case("end item", "end followed by item - should only consume end")]
+#[case(
+    "end item cart: ShoppingCart[1] crosses selectedProduct.inCart;",
+    "full end item usage"
+)]
+fn test_parse_occurrence_usage_prefix(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::occurrence_usage_prefix, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+
+    // Check how much was consumed
+    let pair = result.unwrap().next().unwrap();
+    println!(
+        "{}: consumed '{}' (expected to consume only prefix)",
+        desc,
+        pair.as_str()
     );
 }
 
@@ -2236,6 +2308,10 @@ fn test_parse_item_definition(#[case] input: &str, #[case] desc: &str) {
     "item usage with ref and individual marker"
 )]
 #[case("snapshot item snap1;", "item usage with portion kind")]
+#[case(
+    "end item cart: ShoppingCart[1] crosses selectedProduct.inCart;",
+    "end item with crosses"
+)]
 fn test_parse_item_usage(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::item_usage, input);
 
@@ -6865,7 +6941,7 @@ fn test_parse_action_with_state_and_calc_invocation() {
 		assign counting.counter.count := Increment(counting.counter).count;
 	}"#;
 
-    let result = SysMLParser::parse(Rule::action_definition, input);
+    let result = SysMLParser::parse(Rule::action_usage, input);
 
     assert!(
         result.is_ok(),
