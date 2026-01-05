@@ -345,8 +345,9 @@ expression_body = {
 }
 
 expression_body_part = {
-    visible_annotating_member* ~ (parameter_binding_with_terminator)+ ~ owned_expression
+    visible_annotating_member* ~ (parameter_binding_with_terminator)+ ~ non_occurrence_usage_member* ~ owned_expression
     | visible_annotating_member* ~ (parameter_binding_with_terminator)+
+    | visible_annotating_member* ~ non_occurrence_usage_member* ~ owned_expression
     | visible_annotating_member* ~ owned_expression
 }
 

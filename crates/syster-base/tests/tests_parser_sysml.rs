@@ -7497,3 +7497,151 @@ fn test_parse_variation_part_usage() {
         result.err()
     );
 }
+
+// =============================================================================
+// VehicleGeometryAndCoordinateFrames.sysml patterns - forAll expressions
+// =============================================================================
+
+/// Tests forAll expression with parameter and attributes
+#[test]
+fn test_parse_forall_with_parameter() {
+    let input = r#"(1..5)->forAll {
+        in i : Natural;
+        i > 0
+    }"#;
+    let result = SysMLParser::parse(Rule::owned_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse forAll with parameter: {:?}",
+        result.err()
+    );
+}
+
+/// Tests forAll expression with private attribute
+#[test]
+fn test_parse_forall_with_private_attribute() {
+    let input = r#"(1..5)->forAll {
+        in i : Natural;
+        private attribute x = i * 2;
+        x > 0
+    }"#;
+    let result = SysMLParser::parse(Rule::owned_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse forAll with private attribute: {:?}",
+        result.err()
+    );
+}
+
+/// Tests forAll with hash/metadata access
+#[test]
+fn test_parse_forall_with_hash_access() {
+    let input = r#"(1..numberOfBolts)->forAll {
+        in i : Natural;
+        private attribute lbcf = lugBolts#(i).coordinateFrame;
+        lbcf == null
+    }"#;
+    let result = SysMLParser::parse(Rule::owned_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse forAll with hash access: {:?}",
+        result.err()
+    );
+}
+
+/// Tests forAll with attribute containing body
+#[test]
+fn test_parse_forall_with_attribute_body() {
+    let input = r#"(1..n)->forAll {
+        in i : Natural;
+        private attribute trs : TranslationRotationSequence {
+            :>> source = wcf;
+            :>> target = lbcf;
+        }
+        trs == null
+    }"#;
+    let result = SysMLParser::parse(Rule::owned_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse forAll with attribute body: {:?}",
+        result.err()
+    );
+}
+
+/// Tests new expression with subscript
+#[test]
+fn test_parse_new_with_subscript() {
+    let input = "new Translation((x, y, z)[wcf])";
+    let result = SysMLParser::parse(Rule::instantiation_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse new with subscript: {:?}",
+        result.err()
+    );
+}
+
+/// Tests parameter binding with in direction
+#[test]
+fn test_parse_parameter_binding_with_in() {
+    let input = "in i : Natural";
+    let result = SysMLParser::parse(Rule::parameter_binding, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse parameter binding with in: {:?}",
+        result.err()
+    );
+}
+
+/// Tests forAll inside constraint body
+#[test]
+fn test_parse_forall_in_constraint() {
+    let input = r#"assert constraint {
+        (1..n)->forAll {
+            in i : Natural;
+            i > 0
+        }
+    }"#;
+    let result = SysMLParser::parse(Rule::assert_constraint_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse forAll in constraint: {:?}",
+        result.err()
+    );
+}
+
+/// Tests full Wheel part def from VehicleGeometryAndCoordinateFrames
+#[test]
+fn test_parse_wheel_part_def_with_forall() {
+    let input = r#"part def Wheel :> SpatialItem {
+        item :>> shape : Cylinder {
+            :>> radius = 22/2*25.4 + 110 [mm]; 
+            :>> height = 220 [mm];
+        }
+        attribute <wcf> wheelCoordinateFrame : CoordinateFrame;
+        
+        attribute numberOfBolts : Natural = 5;	
+        part lugBolts : LugBolt[1..numberOfBolts] :> subSpatialParts;
+        
+        attribute <lbpr> lugBoltPlacementRadius :>> radius default 60 [mm];
+        private attribute lugBoltDistributionAngle :>> planeAngle = 360/numberOfBolts ['°'];
+        private attribute lbda : Real = lugBoltDistributionAngle.num * (pi/180);
+        assert constraint {
+            (1..numberOfBolts)->forAll {
+                in i : Natural;
+                private attribute lbcf = lugBolts#(i).coordinateFrame; 
+                private attribute trs : TranslationRotationSequence {
+                    :>> source = wcf;
+                    :>> target = lbcf;
+                    :>> elements = new Translation((lbpr*cos((i-1)*lbda), lbpr*sin((i-1)*lbda), -8)[wcf]); 
+                }
+                lbcf.transformation == trs
+            }
+        }
+    }"#;
+    let result = SysMLParser::parse(Rule::part_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse Wheel part def with forAll: {:?}",
+        result.err()
+    );
+}
