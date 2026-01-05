@@ -6987,3 +6987,39 @@ fn test_parse_picture_taking_action() {
         result.err()
     );
 }
+
+// =============================================================================
+// CauseAndEffectExample.sysml patterns - connector with references operator
+// =============================================================================
+
+/// Tests connector_end_reference with references operator (::>)
+#[rstest]
+#[case("cause1 ::> causer1", "simple references")]
+#[case("effect1 ::> effected1", "effect references")]
+fn test_parse_connector_end_with_references_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::connector_end_reference, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse connector_end_reference '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests n-ary connector with metadata prefix and references operator
+#[test]
+fn test_parse_nary_connector_with_metadata() {
+    let input = r#"#multicausation connection : MultiCauseEffect connect
+                ( cause1 ::> causer1, cause2 ::> causer2,
+                  effect1 ::> effected1, effect2 ::> effected2 );"#;
+
+    let result = SysMLParser::parse(Rule::connection_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse n-ary connector with metadata: {:?}",
+        result.err()
+    );
+}

@@ -1872,16 +1872,14 @@ connector_end = {
 
 connector_end_reference = {
     owned_feature_chain
-    | identifier ~ references_keyword ~ (owned_feature_chain | feature_reference)
-    | quoted_name ~ references_keyword ~ (owned_feature_chain | feature_reference)
+    | identifier ~ references_operator ~ (owned_feature_chain | feature_reference)
+    | quoted_name ~ references_operator ~ (owned_feature_chain | feature_reference)
     | feature_reference
 }
 
 owned_cross_multiplicity_member = { owned_cross_multiplicity }
 
 owned_cross_multiplicity = { owned_multiplicity }
-
-references_keyword = { references_token }
 
 // Connection usage and connector parts
 connection_usage = {
