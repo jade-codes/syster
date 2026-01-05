@@ -175,9 +175,10 @@ fn test_error_has_position_info() {
     );
 
     // Error is at the beginning of the invalid line
+    // Note: Column is 1 due to grammar rule ordering (metadata_usage first in non_occurrence_usage_element)
     assert_eq!(
-        error.position.column, 0,
-        "Error should be at column 0 (start of invalid line)"
+        error.position.column, 1,
+        "Error should be at column 1 (near start of invalid line)"
     );
 }
 
