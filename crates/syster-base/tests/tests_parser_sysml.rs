@@ -7918,6 +7918,51 @@ fn test_parse_metadata_with_about_qualified() {
     );
 }
 
+/// Tests part with typed-by redefinition and multiplicity
+#[test]
+fn test_parse_part_typed_by_redefinition_with_multiplicity() {
+    let input = "part cylinders :>> cylinders [4];";
+    let result = SysMLParser::parse(Rule::part_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse part with :>> and multiplicity: {:?}",
+        result.err()
+    );
+}
+
+/// Tests attribute with redefines and unit
+#[test]
+fn test_parse_attribute_redefines_with_unit() {
+    let input = "attribute mass redefines mass=180 [kg];";
+    let result = SysMLParser::parse(Rule::attribute_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse attribute with redefines and unit: {:?}",
+        result.err()
+    );
+}
+
+/// Tests analysis with subject and parts from line 1165-1172
+#[test]
+fn test_parse_analysis_from_line_1165() {
+    let input = r#"analysis engineTradeOffAnalysis:TradeStudy{
+        subject vehicleAlternatives[2]:>vehicle_b;   
+        
+        part vehicle_b_engine4cyl:>vehicleAlternatives{   
+            part engine redefines engine{
+                part cylinders :>> cylinders [4];
+                attribute mass redefines mass=180 [kg];
+            }
+        }
+    }"#;
+    let result = SysMLParser::parse(Rule::analysis_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse analysis from line 1165: {:?}",
+        result.err()
+    );
+}
+
 /// Tests parsing part body with two interfaces (from actual file)
 #[test]
 fn test_parse_part_with_two_interfaces() {
@@ -8028,6 +8073,95 @@ fn test_parse_metadata_about_qualified_name() {
     assert!(
         result.is_ok(),
         "Failed to parse metadata about qualified name: {:?}",
+        result.err()
+    );
+}
+
+// Test for SimpleVehicleModel.sysml line 1168-1176: redefines with inline value
+#[test]
+fn test_parse_redefines_with_inline_value() {
+    let input = r#"part vehicle_b_engine4cyl:>vehicleAlternatives{   
+                    part engine redefines engine{
+                        part cylinders :>> cylinders [4];
+                        attribute mass redefines mass=180 [kg];
+                        attribute peakHorsePower redefines peakHorsePower = 180 [W];
+                        attribute fuelEfficiency redefines fuelEfficiency=.6;
+                        attribute cost redefines cost = 1000;                     
+                    }
+                }"#;
+    let result = SysMLParser::parse(Rule::part_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse redefines with inline value: {:?}",
+        result.err()
+    );
+}
+
+// Test for PartTest.sysml line 6-7: part with quoted short name
+#[test]
+fn test_parse_part_with_quoted_short_name() {
+    let input = r#"part def A {
+		part <'1'> b: B;
+	}"#;
+    let result = SysMLParser::parse(Rule::part_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse part with quoted short name: {:?}",
+        result.err()
+    );
+}
+
+// Test for PartTest.sysml: public part def A with full body
+#[test]
+fn test_parse_part_test_file() {
+    let input = r#"package PartTest {
+	
+	part f: A;
+
+	public part def A {
+		part <'1'> b: B;
+		protected port c: C;
+		constant attribute x[0..2];
+		derived constant ref attribute y :> x;
+		ref z : ScalarValues::Integer;
+	}
+}"#;
+    let result = SysMLParser::parse(Rule::package, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse PartTest file: {:?}",
+        result.err()
+    );
+}
+
+// Test for SimpleVehicleModel.sysml line 1215-1237: verification with actions
+#[test]
+fn test_parse_verification_with_actions() {
+    let input = r#"verification massTests:MassTest {
+                subject vehicle_uut :> vehicle_b;
+                actor vehicleVerificationSubSystem_1 = verificationContext.massVerificationSystem;
+                objective {
+                    verify vehicleSpecification.vehicleMassRequirement{
+                        redefines massActual=weighVehicle.massMeasured;
+                    }
+                }     
+               @ VerificationMethod{
+                    kind = (VerificationMethodKind::test, VerificationMethodKind::analyze);
+                }
+                action weighVehicle {
+                    out massMeasured:>ISQ::mass;
+                }
+                then action evaluatePassFail {
+                    in massMeasured:>ISQ::mass;
+                    out verdict = PassIf(vehicleSpecification.vehicleMassRequirement(vehicle_uut));
+                }
+                flow from weighVehicle.massMeasured to evaluatePassFail.massMeasured;
+                return :>> verdict = evaluatePassFail.verdict;
+            }"#;
+    let result = SysMLParser::parse(Rule::verification_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse verification with actions: {:?}",
         result.err()
     );
 }

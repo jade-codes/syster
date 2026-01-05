@@ -673,7 +673,7 @@ null_literal = @{ "null" ~ !(ASCII_ALPHANUMERIC | "_") }
 
 string_value = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 numeric_value = @{ 
-    "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+    "-"? ~ (ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? | "." ~ ASCII_DIGIT+) ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
 }
 boolean_value = @{ ("true" | "false") ~ !(ASCII_ALPHANUMERIC | "_") }
 
@@ -1521,14 +1521,14 @@ case_calculation_body_item = {
 }
 
 case_action_body_item = {
-    behavior_usage_member
+    empty_succession_member? ~ behavior_usage_member
+    | empty_succession_member? ~ action_node_member
     | import
     | alias_member_element
     | definition_member
     | variant_usage_member
     | non_occurrence_usage_member
     | structure_usage_member
-    | action_node_member
 }
 
 objective_member = {
