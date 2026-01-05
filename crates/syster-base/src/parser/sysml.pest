@@ -2425,10 +2425,13 @@ annotating_element = {
     | documentation
     | textual_representation
     | metadata_usage_annotation
+    | locale_annotation
     | ignored_block_comment
 }
 
 ignored_block_comment = _{ block_comment }
+
+locale_annotation = { locale_token ~ string_value ~ block_comment? }
 
 comment_annotation = { comment_token ~ identifier? ~ (locale_token ~ quoted_name)? ~ (about_token ~ element_reference ~ ("," ~ element_reference)*)? ~ (block_comment | semi_colon)? }
 

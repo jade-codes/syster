@@ -755,6 +755,19 @@ fn test_parse_documentation_variants(#[case] input: &str) {
     );
 }
 
+#[rstest]
+#[case(r#"locale "en_US" /* comment */"#, "locale with comment")]
+#[case(r#"locale "ja-JP""#, "locale without comment")]
+fn test_parse_locale_annotation(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::locale_annotation, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
 #[test]
 fn test_parse_textual_representation() {
     let input = "rep language 'Python' /* code */";
