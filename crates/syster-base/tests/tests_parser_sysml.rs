@@ -7461,3 +7461,39 @@ fn test_parse_include_with_feature_chain() {
         result.err()
     );
 }
+
+// =============================================================================
+// VariabilityTest.sysml patterns - variation definitions and variant usages
+// =============================================================================
+
+/// Tests variation part definition
+#[test]
+fn test_parse_variation_part_def() {
+    let input = r#"variation part def V :> P {
+        variant part x : Q {
+            attribute b : B;
+        }
+    }"#;
+    let result = SysMLParser::parse(Rule::part_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse variation part definition: {:?}",
+        result.err()
+    );
+}
+
+/// Tests variation part usage
+#[test]
+fn test_parse_variation_part_usage() {
+    let input = r#"variation part v : P {
+        variant q {
+            attribute b : B;
+        }
+    }"#;
+    let result = SysMLParser::parse(Rule::part_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse variation part usage: {:?}",
+        result.err()
+    );
+}

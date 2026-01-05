@@ -281,7 +281,7 @@ membership_expose = { expose_token ~ identifier ~ double_colon ~ identifier ~ se
 namespace_expose = { expose_token ~ identifier ~ double_colon ~ wildcard ~ semi_colon }
 
 // Port and Conjugation
-variant_membership = { variant_token ~ identifier ~ semi_colon }
+variant_membership = { variant_token ~ variant_usage_element }
 conjugated_port_definition = {
     occurrence_definition_prefix ~ port_token ~ def_token ~ conjugate_operator ~ definition_declaration ~ definition_body
 }
