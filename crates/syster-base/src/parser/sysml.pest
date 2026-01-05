@@ -2118,7 +2118,7 @@ constraint_usage = {
 concern_usage_keyword = { concern_token }
 
 concern_usage = {
-    occurrence_usage_prefix ~ concern_usage_keyword ~ usage_declaration? ~ calculation_body
+    occurrence_usage_prefix ~ concern_usage_keyword ~ usage_declaration? ~ requirement_body
 }
 
 constraint_usage_declaration = {
