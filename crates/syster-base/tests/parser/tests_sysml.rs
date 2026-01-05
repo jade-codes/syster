@@ -501,13 +501,13 @@ fn test_parse_requirement_verification_membership() {
 // Port and Conjugation Tests
 
 #[test]
-fn test_parse_conjugated_port_reference() {
+fn test_parse_conjugated_port_type_reference() {
     let input = "~MyPort";
-    let result = SysMLParser::parse(Rule::conjugated_port_reference, input);
+    let result = SysMLParser::parse(Rule::owned_feature_typing, input);
 
     assert!(
         result.is_ok(),
-        "Failed to parse conjugated port reference: {:?}",
+        "Failed to parse conjugated port typing: {:?}",
         result.err()
     );
 }
@@ -635,7 +635,7 @@ fn test_parse_requirement_constraint_kind(#[case] input: &str) {
 #[case("individual")]
 fn test_parse_markers(#[case] input: &str) {
     let rule = if input == "variation" {
-        Rule::variation_marker
+        Rule::variation_token
     } else {
         Rule::individual_marker
     };
@@ -757,7 +757,7 @@ fn test_parse_documentation_variants(#[case] input: &str) {
 
 #[test]
 fn test_parse_textual_representation() {
-    let input = "rep language 'Python' /* code */";
+    let input = "rep language \"Python\" /* code */";
     let result = SysMLParser::parse(Rule::textual_representation, input);
 
     assert!(
@@ -1185,9 +1185,22 @@ fn test_parse_usage_element(#[case] input: &str, #[case] desc: &str) {
 
 #[rstest]
 #[case("specializes", "specializes keyword")]
-#[case(":>", "specializes symbol")]
 fn test_parse_specializes_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::specializes_token, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(":>", "specializes symbol")]
+#[case("specializes", "specializes keyword")]
+fn test_parse_specializes_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::specializes_operator, input);
 
     assert!(
         result.is_ok(),
@@ -1257,7 +1270,6 @@ fn test_parse_typed_by_token(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case(":>", "subsets symbol")]
 #[case("subsets", "subsets keyword")]
 fn test_parse_subsets_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::subsets_token, input);
@@ -1271,7 +1283,20 @@ fn test_parse_subsets_token(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("::>", "references symbol")]
+#[case(":>", "subsets symbol")]
+#[case("subsets", "subsets keyword")]
+fn test_parse_subsets_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::subsets_operator, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
 #[case("references", "references keyword")]
 fn test_parse_references_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::references_token, input);
@@ -1285,10 +1310,37 @@ fn test_parse_references_token(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case(":>>", "redefines symbol")]
+#[case("::>", "references symbol")]
+#[case("references", "references keyword")]
+fn test_parse_references_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::references_operator, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
 #[case("redefines", "redefines keyword")]
 fn test_parse_redefines_token(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::redefines_token, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(":>>", "redefines symbol")]
+#[case("redefines", "redefines keyword")]
+fn test_parse_redefines_operator(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::redefines_operator, input);
 
     assert!(
         result.is_ok(),
@@ -1546,8 +1598,8 @@ fn test_parse_definition_member(#[case] input: &str, #[case] desc: &str) {
 #[case("readonly", "readonly")]
 #[case("derived", "derived")]
 fn test_parse_usage_modifiers(#[case] input: &str, #[case] desc: &str) {
-    let readonly_result = SysMLParser::parse(Rule::readonly, input);
-    let derived_result = SysMLParser::parse(Rule::derived, input);
+    let readonly_result = SysMLParser::parse(Rule::readonly_token, input);
+    let derived_result = SysMLParser::parse(Rule::derived_token, input);
 
     assert!(
         readonly_result.is_ok() || derived_result.is_ok(),
@@ -2325,19 +2377,6 @@ fn test_parse_owned_cross_multiplicity(#[case] input: &str, #[case] desc: &str) 
     );
 }
 
-#[rstest]
-#[case("references", "references keyword")]
-fn test_parse_references_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::references_keyword, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
 // Binding Connector Tests
 
 #[rstest]
@@ -2881,46 +2920,6 @@ fn test_parse_flow_end(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("parent.", "flow end subsetting with dot")]
-#[case("a.b.", "feature chain prefix")]
-fn test_parse_flow_end_subsetting(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::flow_end_subsetting, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("a.b.", "feature chain prefix")]
-fn test_parse_feature_chain_prefix(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::feature_chain_prefix, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("myFeature", "owned feature chaining")]
-fn test_parse_owned_feature_chaining(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::owned_feature_chaining, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
 #[case("flowRef", "flow feature member")]
 fn test_parse_flow_feature_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::flow_feature_member, input);
@@ -3070,7 +3069,9 @@ fn test_parse_action_node_member(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("nextNode", "action target succession")]
+#[case("then nextNode;", "simple target succession")]
+#[case("if true then nextNode;", "guarded target succession")]
+#[case("else defaultNode;", "default target succession")]
 fn test_parse_action_target_succession(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::action_target_succession, input);
 
@@ -3083,7 +3084,7 @@ fn test_parse_action_target_succession(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
-#[case("nextNode", "target succession member")]
+#[case("then nextNode;", "target succession member with then")]
 fn test_parse_target_succession_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::target_succession_member, input);
 
@@ -3096,9 +3097,9 @@ fn test_parse_target_succession_member(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
-#[case("guardedNode", "guarded succession")]
-fn test_parse_guarded_succession(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::guarded_succession, input);
+#[case("if x then y;", "guarded target succession")]
+fn test_parse_guarded_target_succession(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::guarded_target_succession, input);
 
     assert!(
         result.is_ok(),
@@ -3109,7 +3110,7 @@ fn test_parse_guarded_succession(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("guardedNode", "guarded succession member")]
+#[case("if x then y;", "guarded succession member")]
 fn test_parse_guarded_succession_member(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::guarded_succession_member, input);
 
@@ -5301,7 +5302,7 @@ fn test_parse_viewpoint_usage(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("rendering", "rendering keyword")]
 fn test_parse_rendering_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::rendering_keyword, input);
+    let result = SysMLParser::parse(Rule::rendering_token, input);
 
     assert!(
         result.is_ok(),
@@ -5314,7 +5315,7 @@ fn test_parse_rendering_keyword(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("rendering def", "rendering def keyword")]
 fn test_parse_rendering_def_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::rendering_def_keyword, input);
+    let result = SysMLParser::parse(Rule::rendering_def, input);
 
     assert!(
         result.is_ok(),
@@ -5346,7 +5347,7 @@ fn test_parse_rendering_definition(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("rendering", "rendering usage keyword")]
 fn test_parse_rendering_usage_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::rendering_usage_keyword, input);
+    let result = SysMLParser::parse(Rule::rendering_token, input);
 
     assert!(
         result.is_ok(),

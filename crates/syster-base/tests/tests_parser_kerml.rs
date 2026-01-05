@@ -3190,3 +3190,45 @@ fn test_parse_classifier_with_nested_feature_ast() {
         _ => panic!("Expected Classifier"),
     }
 }
+
+// =============================================================================
+// Issue #617: feature_direction_kind should not match prefix of other keywords
+// =============================================================================
+
+/// Tests that feature_direction_kind matches standalone direction keywords
+#[rstest]
+#[case("in")]
+#[case("out")]
+#[case("inout")]
+fn test_feature_direction_kind_standalone(#[case] input: &str) {
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::feature_direction_kind, input);
+    assert!(
+        result.is_ok(),
+        "Should parse '{}' as feature_direction_kind",
+        input
+    );
+    assert_eq!(result.unwrap().as_str(), input);
+}
+
+/// Tests that feature_direction_kind does NOT match when followed by alphanumeric chars
+/// This prevents "in" from matching the start of "interaction", "interface", etc.
+#[rstest]
+#[case("interaction")]
+#[case("interface")]
+#[case("input")]
+#[case("internal")]
+#[case("inout_extended")]
+#[case("output")]
+#[case("outer")]
+fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
+    let result = KerMLParser::parse(syster::parser::kerml::Rule::feature_direction_kind, input);
+    // The parse should either fail or not consume the entire input
+    if let Ok(pairs) = result {
+        let parsed = pairs.as_str();
+        assert_ne!(
+            parsed, input,
+            "'{}' should not fully match as feature_direction_kind",
+            input
+        );
+    }
+}

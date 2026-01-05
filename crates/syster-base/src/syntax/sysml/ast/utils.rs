@@ -291,8 +291,8 @@ pub fn has_flag(pair: &Pair<Rule>, flag: Rule) -> bool {
 
 /// Extract derived and readonly flags from pairs
 pub fn extract_flags(pairs: &[Pair<Rule>]) -> (bool, bool) {
-    let derived = pairs.iter().any(|p| has_flag(p, Rule::derived));
-    let readonly = pairs.iter().any(|p| has_flag(p, Rule::readonly));
+    let derived = pairs.iter().any(|p| has_flag(p, Rule::derived_token));
+    let readonly = pairs.iter().any(|p| has_flag(p, Rule::readonly_token));
     (derived, readonly)
 }
 
@@ -319,10 +319,10 @@ fn has_definition_flag(pair: &Pair<Rule>, flag: Rule) -> bool {
 pub fn extract_definition_flags(pairs: &[Pair<Rule>]) -> (bool, bool) {
     let is_abstract = pairs
         .iter()
-        .any(|p| has_definition_flag(p, Rule::abstract_marker));
+        .any(|p| has_definition_flag(p, Rule::abstract_token));
     let is_variation = pairs
         .iter()
-        .any(|p| has_definition_flag(p, Rule::variation_marker));
+        .any(|p| has_definition_flag(p, Rule::variation_token));
     (is_abstract, is_variation)
 }
 

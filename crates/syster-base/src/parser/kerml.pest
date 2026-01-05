@@ -69,7 +69,9 @@ conjugates_token = @{ "~" | "conjugates" }
 
 // Enum Types
 visibility_kind = @{ "protected" | "private" | "public" }
-feature_direction_kind = @{ "inout" | "in" | "out" }
+// Use negative lookahead to ensure direction kinds are complete words
+// This prevents "in" from matching the start of "interface"
+feature_direction_kind = @{ ("inout" | "in" | "out") ~ !(ASCII_ALPHANUMERIC | "_") }
 unary_operator = @{ "+" | "-" ~ !(">" | "->") | "not" | "~" }
 classification_test_operator = @{ "@@" | "hastype" | "istype" | "@" }
 equality_operator = @{ "!==" | "!=" | "===" | "==" }
@@ -769,7 +771,7 @@ subsetting = {
 
 // Conjugation extends Inheritance
 conjugation = {
-    "conjugates" ~ inheritance
+    conjugates_token ~ inheritance
 }
 
 // Redefinition extends Subsetting

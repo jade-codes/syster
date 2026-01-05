@@ -7,56 +7,209 @@ COMMENT = _{ line_comment }
 line_comment = { "//" ~ (!"\n" ~ ANY)* }
 block_comment = { "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
+// Tokens
+verification_token = @{ "verification" ~ !(ASCII_ALPHANUMERIC | "_") }
+stakeholder_token = @{ "stakeholder" ~ !(ASCII_ALPHANUMERIC | "_") }
+requirement_token = @{ "requirement" ~ !(ASCII_ALPHANUMERIC | "_") }
+redefines_token = @{ "redefines" ~ !(ASCII_ALPHANUMERIC | "_") }
+references_token = @{ "references" ~ !(ASCII_ALPHANUMERIC | "_") }
+individual_token = @{ "individual" ~ !(ASCII_ALPHANUMERIC | "_") }
+constraint_token = @{ "constraint" ~ !(ASCII_ALPHANUMERIC | "_") }
+connection_token = @{ "connection" ~ !(ASCII_ALPHANUMERIC | "_") }
+allocation_token = @{ "allocation" ~ !(ASCII_ALPHANUMERIC | "_") }
+dependency_token = @{ "dependency" ~ !(ASCII_ALPHANUMERIC | "_") }
+occurrence_token = @{ "occurrence" ~ !(ASCII_ALPHANUMERIC | "_") }
+rendering_token = @{ "rendering" ~ !(ASCII_ALPHANUMERIC | "_") }
+viewpoint_token = @{ "viewpoint" ~ !(ASCII_ALPHANUMERIC | "_") }
+variation_token = @{ "variation" ~ !(ASCII_ALPHANUMERIC | "_") }
+attribute_token = @{ "attribute" ~ !(ASCII_ALPHANUMERIC | "_") }
+interface_token = @{ "interface" ~ !(ASCII_ALPHANUMERIC | "_") }
+objective_token = @{ "objective" ~ !(ASCII_ALPHANUMERIC | "_") }
+nonunique_token = @{ "nonunique" ~ !(ASCII_ALPHANUMERIC | "_") }
+succession_token = @{ "succession" ~ !(ASCII_ALPHANUMERIC | "_") }
+terminate_token = @{ "terminate" ~ !(ASCII_ALPHANUMERIC | "_") }
+transition_token = @{ "transition" ~ !(ASCII_ALPHANUMERIC | "_") }
+timeslice_token = @{ "timeslice" ~ !(ASCII_ALPHANUMERIC | "_") }
+protected_token = @{ "protected" ~ !(ASCII_ALPHANUMERIC | "_") }
+standard_token = @{ "standard" ~ !(ASCII_ALPHANUMERIC | "_") }
+typed_token = @{ "typed" ~ !(ASCII_ALPHANUMERIC | "_") }
+class_token = @{ "class" ~ !(ASCII_ALPHANUMERIC | "_") }
+constant_token = @{ "constant" ~ !(ASCII_ALPHANUMERIC | "_") }
+readonly_token = @{ "readonly" ~ !(ASCII_ALPHANUMERIC | "_") }
+metadata_token = @{ "metadata" ~ !(ASCII_ALPHANUMERIC | "_") }
+language_token = @{ "language" ~ !(ASCII_ALPHANUMERIC | "_") }
+snapshot_token = @{ "snapshot" ~ !(ASCII_ALPHANUMERIC | "_") }
+parallel_token = @{ "parallel" ~ !(ASCII_ALPHANUMERIC | "_") }
+allocate_token = @{ "allocate" ~ !(ASCII_ALPHANUMERIC | "_") }
+analysis_token = @{ "analysis" ~ !(ASCII_ALPHANUMERIC | "_") }
+abstract_token = @{ "abstract" ~ !(ASCII_ALPHANUMERIC | "_") }
+library_token = @{ "library" ~ !(ASCII_ALPHANUMERIC | "_") }
+require_token = @{ "require" ~ !(ASCII_ALPHANUMERIC | "_") }
+conjugate_token = @{ "conjugate" ~ !(ASCII_ALPHANUMERIC | "_") }
+perform_token = @{ "perform" ~ !(ASCII_ALPHANUMERIC | "_") }
+exhibit_token = @{ "exhibit" ~ !(ASCII_ALPHANUMERIC | "_") }
+include_token = @{ "include" ~ !(ASCII_ALPHANUMERIC | "_") }
+satisfy_token = @{ "satisfy" ~ !(ASCII_ALPHANUMERIC | "_") }
+binding_token = @{ "binding" ~ !(ASCII_ALPHANUMERIC | "_") }
+crosses_token = @{ "crosses" ~ !(ASCII_ALPHANUMERIC | "_") }
+message_token = @{ "message" ~ !(ASCII_ALPHANUMERIC | "_") }
+package_token = @{ "package" ~ !(ASCII_ALPHANUMERIC | "_") }
+private_token = @{ "private" ~ !(ASCII_ALPHANUMERIC | "_") }
+variant_token = @{ "variant" ~ !(ASCII_ALPHANUMERIC | "_") }
+concern_token = @{ "concern" ~ !(ASCII_ALPHANUMERIC | "_") }
+connect_token = @{ "connect" ~ !(ASCII_ALPHANUMERIC | "_") }
+default_token = @{ "default" ~ !(ASCII_ALPHANUMERIC | "_") }
+defined_token = @{ "defined" ~ !(ASCII_ALPHANUMERIC | "_") }
+derived_token = @{ "derived" ~ !(ASCII_ALPHANUMERIC | "_") }
+subject_token = @{ "subject" ~ !(ASCII_ALPHANUMERIC | "_") }
+ordered_token = @{ "ordered" ~ !(ASCII_ALPHANUMERIC | "_") }
+hastype_token = @{ "hastype" ~ !(ASCII_ALPHANUMERIC | "_") }
+istype_token = @{ "istype" ~ !(ASCII_ALPHANUMERIC | "_") }
+implies_token = @{ "implies" ~ !(ASCII_ALPHANUMERIC | "_") }
+comment_token = @{ "comment" ~ !(ASCII_ALPHANUMERIC | "_") }
+subsets_token = @{ "subsets" ~ !(ASCII_ALPHANUMERIC | "_") }
+render_token = @{ "render" ~ !(ASCII_ALPHANUMERIC | "_") }
+expose_token = @{ "expose" ~ !(ASCII_ALPHANUMERIC | "_") }
+decide_token = @{ "decide" ~ !(ASCII_ALPHANUMERIC | "_") }
+import_token = @{ "import" ~ !(ASCII_ALPHANUMERIC | "_") }
+return_token = @{ "return" ~ !(ASCII_ALPHANUMERIC | "_") }
+action_token = @{ "action" ~ !(ASCII_ALPHANUMERIC | "_") }
+accept_token = @{ "accept" ~ !(ASCII_ALPHANUMERIC | "_") }
+assert_token = @{ "assert" ~ !(ASCII_ALPHANUMERIC | "_") }
+assign_token = @{ "assign" ~ !(ASCII_ALPHANUMERIC | "_") }
+assume_token = @{ "assume" ~ !(ASCII_ALPHANUMERIC | "_") }
+locale_token = @{ "locale" ~ !(ASCII_ALPHANUMERIC | "_") }
+verify_token = @{ "verify" ~ !(ASCII_ALPHANUMERIC | "_") }
+event_token = @{ "event" ~ !(ASCII_ALPHANUMERIC | "_") }
+entry_token = @{ "entry" ~ !(ASCII_ALPHANUMERIC | "_") }
+false_token = @{ "false" ~ !(ASCII_ALPHANUMERIC | "_") }
+frame_token = @{ "frame" ~ !(ASCII_ALPHANUMERIC | "_") }
+about_token = @{ "about" ~ !(ASCII_ALPHANUMERIC | "_") }
+actor_token = @{ "actor" ~ !(ASCII_ALPHANUMERIC | "_") }
+after_token = @{ "after" ~ !(ASCII_ALPHANUMERIC | "_") }
+alias_token = @{ "alias" ~ !(ASCII_ALPHANUMERIC | "_") }
+while_token = @{ "while" ~ !(ASCII_ALPHANUMERIC | "_") }
+until_token = @{ "until" ~ !(ASCII_ALPHANUMERIC | "_") }
+first_token = @{ "first" ~ !(ASCII_ALPHANUMERIC | "_") }
+merge_token = @{ "merge" ~ !(ASCII_ALPHANUMERIC | "_") }
+inout_token = @{ "inout" ~ !(ASCII_ALPHANUMERIC | "_") }
+specializes_token = @{ "specializes" ~ !(ASCII_ALPHANUMERIC | "_") }
+public_token = @{ "public" ~ !(ASCII_ALPHANUMERIC | "_") }
+filter_token = @{ "filter" ~ !(ASCII_ALPHANUMERIC | "_") }
+state_token = @{ "state" ~ !(ASCII_ALPHANUMERIC | "_") }
+port_token = @{ "port" ~ !(ASCII_ALPHANUMERIC | "_") }
+case_token = @{ "case" ~ !(ASCII_ALPHANUMERIC | "_") }
+calc_token = @{ "calc" ~ !(ASCII_ALPHANUMERIC | "_") }
+send_token = @{ "send" ~ !(ASCII_ALPHANUMERIC | "_") }
+then_token = @{ "then" ~ !(ASCII_ALPHANUMERIC | "_") }
+flow_token = @{ "flow" ~ !(ASCII_ALPHANUMERIC | "_") }
+fork_token = @{ "fork" ~ !(ASCII_ALPHANUMERIC | "_") }
+from_token = @{ "from" ~ !(ASCII_ALPHANUMERIC | "_") }
+join_token = @{ "join" ~ !(ASCII_ALPHANUMERIC | "_") }
+loop_token = @{ "loop" ~ !(ASCII_ALPHANUMERIC | "_") }
+part_token = @{ "part" ~ !(ASCII_ALPHANUMERIC | "_") }
+true_token = @{ "true" ~ !(ASCII_ALPHANUMERIC | "_") }
+view_token = @{ "view" ~ !(ASCII_ALPHANUMERIC | "_") }
+bind_token = @{ "bind" ~ !(ASCII_ALPHANUMERIC | "_") }
+else_token = @{ "else" ~ !(ASCII_ALPHANUMERIC | "_") }
+enum_token = @{ "enum" ~ !(ASCII_ALPHANUMERIC | "_") }
+item_token = @{ "item" ~ !(ASCII_ALPHANUMERIC | "_") }
+meta_token = @{ "meta" ~ !(ASCII_ALPHANUMERIC | "_") }
+null_token = @{ "null" ~ !(ASCII_ALPHANUMERIC | "_") }
+when_token = @{ "when" ~ !(ASCII_ALPHANUMERIC | "_") }
+exit_token = @{ "exit" ~ !(ASCII_ALPHANUMERIC | "_") }
+life_token = @{ "life" ~ !(ASCII_ALPHANUMERIC | "_") }
+def_token = @{ "def" ~ !(ASCII_ALPHANUMERIC | "_") }
+doc_token = @{ "doc" ~ !(ASCII_ALPHANUMERIC | "_") }
+end_token = @{ "end" ~ !(ASCII_ALPHANUMERIC | "_") }
+for_token = @{ "for" ~ !(ASCII_ALPHANUMERIC | "_") }
+not_token = @{ "not" ~ !(ASCII_ALPHANUMERIC | "_") }
+ref_token = @{ "ref" ~ !(ASCII_ALPHANUMERIC | "_") }
+rep_token = @{ "rep" ~ !(ASCII_ALPHANUMERIC | "_") }
+use_token = @{ "use" ~ !(ASCII_ALPHANUMERIC | "_") }
+via_token = @{ "via" ~ !(ASCII_ALPHANUMERIC | "_") }
+xor_token = @{ "xor" ~ !(ASCII_ALPHANUMERIC | "_") }
+all_token = @{ "all" ~ !(ASCII_ALPHANUMERIC | "_") }
+and_token = @{ "and" ~ !(ASCII_ALPHANUMERIC | "_") }
+out_token = @{ "out" ~ !(ASCII_ALPHANUMERIC | "_") }
+to_token = @{ "to" ~ !(ASCII_ALPHANUMERIC | "_") }
+as_token = @{ "as" ~ !(ASCII_ALPHANUMERIC | "_") }
+at_token = @{ "at" ~ !(ASCII_ALPHANUMERIC | "_") }
+by_token = @{ "by" ~ !(ASCII_ALPHANUMERIC | "_") }
+do_token = @{ "do" ~ !(ASCII_ALPHANUMERIC | "_") }
+if_token = @{ "if" ~ !(ASCII_ALPHANUMERIC | "_") }
+in_token = @{ "in" ~ !(ASCII_ALPHANUMERIC | "_") }
+of_token = @{ "of" ~ !(ASCII_ALPHANUMERIC | "_") }
+or_token = @{ "or" ~ !(ASCII_ALPHANUMERIC | "_") }
+
+// Delimiters and Operators
+forward_curl_brace = @{ "{" }
+backward_curl_brace = @{ "}" }
+semi_colon = @{ ";" }
+double_colon = @{ "::" }
+colon = @{ ":" }
+wildcard = @{ "*" }
+space = @{ " " }
+question_mark = @{ "?" }
+double_question_mark = @{ "??" }
+conjugate_operator = @{ "~" }
+conjugation_operator = { "~" }
+at_symbol = @{ "@" }
+
+// Markers
+individual_marker = { individual_token }
+
 // Keywords - ordered by length (longest first) to avoid prefix matching issues
 keyword = @{
-    "verification" | "stakeholder" | "specializes" | "requirement" | "redefines" 
-    | "references" | "individual" | "constraint" | "connection" | "allocation"
-    | "dependency" | "occurrence" | "rendering" | "viewpoint" | "variation" 
-    | "attribute" | "interface" | "objective" | "nonunique" | "succession" 
-    | "terminate" | "transition" | "timeslice" | "protected" | "standard"
-    | "readonly" | "metadata" | "language" | "snapshot" | "parallel"
-    | "allocate" | "analysis" | "abstract" | "library" | "require" 
-    | "conjugate" | "perform" | "exhibit" | "include" | "satisfy" | "binding" 
-    | "crosses" | "message" | "package" | "private" | "variant"
-    | "concern" | "connect" | "default" | "defined" | "derived" 
-    | "subject" | "ordered" | "hastype" | "istype" | "implies" 
-    | "comment" | "subsets" | "render" | "expose" | "decide" 
-    | "import" | "return" | "action" | "accept" | "assert" 
-    | "assign" | "assume" | "locale" | "verify" | "event" 
-    | "entry" | "false" | "frame" | "about" | "actor" 
-    | "after" | "alias" | "while" | "until" | "first" 
-    | "merge" | "inout" | "public" | "filter" | "state"
-    | "port" | "case" | "calc" | "send" | "then" | "flow" 
-    | "fork" | "from" | "join" | "loop" | "part" | "true" 
-    | "view" | "bind" | "else" | "enum" | "item" | "meta" 
-    | "null" | "when" | "exit" | "life"
-    | "def" | "doc" | "end" | "for" | "not" | "ref" | "rep" 
-    | "use" | "via" | "xor" | "all" | "and" | "out"
-    | "to" | "as" | "at" | "by" | "do" | "if" | "in" | "of" | "or"
+    verification_token | stakeholder_token | specializes_token | requirement_token | redefines_token 
+    | references_token | individual_token | constraint_token | connection_token | allocation_token
+    | dependency_token | occurrence_token | rendering_token | viewpoint_token | variation_token 
+    | attribute_token | interface_token | objective_token | nonunique_token | succession_token 
+    | terminate_token | transition_token | timeslice_token | protected_token | standard_token
+    | readonly_token | metadata_token | language_token | snapshot_token | parallel_token
+    | allocate_token | analysis_token | abstract_token | library_token | require_token 
+    | conjugate_token | perform_token | exhibit_token | include_token | satisfy_token | binding_token 
+    | crosses_token | message_token | package_token | private_token | variant_token
+    | concern_token | connect_token | default_token | defined_token | derived_token 
+    | subject_token | ordered_token | hastype_token | istype_token | implies_token 
+    | comment_token | subsets_token | render_token | expose_token | decide_token 
+    | import_token | return_token | action_token | accept_token | assert_token 
+    | assign_token | assume_token | locale_token | verify_token | event_token 
+    | entry_token | false_token | frame_token | about_token | actor_token 
+    | after_token | alias_token | while_token | until_token | first_token 
+    | merge_token | inout_token | public_token | filter_token | state_token
+    | port_token | case_token | calc_token | send_token | then_token | flow_token 
+    | fork_token | from_token | join_token | loop_token | part_token | true_token 
+    | view_token | bind_token | else_token | enum_token | item_token | meta_token 
+    | null_token | when_token | exit_token | life_token
+    | def_token | doc_token | end_token | for_token | not_token | ref_token | rep_token 
+    | use_token | via_token | xor_token | all_token | and_token | out_token
+    | to_token | as_token | at_token | by_token | do_token | if_token | in_token | of_token | or_token
 }
 
 // Identifiers
-identifier = @{ !(keyword ~ !(ASCII_ALPHANUMERIC | "_")) ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+identifier = @{ !keyword ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 
-// Tokens
+// Multiple tokens
+defined_by_token = @{ colon | (defined_token ~ space ~ by_token) }
+portion_kind = @{ timeslice_token | snapshot_token }
+requirement_constraint_kind = @{ assume_token | require_token }
+visibility = @{ public_token | private_token | protected_token }
+rendering_def = { rendering_token ~ def_token }
 
-defined_by_token = @{ ":" | ("defined" ~ " " ~ "by") }
+typed_by_token = @{ colon | (typed_token ~ space ~ by_token) }
 
-// Enums
+// Relationship operators (allow both symbol and keyword forms)
+specializes_operator = @{ ":>" | specializes_token }
+subsets_operator = @{ ":>" | subsets_token }
+references_operator = @{ "::>" | references_token }
+crosses_operator = @{ "=>" | crosses_token }
+redefines_operator = @{ ":>>" | redefines_token }
 
-portion_kind = @{ "timeslice" | "snapshot" }
-requirement_constraint_kind = @{ "assume" | "require" }
 
-// Fragments (Markers)
-
-variation_marker = { "variation" }
-individual_marker = { "individual" }
-abstract_marker = { "abstract" }
-standard_marker = { "standard" }
-
-// Visibility
-
-visibility = @{ "public" | "private" | "protected" }
+classification_test_operator = {
+    hastype_token | istype_token | at_symbol
+}
 
 // Control Nodes - extends ActionUsage
 
@@ -68,96 +221,86 @@ control_node = {
 }
 
 control_node_prefix = {
-    ref_prefix ~ individual_marker? ~ portion_kind? ~ usage_extension_keyword*
+    ref_prefix ~ individual_token? ~ portion_kind? ~ usage_extension_keyword*
 }
 
 merge_node = {
-    control_node_prefix ~ "merge" ~ usage_declaration? ~ action_body
+    control_node_prefix ~ merge_token ~ usage_declaration? ~ action_body
 }
 
 decision_node = {
-    control_node_prefix ~ "decide" ~ usage_declaration? ~ action_body
+    control_node_prefix ~ decide_token ~ usage_declaration? ~ action_body
 }
 
 join_node = {
-    control_node_prefix ~ "join" ~ usage_declaration? ~ action_body
+    control_node_prefix ~ join_token ~ usage_declaration? ~ action_body
 }
 
 fork_node = {
-    control_node_prefix ~ "fork" ~ usage_declaration? ~ action_body
+    control_node_prefix ~ fork_token ~ usage_declaration? ~ action_body
 }
 
 // State Subaction Membership - extends FeatureMembership
-
-state_subaction_kind = { "entry" | "exit" | "do" }
-state_subaction_membership = { state_subaction_kind ~ identifier ~ ";" }
+state_subaction_kind = { entry_token | exit_token | do_token }
+state_subaction_membership = { state_subaction_kind ~ identifier ~ semi_colon }
 
 // Transition Feature Membership - extends FeatureMembership
-
-transition_feature_kind = { "accept" | "if" | "do" }
-transition_feature_membership = { transition_feature_kind ~ identifier ~ ";" }
+transition_feature_kind = { accept_token | if_token | do_token }
+transition_feature_membership = { transition_feature_kind ~ identifier ~ semi_colon }
 
 // Parameter Memberships - extends ParameterMembership
-
-subject_membership = { "subject" ~ identifier ~ ";" }
-actor_membership = { "actor" ~ identifier ~ ";" }
-stakeholder_membership = { "stakeholder" ~ identifier ~ ";" }
+subject_membership = { subject_token ~ identifier ~ semi_colon }
+actor_membership = { actor_token ~ identifier ~ semi_colon }
+stakeholder_membership = { stakeholder_token ~ identifier ~ semi_colon }
 
 // Feature Memberships
-
-objective_membership = { "objective" ~ identifier ~ ";" }
-view_rendering_membership = { "render" ~ identifier ~ ";" }
+objective_membership = { objective_token ~ identifier ~ semi_colon }
+view_rendering_membership = { render_token ~ identifier ~ semi_colon }
 
 // Succession and Expose
 
 // Succession keyword
-succession_keyword = { "succession" }
+succession_keyword = @{ succession_token }
 
 succession_as_usage = {
     usage_prefix
     ~ (succession_keyword ~ usage_declaration?)?
-    ~ "first"
+    ~ first_token
     ~ connector_end_member
-    ~ "then"
-    ~ connector_end_member
+    ~ (then_token ~ connector_end_member | guarded_target_succession | default_target_succession)
     ~ definition_body
 }
 
-expose_prefix = { visibility? ~ "expose" }
+expose_prefix = { visibility? ~ expose_token }
 
 expose = {
     expose_prefix ~ imported_reference ~ filter_package? ~ relationship_body
 }
 
-membership_expose = { "expose" ~ identifier ~ "::" ~ identifier ~ ";" }
-namespace_expose = { "expose" ~ identifier ~ "::*" ~ ";" }
+membership_expose = { expose_token ~ identifier ~ double_colon ~ identifier ~ semi_colon }
+namespace_expose = { expose_token ~ identifier ~ double_colon ~ wildcard ~ semi_colon }
 
 // Port and Conjugation
+variant_membership = { variant_token ~ variant_usage_element }
+conjugated_port_definition = {
+    occurrence_definition_prefix ~ port_token ~ def_token ~ conjugate_operator ~ definition_declaration ~ definition_body
+}
+port_conjugation = { conjugate_token ~ conjugate_operator ~ identifier ~ semi_colon }
+conjugated_port_typing = { port_token ~ identifier ~ colon ~ conjugate_operator ~ identifier ~ semi_colon }
+life_class = { life_token ~ class_token ~ identifier ~ semi_colon }
 
-conjugated_port_reference = { "~" ~ identifier }
-variant_membership = { "variant" ~ identifier ~ ";" }
 
 // Requirement Constraint Memberships
-
-requirement_constraint_membership = { "require" ~ identifier ~ ";" }
-framed_concern_membership = { "frame" ~ identifier ~ ";" }
-requirement_verification_membership = { "verify" ~ identifier ~ ";" }
+requirement_constraint_membership = { require_token ~ identifier ~ semi_colon }
+framed_concern_membership = { frame_token ~ identifier ~ semi_colon }
+requirement_verification_membership = { verify_token ~ identifier ~ semi_colon }
 
 // Terminate Action
-
-terminate_action_usage = { "terminate" ~ identifier ~ ";" }
+terminate_action_usage = { terminate_token ~ identifier ~ semi_colon }
 
 // Port Definitions and Conjugation
 
-conjugated_port_definition = {
-    occurrence_definition_prefix ~ "port" ~ "def" ~ "~" ~ definition_declaration ~ definition_body
-}
-port_conjugation = { "conjugate" ~ "~" ~ identifier ~ ";" }
-conjugated_port_typing = { "port" ~ identifier ~ ":" ~ "~" ~ identifier ~ ";" }
-life_class = { "life" ~ "class" ~ identifier ~ ";" }
-
 // Package
-
 package = {
     prefix_metadata?
     ~ package_declaration
@@ -165,16 +308,16 @@ package = {
 }
 
 library_package = {
-    standard_marker?
-    ~ "library"
+    standard_token?
+    ~ library_token
     ~ prefix_metadata?
     ~ package_declaration
     ~ package_body
 }
 
-package_declaration = { "package" ~ identification? }
+package_declaration = { package_token ~ identification? }
 
-package_body = { ";" | ( "{" ~ package_body_items ~ "}" ) }
+package_body = { semi_colon | ( forward_curl_brace ~ package_body_items ~ backward_curl_brace ) }
 
 package_body_items = { package_body_element* }
 
@@ -191,29 +334,30 @@ package_body_element = {
 
 usage_member = { visibility? ~ usage_element }
 
-relationship_member_element = { visibility? ~ dependency }
+relationship_member_element = { visibility? ~ prefix_metadata? ~ dependency }
 
-element_filter_member = { visibility? ~ "filter" ~ owned_expression ~ ";" }
+element_filter_member = { visibility? ~ filter_token ~ owned_expression ~ semi_colon }
 
 // Expressions
 expression_body = {
-    "{" ~ expression_body_part? ~ "}"
-    | ";"
+    forward_curl_brace ~ expression_body_part? ~ backward_curl_brace
+    | semi_colon
 }
 
 expression_body_part = {
-    visible_annotating_member* ~ (parameter_binding_with_terminator)+ ~ owned_expression
+    visible_annotating_member* ~ (parameter_binding_with_terminator)+ ~ non_occurrence_usage_member* ~ owned_expression
     | visible_annotating_member* ~ (parameter_binding_with_terminator)+
+    | visible_annotating_member* ~ non_occurrence_usage_member* ~ owned_expression
     | visible_annotating_member* ~ owned_expression
 }
 
 parameter_binding_with_terminator = {
-    parameter_binding ~ ";"?
+    parameter_binding ~ semi_colon?
 }
 
 parameter_binding = {
-    feature_direction_kind ~ "ref"? ~ identifier? ~ (":" ~ owned_feature_typing)? ~ ("{" ~ visible_annotating_member* ~ "}")?
-    | "ref"? ~ identifier ~ ":" ~ owned_feature_typing ~ ("{" ~ visible_annotating_member* ~ "}")?
+    feature_direction_kind ~ ref_token? ~ identifier? ~ ((specializes_operator | colon) ~ owned_feature_typing)? ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
+    | ref_token? ~ identifier ~ (specializes_operator | colon) ~ owned_feature_typing ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
 }
 
 owned_expression_member = {
@@ -231,7 +375,7 @@ owned_expression_reference = {
 // Conditional Expressions (with operator precedence)
 
 concrete_conditional_expression = {
-    "if" ~ null_coalescing_expression ~ "?" ~ owned_expression_reference ~ "else" ~ owned_expression_reference
+    if_token ~ null_coalescing_expression ~ question_mark ~ owned_expression_reference ~ else_token ~ owned_expression_reference
 }
 
 conditional_expression = {
@@ -240,11 +384,10 @@ conditional_expression = {
 }
 
 null_coalescing_expression = {
-    implies_expression ~ ("??" ~ implies_expression_reference)*
+    implies_expression ~ (double_question_mark ~ implies_expression_reference)*
 }
 
 // Logical Expressions
-
 implies_expression_reference = {
     implies_expression_member
 }
@@ -254,7 +397,7 @@ implies_expression_member = {
 }
 
 implies_expression = {
-    or_expression ~ ("implies" ~ or_expression_reference)*
+    or_expression ~ (implies_token ~ or_expression_reference)*
 }
 
 or_expression_reference = {
@@ -268,7 +411,7 @@ or_expression_member = {
 or_expression = {
     xor_expression ~ (
         ("|" ~ xor_expression)
-        | ("or" ~ xor_expression_reference)
+        | (or_token ~ xor_expression_reference)
     )*
 }
 
@@ -309,8 +452,8 @@ equality_operator = {
 }
 
 // Atomic operators with word boundaries
-as_operator = @{ "as" ~ !(ASCII_ALPHANUMERIC | "_") }
-meta_operator = @{ "meta" ~ !(ASCII_ALPHANUMERIC | "_") }
+as_operator = @{ as_token }
+meta_operator = @{ meta_token }
 
 // Classification Expressions  
 classification_expression = {
@@ -326,9 +469,6 @@ classification_expression = {
     )?
 }
 
-classification_test_operator = {
-    "hastype" | "istype" | "@"
-}
 
 type_reference_member = {
     type_reference
@@ -347,7 +487,7 @@ type_result = {
 }
 
 metadata_reference = {
-    qualified_name | "metadata"
+    qualified_name | metadata_token
 }
 
 // Relational Expressions
@@ -411,7 +551,7 @@ extent_expression = {
 primary_expression = {
     base_expression
     ~ (
-        "." ~ feature_chain_member
+        "." ~ feature_chain_member ~ argument_list?  // feature chain with optional method call
         | "#" ~ "(" ~ sequence_expression ~ ")"  // indexing with #
         | "[" ~ sequence_expression ~ "]"      // indexing with []
         | "->" ~ reference_typing ~ (
@@ -533,15 +673,15 @@ null_literal = @{ "null" ~ !(ASCII_ALPHANUMERIC | "_") }
 
 string_value = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 numeric_value = @{ 
-    "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+    "-"? ~ (ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? | "." ~ ASCII_DIGIT+) ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
 }
 boolean_value = @{ ("true" | "false") ~ !(ASCII_ALPHANUMERIC | "_") }
 
 alias_member_element = {
     visibility?
-    ~ "alias"
+    ~ alias_token
     ~ identification?
-    ~ "for"
+    ~ for_token
     ~ element_reference
     ~ relationship_body
 }
@@ -551,8 +691,8 @@ definition_member_element = { visibility? ~ definition_element }
 // Definition Structure
 
 basic_definition_prefix = {
-    abstract_marker
-    | variation_marker
+    abstract_token
+    | variation_token
 }
 
 definition_extension_keyword = { prefix_metadata_member }
@@ -571,7 +711,7 @@ definition_declaration = {
 
 definition_body = {
     ";"
-    | "{" ~ definition_body_items ~ "}"
+    | forward_curl_brace ~ definition_body_items ~ backward_curl_brace
 }
 
 definition_body_items = { definition_body_item* }
@@ -650,14 +790,14 @@ definition_element = {
 
 // Placeholder definitions for each type (to be implemented incrementally)
 attribute_definition = {
-    definition_prefix ~ "attribute" ~ "def" ~ definition_suffix
+    definition_prefix ~ attribute_token ~ def_token ~ definition_suffix
 }
 enumeration_definition = {
-    prefix_metadata? ~ "enum" ~ "def" ~ definition_declaration ~ enumeration_body
+    prefix_metadata? ~ enum_token ~ def_token ~ definition_declaration ~ enumeration_body
 }
 enumeration_body = {
     ";"
-    | "{" ~ enumeration_items ~ "}"
+    | forward_curl_brace ~ enumeration_items ~ backward_curl_brace
 }
 enumeration_items = {
     (annotating_member | enumeration_usage_member)*
@@ -666,12 +806,12 @@ enumeration_usage_member = {
     visibility? ~ enumerated_value
 }
 enumerated_value = {
-    prefix_metadata? ~ "enum"? ~ usage_suffix
+    prefix_metadata? ~ enum_token? ~ usage_suffix
 }
 
 // Occurrence keywords
-occurrence_keyword = { "occurrence" }
-occurrence_def_keyword = { occurrence_keyword ~ "def" }
+occurrence_keyword = { occurrence_token }
+occurrence_def_keyword = { occurrence_token ~ def_token }
 
 // Empty multiplicity for individual definitions
 empty_multiplicity_member = { empty_multiplicity }
@@ -689,62 +829,63 @@ occurrence_definition = {
 }
 individual_definition = {
     basic_definition_prefix?
-    ~ "individual"
+    ~ individual_token
     ~ empty_multiplicity_member
     ~ definition_extension_keyword*
-    ~ "def"
+    ~ def_token
     ~ definition_declaration
     ~ definition_body
 }
 
 // Item keywords
-item_keyword = { "item" }
-item_def_keyword = { item_keyword ~ "def" }
-item_usage_keyword = { item_keyword }
+item_keyword = { item_token }
+item_def_keyword = { item_token ~ def_token }
+item_usage_keyword = { item_token }
 
 item_definition = {
     occurrence_definition_prefix ~ item_def_keyword ~ definition_declaration ~ definition_body
 }
 
 // Part keywords
-part_keyword = { "part" }
-part_def_keyword = { part_keyword ~ "def" }
-part_usage_keyword = { part_keyword }
+part_keyword = { part_token }
+part_def_keyword = { part_token ~ def_token }
+part_usage_keyword = { part_token }
 
 part_definition = {
     occurrence_definition_prefix ~ part_def_keyword ~ definition_declaration ~ definition_body
 }
 
 // Connection keywords
-connection_keyword = { "connection" }
-connection_def_keyword = { connection_keyword ~ "def" }
-connector_keyword = { "connect" }
-connection_usage_keyword = { connection_keyword }
+connection_keyword = { connection_token }
+connection_def_keyword = { connection_token ~ def_token }
+connector_keyword = { connect_token }
+connection_usage_keyword = { connection_token }
 
 connection_definition = {
     occurrence_definition_prefix ~ connection_def_keyword ~ definition_declaration ~ definition_body
 }
-flow_connection_definition = { "flow" ~ "connection" ~ "def" ~ identifier ~ ";" }
+flow_connection_definition = { flow_token ~ connection_token ~ def_token ~ identifier ~ semi_colon }
 
 // Flow keywords
-flow_keyword = { "flow" }
-flow_def_keyword = { flow_keyword ~ "def" }
+flow_keyword = { flow_token }
+flow_def_keyword = { flow_token ~ def_token }
 
 flow_definition = {
     occurrence_definition_prefix ~ flow_def_keyword ~ definition_declaration ~ definition_body
 }
 
 // Interface keywords
-interface_keyword = { "interface" }
-interface_def_keyword = { interface_keyword ~ "def" }
+interface_keyword = { interface_token }
+interface_def_keyword = { interface_token ~ def_token }
 
 interface_definition = {
     occurrence_definition_prefix ~ interface_def_keyword ~ definition_declaration ~ interface_body
 }
 
 interface_body = {
-    ";"
-    | "{" ~ interface_body_item* ~ "}"
+    semi_colon
+    | forward_curl_brace ~ interface_body_item* ~ backward_curl_brace
+    | connector_keyword ~ connector_part ~ semi_colon
 }
 
 interface_body_item = {
@@ -790,10 +931,18 @@ interface_usage = {
     occurrence_usage_prefix ~ interface_usage_keyword ~ interface_usage_declaration ~ interface_body
 }
 
+// InterfaceUsageDeclaration per spec:
+// UsageDeclaration ValuePart? ('connect' InterfacePart)?
+// | InterfacePart
+// 
+// Ordering matters for PEG parsing:
+// 1. interface_part - handles shorthand "interface a.b to c.d" (no name, no connect keyword)
+// 2. usage_declaration? ~ connector_keyword ~ interface_part - handles "connect a to b" and "name connect a to b"
+// 3. usage_declaration ~ value_part? - handles "name = value" cases without connector
 interface_usage_declaration = {
-    usage_declaration? ~ connector_keyword ~ interface_part
-    | usage_declaration
-    | interface_part
+    interface_part
+    | usage_declaration? ~ connector_keyword ~ interface_part
+    | usage_declaration ~ value_part?
 }
 
 interface_part = {
@@ -802,7 +951,7 @@ interface_part = {
 }
 
 binary_interface_part = {
-    interface_end_member ~ "to" ~ interface_end_member
+    interface_end_member ~ to_token ~ interface_end_member
 }
 
 nary_interface_part = {
@@ -813,27 +962,29 @@ interface_end_member = {
     interface_end
 }
 
+// Interface end per spec: optional multiplicity, optional local name with references,
+// and the target feature. The (identifier references_operator) pattern must be guarded
+// to avoid consuming an identifier that's part of a feature chain.
 interface_end = {
-    owned_cross_multiplicity_member? ~ (identifier ~ references_keyword)? ~ owned_reference_subsetting
+    owned_cross_multiplicity_member? ~ (identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
 }
 
 allocation_definition = {
-    occurrence_definition_prefix ~ "allocation" ~ "def" ~ definition_suffix
+    occurrence_definition_prefix ~ allocation_token ~ def_token ~ definition_suffix
 }
 
 port_definition = {
-    occurrence_definition_prefix ~ "port" ~ "def" ~ definition_declaration ~ definition_body
+    occurrence_definition_prefix ~ port_token ~ def_token ~ definition_declaration ~ definition_body
 }
 
 // Action keywords
-action_keyword = { "action" }
-action_def_keyword = { action_keyword ~ "def" }
-assign_keyword = { "assign" }
+action_keyword = { action_token }
+action_def_keyword = { action_token ~ def_token }
 assignment_operator = @{ ":=" }
 
 // State Keywords
-state_keyword = { "state" }
-state_def_keyword = { state_keyword ~ "def" }
+state_keyword = { state_token }
+state_def_keyword = { state_token ~ def_token }
 
 // State Definition
 state_definition = {
@@ -842,10 +993,10 @@ state_definition = {
 
 state_def_body = {
     ";"
-    | parallel_marker? ~ "{" ~ state_body_part ~ "}"
+    | parallel_marker? ~ forward_curl_brace ~ state_body_part ~ backward_curl_brace
 }
 
-parallel_marker = { "parallel" }
+parallel_marker = { parallel_token }
 
 state_body_part = {
     state_body_item*
@@ -871,28 +1022,39 @@ entry_action_member = {
     member_prefix ~ entry_action_kind ~ state_action_usage
 }
 
-entry_action_kind = { "entry" }
+entry_action_kind = { entry_token }
 
 do_action_member = {
     member_prefix ~ do_action_kind ~ state_action_usage
 }
 
-do_action_kind = { "do" }
+do_action_kind = { do_token }
 
 exit_action_member = {
     member_prefix ~ exit_action_kind ~ state_action_usage
 }
 
-exit_action_kind = { "exit" }
+exit_action_kind = { exit_token }
 
 entry_transition_member = {
-    member_prefix ~ (guarded_target_succession | "then" ~ transition_succession) ~ ";"
+    member_prefix ~ (guarded_target_succession | then_token ~ transition_succession) ~ semi_colon
 }
 
+// State action usage can be:
+// - action keyword with body
+// - semicolon (empty)
+// - qualified name reference
+// - assign action (issue #623)
+// - send node (for entry/do/exit actions)
+// - accept node (for entry/do/exit actions)
 state_action_usage = {
-    "action" ~ (identifier ~ ";" | usage_declaration? ~ action_body)
+    action_keyword ~ (identifier ~ semi_colon | usage_declaration? ~ action_body)
+    | identifier ~ (semi_colon | action_body)
+    | send_node_declaration ~ semi_colon
+    | accept_node_declaration ~ semi_colon
+    | assignment_node_declaration ~ semi_colon
     | ";"
-    | qualified_name ~ ";"
+    | qualified_name ~ semi_colon
 }
 
 empty_action_usage = {
@@ -920,7 +1082,7 @@ action_definition = {
 
 action_body = {
     ";"
-    | "{" ~ action_body_item* ~ "}"
+    | forward_curl_brace ~ action_body_item* ~ backward_curl_brace
 }
 
 action_body_item = {
@@ -929,11 +1091,18 @@ action_body_item = {
     | visible_annotating_member
     | definition_member
     | variant_usage_member
+    | directed_parameter_member
     | non_occurrence_usage_member
     | empty_succession_member? ~ structure_usage_member
     | initial_node_member ~ target_succession_member*
     | empty_succession_member? ~ (behavior_usage_member | action_node_member) ~ target_succession_member*
     | guarded_succession_member
+}
+
+// Directed parameter member: in/out/inout name :type = value;
+// This is a shorthand for in/out/inout attribute name :type = value
+directed_parameter_member = {
+    member_prefix ~ feature_direction_kind ~ attribute_token? ~ usage_suffix
 }
 
 structure_usage_member = {
@@ -945,7 +1114,7 @@ behavior_usage_member = {
 }
 
 initial_node_member = {
-    member_prefix ~ "first" ~ feature_reference ~ relationship_body
+    member_prefix ~ first_token ~ feature_reference ~ relationship_body
 }
 
 member_prefix = {
@@ -982,20 +1151,22 @@ accept_node = {
 }
 
 accept_node_declaration = {
-    action_node_usage_declaration? ~ "accept" ~ accept_parameter_part
+    action_node_usage_declaration? ~ accept_token ~ accept_parameter_part
 }
 
 accept_parameter_part = {
-    payload_parameter_member ~ ("via" ~ node_parameter_member)?
+    payload_parameter_member ~ (via_token ~ node_parameter_member)?
 }
 
 payload_parameter_member = {
     payload_parameter
 }
 
+// Note: Order matters (PEG ordered choice) - check trigger pattern first since it's more specific
+// Otherwise `accept sig after 10` would match `sig` as payload and fail on `after`
 payload_parameter = {
-    payload
-    | identification? ~ payload_feature_specialization_part? ~ trigger_value_part
+    identification? ~ payload_feature_specialization_part? ~ trigger_value_part
+    | payload
 }
 
 trigger_value_part = {
@@ -1012,11 +1183,11 @@ trigger_expression = {
 }
 
 time_trigger_kind = {
-    "at" | "after"
+    at_token | after_token
 }
 
 change_trigger_kind = {
-    "when"
+    when_token
 }
 
 argument_expression_member = {
@@ -1049,19 +1220,19 @@ empty_parameter_member = {
 
 // Send Node
 send_node = {
-    occurrence_usage_prefix ~ action_node_usage_declaration? ~ "send" ~ (
+    occurrence_usage_prefix ~ action_node_usage_declaration? ~ send_token ~ (
         action_body
         | (node_parameter_member ~ sender_receiver_part? | empty_parameter_member ~ sender_receiver_part) ~ action_body
     )
 }
 
 send_node_declaration = {
-    action_node_usage_declaration? ~ "send" ~ node_parameter_member ~ sender_receiver_part?
+    action_node_usage_declaration? ~ send_token ~ node_parameter_member ~ sender_receiver_part?
 }
 
 sender_receiver_part = {
-    "via" ~ node_parameter_member ~ ("to" ~ node_parameter_member)?
-    | empty_parameter_member ~ "to" ~ node_parameter_member
+    via_token ~ node_parameter_member ~ (to_token ~ node_parameter_member)?
+    | empty_parameter_member ~ to_token ~ node_parameter_member
 }
 
 // Assignment Node
@@ -1070,8 +1241,13 @@ assignment_node = {
 }
 
 assignment_node_declaration = {
-    assign_keyword ~ assignment_target_member ~ feature_chain_member ~ assignment_operator ~ node_parameter_member
-    | action_keyword ~ usage_declaration? ~ assign_keyword ~ assignment_target_member ~ feature_chain_member ~ assignment_operator ~ node_parameter_member
+    assign_token ~ assignment_target_chain ~ assignment_operator ~ node_parameter_member
+    | action_keyword ~ usage_declaration? ~ assign_token ~ assignment_target_chain ~ assignment_operator ~ node_parameter_member
+}
+
+// Assignment target is a chain of identifiers separated by dots
+assignment_target_chain = {
+    feature_chain_member ~ ("." ~ feature_chain_member)*
 }
 
 assignment_target_member = {
@@ -1121,7 +1297,7 @@ expression_parameter_member = {
 
 // If Node
 if_node = {
-    action_node_prefix ~ "if" ~ expression_parameter_member ~ action_body_parameter_member ~ ("else" ~ (action_body_parameter_member | if_node_parameter_member))?
+    action_node_prefix ~ if_token ~ expression_parameter_member ~ action_body_parameter_member ~ (else_token ~ (action_body_parameter_member | if_node_parameter_member))?
 }
 
 action_body_parameter_member = {
@@ -1129,7 +1305,7 @@ action_body_parameter_member = {
 }
 
 action_body_parameter = {
-    (action_usage_keyword ~ usage_declaration?)? ~ "{" ~ action_body_item* ~ "}"
+    (action_usage_keyword ~ usage_declaration?)? ~ forward_curl_brace ~ action_body_item* ~ backward_curl_brace
 }
 
 if_node_parameter_member = {
@@ -1139,14 +1315,14 @@ if_node_parameter_member = {
 // While Loop Node
 while_loop_node = {
     action_node_prefix ~ (
-        "while" ~ expression_parameter_member
-        | "loop" ~ empty_parameter_member
-    ) ~ action_body_parameter_member ~ ("until" ~ expression_parameter_member ~ ";")?
+        while_token ~ expression_parameter_member
+        | loop_token ~ empty_parameter_member
+    ) ~ action_body_parameter_member ~ (until_token ~ expression_parameter_member ~ semi_colon)?
 }
 
 // For Loop Node
 for_loop_node = {
-    action_node_prefix ~ "for" ~ for_variable_declaration_member ~ "in" ~ node_parameter_member ~ action_body_parameter_member
+    action_node_prefix ~ for_token ~ for_variable_declaration_member ~ in_token ~ node_parameter_member ~ action_body_parameter_member
 }
 
 for_variable_declaration_member = {
@@ -1159,31 +1335,44 @@ for_variable_declaration = {
 
 // Terminate Node
 terminate_node = {
-    occurrence_usage_prefix ~ action_node_usage_declaration? ~ "terminate" ~ (action_body | node_parameter_member ~ action_body)
+    occurrence_usage_prefix ~ action_node_usage_declaration? ~ terminate_token ~ (action_body | node_parameter_member ~ action_body)
 }
 
 target_succession_member = {
     member_prefix ~ action_target_succession
 }
 
+// ActionTargetSuccession = TargetSuccession | GuardedTargetSuccession | DefaultTargetSuccession
+// With UsageBody (;) at the end
 action_target_succession = {
-    identifier
+    (target_succession | guarded_target_succession | default_target_succession) ~ usage_body
+}
+
+// TargetSuccession: source end, then, target end (basic "then X")
+target_succession = {
+    multiplicity_source_end_member ~ then_token ~ connector_end_member
+}
+
+// GuardedTargetSuccession: "if <expr> then <target>"
+guarded_target_succession = {
+    empty_parameter_member ~ guard_expression_member ~ then_token ~ transition_succession_member
+}
+
+// DefaultTargetSuccession: "else <target>"
+default_target_succession = {
+    empty_parameter_member ~ else_token ~ transition_succession_member
 }
 
 guarded_succession_member = {
-    guarded_succession
-}
-
-guarded_succession = {
-    !(domain_usage_keyword) ~ identifier
+    guarded_target_succession
 }
 
 // Domain-specific usage keywords that should not be matched as guarded successions
-domain_usage_keyword = { "satisfy" | "perform" | "exhibit" | "include" }
+domain_usage_keyword = @{ (satisfy_token | perform_token | exhibit_token | include_token) }
 
 // Calculation Keywords
-calculation_keyword = { "calc" }
-calculation_def_keyword = { calculation_keyword ~ "def" }
+calculation_keyword = { calc_token }
+calculation_def_keyword = { calc_token ~ def_token }
 
 // Calculation Definition
 calculation_definition = {
@@ -1192,7 +1381,7 @@ calculation_definition = {
 
 calculation_body = {
     ";"
-    | "{" ~ calculation_body_part ~ "}"
+    | forward_curl_brace ~ calculation_body_part ~ backward_curl_brace
 }
 
 calculation_body_part = {
@@ -1202,7 +1391,7 @@ calculation_body_part = {
 calculation_body_item = {
     return_parameter_member
     | visible_annotating_member
-    | parameter_binding ~ ";"
+    | parameter_binding ~ semi_colon
     | import
     | alias_member_element
     | definition_member
@@ -1213,7 +1402,7 @@ calculation_body_item = {
 }
 
 return_parameter_member = {
-    member_prefix ~ "return" ~ "attribute"? ~ (identification ~ feature_specialization_part? | feature_specialization_part)? ~ (value_part | usage_body)?
+    member_prefix ~ return_token ~ attribute_token? ~ (identification ~ feature_specialization_part? | feature_specialization_part)? ~ (value_part | usage_body)?
 }
 
 result_expression_member = {
@@ -1221,8 +1410,8 @@ result_expression_member = {
 }
 
 // Requirement Keywords
-requirement_keyword = { "requirement" }
-requirement_def_keyword = { requirement_keyword ~ "def" }
+requirement_keyword = { requirement_token }
+requirement_def_keyword = { requirement_token ~ def_token }
 
 // Requirement Definition
 requirement_definition = {
@@ -1231,7 +1420,7 @@ requirement_definition = {
 
 requirement_body = {
     ";"
-    | "{" ~ requirement_body_item* ~ "}"
+    | forward_curl_brace ~ requirement_body_item* ~ backward_curl_brace
 }
 
 requirement_body_item = {
@@ -1281,7 +1470,7 @@ actor_member = {
 }
 
 actor_usage = {
-    "actor" ~ usage_extension_keyword* ~ usage_suffix
+    actor_token ~ usage_extension_keyword* ~ usage_suffix
 }
 
 stakeholder_member = {
@@ -1289,11 +1478,11 @@ stakeholder_member = {
 }
 
 stakeholder_usage = {
-    "stakeholder" ~ usage_extension_keyword* ~ usage_suffix
+    stakeholder_token ~ usage_extension_keyword* ~ usage_suffix
 }
 
 requirement_verification_member = {
-    member_prefix ~ "verify" ~ requirement_verification_usage
+    member_prefix ~ verify_token ~ requirement_verification_usage
 }
 
 requirement_verification_usage = {
@@ -1303,8 +1492,8 @@ requirement_verification_usage = {
 }
 
 // Concern Keywords
-concern_keyword = { "concern" }
-concern_def_keyword = { concern_keyword ~ "def" }
+concern_keyword = { concern_token }
+concern_def_keyword = { concern_token ~ def_token }
 
 // Concern Definition
 concern_definition = {
@@ -1312,8 +1501,8 @@ concern_definition = {
 }
 
 // Case Keywords
-case_keyword = { "case" }
-case_def_keyword = { case_keyword ~ "def" }
+case_keyword = { case_token }
+case_def_keyword = { case_token ~ def_token }
 
 // Case Definition
 case_definition = {
@@ -1322,7 +1511,7 @@ case_definition = {
 
 case_body = {
     ";"
-    | "{" ~ case_body_item* ~ result_expression_member? ~ "}"
+    | forward_curl_brace ~ case_body_item* ~ result_expression_member? ~ backward_curl_brace
 }
 
 case_body_item = {
@@ -1339,19 +1528,19 @@ case_calculation_body_item = {
 }
 
 case_action_body_item = {
-    behavior_usage_member
+    initial_node_member ~ target_succession_member*
+    | empty_succession_member? ~ (behavior_usage_member | action_node_member) ~ target_succession_member*
+    | guarded_succession_member
     | import
     | alias_member_element
     | definition_member
     | variant_usage_member
     | non_occurrence_usage_member
     | structure_usage_member
-    | action_node_member
-    | guarded_succession_member
 }
 
 objective_member = {
-    member_prefix ~ "objective" ~ objective_requirement_usage
+    member_prefix ~ objective_token ~ objective_requirement_usage
 }
 
 objective_requirement_usage = {
@@ -1359,24 +1548,24 @@ objective_requirement_usage = {
 }
 
 // Analysis Case Keywords
-analysis_keyword = { "analysis" }
+analysis_keyword = { analysis_token }
 
 // Analysis Case Definition
 analysis_case_definition = {
-    occurrence_definition_prefix ~ analysis_keyword ~ (case_def_keyword | "def") ~ definition_declaration ~ case_body
+    occurrence_definition_prefix ~ analysis_keyword ~ (case_def_keyword | def_token) ~ definition_declaration ~ case_body
 }
 
 // Verification Case Keywords
-verification_keyword = { "verification" }
+verification_keyword = { verification_token }
 
 // Verification Case Definition
 verification_case_definition = {
-    occurrence_definition_prefix ~ verification_keyword ~ (case_def_keyword | "def") ~ definition_declaration ~ case_body
+    occurrence_definition_prefix ~ verification_keyword ~ (case_def_keyword | def_token) ~ definition_declaration ~ case_body
 }
 
 // View Keywords
-view_keyword = { "view" }
-view_def_keyword = { view_keyword ~ "def" }
+view_keyword = { view_token }
+view_def_keyword = { view_token ~ def_token }
 
 // View Definition
 view_definition = {
@@ -1385,7 +1574,7 @@ view_definition = {
 
 view_definition_body = {
     ";"
-    | "{" ~ view_definition_body_item* ~ "}"
+    | forward_curl_brace ~ view_definition_body_item* ~ backward_curl_brace
 }
 
 view_definition_body_item = {
@@ -1395,17 +1584,17 @@ view_definition_body_item = {
 }
 
 view_rendering_member = {
-    member_prefix ~ "render" ~ view_rendering_usage
+    member_prefix ~ render_token ~ view_rendering_usage
 }
 
 view_rendering_usage = {
     owned_reference_subsetting ~ feature_specialization* ~ usage_body
-    | (prefix_metadata? ~ "rendering" | prefix_metadata) ~ usage_suffix
+    | (prefix_metadata? ~ rendering_token | prefix_metadata) ~ usage_suffix
 }
 
 // Use Case Keywords
-use_case_keyword = { "use" ~ "case" }
-use_case_def_keyword = { use_case_keyword ~ "def" }
+use_case_keyword = { use_token ~ case_token }
+use_case_def_keyword = { use_token ~ case_token ~ def_token }
 
 // Use Case Definition
 use_case_definition = {
@@ -1413,24 +1602,20 @@ use_case_definition = {
 }
 
 // Viewpoint Keywords
-viewpoint_keyword = { "viewpoint" }
-viewpoint_def_keyword = { viewpoint_keyword ~ "def" }
+viewpoint_keyword = { viewpoint_token }
+viewpoint_def_keyword = { viewpoint_token ~ def_token }
 
 // Viewpoint Definition
 viewpoint_definition = {
     occurrence_definition_prefix ~ viewpoint_def_keyword ~ definition_declaration ~ requirement_body
 }
 
-// Rendering Keywords
-rendering_keyword = { "rendering" }
-rendering_def_keyword = { rendering_keyword ~ "def" }
-
 // Rendering Definition
 rendering_definition = {
-    occurrence_definition_prefix ~ rendering_def_keyword ~ definition_suffix
+    occurrence_definition_prefix ~ rendering_def ~ definition_suffix
 }
 extended_definition = {
-    basic_definition_prefix? ~ definition_extension_keyword+ ~ "def" ~ definition_suffix
+    basic_definition_prefix? ~ definition_extension_keyword+ ~ def_token ~ definition_suffix
 }
 
 usage_element = {
@@ -1439,29 +1624,26 @@ usage_element = {
 }
 
 // Usages
-
-// Markers and keywords (matching KerML)
-readonly = { "readonly" }
-derived = { "derived" }
-end_marker = { "end" }
-feature_direction_kind = @{ "inout" | "in" | "out" }
+// Use negative lookahead to ensure direction kinds are complete words
+// This prevents "in" from matching the start of "interface"
+feature_direction_kind = @{ inout_token | in_token | out_token }
 
 ref_prefix = {
     feature_direction_kind?
+    ~ derived_token?
     ~ basic_definition_prefix?
-    ~ ("constant")?
-    ~ readonly?
-    ~ derived?
+    ~ constant_token?
+    ~ readonly_token?
 }
 
-reference = { "ref" }
+reference = { ref_token }
 
 basic_usage_prefix = {
     ref_prefix ~ reference?
 }
 
 end_usage_prefix = {
-    end_marker ~ owned_crossing_feature_member?
+    end_token ~ owned_crossing_feature_member?
 }
 
 usage_extension_keyword = { prefix_metadata_member }
@@ -1473,8 +1655,15 @@ unextended_usage_prefix = {
 
 owned_crossing_feature_member = { owned_crossing_feature }
 
+// Usage keywords that can follow 'end' - used for negative lookahead
+end_usage_keyword = {
+    item_token | part_token | port_token | connection_token | interface_token
+    | flow_token | action_token | state_token | constraint_token
+    | requirement_token | occurrence_token | attribute_token | ref_token
+}
+
 owned_crossing_feature = {
-    basic_usage_prefix? ~ usage_declaration
+    !end_usage_keyword ~ basic_usage_prefix? ~ usage_declaration
 }
 
 usage_prefix = {
@@ -1518,13 +1707,13 @@ feature_value = {
 // Reference Usages
 
 default_reference_usage = {
-    end_marker?
+    end_token?
     ~ ref_prefix
     ~ usage_suffix
 }
 
 reference_usage = {
-    end_marker ~ ref_prefix ~ "ref" ~ usage_suffix
+    end_token ~ ref_prefix ~ "ref" ~ usage_suffix
     | ref_prefix ~ "ref" ~ usage_suffix
 }
 
@@ -1537,7 +1726,8 @@ variant_reference = {
 // Body Elements
 
 non_occurrence_usage_element = {
-    reference_usage
+    metadata_usage
+    | reference_usage
     | attribute_usage
     | enumeration_usage
     | binding_connector_as_usage
@@ -1564,6 +1754,7 @@ structure_usage_element = {
     | connection_usage
     | interface_usage
     | allocation_usage
+    | allocate_usage
     | message
     | flow_connection_usage
     | succession_flow_connection_usage
@@ -1614,19 +1805,19 @@ variant_usage_element = {
 
 // Placeholder usage rules (to be implemented incrementally)
 attribute_usage = {
-    usage_prefix ~ "attribute" ~ usage_suffix
+    usage_prefix ~ attribute_token ~ usage_suffix
 }
 enumeration_usage = {
-    usage_prefix ~ "enum" ~ usage_suffix
+    usage_prefix ~ enum_token ~ usage_suffix
 }
 
 // Binding connector keywords
-binding_keyword = { "binding" }
+binding_keyword = { binding_token }
 
 binding_connector_as_usage = {
     usage_prefix
     ~ (binding_keyword ~ usage_declaration?)?
-    ~ "bind"
+    ~ bind_token
     ~ connector_end_member
     ~ "="
     ~ connector_end_member
@@ -1640,13 +1831,13 @@ occurrence_usage = {
     occurrence_usage_prefix ~ occurrence_usage_keyword ~ usage_declaration? ~ usage_completion
 }
 individual_usage = {
-    basic_usage_prefix ~ "individual" ~ usage_extension_keyword* ~ usage_declaration? ~ usage_completion
+    basic_usage_prefix ~ individual_token ~ usage_extension_keyword* ~ usage_declaration? ~ usage_completion
 }
 portion_usage = {
     basic_usage_prefix ~ ("individual")? ~ portion_kind ~ usage_extension_keyword* ~ usage_declaration? ~ usage_completion
 }
 event_occurrence_usage = {
-    occurrence_usage_prefix ~ "event"
+    occurrence_usage_prefix ~ event_token
     ~ (owned_reference_subsetting ~ feature_specialization_part?
       | occurrence_usage_keyword ~ usage_declaration?)
     ~ usage_completion
@@ -1667,7 +1858,7 @@ view_usage = {
 
 view_body = {
     ";"
-    | "{" ~ view_body_item* ~ "}"
+    | forward_curl_brace ~ view_body_item* ~ backward_curl_brace
 }
 
 view_body_item = {
@@ -1678,15 +1869,13 @@ view_body_item = {
 }
 
 // Rendering Usage
-rendering_usage_keyword = { rendering_keyword }
-
 rendering_usage = {
-    occurrence_usage_prefix ~ rendering_usage_keyword ~ usage_suffix
+    occurrence_usage_prefix ~ rendering_token ~ usage_suffix
 }
 
 // Port keywords
-port_keyword = { "port" }
-port_usage_keyword = { port_keyword }
+port_keyword = { port_token }
+port_usage_keyword = { port_token }
 
 port_usage = {
     occurrence_usage_prefix ~ port_usage_keyword ~ usage_declaration? ~ usage_completion
@@ -1701,16 +1890,14 @@ connector_end = {
 
 connector_end_reference = {
     owned_feature_chain
-    | identifier ~ references_keyword ~ (owned_feature_chain | feature_reference)
-    | quoted_name ~ references_keyword ~ (owned_feature_chain | feature_reference)
+    | identifier ~ references_operator ~ (owned_feature_chain | feature_reference)
+    | quoted_name ~ references_operator ~ (owned_feature_chain | feature_reference)
     | feature_reference
 }
 
 owned_cross_multiplicity_member = { owned_cross_multiplicity }
 
 owned_cross_multiplicity = { owned_multiplicity }
-
-references_keyword = { "references" }
 
 // Connection usage and connector parts
 connection_usage = {
@@ -1727,7 +1914,7 @@ connector_part = {
 }
 
 binary_connector_part = {
-    connector_end_member ~ "to" ~ connector_end_member
+    connector_end_member ~ to_token ~ connector_end_member
 }
 
 nary_connector_part = {
@@ -1741,23 +1928,79 @@ empty_source_end_member = { empty_source_end }
 
 empty_source_end = { "" }
 
+// Allocate keyword part - shared between allocation_usage and allocate_usage
+// "allocate X to Y" or "allocate (X, Y, Z)"
+allocate_keyword_part = {
+    allocate_token ~ allocate_part
+}
+
+// Allocate part - the "X to Y" or "(nary)" portion after allocate keyword
+allocate_part = {
+    nary_allocate_part
+    | binary_allocate_part
+}
+
+binary_allocate_part = {
+    allocate_end_member ~ to_token ~ allocate_end_member
+}
+
+nary_allocate_part = {
+    "(" ~ allocate_end_member ~ "," ~ allocate_end_member ~ ("," ~ allocate_end_member)* ~ ")"
+}
+
+allocate_end_member = {
+    allocate_end
+}
+
+allocate_end = {
+    owned_cross_multiplicity_member? ~ allocate_end_reference
+}
+
+// Atomic rule matching qualified names with optional feature chains
+// Matches: ActionTree::providePower.generateToAmplify
+// or: Package::Type
+// or: part.feature
+// or: simple
+allocate_qualified_feature_reference = @{
+    (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name) | "." ~ (identifier | quoted_name))*
+}
+
+// Match patterns like: ActionTree::providePower.generateToAmplify
+// or: logical ::> l
+// or: l.component
+// or: simple
+allocate_end_reference = {
+    identifier ~ references_operator ~ allocate_qualified_feature_reference
+    | quoted_name ~ references_operator ~ allocate_qualified_feature_reference
+    | allocate_qualified_feature_reference
+    | all_token
+}
+
+// Allocation usage with optional allocate part
+// "allocation name : Type allocate X to Y;"
 allocation_usage = {
-    occurrence_usage_prefix ~ "allocation" ~ usage_declaration? ~ usage_body
+    occurrence_usage_prefix ~ allocation_token ~ usage_declaration? ~ allocate_keyword_part? ~ usage_body
+}
+
+// Allocate usage - shorthand form
+// "allocate X to Y;"
+allocate_usage = {
+    allocate_keyword_part ~ usage_body
 }
 
 // Messages
-message_keyword = { "message" }
+message_keyword = { message_token }
 
 message = {
     occurrence_usage_prefix ~ message_keyword ~ message_declaration ~ definition_body
 }
 
 message_declaration = {
-    message_event_member ~ "to" ~ message_event_member
-    | usage_declaration ~ value_part? ~ ("of" ~ payload_feature_member)? ~ ("from" ~ message_event_member ~ "to" ~ message_event_member)?
-    | value_part ~ ("of" ~ payload_feature_member)? ~ ("from" ~ message_event_member ~ "to" ~ message_event_member)?
-    | ("of" ~ payload_feature_member) ~ ("from" ~ message_event_member ~ "to" ~ message_event_member)?
-    | "from" ~ message_event_member ~ "to" ~ message_event_member
+    message_event_member ~ to_token ~ message_event_member
+    | usage_declaration ~ value_part? ~ (of_token ~ payload_feature_member)? ~ (from_token ~ message_event_member ~ to_token ~ message_event_member)?
+    | value_part ~ (of_token ~ payload_feature_member)? ~ (from_token ~ message_event_member ~ to_token ~ message_event_member)?
+    | (of_token ~ payload_feature_member) ~ (from_token ~ message_event_member ~ to_token ~ message_event_member)?
+    | from_token ~ message_event_member ~ to_token ~ message_event_member
 }
 
 // Flow Members - PayloadFeature
@@ -1794,21 +2037,11 @@ flow_end_member = {
     flow_end
 }
 
+// FlowEnd: Either a feature chain (a.b.c) or a single feature reference
+// The semantic layer will handle splitting the chain into subsetting + final feature
 flow_end = {
-    flow_end_subsetting? ~ flow_feature_member
-}
-
-flow_end_subsetting = {
-    feature_reference ~ "."
-    | feature_chain_prefix
-}
-
-feature_chain_prefix = {
-    identifier ~ ("." ~ identifier)+ ~ "."
-}
-
-owned_feature_chaining = {
-    identifier
+    owned_feature_chain
+    | flow_feature_member
 }
 
 flow_feature_member = {
@@ -1829,12 +2062,32 @@ flow_connection_usage = {
     occurrence_usage_prefix ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body
 }
 
+// FlowConnectionUsageDeclaration per spec 8.2.2.9.5:
+// ( UsageDeclaration? 'of'? FlowPart )?
+// Where FlowPart = ('from' FlowEndMember)? 'to' FlowEndMember
+//
+// Ordering matters for PEG parsing:
+// 1. of_token ~ owned_feature_typing ~ owned_multiplicity? ~ flow_part - handles "flow of Exposure[1] from X to Y" (typed with mult, no name)
+// 2. flow_part - handles shorthand "flow X.Y to A.B" or "flow from X.Y to A.B" (no name)
+// 3. usage_declaration ~ (of_token ~ owned_feature_typing ~ owned_multiplicity?)? ~ flow_part? - handles named "flow myFlow of Type[1] from X to Y"
+//    or "flow myFlow from X.Y to A.B"
 flow_connection_usage_declaration = {
-    usage_declaration? ~ connector_keyword ~ connector_part
-    | usage_declaration
+    of_token ~ owned_feature_typing ~ owned_multiplicity? ~ flow_part
+    | flow_part
+    | usage_declaration ~ (of_token ~ owned_feature_typing ~ owned_multiplicity?)? ~ flow_part?
 }
 
-succession_flow_connection_usage = { "succession" ~ "flow" ~ identifier ~ ";" }
+// FlowPart supports both:
+// - "from X to Y" (explicit source with from keyword)
+// - "X to Y" (source without from keyword)
+flow_part = {
+    from_token ~ flow_end_member ~ to_token ~ flow_end_member
+    | flow_end_member ~ to_token ~ flow_end_member
+}
+
+succession_flow_connection_usage = { 
+    succession_keyword ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body 
+}
 
 // Action Usages
 action_usage_keyword = { action_keyword }
@@ -1848,7 +2101,7 @@ action_usage_declaration = {
 }
 
 perform_action_usage = {
-    occurrence_usage_prefix ~ "perform" ~ perform_action_usage_declaration ~ action_body
+    occurrence_usage_prefix ~ perform_token ~ perform_action_usage_declaration ~ action_body
 }
 
 perform_action_usage_declaration = {
@@ -1871,13 +2124,13 @@ state_usage = {
 }
 
 state_usage_body = {
-    ";"
-    | parallel_marker? ~ "{" ~ state_body_part ~ "}"
+    semi_colon
+    | parallel_marker? ~ forward_curl_brace ~ state_body_part ~ backward_curl_brace
 }
 
 // Constraint Keywords
-constraint_keyword = { "constraint" }
-constraint_def_keyword = { constraint_keyword ~ "def" }
+constraint_keyword = { constraint_token }
+constraint_def_keyword = { constraint_token ~ def_token }
 
 // Constraint Definition
 constraint_definition = {
@@ -1892,10 +2145,10 @@ constraint_usage = {
 }
 
 // Concern Usage
-concern_usage_keyword = { "concern" }
+concern_usage_keyword = { concern_token }
 
 concern_usage = {
-    occurrence_usage_prefix ~ concern_usage_keyword ~ usage_declaration? ~ calculation_body
+    occurrence_usage_prefix ~ concern_usage_keyword ~ usage_declaration? ~ requirement_body
 }
 
 constraint_usage_declaration = {
@@ -1903,14 +2156,14 @@ constraint_usage_declaration = {
 }
 
 assert_constraint_usage = {
-    occurrence_usage_prefix ~ "assert" ~ "not"? ~ (
+    occurrence_usage_prefix ~ assert_token ~ not_token? ~ (
         owned_reference_subsetting ~ feature_specialization_part?
         | constraint_usage_keyword ~ constraint_usage_declaration?
     ) ~ constraint_body
 }
 
 constraint_body = {
-    ";" | "{" ~ constraint_body_part ~ "}"
+    ";" | forward_curl_brace ~ constraint_body_part ~ backward_curl_brace
 }
 
 constraint_body_part = {
@@ -1925,7 +2178,7 @@ requirement_usage = {
 }
 
 satisfy_requirement_usage = {
-    occurrence_usage_prefix ~ "assert"? ~ ("not")? ~ "satisfy" ~ (
+    occurrence_usage_prefix ~ assert_token? ~ ("not")? ~ satisfy_token ~ (
         requirement_usage_keyword ~ usage_declaration?
         | owned_reference_subsetting ~ feature_specialization_part?
     ) ~ value_part? ~ ("by" ~ satisfaction_subject_member)? ~ requirement_body
@@ -1944,7 +2197,7 @@ satisfaction_feature_value = {
 }
 
 satisfaction_reference_expression = {
-    feature_chain_member
+    owned_feature_chain | feature_chain_member
 }
 
 // Case Usage Keywords
@@ -1966,7 +2219,7 @@ verification_case_usage = {
 }
 
 use_case_usage = {
-    occurrence_usage_prefix ~ "use" ~ "case" ~ usage_declaration? ~ usage_body
+    occurrence_usage_prefix ~ use_token ~ case_token ~ usage_declaration? ~ case_body
 }
 
 // Viewpoint Usage
@@ -1977,23 +2230,33 @@ viewpoint_usage = {
 }
 
 exhibit_state_usage = {
-    occurrence_usage_prefix ~ "exhibit" ~ (
+    occurrence_usage_prefix ~ exhibit_token ~ (
         state_usage_keyword ~ action_usage_declaration
         | owned_reference_subsetting ~ feature_specialization_part? ~ value_part?
     ) ~ state_usage_body
 }
 
 // Transition Usage
-transition_usage_keyword = { "transition" }
+transition_usage_keyword = { transition_token }
 
+// TransitionUsage grammar:
+// 'transition' UsageDeclaration? ('first' TransitionSourceMember | TransitionSourceMember) ...
+// The 'first' keyword indicates this is not a self-loop.
+// Order matters: try 'first' variant before bare source to avoid 'first' being consumed as identifier.
 transition_usage = {
-    transition_usage_keyword ~ (usage_declaration? ~ "first")?
-    ~ transition_source_member
+    transition_usage_keyword
+    ~ (
+        // Named transition with source: "transition name first source ..." or "transition name source ..."
+        usage_declaration ~ (first_token ~ transition_source_member | transition_source_member)
+        // Anonymous transition with source: "transition first source ..." or "transition source ..."
+        | first_token ~ transition_source_member
+        | transition_source_member
+    )
     ~ empty_parameter_member
     ~ (empty_parameter_member ~ trigger_action_member)?
     ~ guard_expression_member?
     ~ effect_behavior_member?
-    ~ "then" ~ transition_succession_member
+    ~ then_token ~ transition_succession_member
     ~ action_body
 }
 
@@ -2009,20 +2272,20 @@ target_transition_usage = {
       | guard_expression_member
         ~ effect_behavior_member?
     )?
-    ~ "then" ~ transition_succession_member
+    ~ then_token ~ transition_succession_member
     ~ action_body
 }
 
 transition_source_member = {
-    feature_reference
-    | owned_feature_chain
+    owned_feature_chain
+    | feature_reference
 }
 
 trigger_action_member = {
     trigger_feature_kind ~ trigger_action
 }
 
-trigger_feature_kind = { "accept" }
+trigger_feature_kind = { accept_token }
 
 trigger_action = {
     accept_parameter_part
@@ -2038,10 +2301,10 @@ effect_behavior_member = {
     effect_feature_kind ~ effect_behavior_usage
 }
 
-effect_feature_kind = { "do" }
+effect_feature_kind = { do_token }
 
 effect_behavior_usage = {
-    performed_action_usage ~ ("{" ~ action_body_item* ~ "}")?
+    performed_action_usage ~ (forward_curl_brace ~ action_body_item* ~ backward_curl_brace)?
     | empty_action_usage
 }
 
@@ -2053,20 +2316,22 @@ transition_succession = {
     empty_source_end_member ~ connector_end_member
 }
 
-include_use_case_usage = { "include" ~ identifier ~ ";" }
+include_use_case_usage = {
+    include_token ~ (use_token ~ case_token)? ~ (owned_feature_chain | usage_declaration) ~ case_body
+}
 
 // Classifiers (reusing KerML rules with same names for compatibility)
-
-specializes_token = @{ ":>" | "specializes" }
+// Note: specializes_token and other feature relationship tokens are defined 
+// in the "Tokens for feature relationships" section below
 
 subclassification_part = {
-    specializes_token
+    specializes_operator
     ~ owned_subclassification
     ~ ("," ~ owned_subclassification)*
 }
 
 redefinition_part = {
-    redefines_token
+    redefines_operator
     ~ owned_subclassification
     ~ ("," ~ owned_subclassification)*
 }
@@ -2102,13 +2367,6 @@ feature_specialization = {
     | redefinitions
 }
 
-// Tokens for feature relationships (matching KerML)
-typed_by_token = @{ ":" | ("typed" ~ " " ~ "by") }
-subsets_token = @{ ":>" | "subsets" }
-references_token = @{ "::>" | "references" }
-crosses_token = @{ "=>" | "crosses" }
-redefines_token = @{ ":>>" | "redefines" }
-
 // Feature relationship patterns
 typings = { typed_by ~ ("," ~ feature_typing)* }
 
@@ -2116,15 +2374,15 @@ typed_by = { typed_by_token ~ feature_typing }
 
 subsettings = { subsets ~ ("," ~ owned_subsetting)* }
 
-subsets = { subsets_token ~ owned_subsetting }
+subsets = { subsets_operator ~ owned_subsetting }
 
-references = { references_token ~ owned_reference_subsetting }
+references = { references_operator ~ owned_reference_subsetting }
 
-crosses = { crosses_token ~ owned_cross_subsetting }
+crosses = { crosses_operator ~ owned_cross_subsetting }
 
 redefinitions = { redefines ~ ("," ~ owned_redefinition)* }
 
-redefines = { redefines_token ~ owned_redefinition }
+redefines = { redefines_operator ~ owned_redefinition }
 
 // Feature typing, subsetting, and redefinition
 feature_typing = {
@@ -2132,8 +2390,8 @@ feature_typing = {
     | conjugated_port_typing
 }
 
-// OwnedFeatureTyping inherited from Expression syntax (to be expanded)
-owned_feature_typing = { feature_reference }
+// OwnedFeatureTyping - supports optional ~ prefix for conjugated port types
+owned_feature_typing = { conjugation_operator? ~ feature_reference }
 
 // Feature subsetting and redefinition rules
 owned_subsetting = {
@@ -2147,19 +2405,19 @@ owned_reference_subsetting = {
 }
 
 owned_cross_subsetting = {
-    feature_reference
-    | owned_feature_chain
+    owned_feature_chain
+    | feature_reference
 }
 
 owned_redefinition = {
-    feature_reference
-    | owned_feature_chain
+    owned_feature_chain
+    | feature_reference
 }
 
 // Feature references and chains (matching KerML structure)
-feature_reference = { qualified_name | identifier | quoted_name | "all" }
+feature_reference = { qualified_name | identifier | quoted_name | all_token}
 
-owned_feature_chain = { identifier ~ ("." ~ identifier)+ }
+owned_feature_chain = { (identifier | quoted_name) ~ ("." ~ (identifier | quoted_name))+ }
 
 // Multiplicity (matching KerML structure)
 owned_multiplicity = { "[" ~ multiplicity_range ~ "]" }
@@ -2176,10 +2434,10 @@ bound = { owned_expression | "*" }
 number_literal = @{ ASCII_DIGIT+ }
 
 multiplicity_properties = {
-    "ordered" ~ "nonunique"
-    | "nonunique" ~ "ordered"
-    | "ordered"
-    | "nonunique"
+    ordered_token ~ nonunique_token
+    | nonunique_token ~ ordered_token
+    | ordered_token
+    | nonunique_token
 }
 
 // Model Entry Point
@@ -2205,74 +2463,68 @@ short_name = { "<" ~ (identifier | quoted_name) ~ ">" }
 regular_name = { identifier | quoted_name }
 identification = { (short_name ~ regular_name?) | regular_name }
 quoted_name = @{ "'" ~ (!("'") ~ ANY)+ ~ "'" }
-relationship_body = { ";" | ( "{" ~ relationship_body_elements ~ "}" ) }
+relationship_body = { ";" | ( forward_curl_brace ~ relationship_body_elements ~ backward_curl_brace ) }
 relationship_body_elements = { owned_annotation* }
 prefix_metadata_annotation = { "#" ~ identifier }
 
 // Annotations
-
 owned_annotation = { annotating_element }
-
 annotating_member = { annotating_element }
-
 annotating_element = {
     comment_annotation
     | documentation
     | textual_representation
     | metadata_usage_annotation
+    | locale_annotation
     | ignored_block_comment
 }
 
 ignored_block_comment = _{ block_comment }
 
-comment_annotation = { "comment" ~ identifier? ~ ("locale" ~ quoted_name)? ~ ("about" ~ element_reference ~ ("," ~ element_reference)*)? ~ (block_comment | ";")? }
+locale_annotation = { locale_token ~ string_value ~ block_comment? }
 
-documentation = { "doc" ~ identifier? ~ ("locale" ~ quoted_name)? ~ (block_comment | ";")? }
+comment_annotation = { comment_token ~ identifier? ~ (locale_token ~ quoted_name)? ~ (about_token ~ element_reference ~ ("," ~ element_reference)*)? ~ (block_comment | semi_colon)? }
 
-textual_representation = { "rep" ~ "language" ~ quoted_name ~ block_comment? }
+documentation = { doc_token ~ identifier? ~ (locale_token ~ quoted_name)? ~ (block_comment | semi_colon)? }
 
-metadata_usage_annotation = { "#" ~ identifier ~ ";" }
+textual_representation = { 
+    rep_token ~ textual_rep_name? ~ language_token ~ string_value ~ block_comment?
+    | language_token ~ string_value ~ block_comment?
+}
+textual_rep_name = { !language_token ~ identifier }
+
+metadata_usage_annotation = { "#" ~ identifier ~ semi_colon }
 
 // Metadata
-
 metadata_definition = {
-    abstract_marker?
+    abstract_token?
     ~ prefix_metadata?
-    ~ "metadata"
-    ~ "def"
+    ~ metadata_token
+    ~ def_token
     ~ ("<" ~ identifier ~ ">")?
     ~ definition_suffix
 }
 
 prefix_metadata_annotation_element = { prefix_metadata_usage }
-
 prefix_metadata_member = { prefix_metadata_usage }
-
 prefix_metadata = { prefix_metadata_member+ }
-
 prefix_metadata_usage = { "#" ~ metadata_typing }
 
 // State-related placeholder rules
-guarded_target_succession = { identifier }
-
 metadata_typing = { identifier | "meta" }
-
 metadata_usage = {
     prefix_metadata?
-    ~ ("metadata" | "@")
+    ~ (metadata_token | at_symbol)
     ~ metadata_usage_declaration
-    ~ ("about" ~ annotation ~ ("," ~ annotation)*)?
+    ~ (about_token ~ annotation ~ ("," ~ annotation)*)?
     ~ metadata_body
 }
 
 metadata_usage_declaration = {
     (identification? ~ defined_by_token)? ~ metadata_typing
 }
-
-annotation = { identifier }
-
-metadata_body = { ";" | ( "{" ~ metadata_body_items ~ "}" ) }
-
+annotation = { qualified_name | identifier }
+metadata_body = { ";" | ( forward_curl_brace ~ metadata_body_items ~ backward_curl_brace ) }
 metadata_body_items = {
     (definition_member
     | relationship_member
@@ -2282,24 +2534,31 @@ metadata_body_items = {
     | import)*
 }
 
-relationship_member = { identifier ~ ";" }
+metadata_body_usage_member = { metadata_body_usage }
+// MetadataBodyUsage follows spec: 'ref'? (':>>' | 'redefines')? OwnedRedefinition FeatureSpecializationPart? ValuePart? MetadataBody
+// OwnedRedefinition is a required identifier (the feature being redefined)
+metadata_body_usage = {
+    ref_token?
+    ~ redefines_operator?
+    ~ identifier
+    ~ feature_specialization_part?
+    ~ value_part?
+    ~ metadata_body
+}
+
+relationship_member = { identifier ~ semi_colon }
 visible_annotating_member = { annotating_element }
-metadata_alias_member = { "alias" ~ identifier ~ "for" ~ identifier ~ ";" }
+metadata_alias_member = { alias_token ~ identifier ~ for_token ~ identifier ~ semi_colon }
 
 // Imports
-
-import_prefix = { visibility? ~ "import" ~ import_all? }
-
-import_all = { "all" }
-
+import_prefix = { visibility? ~ import_token ~ import_all? }
+import_all = { all_token }
 imported_reference = {
     qualified_name
-    ~ namespace_marker?
-    ~ recursive_marker?
+    ~ (recursive_marker | namespace_marker ~ recursive_marker | namespace_marker)?
 }
 
 qualified_name = { (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
-
 namespace_marker = { "::*" }
 recursive_marker = { "::**" }
 
@@ -2311,26 +2570,16 @@ import = {
 }
 
 filter_package = { filter_package_member+ }
-
 filter_package_member = { "[" ~ owned_expression ~ "]" }
-
-metadata_body_usage_member = { metadata_body_usage }
-
-metadata_body_usage = {
-    "ref"?
-    ~ (redefines_token ~ identifier)?
-    ~ feature_specialization_part?
-    ~ value_part?
-    ~ metadata_body
-}
 
 // Dependency
 
 dependency = {
-    "dependency"
-    ~ ((identification ~ "from") | "from")?
+    prefix_metadata?
+    ~ dependency_token
+    ~ ((identification ~ from_token) | from_token)?
     ~ element_reference ~ ("," ~ element_reference)*
-    ~ "to"
+    ~ to_token
     ~ element_reference ~ ("," ~ element_reference)*
     ~ relationship_body
 }
