@@ -7021,6 +7021,14 @@ fn test_parse_decision_test_action_def() {
 #[case("from focus.xrsl to shoot.xsf", "flow with from-to")]
 #[case("focus.xrsl to shoot.xsf", "flow with to only")]
 #[case("myFlow : Exposure from x to y", "named typed flow")]
+#[case(
+    "publish_returnallitems of Publish from apspm.pub to mqget.APIS_MQTT.pub",
+    "named typed flow with from-to"
+)]
+#[case(
+    "call_getItems of CallGiveItems[1] from tlu.cll to apsph.cll",
+    "named typed flow with multiplicity"
+)]
 fn test_parse_flow_connection_usage_declaration(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::flow_connection_usage_declaration, input);
 
@@ -7029,6 +7037,51 @@ fn test_parse_flow_connection_usage_declaration(#[case] input: &str, #[case] des
         "Failed to parse flow_connection_usage_declaration '{}' ({}): {:?}",
         input,
         desc,
+        result.err()
+    );
+}
+
+/// Tests flow_connection_usage with multi-line declaration
+#[rstest]
+#[case("flow publish of Publish from a.b to c.d;", "single line flow")]
+#[case("flow publish of Publish\nfrom a.b to c.d;", "multi-line flow LF")]
+#[case("flow publish of Publish\r\nfrom a.b to c.d;", "multi-line flow CRLF")]
+fn test_parse_flow_connection_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_connection_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse flow_connection_usage '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests interface usage with flows inside
+#[test]
+fn test_parse_interface_usage_with_flows() {
+    let input = r#"package Test {
+        occurrence def APIS_transfer_lifetime {
+            interface APIS_transfer_interface : Interfaces::Interface connect (
+                tlu ::> X.a, // port reference
+                apsph ::> Y.b) {
+
+                flow publish_returnallitems of Publish
+                from apspm.pub to mqget.APIS_MQTT.pub;
+                flow subscribe_returnallitems of Subscribe
+                from apsc.subscr to mqgive.APIS_MQTT.subscr;
+                flow call_getItems of CallGiveItems[1]
+                from tlu.cll to apsph.cll;
+            }
+        }
+    }"#;
+
+    let result = SysMLParser::parse(Rule::model, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface usage with flows: {:?}",
         result.err()
     );
 }
