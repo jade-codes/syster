@@ -8249,3 +8249,94 @@ fn test_parse_expression_dotted_func_call() {
         result.err()
     );
 }
+
+// Test use case usage inside package body
+#[test]
+fn test_parse_use_case_usage() {
+    let input = "use case transportPassenger:TransportPassenger;";
+    let result = SysMLParser::parse(Rule::use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse use case usage: {:?}",
+        result.err()
+    );
+}
+
+// Test use case usage in package body
+#[test]
+fn test_parse_use_case_in_package() {
+    let input = "package P { use case transportPassenger:TransportPassenger; }";
+    let result = SysMLParser::parse(Rule::package, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse use case in package: {:?}",
+        result.err()
+    );
+}
+
+// Test action trigger with accept
+#[test]
+fn test_parse_action_trigger_accept() {
+    let input = "then action trigger accept ignitionCmd:IgnitionCmd;";
+    let result = SysMLParser::parse(Rule::action_body_item, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse action trigger accept: {:?}",
+        result.err()
+    );
+}
+
+// Test use case with trigger accept inside
+#[test]
+fn test_parse_use_case_with_trigger_accept() {
+    let input = "use case transportPassenger:TransportPassenger{
+                first start;
+                then action trigger accept ignitionCmd:IgnitionCmd;
+            }";
+    let result = SysMLParser::parse(Rule::use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse use case with trigger accept: {:?}",
+        result.err()
+    );
+}
+
+// Test "then done;" pattern in use case
+#[test]
+fn test_parse_then_done() {
+    let input = "use case test:TestCase{
+                first start;
+                then done;
+            }";
+    let result = SysMLParser::parse(Rule::use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse then done: {:?}",
+        result.err()
+    );
+}
+
+// Test full use case with multiple then actions
+#[test]
+fn test_parse_use_case_full_flow() {
+    let input = r#"use case transportPassenger:TransportPassenger{
+                first start;
+                then action a{
+                    action driverGetInVehicle;
+                }
+                then action trigger accept ignitionCmd:IgnitionCmd;
+                then action b{
+                    action driveVehicleToDestination;
+                }
+                then action c{
+                    action driverGetOutOfVehicle;
+                }
+                then done;
+            }"#;
+    let result = SysMLParser::parse(Rule::use_case_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse use case full flow: {:?}",
+        result.err()
+    );
+}

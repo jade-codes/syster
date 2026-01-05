@@ -551,7 +551,7 @@ extent_expression = {
 primary_expression = {
     base_expression
     ~ (
-        "." ~ feature_chain_member
+        "." ~ feature_chain_member ~ argument_list?  // feature chain with optional method call
         | "#" ~ "(" ~ sequence_expression ~ ")"  // indexing with #
         | "[" ~ sequence_expression ~ "]"      // indexing with []
         | "->" ~ reference_typing ~ (
@@ -1528,8 +1528,9 @@ case_calculation_body_item = {
 }
 
 case_action_body_item = {
-    empty_succession_member? ~ behavior_usage_member
-    | empty_succession_member? ~ action_node_member
+    initial_node_member ~ target_succession_member*
+    | empty_succession_member? ~ (behavior_usage_member | action_node_member) ~ target_succession_member*
+    | guarded_succession_member
     | import
     | alias_member_element
     | definition_member
