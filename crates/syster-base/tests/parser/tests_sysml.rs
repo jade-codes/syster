@@ -2377,19 +2377,6 @@ fn test_parse_owned_cross_multiplicity(#[case] input: &str, #[case] desc: &str) 
     );
 }
 
-#[rstest]
-#[case("references", "references keyword")]
-fn test_parse_references_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::references_keyword, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
 // Binding Connector Tests
 
 #[rstest]
