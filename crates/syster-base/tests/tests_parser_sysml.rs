@@ -3260,6 +3260,20 @@ fn test_parse_action_usage_declaration(#[case] input: &str, #[case] desc: &str) 
 }
 
 #[rstest]
+#[case("perform c.incr;", "perform with feature chain")]
+#[case("perform myAction;", "perform with reference")]
+fn test_parse_perform_action_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::perform_action_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
 #[case("actionRef", "perform action usage declaration with reference")]
 #[case(
     "action myAction;",
@@ -4675,6 +4689,10 @@ fn test_parse_calculation_def_keyword(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("calc def MyCalc;", "simple calculation definition")]
 #[case("calc def MyCalc {}", "calculation definition with empty body")]
+#[case(
+    "calc def Increment { in c : Counter; return : Counter; perform c.incr; c }",
+    "full calculation definition"
+)]
 fn test_parse_calculation_definition(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::calculation_definition, input);
 
@@ -4689,6 +4707,11 @@ fn test_parse_calculation_definition(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case(";", "semicolon calculation body")]
 #[case("{}", "empty braces calculation body")]
+#[case("{ perform c.incr; c }", "calculation body with perform and result")]
+#[case(
+    "{ in c : Counter; return : Counter; perform c.incr; c }",
+    "full calculation body"
+)]
 fn test_parse_calculation_body(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::calculation_body, input);
 
@@ -6667,6 +6690,199 @@ fn test_textual_representation(#[case] input: &str, #[case] desc: &str) {
         "Failed to parse textual_representation '{}' ({}): {:?}",
         input,
         desc,
+        result.err()
+    );
+}
+
+// =============================================================================
+// AssignmentTest.sysml patterns - assignments in various contexts
+// =============================================================================
+
+/// Tests parsing of the full AssignmentTest package with complex patterns
+#[test]
+fn test_parse_assignment_test_package_full() {
+    let input = r#"package AssignmentTest {
+	
+	part def Counter {
+		attribute count : ScalarValues::Integer := 0;
+		
+		action incr {
+			assign count := count + 1;
+		}
+		
+		action decr {
+			assign count := count - 1;
+		}
+	}
+	
+	attribute def Incr;
+	attribute def Decr;
+	
+	state def Counting {
+		part counter : Counter;
+		entry assign counter.count := 0;
+		
+		then state wait;
+		accept Incr
+			then increment;
+		accept Decr
+			then decrement;
+		
+		state increment {
+			do assign counter.count := counter.count + 1;
+		}
+		then wait;
+		
+		state decrement {
+			do assign counter.count := counter.count - 1;
+		}
+		then wait;
+	}
+	
+	calc def Increment { 
+		in c : Counter;
+		return : Counter;
+		
+		perform c.incr;
+		c
+	}
+	
+	action a {
+		state counting : Counting;
+		assign counting.counter.count := counting.counter.count + 1;
+		assign counting.counter.count := Increment(counting.counter).count;
+	}
+}"#;
+
+    let result = SysMLParser::parse(Rule::package, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse AssignmentTest package: {:?}",
+        result.err()
+    );
+}
+
+/// Tests assignment action usage with various patterns including feature chains and calc invocation
+#[rstest]
+#[case("assign count := count + 1;", "simple increment assignment")]
+#[case("assign count := count - 1;", "simple decrement assignment")]
+#[case("assign counter.count := 0;", "feature chain assignment")]
+#[case(
+    "assign counter.count := counter.count + 1;",
+    "feature chain self-increment"
+)]
+#[case(
+    "assign counting.counter.count := counting.counter.count + 1;",
+    "nested feature chain assignment"
+)]
+#[case(
+    "assign counting.counter.count := Increment(counting.counter).count;",
+    "assignment with calc invocation"
+)]
+fn test_parse_assignment_with_feature_chains(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::assignment_node_declaration, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse assignment_node_declaration '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests part def with nested action definitions containing assignments
+#[test]
+fn test_parse_part_def_counter_with_actions() {
+    let input = r#"part def Counter {
+		attribute count : ScalarValues::Integer := 0;
+		
+		action incr {
+			assign count := count + 1;
+		}
+		
+		action decr {
+			assign count := count - 1;
+		}
+	}"#;
+
+    let result = SysMLParser::parse(Rule::part_definition, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse Counter part def with actions: {:?}",
+        result.err()
+    );
+}
+
+/// Tests state def with entry assignment, accept transitions, and do assignments
+#[test]
+fn test_parse_state_def_with_entry_and_do_assignments() {
+    let input = r#"state def Counting {
+		part counter : Counter;
+		entry assign counter.count := 0;
+		
+		then state wait;
+		accept Incr
+			then increment;
+		accept Decr
+			then decrement;
+		
+		state increment {
+			do assign counter.count := counter.count + 1;
+		}
+		then wait;
+		
+		state decrement {
+			do assign counter.count := counter.count - 1;
+		}
+		then wait;
+	}"#;
+
+    let result = SysMLParser::parse(Rule::state_definition, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse Counting state def: {:?}",
+        result.err()
+    );
+}
+
+/// Tests calc def with perform action and expression result
+#[test]
+fn test_parse_calc_def_with_perform() {
+    let input = r#"calc def Increment { 
+		in c : Counter;
+		return : Counter;
+		
+		perform c.incr;
+		c
+	}"#;
+
+    let result = SysMLParser::parse(Rule::calculation_definition, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse Increment calc def: {:?}",
+        result.err()
+    );
+}
+
+/// Tests action with state usage and assignments including calc invocation
+#[test]
+fn test_parse_action_with_state_and_calc_invocation() {
+    let input = r#"action a {
+		state counting : Counting;
+		assign counting.counter.count := counting.counter.count + 1;
+		assign counting.counter.count := Increment(counting.counter).count;
+	}"#;
+
+    let result = SysMLParser::parse(Rule::action_definition, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse action a with state and assignments: {:?}",
         result.err()
     );
 }

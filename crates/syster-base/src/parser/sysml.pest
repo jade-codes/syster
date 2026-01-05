@@ -1232,8 +1232,13 @@ assignment_node = {
 }
 
 assignment_node_declaration = {
-    assign_token ~ assignment_target_member ~ feature_chain_member ~ assignment_operator ~ node_parameter_member
-    | action_keyword ~ usage_declaration? ~ assign_token ~ assignment_target_member ~ feature_chain_member ~ assignment_operator ~ node_parameter_member
+    assign_token ~ assignment_target_chain ~ assignment_operator ~ node_parameter_member
+    | action_keyword ~ usage_declaration? ~ assign_token ~ assignment_target_chain ~ assignment_operator ~ node_parameter_member
+}
+
+// Assignment target is a chain of identifiers separated by dots
+assignment_target_chain = {
+    feature_chain_member ~ ("." ~ feature_chain_member)*
 }
 
 assignment_target_member = {
