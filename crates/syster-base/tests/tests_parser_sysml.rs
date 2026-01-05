@@ -7865,9 +7865,35 @@ fn test_parse_interface_implicit_body() {
     );
 }
 
+/// Tests dependency with prefix metadata
+#[test]
+fn test_parse_dependency_with_metadata() {
+    let input = "#refinement dependency engine4Cyl to VehicleConfiguration_b::PartsTree::vehicle_b::engine;";
+    let result = SysMLParser::parse(Rule::dependency, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse dependency with metadata: {:?}",
+        result.err()
+    );
+}
+
+/// Tests dependency within package body
+#[test]
+fn test_parse_dependency_in_package() {
+    let input = r#"package Test {
+    #refinement dependency engine4Cyl to VehicleConfiguration_b::PartsTree::vehicle_b::engine;
+}"#;
+    let result = SysMLParser::parse(Rule::package_declaration, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse dependency in package: {:?}",
+        result.err()
+    );
+}
+
 /// Tests interface declaration with connect keyword
 #[test]
-fn test_parse_interface_decl_with_connect() {
+fn test_parse_interface_decl_with_connect_v2() {
     let input = "fuelInterface:FuelInterface connect fuelTank.fuelOutPort to engine.fuelInPort";
     let result = SysMLParser::parse(Rule::interface_usage_declaration, input);
     assert!(
@@ -7945,6 +7971,31 @@ fn test_parse_allocation_def_with_end_features() {
     assert!(
         result.is_ok(),
         "Failed to parse allocation def with end features: {:?}",
+        result.err()
+    );
+}
+
+// Test for SimpleVehicleModel.sysml line 925-938: #refinement dependency
+#[test]
+fn test_parse_refinement_dependency() {
+    let input = r#"package Engine4Cyl_Variant{
+            public import ModelingMetadata::*;
+            part engine:Engine{
+                part cylinders:Cylinder[4..8] ordered;
+            }
+            part engine4Cyl:>engine{
+                part redefines cylinders [4];
+                part cylinder1 subsets cylinders[1];
+                part cylinder2 subsets cylinders[1];
+                part cylinder3 subsets cylinders[1];
+                part cylinder4 subsets cylinders[1];
+            }
+            #refinement dependency engine4Cyl to VehicleConfiguration_b::PartsTree::vehicle_b::engine;
+        }"#;
+    let result = SysMLParser::parse(Rule::package, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse refinement dependency: {:?}",
         result.err()
     );
 }

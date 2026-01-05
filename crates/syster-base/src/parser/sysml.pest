@@ -334,7 +334,7 @@ package_body_element = {
 
 usage_member = { visibility? ~ usage_element }
 
-relationship_member_element = { visibility? ~ dependency }
+relationship_member_element = { visibility? ~ prefix_metadata? ~ dependency }
 
 element_filter_member = { visibility? ~ filter_token ~ owned_expression ~ semi_colon }
 
@@ -2567,7 +2567,8 @@ filter_package_member = { "[" ~ owned_expression ~ "]" }
 // Dependency
 
 dependency = {
-    dependency_token
+    prefix_metadata?
+    ~ dependency_token
     ~ ((identification ~ from_token) | from_token)?
     ~ element_reference ~ ("," ~ element_reference)*
     ~ to_token
