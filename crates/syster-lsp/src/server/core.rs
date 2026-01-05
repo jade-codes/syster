@@ -166,12 +166,19 @@ impl LspServer {
 
         // Load all SysML/KerML files from workspace folders
         let loader = WorkspaceLoader::new();
-        for folder in &self.workspace_folders.clone() {
-            let _ = loader.load_directory(folder, &mut self.workspace);
+        for folder in self.workspace_folders.clone() {
+            if let Err(err) = loader.load_directory(&folder, &mut self.workspace) {
+                return Err(format!(
+                    "Failed to load workspace folder '{}': {err}",
+                    folder.display()
+                ));
+            }
         }
 
         // Populate all symbols
-        let _ = self.workspace.populate_all();
+        if let Err(err) = self.workspace.populate_all() {
+            return Err(format!("Failed to populate workspace symbols: {err}"));
+        }
 
         // Sync document texts for hover/features on stdlib files
         self.sync_document_texts_from_workspace();
