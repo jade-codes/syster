@@ -1944,13 +1944,28 @@ allocate_end_member = {
     allocate_end
 }
 
-// Local qualified reference chain for allocate - matches both :: and . separators
-allocate_qualified_reference = @{
-    identifier ~ ("::" ~ identifier | "." ~ identifier)*
+allocate_end = {
+    owned_cross_multiplicity_member? ~ allocate_end_reference
 }
 
-allocate_end = {
-    owned_cross_multiplicity_member? ~ allocate_qualified_reference
+// Atomic rule matching qualified names with optional feature chains
+// Matches: ActionTree::providePower.generateToAmplify
+// or: Package::Type
+// or: part.feature
+// or: simple
+allocate_qualified_feature_reference = @{
+    (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name) | "." ~ (identifier | quoted_name))*
+}
+
+// Match patterns like: ActionTree::providePower.generateToAmplify
+// or: logical ::> l
+// or: l.component
+// or: simple
+allocate_end_reference = {
+    identifier ~ references_operator ~ allocate_qualified_feature_reference
+    | quoted_name ~ references_operator ~ allocate_qualified_feature_reference
+    | allocate_qualified_feature_reference
+    | all_token
 }
 
 // Allocation usage with optional allocate part

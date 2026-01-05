@@ -7805,6 +7805,30 @@ fn test_parse_allocate_end() {
     );
 }
 
+/// Tests allocate from AllocationTest.sysml line 30 with nested feature access
+#[test]
+fn test_parse_allocate_nested_features() {
+    let input = "allocate l.component to p.assembly.element;";
+    let result = SysMLParser::parse(Rule::allocate_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse allocate with nested features: {:?}",
+        result.err()
+    );
+}
+
+/// Tests nary allocate with named ends using subsetting operator
+#[test]
+fn test_parse_nary_allocate_with_subsetting() {
+    let input = "allocate (logical ::> l, physical ::> p);";
+    let result = SysMLParser::parse(Rule::allocate_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse nary allocate with subsetting: {:?}",
+        result.err()
+    );
+}
+
 /// Tests allocate binary part
 #[test]
 fn test_parse_binary_allocate_part() {
@@ -7906,6 +7930,21 @@ fn test_parse_full_context_with_interfaces() {
     assert!(
         result.is_ok(),
         "Failed to parse full context with interfaces: {:?}",
+        result.err()
+    );
+}
+
+// Test for AllocationTest.sysml line 24-27: allocation def with end features
+#[test]
+fn test_parse_allocation_def_with_end_features() {
+    let input = r#"allocation def Logical_to_Physical :> A {
+        end logical : Logical;
+        end physical : Physical;
+    }"#;
+    let result = SysMLParser::parse(Rule::allocation_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse allocation def with end features: {:?}",
         result.err()
     );
 }
