@@ -112,9 +112,11 @@ impl_from_pest!(Alias, |pest: &mut Pairs<Rule>| {
     let mut span = None;
 
     for pair in pest {
-        span.get_or_insert_with(|| to_span(pair.as_span()));
         match pair.as_rule() {
-            Rule::identification => name = Some(pair.as_str().to_string()),
+            Rule::identification => {
+                span.get_or_insert_with(|| to_span(pair.as_span()));
+                name = Some(pair.as_str().to_string());
+            }
             Rule::element_reference => {
                 target = pair.as_str().to_string();
                 target_span = Some(to_span(pair.as_span()));
