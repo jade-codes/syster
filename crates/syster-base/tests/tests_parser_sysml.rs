@@ -7240,7 +7240,6 @@ fn test_parse_satisfy_requirement_with_dot() {
     );
 }
 
-
 /// Tests #derivation connection def (definition, not usage)
 #[test]
 fn test_parse_derivation_connection_def() {
@@ -7329,6 +7328,81 @@ fn test_parse_action_with_textual_rep() {
     );
 }
 
+// =============================================================================
+// TimeVaryingAttribute.sysml patterns - anonymous features with redefinition
+// =============================================================================
 
+/// Tests parsing feature chain redefinition
+#[test]
+fn test_parse_feature_chain_in_redefinition() {
+    let input = ":>> localClock.currentTime";
+    let result = SysMLParser::parse(Rule::redefinitions, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse feature chain redefinition: {:?}",
+        result.err()
+    );
+}
 
+/// Tests feature_specialization_part with redefinition
+#[test]
+fn test_parse_feature_specialization_with_redefinition() {
+    let input = ":>> localClock.currentTime";
+    let result = SysMLParser::parse(Rule::feature_specialization_part, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse feature specialization part: {:?}",
+        result.err()
+    );
+}
 
+/// Tests attribute with redefinition (no value, just semicolon)
+#[test]
+fn test_parse_attribute_with_redefinition_no_value() {
+    let input = "attribute :>> localClock.currentTime;";
+    let result = SysMLParser::parse(Rule::attribute_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse attribute with redefinition (no value): {:?}",
+        result.err()
+    );
+}
+
+/// Tests usage_suffix with redefinition
+#[test]
+fn test_parse_usage_suffix_with_redefinition() {
+    let input = ":>> localClock.currentTime;";
+    let result = SysMLParser::parse(Rule::usage_suffix, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse usage_suffix with redefinition: {:?}",
+        result.err()
+    );
+}
+
+/// Tests anonymous attribute with redefinition and value
+#[test]
+fn test_parse_anonymous_attribute_with_redefinition() {
+    let input = "attribute :>> localClock.currentTime = startTime + elapseTime;";
+    let result = SysMLParser::parse(Rule::attribute_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse anonymous attribute with redefinition: {:?}",
+        result.err()
+    );
+}
+
+/// Tests anonymous feature with redefinition in snapshot
+#[test]
+fn test_parse_anonymous_redefinition_in_snapshot() {
+    let input = r#"snapshot :>> start {
+        :>> elapseTime = 0 [s];
+        :>> pwrCmd.pwrLevel = 0;
+    }"#;
+    let result = SysMLParser::parse(Rule::portion_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse snapshot with anonymous redefinitions: {:?}",
+        result.err()
+    );
+}
