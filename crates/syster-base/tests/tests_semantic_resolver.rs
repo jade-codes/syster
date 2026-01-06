@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
-#![allow(clippy::panic)]
 
+#![allow(clippy::panic)]
 use syster::semantic::{
     Resolver, SymbolTable, extract_imports, is_wildcard_import, parse_import_path,
     symbol_table::Symbol,
@@ -1107,7 +1107,8 @@ fn test_resolve_in_scope_qualified_name() {
     let scope_id = table.current_scope_id();
 
     // Should find by qualified name from any scope
-    let result = table.resolve_in_scope("Base::Vehicle", scope_id);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("Base::Vehicle", scope_id);
     assert!(result.is_some());
     assert_eq!(result.unwrap().qualified_name(), "Base::Vehicle");
 }
@@ -1159,12 +1160,14 @@ fn test_resolve_in_scope_with_import() {
     let scope_without_import = table.current_scope_id();
 
     // From scope with import, should resolve "Vehicle" via import
-    let result = table.resolve_in_scope("Vehicle", scope_with_import);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("Vehicle", scope_with_import);
     assert!(result.is_some(), "Should find Vehicle via import");
     assert_eq!(result.unwrap().qualified_name(), "Base::Vehicle");
 
     // From scope without import, should NOT find "Vehicle"
-    let result = table.resolve_in_scope("Vehicle", scope_without_import);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("Vehicle", scope_without_import);
     assert!(result.is_none(), "Should not find Vehicle without import");
 }
 
@@ -1205,30 +1208,35 @@ fn test_resolve_in_scope_direct_symbol() {
         .unwrap();
 
     // From child scope, should find local symbol by simple name
-    let result = table.resolve_in_scope("LocalDef", child_scope);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("LocalDef", child_scope);
     assert!(result.is_some(), "Should find LocalDef from child scope");
 
     // From child scope, should find parent symbol
-    let result = table.resolve_in_scope("GlobalPackage", child_scope);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("GlobalPackage", child_scope);
     assert!(
         result.is_some(),
         "Should find GlobalPackage from child scope"
     );
 
     // From root scope (0), should find global
-    let result = table.resolve_in_scope("GlobalPackage", 0);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("GlobalPackage", 0);
     assert!(result.is_some());
 
     // From root scope (0), should NOT find LocalDef by simple name
     // (it's not in scope 0's symbols, not imported, and lookup walks UP not DOWN)
-    let result = table.resolve_in_scope("LocalDef", 0);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("LocalDef", 0);
     assert!(
         result.is_none(),
         "Should not find LocalDef by simple name from root"
     );
 
     // But SHOULD find it by qualified name from anywhere
-    let result = table.resolve_in_scope("GlobalPackage::LocalDef", 0);
+    let _resolver = Resolver::new(&table);
+    let result = _resolver.resolve_in_scope("GlobalPackage::LocalDef", 0);
     assert!(
         result.is_some(),
         "Should find by qualified name from any scope"

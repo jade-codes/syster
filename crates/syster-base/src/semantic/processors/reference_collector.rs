@@ -97,12 +97,8 @@ impl<'a> ReferenceCollector<'a> {
 
         // Apply references to symbols
         for (target_name, refs) in references_by_target {
-            let resolved_symbol = self
-                .symbol_table
-                .lookup_qualified(&target_name)
-                .or_else(|| self.symbol_table.lookup(&target_name));
-
-            if let Some(symbol) = resolved_symbol {
+            // Use find_by_qualified_name for data lookup during population
+            if let Some(symbol) = self.symbol_table.find_by_qualified_name(&target_name) {
                 let qualified_name = symbol.qualified_name().to_string();
                 self.symbol_table
                     .add_references_to_symbol(&qualified_name, refs);
@@ -126,13 +122,12 @@ impl<'a> ReferenceCollector<'a> {
                 }
 
                 // Try to resolve the imported path to a fully qualified name
-                let resolved = self
+                let target_qname = self
                     .symbol_table
-                    .lookup_qualified(&import.path)
-                    .or_else(|| self.symbol_table.lookup(&import.path))
+                    .find_by_qualified_name(&import.path)
                     .map(|s| s.qualified_name().to_string());
 
-                if let Some(target_qname) = resolved {
+                if let Some(target_qname) = target_qname {
                     // Create a reference for the import statement itself
                     if let (Some(span), Some(file)) = (import.span, import.file.clone()) {
                         // Add to the references HashMap for legacy symbol references

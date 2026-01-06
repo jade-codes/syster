@@ -10,8 +10,9 @@ impl LspServer {
         let path = uri_to_path(uri)?;
         let (element_name, range) = self.find_symbol_at_position(&path, position)?;
 
-        // Look up the symbol to verify it exists and is renamable
-        let symbol = self.workspace.symbol_table().resolve(&element_name)?;
+        // Look up the symbol using resolver to verify it exists and is renamable
+        let resolver = self.resolver();
+        let symbol = resolver.resolve(&element_name)?;
 
         // Get the simple name (last component) for display
         let simple_name = symbol.name().to_string();
@@ -36,8 +37,9 @@ impl LspServer {
         let path = uri_to_path(uri)?;
         let (element_name, _) = self.find_symbol_at_position(&path, position)?;
 
-        // Look up the symbol
-        let symbol = self.workspace.symbol_table().resolve(&element_name)?;
+        // Look up the symbol using resolver
+        let resolver = self.resolver();
+        let symbol = resolver.resolve(&element_name)?;
         let qualified_name = symbol.qualified_name();
 
         // Collect all locations (definition + references)

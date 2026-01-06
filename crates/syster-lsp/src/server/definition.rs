@@ -16,8 +16,9 @@ impl LspServer {
         let path = uri_to_path(uri)?;
         let (element_name, _hover_range) = self.find_symbol_at_position(&path, position)?;
 
-        // Look up symbol in workspace
-        let symbol = self.workspace.symbol_table().resolve(&element_name)?;
+        // Look up symbol using resolver
+        let resolver = self.resolver();
+        let symbol = resolver.resolve(&element_name)?;
 
         // Get definition location from symbol
         let source_file = symbol.source_file()?;

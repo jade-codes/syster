@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use syster::semantic::resolver::Resolver;
 
 use from_pest::FromPest;
 use pest::Parser;
@@ -59,11 +60,13 @@ fn test_import_membership() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Vehicle should be accessible in Derived package due to import
-    let my_car = workspace.symbol_table().lookup_qualified("Derived::myCar");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let my_car = _resolver.resolve_qualified("Derived::myCar");
     assert!(my_car.is_some(), "myCar should be defined");
 
     // Verify that Base::Vehicle can be found (the imported member)
-    let vehicle = workspace.symbol_table().lookup_qualified("Base::Vehicle");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let vehicle = _resolver.resolve_qualified("Base::Vehicle");
     assert!(
         vehicle.is_some(),
         "Base::Vehicle should exist and be importable"
@@ -102,14 +105,14 @@ fn test_import_membership_with_namespace() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Member import: only Vehicle should be accessible in Derived1
-    let car1 = workspace.symbol_table().lookup_qualified("Derived1::myCar");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let car1 = _resolver.resolve_qualified("Derived1::myCar");
     assert!(car1.is_some(), "Derived1::myCar should be defined");
 
     // Namespace import: both Vehicle and Engine should be accessible in Derived2
-    let car2 = workspace.symbol_table().lookup_qualified("Derived2::myCar");
-    let engine2 = workspace
-        .symbol_table()
-        .lookup_qualified("Derived2::myEngine");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let car2 = resolver.resolve_qualified("Derived2::myCar");
+    let engine2 = resolver.resolve_qualified("Derived2::myEngine");
     assert!(car2.is_some(), "Derived2::myCar should be defined");
     assert!(engine2.is_some(), "Derived2::myEngine should be defined");
 }
@@ -142,8 +145,10 @@ fn test_import_namespace() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Both Vehicle and Engine should be accessible via namespace import
-    let car = workspace.symbol_table().lookup_qualified("Derived::car");
-    let engine = workspace.symbol_table().lookup_qualified("Derived::engine");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let car = _resolver.resolve_qualified("Derived::car");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let engine = _resolver.resolve_qualified("Derived::engine");
 
     assert!(car.is_some(), "car should be defined");
     assert!(engine.is_some(), "engine should be defined");
@@ -183,7 +188,8 @@ fn test_cross_file_import() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Car should be able to specialize Vehicle from the imported package
-    let car = workspace.symbol_table().lookup_qualified("Car");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let car = _resolver.resolve_qualified("Car");
     assert!(car.is_some(), "Car should be defined");
 }
 
@@ -215,7 +221,8 @@ fn test_import_visibility() {
     workspace.populate_all().expect("Population should succeed");
 
     // With model-level imports, both should work
-    let y = workspace.symbol_table().lookup_qualified("B::y");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let y = _resolver.resolve_qualified("B::y");
     assert!(y.is_some(), "y should be defined in package B");
 }
 
@@ -278,20 +285,20 @@ fn test_import_alias() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify that Car can reference BaseVehicle (the alias)
-    let car = workspace.symbol_table().lookup_qualified("Derived::Car");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let car = _resolver.resolve_qualified("Derived::Car");
     assert!(car.is_some(), "Car should be defined");
 
     // Verify that BaseVehicle resolves to Vehicle
-    let base_vehicle = workspace
-        .symbol_table()
-        .lookup_qualified("Derived::BaseVehicle");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let base_vehicle = resolver.resolve_qualified("Derived::BaseVehicle");
     assert!(
         base_vehicle.is_some(),
         "BaseVehicle alias should be defined in Derived package"
     );
 
     // Verify that the alias actually points to the Vehicle definition
-    let vehicle = workspace.symbol_table().lookup_qualified("Base::Vehicle");
+    let vehicle = resolver.resolve_qualified("Base::Vehicle");
     assert!(
         vehicle.is_some(),
         "Vehicle should be defined in Base package"

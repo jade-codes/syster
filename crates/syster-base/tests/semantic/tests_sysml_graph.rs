@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use syster::semantic::resolver::Resolver;
 
 use from_pest::FromPest;
 use pest::Parser;
@@ -41,9 +42,9 @@ fn test_end_to_end_relationship_population() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify symbols are in the table
-    assert!(symbol_table.lookup("Vehicle").is_some());
-    assert!(symbol_table.lookup("Car").is_some());
-    assert!(symbol_table.lookup("myCar").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Car").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("myCar").is_some());
 
     // Verify specialization relationship (Car :> Vehicle)
     let car_specializes = relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Car");
@@ -414,8 +415,8 @@ fn test_satisfy_requirement_relationship() {
     populator.populate(&file).unwrap();
 
     // Verify symbols exist
-    assert!(symbol_table.lookup("SafetyReq").is_some());
-    assert!(symbol_table.lookup("SafetyCase").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("SafetyReq").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("SafetyCase").is_some());
 
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
@@ -462,8 +463,8 @@ fn test_perform_action_relationship() {
     populator.populate(&file).unwrap();
 
     // Verify symbols exist
-    assert!(symbol_table.lookup("Move").is_some());
-    assert!(symbol_table.lookup("Robot").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Move").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Robot").is_some());
 
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
@@ -487,11 +488,11 @@ fn test_exhibit_state_relationship() {
 
     // Verify symbols exist
     assert!(
-        symbol_table.lookup("Moving").is_some(),
+        Resolver::new(&symbol_table).resolve("Moving").is_some(),
         "Moving symbol not found"
     );
     assert!(
-        symbol_table.lookup("Vehicle").is_some(),
+        Resolver::new(&symbol_table).resolve("Vehicle").is_some(),
         "Vehicle symbol not found"
     );
 
@@ -516,8 +517,8 @@ fn test_include_use_case_relationship() {
     populator.populate(&file).unwrap();
 
     // Verify symbols exist
-    assert!(symbol_table.lookup("Login").is_some());
-    assert!(symbol_table.lookup("ManageAccount").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Login").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("ManageAccount").is_some());
 
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
@@ -681,8 +682,8 @@ fn test_derived_requirement_modifier() {
     populator.populate(&file).unwrap();
 
     // Both requirements exist (nested and top-level with same name)
-    assert!(symbol_table.lookup("BaseReq").is_some());
-    assert!(symbol_table.lookup("childReq").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("BaseReq").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("childReq").is_some());
 
     // No subsetting relationship since there's no :> clause
     assert_eq!(

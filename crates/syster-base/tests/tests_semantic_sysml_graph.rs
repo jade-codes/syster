@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use syster::semantic::resolver::Resolver;
 
 use from_pest::FromPest;
 use pest::Parser;
@@ -41,9 +42,9 @@ fn test_end_to_end_relationship_population() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify symbols are in the table
-    assert!(symbol_table.lookup("Vehicle").is_some());
-    assert!(symbol_table.lookup("Car").is_some());
-    assert!(symbol_table.lookup("myCar").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Car").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("myCar").is_some());
 
     // Verify specialization relationship (Car :> Vehicle)
     let car_specializes = relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Car");
@@ -414,8 +415,8 @@ fn test_satisfy_requirement_relationship() {
     populator.populate(&file).unwrap();
 
     // Verify symbols exist
-    assert!(symbol_table.lookup("SafetyReq").is_some());
-    assert!(symbol_table.lookup("SafetyCase").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("SafetyReq").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("SafetyCase").is_some());
 
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
@@ -462,8 +463,8 @@ fn test_perform_action_relationship() {
     populator.populate(&file).unwrap();
 
     // Verify symbols exist
-    assert!(symbol_table.lookup("Move").is_some());
-    assert!(symbol_table.lookup("Robot").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Move").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Robot").is_some());
 
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
@@ -487,11 +488,11 @@ fn test_exhibit_state_relationship() {
 
     // Verify symbols exist
     assert!(
-        symbol_table.lookup("Moving").is_some(),
+        Resolver::new(&symbol_table).resolve("Moving").is_some(),
         "Moving symbol not found"
     );
     assert!(
-        symbol_table.lookup("Vehicle").is_some(),
+        Resolver::new(&symbol_table).resolve("Vehicle").is_some(),
         "Vehicle symbol not found"
     );
 
@@ -516,8 +517,12 @@ fn test_include_use_case_relationship() {
     populator.populate(&file).unwrap();
 
     // Verify symbols exist
-    assert!(symbol_table.lookup("Login").is_some());
-    assert!(symbol_table.lookup("ManageAccount").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Login").is_some());
+    assert!(
+        Resolver::new(&symbol_table)
+            .resolve("ManageAccount")
+            .is_some()
+    );
 
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
@@ -681,8 +686,8 @@ fn test_derived_requirement_modifier() {
     populator.populate(&file).unwrap();
 
     // Both requirements exist (nested and top-level with same name)
-    assert!(symbol_table.lookup("BaseReq").is_some());
-    assert!(symbol_table.lookup("childReq").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("BaseReq").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("childReq").is_some());
 
     // No subsetting relationship since there's no :> clause
     assert_eq!(
@@ -1327,9 +1332,21 @@ fn test_workspace_repopulation_symbols_and_relationships() {
     workspace.populate_all().expect("Failed to populate");
 
     // Verify initial state
-    assert!(workspace.symbol_table().lookup("Vehicle").is_some());
-    assert!(workspace.symbol_table().lookup("Car").is_some());
-    assert!(workspace.symbol_table().lookup("myCar").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Vehicle")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Car")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("myCar")
+            .is_some()
+    );
     assert!(
         workspace
             .relationship_graph()
@@ -1351,15 +1368,21 @@ fn test_workspace_repopulation_symbols_and_relationships() {
 
     // Old symbols should be gone
     assert!(
-        workspace.symbol_table().lookup("Vehicle").is_none(),
+        Resolver::new(workspace.symbol_table())
+            .resolve("Vehicle")
+            .is_none(),
         "Vehicle should be removed"
     );
     assert!(
-        workspace.symbol_table().lookup("Car").is_none(),
+        Resolver::new(workspace.symbol_table())
+            .resolve("Car")
+            .is_none(),
         "Car should be removed"
     );
     assert!(
-        workspace.symbol_table().lookup("myCar").is_none(),
+        Resolver::new(workspace.symbol_table())
+            .resolve("myCar")
+            .is_none(),
         "myCar should be removed"
     );
 
@@ -1379,11 +1402,15 @@ fn test_workspace_repopulation_symbols_and_relationships() {
 
     // New symbols should exist
     assert!(
-        workspace.symbol_table().lookup("Truck").is_some(),
+        Resolver::new(workspace.symbol_table())
+            .resolve("Truck")
+            .is_some(),
         "Truck should exist"
     );
     assert!(
-        workspace.symbol_table().lookup("BigTruck").is_some(),
+        Resolver::new(workspace.symbol_table())
+            .resolve("BigTruck")
+            .is_some(),
         "BigTruck should exist"
     );
 
@@ -1417,7 +1444,11 @@ fn test_nested_symbols_repopulation() {
     workspace.populate_all().expect("Failed to populate");
 
     // Verify nested symbols exist via all_symbols (nested symbols stored by simple name)
-    assert!(workspace.symbol_table().lookup("Container").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Container")
+            .is_some()
+    );
     let all_symbols = workspace.symbol_table().all_symbols();
     assert!(
         all_symbols
@@ -1458,7 +1489,11 @@ fn test_nested_symbols_repopulation() {
     );
 
     // New nested symbol should exist
-    assert!(workspace.symbol_table().lookup("Container").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Container")
+            .is_some()
+    );
     assert!(
         all_symbols_after
             .iter()
@@ -1490,10 +1525,26 @@ fn test_multi_file_update_isolation() {
     workspace.populate_all().expect("Failed to populate");
 
     // Verify both files' symbols and relationships exist
-    assert!(workspace.symbol_table().lookup("Vehicle").is_some());
-    assert!(workspace.symbol_table().lookup("Car").is_some());
-    assert!(workspace.symbol_table().lookup("Animal").is_some());
-    assert!(workspace.symbol_table().lookup("Dog").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Vehicle")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Car")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Animal")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Dog")
+            .is_some()
+    );
 
     // Update file1 only
     let source1_new = "part def Machine; part def Robot :> Machine;";
@@ -1502,14 +1553,38 @@ fn test_multi_file_update_isolation() {
     workspace.populate_affected().expect("Failed to repopulate");
 
     // File1's old symbols should be gone, new ones should exist
-    assert!(workspace.symbol_table().lookup("Vehicle").is_none());
-    assert!(workspace.symbol_table().lookup("Car").is_none());
-    assert!(workspace.symbol_table().lookup("Machine").is_some());
-    assert!(workspace.symbol_table().lookup("Robot").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Vehicle")
+            .is_none()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Car")
+            .is_none()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Machine")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Robot")
+            .is_some()
+    );
 
     // File2's symbols should be unchanged
-    assert!(workspace.symbol_table().lookup("Animal").is_some());
-    assert!(workspace.symbol_table().lookup("Dog").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Animal")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Dog")
+            .is_some()
+    );
 
     // File2's relationships should be unchanged
     let dog_spec = workspace
@@ -1567,9 +1642,8 @@ fn test_cross_language_sysml_specializes_kerml() {
     // But lookup() only searches current scope chain, not through imports for other files
 
     // Use qualified name lookup instead
-    let symbol = workspace
-        .symbol_table()
-        .lookup_qualified("VectorValues::NumericalVectorValue");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let symbol = resolver.resolve_qualified("VectorValues::NumericalVectorValue");
     println!(
         "VectorValues::NumericalVectorValue lookup: {:?}",
         symbol.map(|s| s.qualified_name())

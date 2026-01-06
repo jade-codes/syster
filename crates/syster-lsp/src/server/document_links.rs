@@ -63,8 +63,9 @@ impl LspServer {
             return None;
         }
 
-        // Look up the symbol in the symbol table
-        let symbol = self.workspace.symbol_table().resolve(&symbol_name)?;
+        // Look up the symbol using resolver
+        let resolver = self.resolver();
+        let symbol = resolver.resolve(&symbol_name)?;
 
         // Get the source file for this symbol
         let source_file = symbol.source_file()?;

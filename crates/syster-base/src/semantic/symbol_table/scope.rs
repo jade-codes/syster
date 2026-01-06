@@ -14,7 +14,7 @@ pub struct Import {
 
 /// Represents a lexical scope in the symbol table
 #[derive(Debug)]
-pub(super) struct Scope {
+pub struct Scope {
     pub parent: Option<usize>,
     pub symbols: HashMap<String, Symbol>,
     pub children: Vec<usize>,

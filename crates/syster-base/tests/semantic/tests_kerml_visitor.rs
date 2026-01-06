@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use syster::semantic::resolver::Resolver;
 
 use from_pest::FromPest;
 use pest::Parser;
@@ -19,7 +20,7 @@ fn test_kerml_visitor_creates_package_symbol() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(symbol_table.lookup("MyPackage").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("MyPackage").is_some());
 }
 
 #[test]
@@ -33,7 +34,8 @@ fn test_kerml_visitor_creates_classifier_symbol() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let symbol = symbol_table.lookup("Vehicle").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let symbol = _resolver.resolve("Vehicle").unwrap();
     match symbol {
         Symbol::Classifier { kind, .. } => assert_eq!(kind, "Classifier"),
         _ => panic!("Expected Classifier symbol"),
@@ -51,7 +53,8 @@ fn test_kerml_visitor_creates_datatype_symbol() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let symbol = symbol_table.lookup("Temperature").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let symbol = _resolver.resolve("Temperature").unwrap();
     match symbol {
         Symbol::Definition { kind, .. } => assert_eq!(kind, "Datatype"),
         _ => panic!("Expected Definition symbol"),
@@ -69,7 +72,8 @@ fn test_kerml_visitor_creates_feature_symbol() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let symbol = symbol_table.lookup("mass").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let symbol = _resolver.resolve("mass").unwrap();
     match symbol {
         Symbol::Feature { .. } => (),
         _ => panic!("Expected Feature symbol"),
@@ -91,7 +95,7 @@ fn test_kerml_visitor_handles_nested_elements() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(symbol_table.lookup("OuterPackage").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("OuterPackage").is_some());
 
     // Nested elements must be looked up via all_symbols since they're in a nested scope
     let all_symbols = symbol_table.all_symbols();
@@ -119,7 +123,8 @@ fn test_kerml_visitor_creates_function_symbol() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let symbol = symbol_table.lookup("calculateArea").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let symbol = _resolver.resolve("calculateArea").unwrap();
     match symbol {
         Symbol::Definition { kind, .. } => assert_eq!(kind, "Function"),
         _ => panic!("Expected Function symbol"),
@@ -140,8 +145,8 @@ fn test_kerml_visitor_handles_specialization_relationships() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(symbol_table.lookup("Vehicle").is_some());
-    assert!(symbol_table.lookup("Car").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Car").is_some());
 
     // Verify the relationship graph has the specialization
     let relationships = graph.get_all_relationships("Car");
@@ -162,8 +167,8 @@ fn test_kerml_visitor_handles_feature_typing() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(symbol_table.lookup("Real").is_some());
-    assert!(symbol_table.lookup("mass").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Real").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("mass").is_some());
 
     // Verify the relationship graph has the typing relationship
     let relationships = graph.get_all_relationships("mass");
@@ -184,7 +189,8 @@ fn test_kerml_visitor_handles_abstract_classifiers() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let symbol = symbol_table.lookup("Shape").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let symbol = _resolver.resolve("Shape").unwrap();
     match symbol {
         Symbol::Classifier {
             kind, is_abstract, ..
@@ -208,7 +214,8 @@ fn test_kerml_visitor_handles_readonly_features() {
     adapter.populate(&file).unwrap();
 
     // For now, just verify the symbol exists - readonly modifier tracking will be added later
-    let symbol = symbol_table.lookup("timestamp");
+    let _resolver = Resolver::new(&symbol_table);
+    let symbol = _resolver.resolve("timestamp");
     assert!(symbol.is_some(), "timestamp feature should exist");
 }
 
@@ -226,8 +233,8 @@ fn test_kerml_visitor_handles_redefinition() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(symbol_table.lookup("baseFeature").is_some());
-    assert!(symbol_table.lookup("derivedFeature").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("baseFeature").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("derivedFeature").is_some());
 
     // Verify the relationship graph has the redefinition
     let relationships = graph.get_all_relationships("derivedFeature");
@@ -254,7 +261,7 @@ fn test_kerml_visitor_handles_imports() {
     // Should not error on imports
     let result = adapter.populate(&file);
     assert!(result.is_ok(), "Should handle imports without error");
-    assert!(symbol_table.lookup("MyPackage").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("MyPackage").is_some());
 }
 
 #[test]
@@ -273,8 +280,8 @@ fn test_kerml_visitor_handles_multiple_packages() {
     adapter.populate(&file).unwrap();
     for (_name, _) in symbol_table.all_symbols() {}
 
-    assert!(symbol_table.lookup("Package1").is_some());
-    assert!(symbol_table.lookup("Package2").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Package1").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Package2").is_some());
 }
 
 #[test]
@@ -288,7 +295,7 @@ fn test_kerml_visitor_handles_empty_package() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(symbol_table.lookup("EmptyPackage").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("EmptyPackage").is_some());
 }
 
 #[test]
