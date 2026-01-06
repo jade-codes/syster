@@ -289,11 +289,11 @@ pub fn has_flag(pair: &Pair<Rule>, flag: Rule) -> bool {
     false
 }
 
-/// Extract derived and readonly flags from pairs
+/// Extract derived flag from pairs (readonly is KerML-only, not in SysML)
 pub fn extract_flags(pairs: &[Pair<Rule>]) -> (bool, bool) {
     let derived = pairs.iter().any(|p| has_flag(p, Rule::derived));
-    let readonly = pairs.iter().any(|p| has_flag(p, Rule::readonly));
-    (derived, readonly)
+    // readonly is KerML-only, always false in SysML
+    (derived, false)
 }
 
 /// Check if a pair has a definition flag (with recursion into prefixes)

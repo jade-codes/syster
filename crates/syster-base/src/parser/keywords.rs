@@ -162,6 +162,7 @@ pub const SYSML_KEYWORDS: &[&str] = &[
     "import",
     "alias",
     "abstract",
+    "constant",
     "derived",
     "ordered",
     "nonunique",

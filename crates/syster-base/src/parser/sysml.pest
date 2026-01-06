@@ -1442,7 +1442,6 @@ usage_element = {
 // Usages
 
 // Markers and keywords (matching KerML)
-readonly = { "readonly" }
 derived = { "derived" }
 end_marker = { "end" }
 feature_direction_kind = @{ "inout" | "in" | "out" }
@@ -1451,7 +1450,6 @@ ref_prefix = {
     feature_direction_kind?
     ~ basic_definition_prefix?
     ~ ("constant")?
-    ~ readonly?
     ~ derived?
 }
 

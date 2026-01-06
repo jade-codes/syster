@@ -1522,17 +1522,14 @@ fn test_parse_definition_member(#[case] input: &str, #[case] desc: &str) {
 // Usage Structure Tests
 
 #[rstest]
-#[case("readonly", "readonly")]
 #[case("derived", "derived")]
 fn test_parse_usage_modifiers(#[case] input: &str, #[case] desc: &str) {
-    let readonly_result = SysMLParser::parse(Rule::readonly, input);
     let derived_result = SysMLParser::parse(Rule::derived, input);
 
     assert!(
-        readonly_result.is_ok() || derived_result.is_ok(),
-        "Failed to parse {}: readonly={:?}, derived={:?}",
+        derived_result.is_ok(),
+        "Failed to parse {}: derived={:?}",
         desc,
-        readonly_result.err(),
         derived_result.err()
     );
 }
