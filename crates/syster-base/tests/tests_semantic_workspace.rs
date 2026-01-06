@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
-use syster::semantic::resolver::Resolver;
 use syster::semantic::Workspace;
+use syster::semantic::resolver::Resolver;
 
 use std::path::PathBuf;
 
@@ -48,8 +48,8 @@ fn test_populate_single_file() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify symbol was added to the shared symbol table
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let symbol = _resolver.resolve("Vehicle");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let symbol = resolver.resolve("Vehicle");
     assert!(symbol.is_some());
     assert_eq!(symbol.unwrap().source_file(), Some("vehicle.sysml"));
 }
@@ -81,13 +81,13 @@ fn test_populate_multiple_files() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify both symbols are in the shared symbol table
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let vehicle = _resolver.resolve("Vehicle");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let vehicle = resolver.resolve("Vehicle");
     assert!(vehicle.is_some());
     assert_eq!(vehicle.unwrap().source_file(), Some("vehicle.sysml"));
 
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let car = _resolver.resolve("Car");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let car = resolver.resolve("Car");
     assert!(car.is_some());
     assert_eq!(car.unwrap().source_file(), Some("car.sysml"));
 
@@ -114,8 +114,8 @@ fn test_update_file_content() {
     workspace.populate_file(&path).unwrap();
 
     // Verify initial content
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let symbol = _resolver.resolve("Vehicle");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let symbol = resolver.resolve("Vehicle");
     assert!(symbol.is_some());
 
     // Get initial version
@@ -1416,8 +1416,8 @@ fn test_symbol_table_mut_basic() {
         .unwrap();
 
     // Verify it was added
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let lookup = _resolver.resolve("TestPackage");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let lookup = resolver.resolve("TestPackage");
     assert!(lookup.is_some());
 }
 
@@ -1458,8 +1458,16 @@ fn test_symbol_table_mut_allows_modifications() {
         .unwrap();
 
     // Verify both exist
-    assert!(Resolver::new(workspace.symbol_table()).resolve("Symbol1").is_some());
-    assert!(Resolver::new(workspace.symbol_table()).resolve("Symbol2").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Symbol1")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Symbol2")
+            .is_some()
+    );
 }
 
 #[test]
@@ -1485,8 +1493,8 @@ fn test_symbol_table_mut_independent_from_immutable() {
         .unwrap();
 
     // Access via immutable reference
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let symbol = _resolver.resolve("Test");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let symbol = resolver.resolve("Test");
     assert!(symbol.is_some());
     assert_eq!(symbol.unwrap().name(), "Test");
 }

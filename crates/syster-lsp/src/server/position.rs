@@ -40,7 +40,7 @@ impl LspServer {
         // First, check if the word matches a symbol defined in THIS file.
         // This handles hovering on definitions like "part def Engine".
         for (_key, symbol) in self.workspace.symbol_table().all_symbols() {
-            if symbol.name() == word && symbol.source_file().as_deref() == Some(&file_path_str) {
+            if symbol.name() == word && symbol.source_file() == Some(&file_path_str) {
                 let qualified_name = symbol.qualified_name().to_string();
                 let range = symbol
                     .span()
@@ -57,15 +57,14 @@ impl LspServer {
             .workspace
             .symbol_table()
             .get_scope_for_file(&file_path_str)
+            && let Some(symbol) = resolver.resolve_in_scope(&word, scope_id)
         {
-            if let Some(symbol) = resolver.resolve_in_scope(&word, scope_id) {
-                let qualified_name = symbol.qualified_name().to_string();
-                let range = symbol
-                    .span()
-                    .map(|s| span_to_lsp_range(&s))
-                    .unwrap_or(word_range);
-                return Some((qualified_name, range));
-            }
+            let qualified_name = symbol.qualified_name().to_string();
+            let range = symbol
+                .span()
+                .map(|s| span_to_lsp_range(&s))
+                .unwrap_or(word_range);
+            return Some((qualified_name, range));
         }
 
         // Fallback: try resolver for qualified names (e.g., "Package::Type")

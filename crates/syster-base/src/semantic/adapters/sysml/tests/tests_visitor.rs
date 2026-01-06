@@ -35,8 +35,8 @@ fn test_visitor_creates_definition_symbol() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let symbol = _resolver.resolve("Vehicle").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let symbol = resolver.resolve("Vehicle").unwrap();
     match symbol {
         Symbol::Definition { kind, .. } => assert_eq!(kind, "Part"),
         _ => panic!("Expected Definition symbol"),
@@ -392,8 +392,8 @@ fn test_visitor_creates_usage_symbol() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let symbol = _resolver.resolve("myCar").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let symbol = resolver.resolve("myCar").unwrap();
     match symbol {
         Symbol::Usage { usage_type, .. } => {
             assert_eq!(usage_type.as_deref(), Some("Vehicle"));
@@ -574,22 +574,22 @@ fn test_different_definition_kinds() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let part_def = _resolver.resolve("PartDef").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let part_def = resolver.resolve("PartDef").unwrap();
     match part_def {
         Symbol::Definition { kind, .. } => assert_eq!(kind, "Part"),
         _ => panic!("Expected Definition symbol"),
     }
 
-    let _resolver = Resolver::new(&symbol_table);
-    let action_def = _resolver.resolve("ActionDef").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let action_def = resolver.resolve("ActionDef").unwrap();
     match action_def {
         Symbol::Definition { kind, .. } => assert_eq!(kind, "Action"),
         _ => panic!("Expected Definition symbol"),
     }
 
-    let _resolver = Resolver::new(&symbol_table);
-    let req_def = _resolver.resolve("ReqDef").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let req_def = resolver.resolve("ReqDef").unwrap();
     match req_def {
         Symbol::Definition { kind, .. } => assert_eq!(kind, "Requirement"),
         _ => panic!("Expected Definition symbol"),
@@ -688,8 +688,8 @@ fn test_empty_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let symbol = _resolver.resolve("EmptyPart").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let symbol = resolver.resolve("EmptyPart").unwrap();
     match symbol {
         Symbol::Definition { name, .. } => assert_eq!(name, "EmptyPart"),
         _ => panic!("Expected Definition symbol"),
@@ -707,8 +707,8 @@ fn test_usage_without_type() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let symbol = _resolver.resolve("untyped").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let symbol = resolver.resolve("untyped").unwrap();
     match symbol {
         Symbol::Usage { usage_type, .. } => {
             assert_eq!(
@@ -737,8 +737,8 @@ fn test_qualified_names_are_correct() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let vehicles = _resolver.resolve("Vehicles").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let vehicles = resolver.resolve("Vehicles").unwrap();
     match vehicles {
         Symbol::Package { qualified_name, .. } => {
             assert_eq!(qualified_name, "Vehicles");
@@ -883,8 +883,8 @@ fn test_port_definition_and_usage() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let port_def = _resolver.resolve("DataPort").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let port_def = resolver.resolve("DataPort").unwrap();
     match port_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Port");
@@ -927,8 +927,8 @@ fn test_action_with_parameters() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let action_def = _resolver.resolve("ProcessData").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let action_def = resolver.resolve("ProcessData").unwrap();
     match action_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Action");
@@ -960,8 +960,8 @@ fn test_constraint_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let constraint_def = _resolver.resolve("SpeedLimit").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let constraint_def = resolver.resolve("SpeedLimit").unwrap();
     match constraint_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Constraint");
@@ -987,8 +987,8 @@ fn test_enumeration_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let enum_def = _resolver.resolve("Color").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let enum_def = resolver.resolve("Color").unwrap();
     match enum_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Enumeration");
@@ -1024,8 +1024,8 @@ fn test_state_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let state_def = _resolver.resolve("VehicleState").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let state_def = resolver.resolve("VehicleState").unwrap();
     match state_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "State");
@@ -1045,8 +1045,8 @@ fn test_connection_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let conn_def = _resolver.resolve("DataFlow").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let conn_def = resolver.resolve("DataFlow").unwrap();
     match conn_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Connection");
@@ -1066,8 +1066,8 @@ fn test_interface_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let intf_def = _resolver.resolve("NetworkInterface").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let intf_def = resolver.resolve("NetworkInterface").unwrap();
     match intf_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Interface");
@@ -1087,8 +1087,8 @@ fn test_allocation_definition() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let alloc_def = _resolver.resolve("ResourceAllocation").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let alloc_def = resolver.resolve("ResourceAllocation").unwrap();
     match alloc_def {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Allocation");
@@ -1144,8 +1144,8 @@ fn test_concern_and_requirement() {
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let _resolver = Resolver::new(&symbol_table);
-    let concern = _resolver.resolve("Safety").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let concern = resolver.resolve("Safety").unwrap();
     match concern {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "UseCase"); // Concern maps to UseCase
@@ -1153,8 +1153,8 @@ fn test_concern_and_requirement() {
         _ => panic!("Expected Definition symbol"),
     }
 
-    let _resolver = Resolver::new(&symbol_table);
-    let requirement = _resolver.resolve("SafetyRequirement").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let requirement = resolver.resolve("SafetyRequirement").unwrap();
     match requirement {
         Symbol::Definition { kind, .. } => {
             assert_eq!(kind, "Requirement");

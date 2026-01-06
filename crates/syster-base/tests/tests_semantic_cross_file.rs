@@ -168,16 +168,16 @@ fn test_cross_file_transitive_relationships() {
     );
 
     // Verify all symbols exist with correct source files
-    let _resolver = Resolver::new(&symbol_table);
-    let thing_symbol = _resolver.resolve("Thing").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let thing_symbol = resolver.resolve("Thing").unwrap();
     assert_eq!(thing_symbol.source_file(), Some("file1.sysml"));
 
-    let _resolver = Resolver::new(&symbol_table);
-    let vehicle_symbol = _resolver.resolve("Vehicle").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let vehicle_symbol = resolver.resolve("Vehicle").unwrap();
     assert_eq!(vehicle_symbol.source_file(), Some("file2.sysml"));
 
-    let _resolver = Resolver::new(&symbol_table);
-    let car_symbol = _resolver.resolve("Car").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let car_symbol = resolver.resolve("Car").unwrap();
     assert_eq!(car_symbol.source_file(), Some("file3.sysml"));
 
     // Verify transitive relationships across files
@@ -238,10 +238,10 @@ fn test_symbol_source_tracking() {
     populator2.populate(&file2).unwrap();
 
     // We can now query which file a symbol came from
-    let _resolver = Resolver::new(&symbol_table);
-    let vehicle_symbol = _resolver.resolve("Vehicle").unwrap();
-    let _resolver = Resolver::new(&symbol_table);
-    let car_symbol = _resolver.resolve("Car").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let vehicle_symbol = resolver.resolve("Vehicle").unwrap();
+    let resolver = Resolver::new(&symbol_table);
+    let car_symbol = resolver.resolve("Car").unwrap();
 
     assert_eq!(vehicle_symbol.source_file(), Some("vehicle.sysml"));
     assert_eq!(car_symbol.source_file(), Some("car.sysml"));

@@ -324,7 +324,7 @@ part myVehicle: Vehicle;"#;
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     let symbol_table = workspace.symbol_table();
-    let resolver = Resolver::new(&symbol_table);
+    let resolver = Resolver::new(symbol_table);
 
     // Check that Package symbol has span
     let package_symbol = resolver

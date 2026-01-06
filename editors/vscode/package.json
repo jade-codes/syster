@@ -2,7 +2,7 @@
   "name": "sysml-language-support",
   "displayName": "SysML v2 Language Support",
   "description": "Language support for SysML v2 and KerML with LSP-based features",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "publisher": "jade-codes",
   "repository": {
     "type": "git",
@@ -64,7 +64,7 @@
       "properties": {
         "syster.lsp.path": {
           "type": "string",
-          "default": "/workspaces/syster/target/release/syster-lsp",
+          "default": "",
           "description": "Path to syster-lsp binary (leave empty for auto-detection)"
         },
         "syster.lsp.trace.server": {
@@ -106,11 +106,12 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run compile && npm run bundle-assets",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint client/src --ext ts",
-    "package": "vsce package"
+    "package": "vsce package",
+    "bundle-assets": "node scripts/bundle-assets.js"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -122,6 +123,7 @@
     "@typescript-eslint/parser": "^6.13.0",
     "@vscode/vsce": "^2.22.0",
     "eslint": "^8.54.0",
+    "ovsx": "^0.10.8",
     "typescript": "^5.3.0"
   }
 }

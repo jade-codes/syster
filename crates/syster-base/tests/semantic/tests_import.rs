@@ -60,13 +60,13 @@ fn test_import_membership() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Vehicle should be accessible in Derived package due to import
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let my_car = _resolver.resolve_qualified("Derived::myCar");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let my_car = resolver.resolve_qualified("Derived::myCar");
     assert!(my_car.is_some(), "myCar should be defined");
 
     // Verify that Base::Vehicle can be found (the imported member)
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let vehicle = _resolver.resolve_qualified("Base::Vehicle");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let vehicle = resolver.resolve_qualified("Base::Vehicle");
     assert!(
         vehicle.is_some(),
         "Base::Vehicle should exist and be importable"
@@ -105,8 +105,8 @@ fn test_import_membership_with_namespace() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Member import: only Vehicle should be accessible in Derived1
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let car1 = _resolver.resolve_qualified("Derived1::myCar");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let car1 = resolver.resolve_qualified("Derived1::myCar");
     assert!(car1.is_some(), "Derived1::myCar should be defined");
 
     // Namespace import: both Vehicle and Engine should be accessible in Derived2
@@ -145,10 +145,10 @@ fn test_import_namespace() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Both Vehicle and Engine should be accessible via namespace import
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let car = _resolver.resolve_qualified("Derived::car");
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let engine = _resolver.resolve_qualified("Derived::engine");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let car = resolver.resolve_qualified("Derived::car");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let engine = resolver.resolve_qualified("Derived::engine");
 
     assert!(car.is_some(), "car should be defined");
     assert!(engine.is_some(), "engine should be defined");
@@ -188,8 +188,8 @@ fn test_cross_file_import() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Car should be able to specialize Vehicle from the imported package
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let car = _resolver.resolve_qualified("Car");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let car = resolver.resolve_qualified("Car");
     assert!(car.is_some(), "Car should be defined");
 }
 
@@ -221,8 +221,8 @@ fn test_import_visibility() {
     workspace.populate_all().expect("Population should succeed");
 
     // With model-level imports, both should work
-    let _resolver = Resolver::new(workspace.symbol_table());
-    let y = _resolver.resolve_qualified("B::y");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let y = resolver.resolve_qualified("B::y");
     assert!(y.is_some(), "y should be defined in package B");
 }
 

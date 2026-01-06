@@ -518,7 +518,11 @@ fn test_include_use_case_relationship() {
 
     // Verify symbols exist
     assert!(Resolver::new(&symbol_table).resolve("Login").is_some());
-    assert!(Resolver::new(&symbol_table).resolve("ManageAccount").is_some());
+    assert!(
+        Resolver::new(&symbol_table)
+            .resolve("ManageAccount")
+            .is_some()
+    );
 
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");

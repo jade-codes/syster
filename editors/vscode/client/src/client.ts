@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import {
     LanguageClient,
     LanguageClientOptions,
@@ -12,10 +14,14 @@ let client: LanguageClient | undefined;
 /**
  * Create server options for launching the LSP server
  */
-async function createServerOptions(outputChannel: vscode.OutputChannel): Promise<ServerOptions> {
+async function createServerOptions(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel): Promise<ServerOptions> {
     // Always use the first (root) workspace folder
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    const serverPath = await findServerBinary({ workspaceFolder, outputChannel });
+    const serverPath = await findServerBinary({ 
+        workspaceFolder, 
+        outputChannel,
+        extensionPath: context.extensionPath
+    });
 
     return {
         command: serverPath,
@@ -32,11 +38,20 @@ async function createServerOptions(outputChannel: vscode.OutputChannel): Promise
 /**
  * Create client options for the Language Client
  */
-function createClientOptions(outputChannel: vscode.OutputChannel): LanguageClientOptions {
+function createClientOptions(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel): LanguageClientOptions {
     // Read stdlib configuration from VS Code settings
     const config = vscode.workspace.getConfiguration('syster');
     const stdlibEnabled = config.get<boolean>('stdlib.enabled', true);
-    const stdlibPath = config.get<string>('stdlib.path', '');
+    let stdlibPath = config.get<string>('stdlib.path', '');
+
+    // If no custom path set, try bundled stdlib
+    if (!stdlibPath) {
+        const bundledStdlib = path.join(context.extensionPath, 'sysml.library');
+        if (fs.existsSync(bundledStdlib)) {
+            stdlibPath = bundledStdlib;
+            outputChannel.appendLine(`[Client] Using bundled stdlib: ${bundledStdlib}`);
+        }
+    }
 
     // Only pass stdlibPath if it's actually set (non-empty)
     const initOptions: { stdlibEnabled: boolean; stdlibPath?: string } = {
@@ -84,8 +99,8 @@ export async function startClient(context: vscode.ExtensionContext): Promise<Lan
     try {
         outputChannel.appendLine('Starting SysML Language Server...');
         
-        const serverOptions = await createServerOptions(outputChannel);
-        const clientOptions = createClientOptions(outputChannel);
+        const serverOptions = await createServerOptions(context, outputChannel);
+        const clientOptions = createClientOptions(context, outputChannel);
 
         client = new LanguageClient(
             'syster-lsp',
