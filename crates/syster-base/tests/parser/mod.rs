@@ -2,6 +2,7 @@ mod tests_constraint;
 mod tests_expression;
 mod tests_kerml;
 mod tests_kerml_stdlib;
+mod tests_keywords;
 mod tests_span;
 mod tests_stdlib_kerml;
 mod tests_stdlib_sysml;
