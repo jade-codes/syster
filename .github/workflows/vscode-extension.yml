@@ -211,16 +211,6 @@ jobs:
             echo "Publishing $vsix to Open VSX..."
             ovsx publish "$vsix" -p ${{ secrets.OPENVSX_TOKEN }}
           done
-      
-      - name: Publish to VS Code Marketplace (optional)
-        if: secrets.VSCE_PAT != ''
-        continue-on-error: true
-        run: |
-          npm install -g @vscode/vsce
-          for vsix in vsix/*.vsix; do
-            echo "Publishing $vsix to VS Code Marketplace..."
-            vsce publish --packagePath "$vsix" -p ${{ secrets.VSCE_PAT }}
-          done
 
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
