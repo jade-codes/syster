@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use crate::semantic::resolver::Resolver;
 
 use crate::semantic::{SymbolTable, symbol_table::Symbol};
 
@@ -23,7 +24,8 @@ fn test_insert_and_lookup() {
     table
         .insert("MyPackage".to_string(), symbol.clone())
         .unwrap();
-    let found = table.lookup("MyPackage");
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve("MyPackage");
     assert!(found.is_some());
     assert_eq!(found.unwrap(), &symbol);
 }
@@ -74,13 +76,13 @@ fn test_scope_hierarchy() {
     };
     table.insert("MyClass".to_string(), class_symbol).unwrap();
 
-    assert!(table.lookup("Root").is_some());
-    assert!(table.lookup("MyClass").is_some());
+    assert!(Resolver::new(&table).resolve("Root").is_some());
+    assert!(Resolver::new(&table).resolve("MyClass").is_some());
 
     table.exit_scope();
 
-    assert!(table.lookup("Root").is_some());
-    assert!(table.lookup("MyClass").is_none());
+    assert!(Resolver::new(&table).resolve("Root").is_some());
+    assert!(Resolver::new(&table).resolve("MyClass").is_none());
 }
 
 #[test]
@@ -162,17 +164,17 @@ fn test_multiple_nested_scopes() {
         )
         .unwrap();
 
-    assert!(table.lookup("Level0").is_some());
-    assert!(table.lookup("Level1").is_some());
-    assert!(table.lookup("Level2").is_some());
+    assert!(Resolver::new(&table).resolve("Level0").is_some());
+    assert!(Resolver::new(&table).resolve("Level1").is_some());
+    assert!(Resolver::new(&table).resolve("Level2").is_some());
 
     table.exit_scope();
-    assert!(table.lookup("Level2").is_none());
-    assert!(table.lookup("Level1").is_some());
+    assert!(Resolver::new(&table).resolve("Level2").is_none());
+    assert!(Resolver::new(&table).resolve("Level1").is_some());
 
     table.exit_scope();
-    assert!(table.lookup("Level1").is_none());
-    assert!(table.lookup("Level0").is_some());
+    assert!(Resolver::new(&table).resolve("Level1").is_none());
+    assert!(Resolver::new(&table).resolve("Level0").is_some());
 }
 
 #[test]
@@ -257,11 +259,11 @@ fn test_different_symbol_types() {
         )
         .unwrap();
 
-    assert!(table.lookup("MyPackage").is_some());
-    assert!(table.lookup("MyClass").is_some());
-    assert!(table.lookup("MyFeature").is_some());
-    assert!(table.lookup("MyDef").is_some());
-    assert!(table.lookup("MyUsage").is_some());
+    assert!(Resolver::new(&table).resolve("MyPackage").is_some());
+    assert!(Resolver::new(&table).resolve("MyClass").is_some());
+    assert!(Resolver::new(&table).resolve("MyFeature").is_some());
+    assert!(Resolver::new(&table).resolve("MyDef").is_some());
+    assert!(Resolver::new(&table).resolve("MyUsage").is_some());
 
     let all = table.all_symbols();
     assert_eq!(all.len(), 5);
@@ -280,7 +282,7 @@ fn test_exit_scope_at_root() {
 #[test]
 fn test_lookup_nonexistent_symbol() {
     let table = SymbolTable::new();
-    assert!(table.lookup("DoesNotExist").is_none());
+    assert!(Resolver::new(&table).resolve("DoesNotExist").is_none());
 }
 
 #[test]
@@ -339,9 +341,9 @@ fn test_remove_symbols_from_file() {
         .unwrap();
 
     // Verify all symbols exist
-    assert!(table.lookup("Pkg1").is_some());
-    assert!(table.lookup("Pkg2").is_some());
-    assert!(table.lookup("Class1").is_some());
+    assert!(Resolver::new(&table).resolve("Pkg1").is_some());
+    assert!(Resolver::new(&table).resolve("Pkg2").is_some());
+    assert!(Resolver::new(&table).resolve("Class1").is_some());
 
     // Remove file1 symbols
     let removed = table.remove_symbols_from_file("file1.sysml");
@@ -350,9 +352,9 @@ fn test_remove_symbols_from_file() {
     assert_eq!(removed, 2);
 
     // Verify file1 symbols are gone
-    assert!(table.lookup("Pkg1").is_none());
-    assert!(table.lookup("Class1").is_none());
+    assert!(Resolver::new(&table).resolve("Pkg1").is_none());
+    assert!(Resolver::new(&table).resolve("Class1").is_none());
 
     // Verify file2 symbols remain
-    assert!(table.lookup("Pkg2").is_some());
+    assert!(Resolver::new(&table).resolve("Pkg2").is_some());
 }

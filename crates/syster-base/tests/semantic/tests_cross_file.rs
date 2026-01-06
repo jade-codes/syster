@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use syster::semantic::resolver::Resolver;
 
 fn assert_targets_eq(result: Option<Vec<&str>>, expected: &[&str]) {
     match result {
@@ -60,16 +61,22 @@ fn test_cross_file_specialization() {
     );
 
     // Verify both symbols are in the table
-    assert!(symbol_table.lookup("Vehicle").is_some());
-    assert!(symbol_table.lookup("Car").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Car").is_some());
 
     // Verify source files are tracked
     assert_eq!(
-        symbol_table.lookup("Vehicle").unwrap().source_file(),
+        Resolver::new(&symbol_table)
+            .resolve("Vehicle")
+            .unwrap()
+            .source_file(),
         Some("base.sysml")
     );
     assert_eq!(
-        symbol_table.lookup("Car").unwrap().source_file(),
+        Resolver::new(&symbol_table)
+            .resolve("Car")
+            .unwrap()
+            .source_file(),
         Some("derived.sysml")
     );
 
@@ -111,8 +118,8 @@ fn test_cross_file_typing() {
         "Failed to populate file 2: {:?}",
         result.err()
     );
-    assert!(symbol_table.lookup("Vehicle").is_some());
-    assert!(symbol_table.lookup("myCar").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
+    assert!(Resolver::new(&symbol_table).resolve("myCar").is_some());
 }
 
 #[test]
@@ -161,13 +168,16 @@ fn test_cross_file_transitive_relationships() {
     );
 
     // Verify all symbols exist with correct source files
-    let thing_symbol = symbol_table.lookup("Thing").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let thing_symbol = _resolver.resolve("Thing").unwrap();
     assert_eq!(thing_symbol.source_file(), Some("file1.sysml"));
 
-    let vehicle_symbol = symbol_table.lookup("Vehicle").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let vehicle_symbol = _resolver.resolve("Vehicle").unwrap();
     assert_eq!(vehicle_symbol.source_file(), Some("file2.sysml"));
 
-    let car_symbol = symbol_table.lookup("Car").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let car_symbol = _resolver.resolve("Car").unwrap();
     assert_eq!(car_symbol.source_file(), Some("file3.sysml"));
 
     // Verify transitive relationships across files
@@ -192,7 +202,12 @@ fn test_unresolved_cross_file_reference() {
 
     // Should fail or report an error about unresolved reference
     // (Depending on how we want to handle this - might be a warning instead)
-    assert!(result.is_err() || symbol_table.lookup("NonExistentVehicle").is_none());
+    assert!(
+        result.is_err()
+            || Resolver::new(&symbol_table)
+                .resolve("NonExistentVehicle")
+                .is_none()
+    );
 }
 
 #[test]
@@ -223,8 +238,10 @@ fn test_symbol_source_tracking() {
     populator2.populate(&file2).unwrap();
 
     // We can now query which file a symbol came from
-    let vehicle_symbol = symbol_table.lookup("Vehicle").unwrap();
-    let car_symbol = symbol_table.lookup("Car").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let vehicle_symbol = _resolver.resolve("Vehicle").unwrap();
+    let _resolver = Resolver::new(&symbol_table);
+    let car_symbol = _resolver.resolve("Car").unwrap();
 
     assert_eq!(vehicle_symbol.source_file(), Some("vehicle.sysml"));
     assert_eq!(car_symbol.source_file(), Some("car.sysml"));
@@ -280,13 +297,14 @@ fn test_workspace_with_file_paths() {
     );
 
     // Verify all symbols are in the shared symbol table with correct source files
-    let vehicle = workspace.symbol_table().lookup("Vehicle").unwrap();
+    let resolver = Resolver::new(workspace.symbol_table());
+    let vehicle = resolver.resolve("Vehicle").unwrap();
     assert_eq!(vehicle.source_file(), Some("base/vehicle.sysml"));
 
-    let car = workspace.symbol_table().lookup("Car").unwrap();
+    let car = resolver.resolve("Car").unwrap();
     assert_eq!(car.source_file(), Some("derived/car.sysml"));
 
-    let sports_car = workspace.symbol_table().lookup("SportsCar").unwrap();
+    let sports_car = resolver.resolve("SportsCar").unwrap();
     assert_eq!(sports_car.source_file(), Some("derived/sports_car.sysml"));
 
     // Verify relationships across files

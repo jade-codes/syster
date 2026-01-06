@@ -1,14 +1,16 @@
 use super::AnalysisContext;
-use crate::semantic::SemanticAnalyzer;
+use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::Symbol;
 use crate::semantic::types::SemanticError;
+use crate::semantic::SemanticAnalyzer;
 
 impl SemanticAnalyzer {
     pub(super) fn validate_types(&self, context: &mut AnalysisContext) {
+        let resolver = Resolver::new(&self.symbol_table);
         for (_name, symbol) in self.symbol_table.all_symbols() {
             if let Some(type_ref) = symbol.type_reference() {
                 let scope_id = symbol.scope_id();
-                let resolved = self.symbol_table.lookup_from_scope(type_ref, scope_id);
+                let resolved = resolver.resolve_in_scope(type_ref, scope_id);
 
                 match resolved {
                     Some(resolved_symbol) => {
@@ -33,6 +35,8 @@ impl SemanticAnalyzer {
     }
 
     pub(super) fn validate_relationships(&self, context: &mut AnalysisContext) {
+        let resolver = Resolver::new(&self.symbol_table);
+
         // Validate that all relationship targets exist and check domain constraints
         for relationship_type in self.relationship_graph.relationship_types() {
             for (_name, symbol) in self.symbol_table.all_symbols() {
@@ -45,6 +49,7 @@ impl SemanticAnalyzer {
                 {
                     for target in targets {
                         self.validate_single_relationship(
+                            &resolver,
                             &relationship_type,
                             symbol,
                             target,
@@ -58,7 +63,13 @@ impl SemanticAnalyzer {
                     .relationship_graph
                     .get_one_to_one(&relationship_type, qualified_name)
                 {
-                    self.validate_single_relationship(&relationship_type, symbol, target, context);
+                    self.validate_single_relationship(
+                        &resolver,
+                        &relationship_type,
+                        symbol,
+                        target,
+                        context,
+                    );
                 }
             }
         }
@@ -89,12 +100,13 @@ impl SemanticAnalyzer {
     /// Validates a single relationship between source symbol and target name
     fn validate_single_relationship(
         &self,
+        resolver: &Resolver,
         relationship_type: &str,
         source: &Symbol,
         target_name: &str,
         context: &mut AnalysisContext,
     ) {
-        match self.symbol_table.lookup(target_name) {
+        match resolver.resolve(target_name) {
             Some(target_symbol) => {
                 // Validate using language-specific validator
                 if let Err(error) =

@@ -126,4 +126,34 @@ impl OneToOneGraph {
             }
         }
     }
+
+    /// Iterate all (source, target) pairs
+    pub fn all_entries(&self) -> impl Iterator<Item = (&IStr, &IStr)> {
+        self.relationships
+            .iter()
+            .map(|(source, (target, _))| (source, target))
+    }
+
+    /// Update a target to a new resolved value, fixing the reverse index
+    pub fn update_target(&mut self, source: &IStr, new_target: IStr) {
+        if let Some((old_target, location)) = self.relationships.get(source).cloned() {
+            // Remove from old reverse index
+            if let Some(sources) = self.reverse_index.get_mut(&old_target) {
+                sources.retain(|(s, _)| s != source);
+                if sources.is_empty() {
+                    self.reverse_index.remove(&old_target);
+                }
+            }
+
+            // Update forward relationship
+            self.relationships
+                .insert(source.clone(), (new_target.clone(), location.clone()));
+
+            // Add to new reverse index
+            self.reverse_index
+                .entry(new_target)
+                .or_default()
+                .push((source.clone(), location));
+        }
+    }
 }

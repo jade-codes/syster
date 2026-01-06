@@ -235,4 +235,41 @@ impl RelationshipGraph {
 
         refs
     }
+
+    /// Resolve all targets in a one-to-one relationship using the provided resolver function.
+    /// The resolver takes (source_qualified_name, unresolved_target) and returns the resolved qualified name if found.
+    pub fn resolve_targets<F>(&mut self, relationship_type: &str, resolver: F)
+    where
+        F: Fn(&str, &str) -> Option<String>,
+    {
+        // First pass: collect updates from the graph
+        let updates: Vec<_> = {
+            let Some(graph) = self.one_to_one.get(relationship_type) else {
+                return;
+            };
+            graph
+                .all_entries()
+                .filter_map(|(source, target)| {
+                    resolver(source.as_ref(), target.as_ref())
+                        .map(|resolved| (source.clone(), resolved))
+                })
+                .collect()
+        };
+
+        // Intern all new targets
+        let interned_updates: Vec<_> = updates
+            .into_iter()
+            .map(|(source, new_target)| {
+                let interned = self.intern(&new_target);
+                (source, interned)
+            })
+            .collect();
+
+        // Apply updates to the graph
+        if let Some(graph) = self.one_to_one.get_mut(relationship_type) {
+            for (source, new_target_interned) in interned_updates {
+                graph.update_target(&source, new_target_interned);
+            }
+        }
+    }
 }

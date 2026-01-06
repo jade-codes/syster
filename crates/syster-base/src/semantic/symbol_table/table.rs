@@ -139,6 +139,48 @@ impl SymbolTable {
         self.scopes.len()
     }
 
+    // ============================================================
+    // Data Access Methods (for Resolver)
+    // ============================================================
+
+    /// Get read-only access to all scopes.
+    pub fn scopes(&self) -> &[Scope] {
+        &self.scopes
+    }
+
+    /// Get a symbol directly from a specific scope (no chain walking).
+    pub fn get_symbol_in_scope(&self, scope_id: usize, name: &str) -> Option<&Symbol> {
+        self.scopes.get(scope_id)?.symbols.get(name)
+    }
+
+    /// Get the parent of a scope.
+    pub fn get_scope_parent(&self, scope_id: usize) -> Option<usize> {
+        self.scopes.get(scope_id)?.parent
+    }
+
+    /// Get the scope ID for a file that contains its imports.
+    ///
+    /// This returns the scope where imports are registered for the given file,
+    /// which is typically the scope of the top-level package body.
+    /// Falls back to the scope of the first symbol if no imports are found.
+    pub fn get_scope_for_file(&self, file_path: &str) -> Option<usize> {
+        // First, try to find a scope with imports from this file
+        for (scope_id, scope) in self.scopes.iter().enumerate() {
+            if scope
+                .imports
+                .iter()
+                .any(|import| import.file.as_deref() == Some(file_path))
+            {
+                return Some(scope_id);
+            }
+        }
+
+        // Fall back to the scope of the first symbol defined in the file
+        self.get_symbols_for_file(file_path)
+            .next()
+            .map(|symbol| symbol.scope_id())
+    }
+
     pub fn get_scope_imports(&self, scope_id: usize) -> Vec<super::scope::Import> {
         self.scopes
             .get(scope_id)
@@ -218,7 +260,17 @@ impl SymbolTable {
             .get(file_path)
             .into_iter()
             .flatten()
-            .filter_map(|qname| self.lookup_qualified(qname))
+            .filter_map(|qname| self.find_by_qualified_name(qname))
+    }
+
+    /// Find a symbol by its exact qualified name (data access, not resolution)
+    pub fn find_by_qualified_name(&self, qualified_name: &str) -> Option<&Symbol> {
+        self.scopes.iter().find_map(|scope| {
+            scope
+                .symbols
+                .values()
+                .find(|symbol| symbol.qualified_name() == qualified_name)
+        })
     }
 
     /// Get qualified names of all symbols defined in a specific file

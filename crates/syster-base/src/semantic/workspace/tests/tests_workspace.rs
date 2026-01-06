@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use crate::semantic::resolver::Resolver;
 
 use std::path::PathBuf;
 
@@ -47,7 +48,8 @@ fn test_populate_single_file() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify symbol was added to the shared symbol table
-    let symbol = workspace.symbol_table().lookup("Vehicle");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let symbol = _resolver.resolve("Vehicle");
     assert!(symbol.is_some());
     assert_eq!(symbol.unwrap().source_file(), Some("vehicle.sysml"));
 }
@@ -79,11 +81,13 @@ fn test_populate_multiple_files() {
     assert!(result.is_ok(), "Failed to populate: {:?}", result.err());
 
     // Verify both symbols are in the shared symbol table
-    let vehicle = workspace.symbol_table().lookup("Vehicle");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let vehicle = _resolver.resolve("Vehicle");
     assert!(vehicle.is_some());
     assert_eq!(vehicle.unwrap().source_file(), Some("vehicle.sysml"));
 
-    let car = workspace.symbol_table().lookup("Car");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let car = _resolver.resolve("Car");
     assert!(car.is_some());
     assert_eq!(car.unwrap().source_file(), Some("car.sysml"));
 
@@ -110,7 +114,8 @@ fn test_update_file_content() {
     workspace.populate_file(&path).unwrap();
 
     // Verify initial content
-    let symbol = workspace.symbol_table().lookup("Vehicle");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let symbol = _resolver.resolve("Vehicle");
     assert!(symbol.is_some());
 
     // Get initial version
@@ -1463,7 +1468,8 @@ fn test_symbol_table_mut_basic() {
         .unwrap();
 
     // Verify it was added
-    let lookup = workspace.symbol_table().lookup("TestPackage");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let lookup = _resolver.resolve("TestPackage");
     assert!(lookup.is_some());
 }
 
@@ -1504,8 +1510,8 @@ fn test_symbol_table_mut_allows_modifications() {
         .unwrap();
 
     // Verify both exist
-    assert!(workspace.symbol_table().lookup("Symbol1").is_some());
-    assert!(workspace.symbol_table().lookup("Symbol2").is_some());
+    assert!(Resolver::new(workspace.symbol_table()).resolve("Symbol1").is_some());
+    assert!(Resolver::new(workspace.symbol_table()).resolve("Symbol2").is_some());
 }
 
 #[test]
@@ -1531,7 +1537,8 @@ fn test_symbol_table_mut_independent_from_immutable() {
         .unwrap();
 
     // Access via immutable reference
-    let symbol = workspace.symbol_table().lookup("Test");
+    let _resolver = Resolver::new(workspace.symbol_table());
+    let symbol = _resolver.resolve("Test");
     assert!(symbol.is_some());
     assert_eq!(symbol.unwrap().name(), "Test");
 }
