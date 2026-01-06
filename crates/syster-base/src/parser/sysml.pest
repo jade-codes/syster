@@ -14,9 +14,9 @@ keyword = @{
     | "dependency" | "occurrence" | "rendering" | "viewpoint" | "variation" 
     | "attribute" | "interface" | "objective" | "nonunique" | "succession" 
     | "terminate" | "transition" | "timeslice" | "protected" | "standard"
-    | "readonly" | "metadata" | "language" | "snapshot" | "parallel"
+    | "constant" | "metadata" | "language" | "snapshot" | "parallel"
     | "allocate" | "analysis" | "abstract" | "library" | "require" 
-    | "conjugate" | "perform" | "exhibit" | "include" | "satisfy" | "binding" 
+    | "perform" | "exhibit" | "include" | "satisfy" | "binding" 
     | "crosses" | "message" | "package" | "private" | "variant"
     | "concern" | "connect" | "default" | "defined" | "derived" 
     | "subject" | "ordered" | "hastype" | "istype" | "implies" 
@@ -29,7 +29,7 @@ keyword = @{
     | "port" | "case" | "calc" | "send" | "then" | "flow" 
     | "fork" | "from" | "join" | "loop" | "part" | "true" 
     | "view" | "bind" | "else" | "enum" | "item" | "meta" 
-    | "null" | "when" | "exit" | "life"
+    | "null" | "when" | "exit"
     | "def" | "doc" | "end" | "for" | "not" | "ref" | "rep" 
     | "use" | "via" | "xor" | "all" | "and" | "out"
     | "to" | "as" | "at" | "by" | "do" | "if" | "in" | "of" | "or"
@@ -152,9 +152,10 @@ terminate_action_usage = { "terminate" ~ identifier ~ ";" }
 conjugated_port_definition = {
     occurrence_definition_prefix ~ "port" ~ "def" ~ "~" ~ definition_declaration ~ definition_body
 }
-port_conjugation = { "conjugate" ~ "~" ~ identifier ~ ";" }
+// port_conjugation and life_class are KerML constructs, not SysML V2
+// port_conjugation = { "conjugate" ~ "~" ~ identifier ~ ";" }
 conjugated_port_typing = { "port" ~ identifier ~ ":" ~ "~" ~ identifier ~ ";" }
-life_class = { "life" ~ "class" ~ identifier ~ ";" }
+// life_class = { "life" ~ "class" ~ identifier ~ ";" }
 
 // Package
 

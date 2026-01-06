@@ -162,7 +162,6 @@ pub const SYSML_KEYWORDS: &[&str] = &[
     "import",
     "alias",
     "abstract",
-    "readonly",
     "derived",
     "ordered",
     "nonunique",
@@ -174,7 +173,6 @@ pub const SYSML_KEYWORDS: &[&str] = &[
     "subsets",
     "redefines",
     "references",
-    "conjugate",
     "defined by",
     // Flow keywords
     "in",

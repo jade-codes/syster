@@ -2,7 +2,7 @@
 
 use pest::Parser;
 use rstest::rstest;
-use syster::parser::{SysMLParser, sysml::Rule};
+use syster::parser::{sysml::Rule, SysMLParser};
 
 #[test]
 fn test_parse_simple_identifier() {
@@ -110,7 +110,7 @@ fn test_parse_simple_identifier() {
 #[case("private")]
 #[case("protected")]
 #[case("public")]
-#[case("readonly")]
+#[case("constant")]
 #[case("redefines")]
 #[case("ref")]
 #[case("references")]
@@ -552,17 +552,8 @@ fn test_parse_conjugated_port_definition() {
     );
 }
 
-#[test]
-fn test_parse_port_conjugation() {
-    let input = "conjugate ~MyPort;";
-    let result = SysMLParser::parse(Rule::port_conjugation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse port conjugation: {:?}",
-        result.err()
-    );
-}
+// port_conjugation and life_class tests removed - these are KerML constructs, not SysML V2
+// See issue #637
 
 #[test]
 fn test_parse_conjugated_port_typing() {
@@ -572,18 +563,6 @@ fn test_parse_conjugated_port_typing() {
     assert!(
         result.is_ok(),
         "Failed to parse conjugated port typing: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_life_class() {
-    let input = "life class MyLifeClass;";
-    let result = SysMLParser::parse(Rule::life_class, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse life class: {:?}",
         result.err()
     );
 }
@@ -5847,8 +5826,8 @@ fn test_parse_literal(#[case] input: &str, #[case] desc: &str) {
 fn test_parse_attribute_def_from_stdlib() {
     use std::path::PathBuf;
     use syster::project::file_loader;
-    use syster::syntax::sysml::ast::Element;
     use syster::syntax::sysml::ast::enums::DefinitionKind;
+    use syster::syntax::sysml::ast::Element;
 
     // Test actual attribute def from MeasurementReferences.sysml
     let input = r#"
@@ -5899,8 +5878,8 @@ fn test_parse_attribute_def_from_stdlib() {
 fn test_parse_abstract_attribute_def() {
     use std::path::PathBuf;
     use syster::project::file_loader;
-    use syster::syntax::sysml::ast::Element;
     use syster::syntax::sysml::ast::enums::DefinitionKind;
+    use syster::syntax::sysml::ast::Element;
 
     // Test ABSTRACT attribute def like in stdlib
     let input = r#"
