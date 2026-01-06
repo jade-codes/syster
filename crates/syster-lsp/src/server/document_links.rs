@@ -1,5 +1,6 @@
 use super::LspServer;
 use super::helpers::{span_to_lsp_range, uri_to_path};
+use super::type_references;
 use async_lsp::lsp_types::{DocumentLink, Url};
 
 impl LspServer {
@@ -35,6 +36,12 @@ impl LspServer {
                 });
             }
         }
+
+        // Add links for type references (specializations, typing, subsetting)
+        links.extend(type_references::collect_document_links(
+            &self.workspace,
+            &file_path_str,
+        ));
 
         links
     }

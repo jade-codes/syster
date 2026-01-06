@@ -139,8 +139,8 @@ fn test_multiple_specializations() {
     assert!(c_specializes.is_some());
     let specializes = c_specializes.unwrap();
     assert_eq!(specializes.len(), 2);
-    assert!(specializes.iter().any(|s| *s == "A"));
-    assert!(specializes.iter().any(|s| *s == "B"));
+    assert!(specializes.contains(&"A"));
+    assert!(specializes.contains(&"B"));
 }
 
 #[test]
@@ -298,8 +298,8 @@ fn test_multiple_subsettings() {
     assert!(subsets.is_some());
     let subsets = subsets.unwrap();
     assert_eq!(subsets.len(), 2);
-    assert!(subsets.iter().any(|s| *s == "v1"));
-    assert!(subsets.iter().any(|s| *s == "v2"));
+    assert!(subsets.contains(&"v1"));
+    assert!(subsets.contains(&"v2"));
 }
 
 #[test]
@@ -420,7 +420,7 @@ fn test_satisfy_requirement_relationship() {
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
     assert!(satisfies.is_some(), "Expected satisfy relationship");
-    let result: Vec<&str> = satisfies.unwrap().iter().copied().collect();
+    let result: Vec<&str> = satisfies.unwrap().to_vec();
     assert_eq!(result, vec!["SafetyReq"]);
 }
 
@@ -445,7 +445,7 @@ fn test_satisfy_with_requirement_keyword() {
         satisfies.is_some(),
         "Expected satisfy relationship with requirement keyword"
     );
-    let result: Vec<&str> = satisfies.unwrap().iter().copied().collect();
+    let result: Vec<&str> = satisfies.unwrap().to_vec();
     assert_eq!(result, vec!["SafetyReq"]);
 }
 
@@ -470,7 +470,7 @@ fn test_perform_action_relationship() {
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
     assert!(performs.is_some(), "Expected perform relationship");
-    let result: Vec<&str> = performs.unwrap().iter().copied().collect();
+    let result: Vec<&str> = performs.unwrap().to_vec();
     assert_eq!(result, vec!["Move"]);
 }
 
@@ -501,7 +501,7 @@ fn test_exhibit_state_relationship() {
     // Verify exhibit relationship
     let exhibits = relationship_graph.get_one_to_many(REL_EXHIBIT, "Vehicle");
     assert!(exhibits.is_some(), "Expected exhibit relationship");
-    let result: Vec<&str> = exhibits.unwrap().iter().copied().collect();
+    let result: Vec<&str> = exhibits.unwrap().to_vec();
     assert_eq!(result, vec!["Moving"]);
 }
 
@@ -526,7 +526,7 @@ fn test_include_use_case_relationship() {
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
     assert!(includes.is_some(), "Expected include relationship");
-    let result: Vec<&str> = includes.unwrap().iter().copied().collect();
+    let result: Vec<&str> = includes.unwrap().to_vec();
     assert_eq!(result, vec!["Login"]);
 }
 
@@ -553,8 +553,8 @@ fn test_multiple_satisfy_relationships() {
     let satisfies = satisfies.unwrap();
     // Found satisfy relationships
     assert_eq!(satisfies.len(), 2);
-    assert!(satisfies.iter().any(|s| *s == "Req1"));
-    assert!(satisfies.iter().any(|s| *s == "Req2"));
+    assert!(satisfies.contains(&"Req1"));
+    assert!(satisfies.contains(&"Req2"));
 }
 
 #[test]
