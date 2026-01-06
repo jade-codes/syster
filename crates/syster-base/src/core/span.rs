@@ -9,13 +9,6 @@ pub struct Span {
     pub end: Position,
 }
 
-/// A reference to a symbol, including file and span information
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymbolReference {
-    pub file: String,
-    pub span: Span,
-}
-
 /// A position in source code (0-indexed)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
@@ -38,6 +31,14 @@ impl Span {
         Self {
             start: Position::new(start_line, start_col),
             end: Position::new(end_line, end_col),
+        }
+    }
+
+    /// Creates a single-character span
+    pub fn single(line: usize, column: usize) -> Self {
+        Self {
+            start: Position::new(line, column),
+            end: Position::new(line, column + 1),
         }
     }
 

@@ -1,3 +1,4 @@
+use crate::core::Span;
 use crate::core::error_codes::{
     SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_CIRCULAR_DEPENDENCY_MSG, SEMANTIC_DUPLICATE_DEFINITION,
     SEMANTIC_DUPLICATE_DEFINITION_MSG, SEMANTIC_INVALID_TYPE, SEMANTIC_INVALID_TYPE_MSG,
@@ -15,11 +16,11 @@ pub struct SemanticError {
     pub location: Option<Location>,
 }
 
+/// Location of a semantic error (file path and optional span)
 #[derive(Debug, Clone, PartialEq)]
 pub struct Location {
     pub file: Option<String>,
-    pub line: Option<usize>,
-    pub column: Option<usize>,
+    pub span: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -171,11 +172,9 @@ impl fmt::Display for SemanticError {
             if let Some(file) = &loc.file {
                 write!(f, "{file}:")?;
             }
-            if let Some(line) = loc.line {
-                write!(f, "{line}:")?;
-                if let Some(col) = loc.column {
-                    write!(f, "{col}:")?;
-                }
+            if let Some(span) = &loc.span {
+                // Display as 1-indexed line:column for human readability
+                write!(f, "{}:{}:", span.start.line + 1, span.start.column + 1)?;
             }
             write!(f, " ")?;
         }

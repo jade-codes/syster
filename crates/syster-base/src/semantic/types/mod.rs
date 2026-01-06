@@ -5,7 +5,9 @@ pub mod folding_range;
 pub mod inlay_hint;
 pub mod semantic_role;
 
-pub use diagnostic::{Diagnostic, Location as DiagnosticLocation, Position, Range, Severity};
+pub use diagnostic::{Diagnostic, Location as DiagnosticLocation, Severity};
+// Re-export Position and Span from core for backwards compatibility
+pub use crate::core::{Position, Span};
 pub use error::{Location, SemanticError, SemanticErrorKind, SemanticResult};
 pub use events::{DependencyEvent, SymbolTableEvent, WorkspaceEvent};
 pub use folding_range::FoldingRangeInfo;

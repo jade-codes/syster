@@ -1,5 +1,5 @@
-use crate::core::{ParseError, ParseErrorKind, ParseResult};
-use crate::semantic::types::diagnostic::{Diagnostic, Location, Position, Range};
+use crate::core::{ParseError, ParseErrorKind, ParseResult, Position, Span};
+use crate::semantic::types::diagnostic::{Diagnostic, Location};
 
 /// Converts parse results into LSP-compatible diagnostics
 pub struct DiagnosticPublisher;
@@ -19,7 +19,7 @@ impl DiagnosticPublisher {
     fn error_to_diagnostic(error: &ParseError, file_path: &str) -> Diagnostic {
         let location = Location::new(
             file_path,
-            Range::new(
+            Span::new(
                 Position::new(error.position.line, error.position.column),
                 Position::new(error.position.line, error.position.column + 1),
             ),

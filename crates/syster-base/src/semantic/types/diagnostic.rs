@@ -1,5 +1,8 @@
 use std::fmt;
 
+// Re-export Position and Span from core for consumers of this module
+pub use crate::core::{Position, Span};
+
 /// Represents a diagnostic (error, warning, or info) with precise location
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
@@ -17,25 +20,11 @@ pub enum Severity {
     Hint,
 }
 
-/// Position in a source file (0-indexed for LSP compatibility)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Position {
-    pub line: usize,
-    pub column: usize,
-}
-
-/// Range in a source file
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Range {
-    pub start: Position,
-    pub end: Position,
-}
-
 /// Location of a diagnostic in a file
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Location {
     pub file: String,
-    pub range: Range,
+    pub span: Span,
 }
 
 impl Diagnostic {
@@ -66,31 +55,11 @@ impl Diagnostic {
     }
 }
 
-impl Position {
-    pub fn new(line: usize, column: usize) -> Self {
-        Self { line, column }
-    }
-}
-
-impl Range {
-    pub fn new(start: Position, end: Position) -> Self {
-        Self { start, end }
-    }
-
-    /// Creates a single-character range
-    pub fn single(line: usize, column: usize) -> Self {
-        Self {
-            start: Position::new(line, column),
-            end: Position::new(line, column + 1),
-        }
-    }
-}
-
 impl Location {
-    pub fn new(file: impl Into<String>, range: Range) -> Self {
+    pub fn new(file: impl Into<String>, span: Span) -> Self {
         Self {
             file: file.into(),
-            range,
+            span,
         }
     }
 }
@@ -101,8 +70,8 @@ impl fmt::Display for Diagnostic {
             f,
             "{}:{}:{}: {:?}: {}",
             self.location.file,
-            self.location.range.start.line + 1,
-            self.location.range.start.column + 1,
+            self.location.span.start.line + 1,
+            self.location.span.start.column + 1,
             self.severity,
             self.message
         )

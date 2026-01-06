@@ -13,12 +13,24 @@ use crate::{
         SEMANTIC_INVALID_TYPE_MSG, SEMANTIC_TYPE_MISMATCH, SEMANTIC_TYPE_MISMATCH_MSG,
         SEMANTIC_UNDEFINED_REFERENCE,
     },
+    core::{Position, Span},
     semantic::{
         DependencyEvent, SemanticError, SemanticErrorKind, SymbolTableEvent, WorkspaceEvent,
-        types::diagnostic::{Diagnostic, Location as DiagLocation, Position, Range, Severity},
+        types::diagnostic::{Diagnostic, Location as DiagLocation, Severity},
         types::error::Location,
     },
 };
+
+/// Helper to create a Location with file and span
+fn loc(file: Option<&str>, line: Option<usize>, column: Option<usize>) -> Location {
+    Location {
+        file: file.map(String::from),
+        span: line.map(|l| {
+            let col = column.unwrap_or(0);
+            Span::from_coords(l, col, l, col + 1)
+        }),
+    }
+}
 
 #[test]
 fn test_error_has_code() {
@@ -63,16 +75,16 @@ fn test_error_display_includes_code() {
 
 #[test]
 fn test_error_display_with_location() {
-    let error =
-        SemanticError::undefined_reference("MySymbol".to_string()).with_location(Location {
-            file: Some("test.sysml".to_string()),
-            line: Some(10),
-            column: Some(5),
-        });
+    let error = SemanticError::undefined_reference("MySymbol".to_string()).with_location(loc(
+        Some("test.sysml"),
+        Some(10),
+        Some(5),
+    ));
 
     let display = format!("{}", error);
     assert!(display.contains("test.sysml"));
-    assert!(display.contains("10"));
+    // Line 10+1=11 (displayed as 1-indexed)
+    assert!(display.contains("11"));
     assert!(display.contains("MySymbol"));
 }
 
@@ -142,11 +154,11 @@ fn test_invalid_type_error() {
 
 #[test]
 fn test_location_with_file_only() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("file.sysml".to_string()),
-        line: None,
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("file.sysml"),
+        None,
+        None,
+    ));
 
     let display = format!("{}", error);
     assert!(display.contains("file.sysml"));
@@ -154,37 +166,35 @@ fn test_location_with_file_only() {
 
 #[test]
 fn test_location_with_line_only() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: None,
-        line: Some(42),
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        None,
+        Some(42),
+        None,
+    ));
 
     let display = format!("{}", error);
-    assert!(display.contains("42"));
+    // Line 42+1=43 (displayed as 1-indexed)
+    assert!(display.contains("43"));
 }
 
 #[test]
 fn test_location_with_all_fields() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(15),
-        column: Some(20),
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("test.sysml"),
+        Some(15),
+        Some(20),
+    ));
 
     let display = format!("{}", error);
     assert!(display.contains("test.sysml"));
-    assert!(display.contains("15"));
-    assert!(display.contains("20"));
+    // Line 15+1=16, column 20+1=21 (displayed as 1-indexed)
+    assert!(display.contains("16"));
+    assert!(display.contains("21"));
 }
 
 #[test]
 fn test_duplicate_definition_with_first_location() {
-    let first_loc = Location {
-        file: Some("first.sysml".to_string()),
-        line: Some(5),
-        column: Some(10),
-    };
+    let first_loc = loc(Some("first.sysml"), Some(5), Some(10));
     let error = SemanticError::duplicate_definition("MyClass".to_string(), Some(first_loc));
 
     let SemanticErrorKind::DuplicateDefinition {
@@ -359,16 +369,8 @@ fn test_error_clone() {
 
 #[test]
 fn test_location_equality() {
-    let loc1 = Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(10),
-        column: Some(5),
-    };
-    let loc2 = Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(10),
-        column: Some(5),
-    };
+    let loc1 = loc(Some("test.sysml"), Some(10), Some(5));
+    let loc2 = loc(Some("test.sysml"), Some(10), Some(5));
     assert_eq!(loc1, loc2);
 }
 
@@ -525,7 +527,7 @@ fn test_symbol_table_event_equality() {
 fn test_diagnostic_creation() {
     let location = DiagLocation::new(
         "test.sysml",
-        Range::new(Position::new(0, 5), Position::new(0, 10)),
+        Span::new(Position::new(0, 5), Position::new(0, 10)),
     );
 
     let diag = Diagnostic::error("Undefined symbol", location.clone());
@@ -533,14 +535,14 @@ fn test_diagnostic_creation() {
     assert_eq!(diag.severity, Severity::Error);
     assert_eq!(diag.message, "Undefined symbol");
     assert_eq!(diag.location.file, "test.sysml");
-    assert_eq!(diag.location.range.start.line, 0);
-    assert_eq!(diag.location.range.start.column, 5);
+    assert_eq!(diag.location.span.start.line, 0);
+    assert_eq!(diag.location.span.start.column, 5);
     assert_eq!(diag.code, None);
 }
 
 #[test]
 fn test_diagnostic_with_code() {
-    let location = DiagLocation::new("test.sysml", Range::single(0, 5));
+    let location = DiagLocation::new("test.sysml", Span::single(0, 5));
 
     let diag = Diagnostic::error("Parse error", location).with_code("E001");
 
@@ -549,7 +551,7 @@ fn test_diagnostic_with_code() {
 
 #[test]
 fn test_warning_diagnostic() {
-    let location = DiagLocation::new("test.sysml", Range::single(2, 10));
+    let location = DiagLocation::new("test.sysml", Span::single(2, 10));
 
     let diag = Diagnostic::warning("Unused variable", location);
 
@@ -558,7 +560,7 @@ fn test_warning_diagnostic() {
 
 #[test]
 fn test_single_char_range() {
-    let range = Range::single(5, 10);
+    let range = Span::single(5, 10);
 
     assert_eq!(range.start.line, 5);
     assert_eq!(range.start.column, 10);
@@ -568,7 +570,7 @@ fn test_single_char_range() {
 
 #[test]
 fn test_diagnostic_display() {
-    let location = DiagLocation::new("test.sysml", Range::single(0, 5));
+    let location = DiagLocation::new("test.sysml", Span::single(0, 5));
     let diag = Diagnostic::error("Test error", location);
 
     let display = format!("{}", diag);
@@ -580,7 +582,7 @@ fn test_diagnostic_display() {
 
 #[test]
 fn test_multiline_range() {
-    let range = Range::new(Position::new(0, 5), Position::new(2, 10));
+    let range = Span::new(Position::new(0, 5), Position::new(2, 10));
 
     assert_eq!(range.start.line, 0);
     assert_eq!(range.end.line, 2);

@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::semantic::types::diagnostic::{Diagnostic, Location, Position, Range, Severity};
+use crate::semantic::types::diagnostic::{Diagnostic, Location, Severity, Span};
 
 // ============================================================================
 // Tests for Diagnostic::warning (#334)
@@ -8,10 +8,7 @@ use crate::semantic::types::diagnostic::{Diagnostic, Location, Position, Range, 
 
 #[test]
 fn test_warning_creates_warning_severity() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 10)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(0, 0, 0, 10));
     let diagnostic = Diagnostic::warning("Test warning", location);
 
     assert_eq!(diagnostic.severity, Severity::Warning);
@@ -19,10 +16,7 @@ fn test_warning_creates_warning_severity() {
 
 #[test]
 fn test_warning_stores_message() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 10)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(0, 0, 0, 10));
     let diagnostic = Diagnostic::warning("Test warning message", location);
 
     assert_eq!(diagnostic.message, "Test warning message");
@@ -30,25 +24,19 @@ fn test_warning_stores_message() {
 
 #[test]
 fn test_warning_stores_location() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(5, 10), Position::new(5, 20)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(5, 10, 5, 20));
     let diagnostic = Diagnostic::warning("Warning", location.clone());
 
     assert_eq!(diagnostic.location.file, "test.sysml");
-    assert_eq!(diagnostic.location.range.start.line, 5);
-    assert_eq!(diagnostic.location.range.start.column, 10);
-    assert_eq!(diagnostic.location.range.end.line, 5);
-    assert_eq!(diagnostic.location.range.end.column, 20);
+    assert_eq!(diagnostic.location.span.start.line, 5);
+    assert_eq!(diagnostic.location.span.start.column, 10);
+    assert_eq!(diagnostic.location.span.end.line, 5);
+    assert_eq!(diagnostic.location.span.end.column, 20);
 }
 
 #[test]
 fn test_warning_no_code_by_default() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 10)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(0, 0, 0, 10));
     let diagnostic = Diagnostic::warning("Warning", location);
 
     assert_eq!(diagnostic.code, None);
@@ -56,10 +44,7 @@ fn test_warning_no_code_by_default() {
 
 #[test]
 fn test_warning_with_code() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 10)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(0, 0, 0, 10));
     let diagnostic = Diagnostic::warning("Warning", location).with_code("W001");
 
     assert_eq!(diagnostic.severity, Severity::Warning);
@@ -68,10 +53,7 @@ fn test_warning_with_code() {
 
 #[test]
 fn test_warning_accepts_string_types() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 10)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(0, 0, 0, 10));
 
     // Test with &str
     let diagnostic1 = Diagnostic::warning("Warning from &str", location.clone());
@@ -89,24 +71,18 @@ fn test_warning_accepts_string_types() {
 
 #[test]
 fn test_warning_multiline_location() {
-    let location = Location::new(
-        "model.sysml",
-        Range::new(Position::new(10, 5), Position::new(15, 30)),
-    );
+    let location = Location::new("model.sysml", Span::from_coords(10, 5, 15, 30));
     let diagnostic = Diagnostic::warning("Multiline warning", location);
 
-    assert_eq!(diagnostic.location.range.start.line, 10);
-    assert_eq!(diagnostic.location.range.start.column, 5);
-    assert_eq!(diagnostic.location.range.end.line, 15);
-    assert_eq!(diagnostic.location.range.end.column, 30);
+    assert_eq!(diagnostic.location.span.start.line, 10);
+    assert_eq!(diagnostic.location.span.start.column, 5);
+    assert_eq!(diagnostic.location.span.end.line, 15);
+    assert_eq!(diagnostic.location.span.end.column, 30);
 }
 
 #[test]
 fn test_warning_empty_message() {
-    let location = Location::new(
-        "test.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 1)),
-    );
+    let location = Location::new("test.sysml", Span::from_coords(0, 0, 0, 1));
     let diagnostic = Diagnostic::warning("", location);
 
     assert_eq!(diagnostic.message, "");
@@ -117,7 +93,7 @@ fn test_warning_empty_message() {
 fn test_warning_long_file_path() {
     let location = Location::new(
         "/very/long/path/to/some/deeply/nested/directory/structure/model.sysml",
-        Range::new(Position::new(0, 0), Position::new(0, 10)),
+        Span::from_coords(0, 0, 0, 10),
     );
     let diagnostic = Diagnostic::warning("Warning in nested file", location);
 

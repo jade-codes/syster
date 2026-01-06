@@ -2,11 +2,23 @@
 #![allow(clippy::panic)]
 
 use super::super::*;
+use crate::core::Span;
 use crate::core::error_codes::{
     SEMANTIC_CIRCULAR_DEPENDENCY, SEMANTIC_CIRCULAR_DEPENDENCY_MSG, SEMANTIC_INVALID_TYPE,
     SEMANTIC_INVALID_TYPE_MSG, SEMANTIC_TYPE_MISMATCH, SEMANTIC_TYPE_MISMATCH_MSG,
     SEMANTIC_UNDEFINED_REFERENCE, SEMANTIC_UNDEFINED_REFERENCE_MSG,
 };
+
+/// Helper to create a Location with file and span
+fn loc(file: Option<&str>, line: Option<usize>, column: Option<usize>) -> Location {
+    Location {
+        file: file.map(String::from),
+        span: line.map(|l| {
+            let col = column.unwrap_or(0);
+            Span::from_coords(l, col, l, col + 1)
+        }),
+    }
+}
 
 // ============================================================================
 // Tests for with_location method (issue #345)
@@ -15,11 +27,7 @@ use crate::core::error_codes::{
 #[test]
 fn test_with_location_adds_location() {
     let error = SemanticError::undefined_reference("Symbol".to_string());
-    let location = Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(10),
-        column: Some(5),
-    };
+    let location = loc(Some("test.sysml"), Some(10), Some(5));
 
     let error_with_loc = error.with_location(location.clone());
 
@@ -28,11 +36,11 @@ fn test_with_location_adds_location() {
 
 #[test]
 fn test_with_location_chains_properly() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(10),
-        column: Some(5),
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("test.sysml"),
+        Some(10),
+        Some(5),
+    ));
 
     assert!(error.location.is_some());
     assert_eq!(
@@ -43,41 +51,38 @@ fn test_with_location_chains_properly() {
 
 #[test]
 fn test_with_location_with_file_only() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("file.sysml".to_string()),
-        line: None,
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("file.sysml"),
+        None,
+        None,
+    ));
 
     assert!(error.location.is_some());
     assert_eq!(
         error.location.as_ref().unwrap().file,
         Some("file.sysml".to_string())
     );
-    assert_eq!(error.location.as_ref().unwrap().line, None);
-    assert_eq!(error.location.as_ref().unwrap().column, None);
+    assert_eq!(error.location.as_ref().unwrap().span, None);
 }
 
 #[test]
 fn test_with_location_with_line_no_column() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("file.sysml".to_string()),
-        line: Some(42),
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("file.sysml"),
+        Some(42),
+        None,
+    ));
 
     assert!(error.location.is_some());
-    assert_eq!(error.location.as_ref().unwrap().line, Some(42));
-    assert_eq!(error.location.as_ref().unwrap().column, None);
+    // Span should exist with line 42
+    let span = error.location.as_ref().unwrap().span.unwrap();
+    assert_eq!(span.start.line, 42);
 }
 
 #[test]
 fn test_with_location_with_all_fields_none() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: None,
-        line: None,
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string())
+        .with_location(loc(None, None, None));
 
     assert!(error.location.is_some());
     assert_eq!(error.location.as_ref().unwrap().file, None);
@@ -93,11 +98,7 @@ fn test_with_location_preserves_error_fields() {
     let original_message = original_error.message.clone();
     let original_code = original_error.error_code;
 
-    let error_with_loc = original_error.with_location(Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(10),
-        column: Some(5),
-    });
+    let error_with_loc = original_error.with_location(loc(Some("test.sysml"), Some(10), Some(5)));
 
     assert_eq!(error_with_loc.message, original_message);
     assert_eq!(error_with_loc.error_code, original_code);
@@ -423,11 +424,11 @@ fn test_display_without_location() {
 
 #[test]
 fn test_display_with_file_only() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("test.sysml".to_string()),
-        line: None,
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("test.sysml"),
+        None,
+        None,
+    ));
 
     let display = format!("{}", error);
 
@@ -437,56 +438,60 @@ fn test_display_with_file_only() {
 
 #[test]
 fn test_display_with_file_and_line() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("test.sysml".to_string()),
-        line: Some(42),
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("test.sysml"),
+        Some(42),
+        None,
+    ));
 
     let display = format!("{}", error);
 
-    assert!(display.contains("test.sysml:42:"));
+    // Line is 0-indexed internally, displayed as 1-indexed (42+1=43)
+    assert!(display.contains("test.sysml:43:"));
 }
 
 #[test]
 fn test_display_with_all_location_fields() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: Some("file.sysml".to_string()),
-        line: Some(10),
-        column: Some(25),
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        Some("file.sysml"),
+        Some(10),
+        Some(25),
+    ));
 
     let display = format!("{}", error);
 
     assert!(display.contains("E002: "));
-    assert!(display.contains("file.sysml:10:25:"));
+    // Line 10+1=11, column 25+1=26
+    assert!(display.contains("file.sysml:11:26:"));
     assert!(display.contains("Symbol"));
 }
 
 #[test]
 fn test_display_with_line_only() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: None,
-        line: Some(15),
-        column: None,
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        None,
+        Some(15),
+        None,
+    ));
 
     let display = format!("{}", error);
 
-    assert!(display.contains("15:"));
+    // Line 15+1=16
+    assert!(display.contains("16:"));
 }
 
 #[test]
 fn test_display_with_line_and_column_no_file() {
-    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(Location {
-        file: None,
-        line: Some(20),
-        column: Some(30),
-    });
+    let error = SemanticError::undefined_reference("Symbol".to_string()).with_location(loc(
+        None,
+        Some(20),
+        Some(30),
+    ));
 
     let display = format!("{}", error);
 
-    assert!(display.contains("20:30:"));
+    // Line 20+1=21, column 30+1=31
+    assert!(display.contains("21:31:"));
     assert!(!display.contains(".sysml"));
 }
 
@@ -505,11 +510,11 @@ fn test_display_format_includes_message() {
 
 #[test]
 fn test_display_format_order() {
-    let error = SemanticError::undefined_reference("MyVar".to_string()).with_location(Location {
-        file: Some("main.sysml".to_string()),
-        line: Some(5),
-        column: Some(10),
-    });
+    let error = SemanticError::undefined_reference("MyVar".to_string()).with_location(loc(
+        Some("main.sysml"),
+        Some(5),
+        Some(10),
+    ));
 
     let display = format!("{}", error);
 

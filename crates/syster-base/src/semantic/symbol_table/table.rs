@@ -19,6 +19,8 @@ pub struct SymbolTable {
     pub(super) imports_by_file: HashMap<String, Vec<Import>>,
     /// Reverse index: target_qname -> [(file, span)] for O(1) import reference lookups
     import_references: HashMap<String, Vec<(String, Span)>>,
+    /// Index mapping qualified names to (scope_id, name) for O(1) lookups
+    pub(super) qualified_name_index: HashMap<String, (usize, String)>,
 }
 
 impl SymbolTable {
@@ -31,6 +33,7 @@ impl SymbolTable {
             symbols_by_file: HashMap::new(),
             imports_by_file: HashMap::new(),
             import_references: HashMap::new(),
+            qualified_name_index: HashMap::new(),
         }
     }
 
@@ -71,14 +74,19 @@ impl SymbolTable {
             let qualified_name = symbol.qualified_name().to_string();
             let source_file = symbol.source_file().map(|s| s.to_string());
             let symbol_id = self.scopes.iter().map(|s| s.symbols.len()).sum::<usize>();
+            let scope_id = self.current_scope;
 
-            let scope = &mut self.scopes[self.current_scope];
+            let scope = &mut self.scopes[scope_id];
             if scope.symbols.contains_key(&name) {
                 return OperationResult::failure(format!(
                     "Symbol '{name}' already defined in this scope"
                 ))
                 .publish(self);
             }
+
+            // Update the qualified name index for O(1) lookups
+            self.qualified_name_index
+                .insert(qualified_name.clone(), (scope_id, name.clone()));
 
             scope.symbols.insert(name, symbol);
 

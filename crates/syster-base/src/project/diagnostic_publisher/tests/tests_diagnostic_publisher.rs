@@ -32,8 +32,8 @@ fn test_publish_syntax_error() {
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].severity, Severity::Error);
     assert_eq!(diagnostics[0].location.file, "test.sysml");
-    assert_eq!(diagnostics[0].location.range.start.line, 5);
-    assert_eq!(diagnostics[0].location.range.start.column, 10);
+    assert_eq!(diagnostics[0].location.span.start.line, 5);
+    assert_eq!(diagnostics[0].location.span.start.column, 10);
     assert_eq!(diagnostics[0].code, Some("P001".to_string()));
 }
 
@@ -62,8 +62,8 @@ fn test_publish_multiple_errors() {
 
     let diagnostics = DiagnosticPublisher::publish(&result, "test.sysml");
     assert_eq!(diagnostics.len(), 2);
-    assert_eq!(diagnostics[0].location.range.start.line, 1);
-    assert_eq!(diagnostics[1].location.range.start.line, 3);
+    assert_eq!(diagnostics[0].location.span.start.line, 1);
+    assert_eq!(diagnostics[1].location.span.start.line, 3);
 }
 
 #[test]

@@ -125,12 +125,10 @@ impl SymbolTable {
     }
 
     pub fn lookup_qualified(&self, qualified_name: &str) -> Option<&Symbol> {
-        self.scopes.iter().find_map(|scope| {
-            scope
-                .symbols
-                .values()
-                .find(|symbol| symbol.qualified_name() == qualified_name)
-        })
+        // Use the qualified name index for O(1) lookup
+        self.qualified_name_index
+            .get(qualified_name)
+            .and_then(|(scope_id, name)| self.scopes.get(*scope_id)?.symbols.get(name))
     }
 
     /// Resolve a symbol by name, trying qualified lookup first, then simple lookup
@@ -150,8 +148,12 @@ impl SymbolTable {
     }
 
     pub fn remove_symbols_from_file(&mut self, file_path: &str) -> usize {
-        // Clear the file -> symbols index for this file
-        self.symbols_by_file.remove(file_path);
+        // Get qualified names for this file to update the index
+        if let Some(qualified_names) = self.symbols_by_file.remove(file_path) {
+            for qname in &qualified_names {
+                self.qualified_name_index.remove(qname);
+            }
+        }
 
         // Remove symbols from all scopes
         self.scopes
