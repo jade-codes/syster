@@ -290,7 +290,7 @@ pub fn format_rich_hover(
             let file_name = loc
                 .uri
                 .path_segments()
-                .and_then(|s| s.last())
+                .and_then(|mut s| s.next_back())
                 .unwrap_or("unknown");
             let line = loc.range.start.line + 1;
             let col = loc.range.start.character + 1;

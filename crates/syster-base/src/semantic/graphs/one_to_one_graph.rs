@@ -32,12 +32,12 @@ impl OneToOneGraph {
         };
 
         // Remove old reverse index entry if source already had a target
-        if let Some((old_target, _)) = self.relationships.get(&source) {
-            if let Some(sources) = self.reverse_index.get_mut(old_target) {
-                sources.retain(|(s, _)| s != &source);
-                if sources.is_empty() {
-                    self.reverse_index.remove(old_target);
-                }
+        if let Some((old_target, _)) = self.relationships.get(&source)
+            && let Some(sources) = self.reverse_index.get_mut(old_target)
+        {
+            sources.retain(|(s, _)| s != &source);
+            if sources.is_empty() {
+                self.reverse_index.remove(old_target);
             }
         }
 
@@ -94,12 +94,12 @@ impl OneToOneGraph {
 
     /// Remove the relationship where the given source is the origin
     pub fn remove_source(&mut self, source: &str) {
-        if let Some((target, _)) = self.relationships.get(source) {
-            if let Some(sources) = self.reverse_index.get_mut(target.as_ref()) {
-                sources.retain(|(s, _)| s.as_ref() != source);
-                if sources.is_empty() {
-                    self.reverse_index.remove(target.as_ref());
-                }
+        if let Some((target, _)) = self.relationships.get(source)
+            && let Some(sources) = self.reverse_index.get_mut(target.as_ref())
+        {
+            sources.retain(|(s, _)| s.as_ref() != source);
+            if sources.is_empty() {
+                self.reverse_index.remove(target.as_ref());
             }
         }
         self.relationships.remove(source);
