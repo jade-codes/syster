@@ -215,7 +215,7 @@ impl RelationshipGraph {
     pub fn get_references_to(&self, target: &str) -> Vec<(&str, &Span)> {
         let mut refs = Vec::new();
 
-        for (_rel_type, graph) in &self.one_to_many {
+        for graph in self.one_to_many.values() {
             let sources = graph.get_sources_with_locations(target);
             for (_source, loc) in sources {
                 if let Some(location) = loc {
@@ -224,7 +224,7 @@ impl RelationshipGraph {
             }
         }
 
-        for (_rel_type, graph) in &self.one_to_one {
+        for graph in self.one_to_one.values() {
             let sources = graph.get_sources_with_locations(target);
             for (_source, loc) in sources {
                 if let Some(location) = loc {

@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use super::super::OneToManyGraph;
-use crate::core::{IStr, Interner, Span};
+use crate::core::{IStr, Span};
 use std::rc::Rc;
 
 fn istr(s: &str) -> IStr {
