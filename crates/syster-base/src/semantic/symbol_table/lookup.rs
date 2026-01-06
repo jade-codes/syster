@@ -150,6 +150,10 @@ impl SymbolTable {
     }
 
     pub fn remove_symbols_from_file(&mut self, file_path: &str) -> usize {
+        // Clear the file -> symbols index for this file
+        self.symbols_by_file.remove(file_path);
+
+        // Remove symbols from all scopes
         self.scopes
             .iter_mut()
             .map(|scope| {
@@ -160,5 +164,18 @@ impl SymbolTable {
                 before - scope.symbols.len()
             })
             .sum()
+    }
+
+    /// Remove all imports that originated from a specific file
+    pub fn remove_imports_from_file(&mut self, file_path: &str) {
+        // Clear the file -> imports index
+        self.imports_by_file.remove(file_path);
+
+        // Remove imports from all scopes
+        for scope in &mut self.scopes {
+            scope
+                .imports
+                .retain(|import| import.file.as_deref() != Some(file_path));
+        }
     }
 }

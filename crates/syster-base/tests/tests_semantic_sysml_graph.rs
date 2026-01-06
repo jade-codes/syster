@@ -14,11 +14,10 @@ use syster::semantic::symbol_table::SymbolTable;
 use syster::syntax::sysml::ast::SysMLFile;
 
 // Helper function to compare graph results with string literals
-fn assert_targets_eq(result: Option<Vec<&String>>, expected: &[&str]) {
+fn assert_targets_eq(result: Option<Vec<&str>>, expected: &[&str]) {
     match result {
         Some(targets) => {
-            let target_strs: Vec<&str> = targets.iter().map(|s| s.as_str()).collect();
-            assert_eq!(target_strs, expected);
+            assert_eq!(targets, expected);
         }
         None => panic!("Expected Some({expected:?}), got None"),
     }
@@ -74,7 +73,7 @@ fn test_multiple_relationships() {
     // vehicle1 : Vehicle
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "vehicle1"),
-        Some(&"Vehicle".to_string())
+        Some("Vehicle")
     );
 
     // vehicle2 :> vehicle1
@@ -140,8 +139,8 @@ fn test_multiple_specializations() {
     assert!(c_specializes.is_some());
     let specializes = c_specializes.unwrap();
     assert_eq!(specializes.len(), 2);
-    assert!(specializes.iter().any(|s| s.as_str() == "A"));
-    assert!(specializes.iter().any(|s| s.as_str() == "B"));
+    assert!(specializes.iter().any(|s| *s == "A"));
+    assert!(specializes.iter().any(|s| *s == "B"));
 }
 
 #[test]
@@ -189,11 +188,11 @@ fn test_usage_typing_and_subsetting() {
     // Both usages are typed by Vehicle
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "baseVehicle"),
-        Some(&"Vehicle".to_string())
+        Some("Vehicle")
     );
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myVehicle"),
-        Some(&"Vehicle".to_string())
+        Some("Vehicle")
     );
 
     // myVehicle subsets baseVehicle
@@ -226,7 +225,7 @@ fn test_action_relationships() {
     // myAction is typed by SpecializedAction
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myAction"),
-        Some(&"SpecializedAction".to_string())
+        Some("SpecializedAction")
     );
 }
 
@@ -250,7 +249,7 @@ fn test_requirement_relationships() {
     );
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myReq"),
-        Some(&"DerivedReq".to_string())
+        Some("DerivedReq")
     );
 }
 
@@ -299,8 +298,8 @@ fn test_multiple_subsettings() {
     assert!(subsets.is_some());
     let subsets = subsets.unwrap();
     assert_eq!(subsets.len(), 2);
-    assert!(subsets.iter().any(|s| s.as_str() == "v1"));
-    assert!(subsets.iter().any(|s| s.as_str() == "v2"));
+    assert!(subsets.iter().any(|s| *s == "v1"));
+    assert!(subsets.iter().any(|s| *s == "v2"));
 }
 
 #[test]
@@ -421,7 +420,7 @@ fn test_satisfy_requirement_relationship() {
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
     assert!(satisfies.is_some(), "Expected satisfy relationship");
-    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| *s).collect();
     assert_eq!(result, vec!["SafetyReq"]);
 }
 
@@ -446,7 +445,7 @@ fn test_satisfy_with_requirement_keyword() {
         satisfies.is_some(),
         "Expected satisfy relationship with requirement keyword"
     );
-    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| *s).collect();
     assert_eq!(result, vec!["SafetyReq"]);
 }
 
@@ -471,7 +470,7 @@ fn test_perform_action_relationship() {
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
     assert!(performs.is_some(), "Expected perform relationship");
-    let result: Vec<&str> = performs.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = performs.unwrap().iter().map(|s| *s).collect();
     assert_eq!(result, vec!["Move"]);
 }
 
@@ -502,7 +501,7 @@ fn test_exhibit_state_relationship() {
     // Verify exhibit relationship
     let exhibits = relationship_graph.get_one_to_many(REL_EXHIBIT, "Vehicle");
     assert!(exhibits.is_some(), "Expected exhibit relationship");
-    let result: Vec<&str> = exhibits.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = exhibits.unwrap().iter().map(|s| *s).collect();
     assert_eq!(result, vec!["Moving"]);
 }
 
@@ -527,7 +526,7 @@ fn test_include_use_case_relationship() {
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
     assert!(includes.is_some(), "Expected include relationship");
-    let result: Vec<&str> = includes.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = includes.unwrap().iter().map(|s| *s).collect();
     assert_eq!(result, vec!["Login"]);
 }
 
@@ -554,8 +553,8 @@ fn test_multiple_satisfy_relationships() {
     let satisfies = satisfies.unwrap();
     // Found satisfy relationships
     assert_eq!(satisfies.len(), 2);
-    assert!(satisfies.iter().any(|s| s.as_str() == "Req1"));
-    assert!(satisfies.iter().any(|s| s.as_str() == "Req2"));
+    assert!(satisfies.iter().any(|s| *s == "Req1"));
+    assert!(satisfies.iter().any(|s| *s == "Req2"));
 }
 
 #[test]
@@ -727,7 +726,7 @@ fn test_derived_keyword_with_subsetting() {
     let qualified_name = "Container::DerivedReq";
     let subsets = relationship_graph.get_one_to_many(REL_SUBSETTING, qualified_name);
     assert_eq!(subsets.as_ref().map(|v| v.len()), Some(1));
-    assert!(subsets.unwrap().contains(&&"ParentReq".to_string()));
+    assert!(subsets.unwrap().contains(&"ParentReq"));
 }
 
 #[test]
@@ -755,11 +754,11 @@ fn test_multiple_derived_requirements_in_body() {
     // Each derived requirement should have its subsetting relationship
     let subsets1 = relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq1");
     assert_eq!(subsets1.as_ref().map(|v| v.len()), Some(1));
-    assert!(subsets1.unwrap().contains(&&"Req1".to_string()));
+    assert!(subsets1.unwrap().contains(&"Req1"));
 
     let subsets2 = relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq2");
     assert_eq!(subsets2.as_ref().map(|v| v.len()), Some(1));
-    assert!(subsets2.unwrap().contains(&&"Req2".to_string()));
+    assert!(subsets2.unwrap().contains(&"Req2"));
 }
 
 // =============================================================================
@@ -779,6 +778,7 @@ fn test_get_references_to_finds_typing_references() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
@@ -788,14 +788,13 @@ fn test_get_references_to_finds_typing_references() {
     let refs = relationship_graph.get_references_to("Vehicle");
 
     // Should find 2 references: car and truck (both typed by Vehicle)
+    // API returns (file_path, span) pairs
     assert_eq!(refs.len(), 2, "Should find 2 references to Vehicle");
 
-    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
-    assert!(ref_names.contains(&"car"), "Should find 'car' reference");
-    assert!(
-        ref_names.contains(&"truck"),
-        "Should find 'truck' reference"
-    );
+    // All refs should be from test.sysml
+    for (file_path, _span) in &refs {
+        assert_eq!(*file_path, "test.sysml");
+    }
 }
 
 #[test]
@@ -810,6 +809,7 @@ fn test_get_references_to_finds_specialization_references() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
@@ -819,17 +819,13 @@ fn test_get_references_to_finds_specialization_references() {
     let refs = relationship_graph.get_references_to("Vehicle");
 
     // Should find 2 references: Car and Truck (both specialize Vehicle)
+    // API returns (file_path, span) pairs
     assert_eq!(refs.len(), 2, "Should find 2 specialization references");
 
-    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
-    assert!(
-        ref_names.contains(&"Car"),
-        "Should find 'Car' specialization"
-    );
-    assert!(
-        ref_names.contains(&"Truck"),
-        "Should find 'Truck' specialization"
-    );
+    // All refs should be from test.sysml
+    for (file_path, _span) in &refs {
+        assert_eq!(*file_path, "test.sysml");
+    }
 }
 
 #[test]
@@ -840,6 +836,7 @@ fn test_get_references_to_returns_spans() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
@@ -847,12 +844,12 @@ fn test_get_references_to_returns_spans() {
 
     let refs = relationship_graph.get_references_to("Vehicle");
 
-    // Should have a span for the reference
+    // Should have a reference with file path and span
+    // API returns (file_path, span) pairs
     assert_eq!(refs.len(), 1);
-    let (name, span) = &refs[0];
-    assert_eq!(name.as_str(), "car");
-    // Span might be None depending on how typing relationships store spans
-    // but we're testing the API works
+    let (file_path, span) = &refs[0];
+    assert_eq!(*file_path, "test.sysml");
+    // Span is for the reference location
     let _ = span; // Use the span to avoid warning
 }
 
@@ -890,6 +887,7 @@ fn test_get_references_to_combined_relationship_types() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
@@ -899,21 +897,17 @@ fn test_get_references_to_combined_relationship_types() {
     let refs = relationship_graph.get_references_to("Base");
 
     // Should find: Derived (specializes), instance (typed by)
+    // API returns (file_path, span) pairs
     assert_eq!(
         refs.len(),
         2,
         "Should find refs from both specialization and typing"
     );
 
-    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
-    assert!(
-        ref_names.contains(&"Derived"),
-        "Should find specialization reference"
-    );
-    assert!(
-        ref_names.contains(&"instance"),
-        "Should find typing reference"
-    );
+    // All refs should be from test.sysml
+    for (file_path, _span) in &refs {
+        assert_eq!(*file_path, "test.sysml");
+    }
 }
 
 // =============================================================================
@@ -985,7 +979,7 @@ fn test_stdlib_no_duplicate_relationships() {
         1,
         "Should have exactly 1 specialization target"
     );
-    assert_eq!(targets[0].as_str(), "ScalarQuantityValue");
+    assert_eq!(targets[0], "ScalarQuantityValue");
 }
 
 /// Test that repopulating a file doesn't create duplicate relationships.
@@ -1136,7 +1130,7 @@ fn test_lsp_open_stdlib_file_no_duplicates_after_fix() {
 fn test_add_single_relationship() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car");
     assert!(targets.is_some());
@@ -1148,15 +1142,15 @@ fn test_add_single_relationship() {
 fn test_add_multiple_relationships_same_source() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Machine".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Machine", None, None);
 
     let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car");
     assert!(targets.is_some());
     let targets = targets.unwrap();
     assert_eq!(targets.len(), 2);
-    assert!(targets.iter().any(|t| t.as_str() == "Vehicle"));
-    assert!(targets.iter().any(|t| t.as_str() == "Machine"));
+    assert!(targets.iter().any(|t| *t == "Vehicle"));
+    assert!(targets.iter().any(|t| *t == "Machine"));
 }
 
 /// Test adding relationships for different sources
@@ -1164,8 +1158,8 @@ fn test_add_multiple_relationships_same_source() {
 fn test_add_relationships_different_sources() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
-    graph.add_one_to_many(REL_SPECIALIZATION, "Truck".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Truck", "Vehicle", None, None);
 
     // Both should have their own relationship
     assert!(graph.get_one_to_many(REL_SPECIALIZATION, "Car").is_some());
@@ -1178,8 +1172,8 @@ fn test_remove_relationships_for_source() {
     let mut graph = RelationshipGraph::new();
 
     // Add relationships for two different sources
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
-    graph.add_one_to_many(REL_SPECIALIZATION, "Truck".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Truck", "Vehicle", None, None);
 
     // Remove relationships for Car only
     graph.remove_relationships_for_source("Car");
@@ -1199,9 +1193,9 @@ fn test_remove_source_clears_all_relationship_types() {
     let mut graph = RelationshipGraph::new();
 
     // Add different relationship types for the same source
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
-    graph.add_one_to_many(REL_SUBSETTING, "Car".into(), "BaseCar".into(), None);
-    graph.add_one_to_one(REL_TYPING, "myCar".into(), "Car".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
+    graph.add_one_to_many(REL_SUBSETTING, "Car", "BaseCar", None, None);
+    graph.add_one_to_one(REL_TYPING, "myCar", "Car", None, None);
 
     // Remove myCar from typing
     graph.remove_relationships_for_source("myCar");
@@ -1218,7 +1212,7 @@ fn test_remove_source_clears_all_relationship_types() {
 fn test_remove_nonexistent_source() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     // Remove a source that doesn't exist - should not panic
     graph.remove_relationships_for_source("NonExistent");
@@ -1232,16 +1226,20 @@ fn test_remove_nonexistent_source() {
 fn test_one_to_one_add_and_remove() {
     let mut graph = RelationshipGraph::new();
 
-    graph.add_one_to_one(REL_TYPING, "myCar".into(), "Car".into(), None);
-    graph.add_one_to_one(REL_TYPING, "myTruck".into(), "Truck".into(), None);
+    graph.add_one_to_one(REL_TYPING, "myCar", "Car", None, None);
+    graph.add_one_to_one(REL_TYPING, "myTruck", "Truck", None, None);
 
     assert_eq!(
-        graph.get_one_to_one(REL_TYPING, "myCar"),
-        Some(&"Car".to_string())
+        graph
+            .get_one_to_one(REL_TYPING, "myCar")
+            .map(|s| s.as_ref()),
+        Some("Car")
     );
     assert_eq!(
-        graph.get_one_to_one(REL_TYPING, "myTruck"),
-        Some(&"Truck".to_string())
+        graph
+            .get_one_to_one(REL_TYPING, "myTruck")
+            .map(|s| s.as_ref()),
+        Some("Truck")
     );
 
     // Remove myCar
@@ -1249,8 +1247,10 @@ fn test_one_to_one_add_and_remove() {
 
     assert!(graph.get_one_to_one(REL_TYPING, "myCar").is_none());
     assert_eq!(
-        graph.get_one_to_one(REL_TYPING, "myTruck"),
-        Some(&"Truck".to_string())
+        graph
+            .get_one_to_one(REL_TYPING, "myTruck")
+            .map(|s| s.as_ref()),
+        Some("Truck")
     );
 }
 
@@ -1260,7 +1260,7 @@ fn test_repopulation_add_remove_add() {
     let mut graph = RelationshipGraph::new();
 
     // First population
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
     assert_eq!(
         graph
             .get_one_to_many(REL_SPECIALIZATION, "Car")
@@ -1273,7 +1273,7 @@ fn test_repopulation_add_remove_add() {
     graph.remove_relationships_for_source("Car");
 
     // Second population (same content)
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     // Should still have exactly 1 (not 2!)
     let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car").unwrap();
@@ -1291,13 +1291,13 @@ fn test_repopulation_with_changed_content() {
     let mut graph = RelationshipGraph::new();
 
     // First population: Car specializes Vehicle
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     // Clear for repopulation
     graph.remove_relationships_for_source("Car");
 
     // Second population: Car now specializes Machine instead
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Machine".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Machine", None, None);
 
     // Should have Machine, not Vehicle
     let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Car").unwrap();
@@ -1311,9 +1311,9 @@ fn test_remove_source_doesnt_affect_reverse_lookups() {
     let mut graph = RelationshipGraph::new();
 
     // Multiple sources reference the same target
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car".into(), "Vehicle".into(), None);
-    graph.add_one_to_many(REL_SPECIALIZATION, "Truck".into(), "Vehicle".into(), None);
-    graph.add_one_to_many(REL_SPECIALIZATION, "Bus".into(), "Vehicle".into(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Truck", "Vehicle", None, None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Bus", "Vehicle", None, None);
 
     // Get sources that reference Vehicle
     let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Vehicle");
@@ -1325,9 +1325,9 @@ fn test_remove_source_doesnt_affect_reverse_lookups() {
     // Vehicle should still be referenced by Truck and Bus
     let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Vehicle");
     assert_eq!(sources.len(), 2);
-    assert!(sources.iter().any(|s| s.as_str() == "Truck"));
-    assert!(sources.iter().any(|s| s.as_str() == "Bus"));
-    assert!(!sources.iter().any(|s| s.as_str() == "Car"));
+    assert!(sources.iter().any(|s| *s == "Truck"));
+    assert!(sources.iter().any(|s| *s == "Bus"));
+    assert!(!sources.iter().any(|s| *s == "Car"));
 }
 
 /// Test full workspace repopulation scenario with symbols and relationships

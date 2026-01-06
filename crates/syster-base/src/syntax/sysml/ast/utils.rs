@@ -264,6 +264,10 @@ pub fn to_usage_kind(rule: Rule) -> Result<UsageKind, ConversionError<Void>> {
         Rule::perform_action_usage => UsageKind::PerformAction,
         Rule::exhibit_state_usage => UsageKind::ExhibitState,
         Rule::include_use_case_usage => UsageKind::IncludeUseCase,
+        // Occurrence-based usages
+        Rule::occurrence_usage => UsageKind::Occurrence,
+        Rule::individual_usage => UsageKind::Individual,
+        Rule::portion_usage => UsageKind::Snapshot, // portion_usage can be snapshot or timeslice
         _ => return Err(ConversionError::NoMatch),
     })
 }

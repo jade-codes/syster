@@ -8340,3 +8340,89 @@ fn test_parse_use_case_full_flow() {
         result.err()
     );
 }
+
+#[test]
+fn test_parse_package_with_nested_elements_issue() {
+    use std::path::PathBuf;
+    use syster::project::file_loader;
+    use syster::syntax::sysml::ast::Element;
+
+    // Use namespace syntax - file-level package declaration
+    let input = r#"
+package ScalarValues {
+    attribute def Real;
+}
+package TestWithStdlib {
+
+part def Calculator {
+    attribute result : ScalarValues::Real;
+}
+
+part cal : Calculator;
+}"#;
+
+    let path = PathBuf::from("test.sysml");
+    let parse_result = file_loader::parse_with_result(input, &path);
+
+    println!("Parse errors: {:?}", parse_result.errors);
+    assert!(
+        parse_result.content.is_some(),
+        "Parse should succeed. Errors: {:?}",
+        parse_result.errors
+    );
+
+    let language_file = parse_result.content.expect("Parse should succeed");
+    let syster::syntax::SyntaxFile::SysML(file) = language_file else {
+        panic!("Expected SysML file");
+    };
+
+    println!(
+        "file.namespace: {:?}",
+        file.namespace.as_ref().map(|n| &n.name)
+    );
+    println!("file.elements.len: {}", file.elements.len());
+    for (i, el) in file.elements.iter().enumerate() {
+        match el {
+            Element::Package(p) => println!("element[{}] = Package({:?})", i, p.name),
+            Element::Definition(d) => println!("element[{}] = Definition({:?})", i, d.name),
+            Element::Usage(u) => println!("element[{}] = Usage({:?})", i, u.name),
+            Element::Comment(_) => println!("element[{}] = Comment", i),
+            Element::Import(_) => println!("element[{}] = Import", i),
+            Element::Alias(_) => println!("element[{}] = Alias", i),
+        }
+    }
+
+    // Should have 2 top-level packages
+    assert_eq!(file.elements.len(), 2, "Should have 2 top-level packages");
+
+    // First package is ScalarValues
+    let Element::Package(scalar_pkg) = &file.elements[0] else {
+        panic!("Expected Package, got {:?}", file.elements[0]);
+    };
+    assert_eq!(scalar_pkg.name, Some("ScalarValues".to_string()));
+
+    // Second package is TestWithStdlib
+    let Element::Package(test_pkg) = &file.elements[1] else {
+        panic!("Expected Package, got {:?}", file.elements[1]);
+    };
+    assert_eq!(test_pkg.name, Some("TestWithStdlib".to_string()));
+
+    // TestWithStdlib should have 2 elements: part def Calculator and part cal
+    assert_eq!(
+        test_pkg.elements.len(),
+        2,
+        "TestWithStdlib should have 2 elements (definition and usage)"
+    );
+
+    // First element should be the part def
+    let Element::Definition(def) = &test_pkg.elements[0] else {
+        panic!("Expected Definition, got {:?}", test_pkg.elements[0]);
+    };
+    assert_eq!(def.name, Some("Calculator".to_string()));
+
+    // Second element should be the part usage
+    let Element::Usage(usage) = &test_pkg.elements[1] else {
+        panic!("Expected Usage, got {:?}", test_pkg.elements[1]);
+    };
+    assert_eq!(usage.name, Some("cal".to_string()));
+}

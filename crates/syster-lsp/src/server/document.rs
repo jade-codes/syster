@@ -86,7 +86,8 @@ impl LspServer {
 
         if let Some(file) = parse_result.content {
             // Use update if file exists, otherwise add
-            if self.workspace.get_file(path).is_some() {
+            let file_exists = self.workspace.get_file(path).is_some();
+            if file_exists {
                 self.workspace.update_file(path, file);
             } else {
                 self.workspace.add_file(path.clone(), file);

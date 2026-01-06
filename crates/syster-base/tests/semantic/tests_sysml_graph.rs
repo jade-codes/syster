@@ -14,11 +14,10 @@ use syster::semantic::symbol_table::SymbolTable;
 use syster::syntax::sysml::ast::SysMLFile;
 
 // Helper function to compare graph results with string literals
-fn assert_targets_eq(result: Option<Vec<&String>>, expected: &[&str]) {
+fn assert_targets_eq(result: Option<Vec<&str>>, expected: &[&str]) {
     match result {
         Some(targets) => {
-            let target_strs: Vec<&str> = targets.iter().map(|s| s.as_str()).collect();
-            assert_eq!(target_strs, expected);
+            assert_eq!(targets, expected);
         }
         None => panic!("Expected Some({expected:?}), got None"),
     }
@@ -74,7 +73,7 @@ fn test_multiple_relationships() {
     // vehicle1 : Vehicle
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "vehicle1"),
-        Some(&"Vehicle".to_string())
+        Some("Vehicle")
     );
 
     // vehicle2 :> vehicle1
@@ -140,8 +139,8 @@ fn test_multiple_specializations() {
     assert!(c_specializes.is_some());
     let specializes = c_specializes.unwrap();
     assert_eq!(specializes.len(), 2);
-    assert!(specializes.iter().any(|s| s.as_str() == "A"));
-    assert!(specializes.iter().any(|s| s.as_str() == "B"));
+    assert!(specializes.iter().any(|s| *s == "A"));
+    assert!(specializes.iter().any(|s| *s == "B"));
 }
 
 #[test]
@@ -189,11 +188,11 @@ fn test_usage_typing_and_subsetting() {
     // Both usages are typed by Vehicle
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "baseVehicle"),
-        Some(&"Vehicle".to_string())
+        Some("Vehicle")
     );
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myVehicle"),
-        Some(&"Vehicle".to_string())
+        Some("Vehicle")
     );
 
     // myVehicle subsets baseVehicle
@@ -226,7 +225,7 @@ fn test_action_relationships() {
     // myAction is typed by SpecializedAction
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myAction"),
-        Some(&"SpecializedAction".to_string())
+        Some("SpecializedAction")
     );
 }
 
@@ -250,7 +249,7 @@ fn test_requirement_relationships() {
     );
     assert_eq!(
         relationship_graph.get_one_to_one(REL_TYPING, "myReq"),
-        Some(&"DerivedReq".to_string())
+        Some("DerivedReq")
     );
 }
 
@@ -299,8 +298,8 @@ fn test_multiple_subsettings() {
     assert!(subsets.is_some());
     let subsets = subsets.unwrap();
     assert_eq!(subsets.len(), 2);
-    assert!(subsets.iter().any(|s| s.as_str() == "v1"));
-    assert!(subsets.iter().any(|s| s.as_str() == "v2"));
+    assert!(subsets.iter().any(|s| *s == "v1"));
+    assert!(subsets.iter().any(|s| *s == "v2"));
 }
 
 #[test]
@@ -421,7 +420,7 @@ fn test_satisfy_requirement_relationship() {
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
     assert!(satisfies.is_some(), "Expected satisfy relationship");
-    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = satisfies.unwrap().iter().copied().collect();
     assert_eq!(result, vec!["SafetyReq"]);
 }
 
@@ -446,7 +445,7 @@ fn test_satisfy_with_requirement_keyword() {
         satisfies.is_some(),
         "Expected satisfy relationship with requirement keyword"
     );
-    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = satisfies.unwrap().iter().copied().collect();
     assert_eq!(result, vec!["SafetyReq"]);
 }
 
@@ -471,7 +470,7 @@ fn test_perform_action_relationship() {
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
     assert!(performs.is_some(), "Expected perform relationship");
-    let result: Vec<&str> = performs.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = performs.unwrap().iter().copied().collect();
     assert_eq!(result, vec!["Move"]);
 }
 
@@ -502,7 +501,7 @@ fn test_exhibit_state_relationship() {
     // Verify exhibit relationship
     let exhibits = relationship_graph.get_one_to_many(REL_EXHIBIT, "Vehicle");
     assert!(exhibits.is_some(), "Expected exhibit relationship");
-    let result: Vec<&str> = exhibits.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = exhibits.unwrap().iter().copied().collect();
     assert_eq!(result, vec!["Moving"]);
 }
 
@@ -527,7 +526,7 @@ fn test_include_use_case_relationship() {
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
     assert!(includes.is_some(), "Expected include relationship");
-    let result: Vec<&str> = includes.unwrap().iter().map(|s| s.as_str()).collect();
+    let result: Vec<&str> = includes.unwrap().iter().copied().collect();
     assert_eq!(result, vec!["Login"]);
 }
 
@@ -554,8 +553,8 @@ fn test_multiple_satisfy_relationships() {
     let satisfies = satisfies.unwrap();
     // Found satisfy relationships
     assert_eq!(satisfies.len(), 2);
-    assert!(satisfies.iter().any(|s| s.as_str() == "Req1"));
-    assert!(satisfies.iter().any(|s| s.as_str() == "Req2"));
+    assert!(satisfies.iter().any(|s| *s == "Req1"));
+    assert!(satisfies.iter().any(|s| *s == "Req2"));
 }
 
 #[test]
@@ -727,7 +726,7 @@ fn test_derived_keyword_with_subsetting() {
     let qualified_name = "Container::DerivedReq";
     let subsets = relationship_graph.get_one_to_many(REL_SUBSETTING, qualified_name);
     assert_eq!(subsets.as_ref().map(|v| v.len()), Some(1));
-    assert!(subsets.unwrap().contains(&&"ParentReq".to_string()));
+    assert!(subsets.unwrap().contains(&"ParentReq"));
 }
 
 #[test]
@@ -755,11 +754,11 @@ fn test_multiple_derived_requirements_in_body() {
     // Each derived requirement should have its subsetting relationship
     let subsets1 = relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq1");
     assert_eq!(subsets1.as_ref().map(|v| v.len()), Some(1));
-    assert!(subsets1.unwrap().contains(&&"Req1".to_string()));
+    assert!(subsets1.unwrap().contains(&"Req1"));
 
     let subsets2 = relationship_graph.get_one_to_many(REL_SUBSETTING, "Container::DerivedReq2");
     assert_eq!(subsets2.as_ref().map(|v| v.len()), Some(1));
-    assert!(subsets2.unwrap().contains(&&"Req2".to_string()));
+    assert!(subsets2.unwrap().contains(&"Req2"));
 }
 
 // =============================================================================
@@ -779,23 +778,21 @@ fn test_get_references_to_finds_typing_references() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
     populator.populate(&file).unwrap();
 
     // Get all references to Vehicle
+    // Note: Returns (file_path, span) pairs now
     let refs = relationship_graph.get_references_to("Vehicle");
 
     // Should find 2 references: car and truck (both typed by Vehicle)
     assert_eq!(refs.len(), 2, "Should find 2 references to Vehicle");
 
-    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
-    assert!(ref_names.contains(&"car"), "Should find 'car' reference");
-    assert!(
-        ref_names.contains(&"truck"),
-        "Should find 'truck' reference"
-    );
+    // All references should be from the same file
+    assert!(refs.iter().all(|(file, _)| *file == "test.sysml"));
 }
 
 #[test]
@@ -810,26 +807,21 @@ fn test_get_references_to_finds_specialization_references() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
     populator.populate(&file).unwrap();
 
     // Get all references to Vehicle via specialization
+    // Note: Returns (file_path, span) pairs now
     let refs = relationship_graph.get_references_to("Vehicle");
 
     // Should find 2 references: Car and Truck (both specialize Vehicle)
     assert_eq!(refs.len(), 2, "Should find 2 specialization references");
 
-    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
-    assert!(
-        ref_names.contains(&"Car"),
-        "Should find 'Car' specialization"
-    );
-    assert!(
-        ref_names.contains(&"Truck"),
-        "Should find 'Truck' specialization"
-    );
+    // All references should be from the same file
+    assert!(refs.iter().all(|(file, _)| *file == "test.sysml"));
 }
 
 #[test]
@@ -840,19 +832,21 @@ fn test_get_references_to_returns_spans() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
     populator.populate(&file).unwrap();
 
+    // Note: Returns (file_path, span) pairs now
     let refs = relationship_graph.get_references_to("Vehicle");
 
     // Should have a span for the reference
     assert_eq!(refs.len(), 1);
-    let (name, span) = &refs[0];
-    assert_eq!(name.as_str(), "car");
+    let (file_path, span) = &refs[0];
+    assert_eq!(*file_path, "test.sysml");
+    // Span should point to the typing reference location
     // Span might be None depending on how typing relationships store spans
-    // but we're testing the API works
     let _ = span; // Use the span to avoid warning
 }
 
@@ -867,6 +861,7 @@ fn test_get_references_to_empty_for_unreferenced_symbol() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
@@ -890,12 +885,14 @@ fn test_get_references_to_combined_relationship_types() {
     let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
     let mut relationship_graph = RelationshipGraph::new();
     let mut populator =
         SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
     populator.populate(&file).unwrap();
 
     // Get all references to Base
+    // Note: Returns (file_path, span) pairs now
     let refs = relationship_graph.get_references_to("Base");
 
     // Should find: Derived (specializes), instance (typed by)
@@ -905,13 +902,6 @@ fn test_get_references_to_combined_relationship_types() {
         "Should find refs from both specialization and typing"
     );
 
-    let ref_names: Vec<&str> = refs.iter().map(|(name, _)| name.as_str()).collect();
-    assert!(
-        ref_names.contains(&"Derived"),
-        "Should find specialization reference"
-    );
-    assert!(
-        ref_names.contains(&"instance"),
-        "Should find typing reference"
-    );
+    // All references should be from the same file
+    assert!(refs.iter().all(|(file, _)| *file == "test.sysml"));
 }

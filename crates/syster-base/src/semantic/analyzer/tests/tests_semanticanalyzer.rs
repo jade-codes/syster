@@ -77,12 +77,7 @@ fn test_relationship_graph_with_specialization_relationships() {
         .unwrap();
 
     // Add relationship: Car specializes Vehicle
-    graph.add_one_to_many(
-        "specialization",
-        "Car".to_string(),
-        "Vehicle".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Car", "Vehicle", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let retrieved_graph = analyzer.relationship_graph();
@@ -136,12 +131,7 @@ fn test_relationship_graph_with_typing_relationships() {
         .unwrap();
 
     // Add typing relationship
-    graph.add_one_to_one(
-        "typing",
-        "myVehicle".to_string(),
-        "VehicleDef".to_string(),
-        None,
-    );
+    graph.add_one_to_one("typing", "myVehicle", "VehicleDef", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let retrieved_graph = analyzer.relationship_graph();
@@ -208,24 +198,9 @@ fn test_relationship_graph_with_multiple_relationship_types() {
         .unwrap();
 
     // Add multiple relationship types
-    graph.add_one_to_many(
-        "specialization",
-        "Derived".to_string(),
-        "Base".to_string(),
-        None,
-    );
-    graph.add_one_to_one(
-        "typing",
-        "instance".to_string(),
-        "Derived".to_string(),
-        None,
-    );
-    graph.add_one_to_many(
-        "subsetting",
-        "instance".to_string(),
-        "Derived".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Derived", "Base", None, None);
+    graph.add_one_to_one("typing", "instance", "Derived", None, None);
+    graph.add_one_to_many("subsetting", "instance", "Derived", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let retrieved_graph = analyzer.relationship_graph();
@@ -267,7 +242,7 @@ fn test_relationship_graph_immutability() {
         )
         .unwrap();
 
-    graph.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
+    graph.add_one_to_many("specialization", "A", "B", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
 
@@ -290,7 +265,7 @@ fn test_relationship_graph_immutability() {
 #[test]
 fn test_relationship_graph_with_no_relationships_for_source() {
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
+    graph.add_one_to_many("specialization", "A", "B", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(SymbolTable::new(), graph);
     let retrieved_graph = analyzer.relationship_graph();
@@ -316,12 +291,7 @@ fn test_relationship_graph_mut_returns_mutable_reference() {
 
     // Get mutable reference and add a relationship
     let graph_mut = analyzer.relationship_graph_mut();
-    graph_mut.add_one_to_many(
-        "specialization",
-        "Child".to_string(),
-        "Parent".to_string(),
-        None,
-    );
+    graph_mut.add_one_to_many("specialization", "Child", "Parent", None, None);
 
     // Verify the change persisted
     let graph = analyzer.relationship_graph();
@@ -370,12 +340,7 @@ fn test_relationship_graph_mut_can_add_specialization() {
         .unwrap();
 
     // Add specialization through mutable reference
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "Child".to_string(),
-        "Parent".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "Child", "Parent", None, None);
 
     // Verify through immutable reference
     let specializations = analyzer
@@ -428,12 +393,7 @@ fn test_relationship_graph_mut_can_add_typing() {
         .unwrap();
 
     // Add typing through mutable reference
-    analyzer.relationship_graph_mut().add_one_to_one(
-        "typing",
-        "instance".to_string(),
-        "TypeDef".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_one("typing", "instance", "TypeDef", None, None);
 
     // Verify through immutable reference
     let typing = analyzer
@@ -449,9 +409,9 @@ fn test_relationship_graph_mut_can_add_multiple_relationships() {
 
     // Add relationships one by one
     let graph_mut = analyzer.relationship_graph_mut();
-    graph_mut.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
-    graph_mut.add_one_to_many("specialization", "C".to_string(), "D".to_string(), None);
-    graph_mut.add_one_to_one("typing", "X".to_string(), "Y".to_string(), None);
+    graph_mut.add_one_to_many("specialization", "A", "B", None, None);
+    graph_mut.add_one_to_many("specialization", "C", "D", None, None);
+    graph_mut.add_one_to_one("typing", "X", "Y", None, None);
 
     // Verify all were added
     let graph = analyzer.relationship_graph();
@@ -466,12 +426,7 @@ fn test_relationship_graph_mut_can_modify_existing_graph() {
     let mut graph = RelationshipGraph::new();
 
     // Start with one relationship
-    graph.add_one_to_many(
-        "specialization",
-        "Initial".to_string(),
-        "Base".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Initial", "Base", None, None);
 
     let mut analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
 
@@ -484,12 +439,7 @@ fn test_relationship_graph_mut_can_modify_existing_graph() {
     );
 
     // Add more relationships
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "Added".to_string(),
-        "Base".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "Added", "Base", None, None);
 
     // Verify modification - both relationships should exist
     assert!(
@@ -511,12 +461,7 @@ fn test_relationship_graph_mut_can_add_subsetting() {
     let mut analyzer = SemanticAnalyzer::new();
 
     // Add subsetting relationship
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "subsetting",
-        "Refined".to_string(),
-        "Original".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("subsetting", "Refined", "Original", None, None);
 
     // Verify
     let subsettings = analyzer
@@ -533,12 +478,7 @@ fn test_relationship_graph_mut_can_add_redefinition() {
     let mut analyzer = SemanticAnalyzer::new();
 
     // Add redefinition relationship
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "redefinition",
-        "Override".to_string(),
-        "Original".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("redefinition", "Override", "Original", None, None);
 
     // Verify
     let redefinitions = analyzer
@@ -557,7 +497,7 @@ fn test_relationship_graph_mut_changes_persist() {
     // Make a change
     {
         let graph_mut = analyzer.relationship_graph_mut();
-        graph_mut.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
+        graph_mut.add_one_to_many("specialization", "A", "B", None, None);
     } // Mutable reference dropped
 
     // Verify change persists after mutable reference is dropped
@@ -567,7 +507,7 @@ fn test_relationship_graph_mut_changes_persist() {
     // Make another change
     {
         let graph_mut = analyzer.relationship_graph_mut();
-        graph_mut.add_one_to_many("specialization", "C".to_string(), "D".to_string(), None);
+        graph_mut.add_one_to_many("specialization", "C", "D", None, None);
     }
 
     // Verify both changes persist
@@ -589,12 +529,7 @@ fn test_relationship_graph_mut_with_empty_initial_graph() {
     );
 
     // Add relationship
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "A".to_string(),
-        "B".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "A", "B", None, None);
 
     // Verify it was added to initially empty graph
     assert!(
@@ -610,26 +545,11 @@ fn test_relationship_graph_mut_multiple_consecutive_mutations() {
     let mut analyzer = SemanticAnalyzer::new();
 
     // Perform multiple mutations in sequence
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "A".to_string(),
-        "B".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "A", "B", None, None);
 
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "B".to_string(),
-        "C".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "B", "C", None, None);
 
-    analyzer.relationship_graph_mut().add_one_to_one(
-        "typing",
-        "X".to_string(),
-        "Y".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_one("typing", "X", "Y", None, None);
 
     // Verify all mutations applied
     let graph = analyzer.relationship_graph();
@@ -643,19 +563,9 @@ fn test_relationship_graph_mut_can_add_multiple_targets_to_same_source() {
     let mut analyzer = SemanticAnalyzer::new();
 
     // Add multiple specialization targets for the same source
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "Child".to_string(),
-        "Parent1".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "Child", "Parent1", None, None);
 
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "Child".to_string(),
-        "Parent2".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "Child", "Parent2", None, None);
 
     // Verify both targets exist
     let specializations = analyzer
@@ -664,8 +574,8 @@ fn test_relationship_graph_mut_can_add_multiple_targets_to_same_source() {
     assert!(specializations.is_some());
     let targets = specializations.unwrap();
     assert_eq!(targets.len(), 2);
-    assert!(targets.contains(&&"Parent1".to_string()));
-    assert!(targets.contains(&&"Parent2".to_string()));
+    assert!(targets.contains(&"Parent1"));
+    assert!(targets.contains(&"Parent2"));
 }
 
 // Edge case tests
@@ -709,12 +619,7 @@ fn test_relationship_graph_with_qualified_names() {
         .unwrap();
 
     // Add relationship with qualified names
-    graph.add_one_to_many(
-        "specialization",
-        "Pkg::Derived".to_string(),
-        "Pkg::Base".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Pkg::Derived", "Pkg::Base", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let retrieved_graph = analyzer.relationship_graph();
@@ -732,12 +637,12 @@ fn test_relationship_graph_mut_with_different_relationship_kinds() {
     let graph_mut = analyzer.relationship_graph_mut();
 
     // Add various SysML/KerML relationship kinds
-    graph_mut.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
-    graph_mut.add_one_to_many("subsetting", "C".to_string(), "D".to_string(), None);
-    graph_mut.add_one_to_many("redefinition", "E".to_string(), "F".to_string(), None);
-    graph_mut.add_one_to_one("typing", "G".to_string(), "H".to_string(), None);
-    graph_mut.add_one_to_many("satisfy", "I".to_string(), "J".to_string(), None);
-    graph_mut.add_one_to_many("perform", "K".to_string(), "L".to_string(), None);
+    graph_mut.add_one_to_many("specialization", "A", "B", None, None);
+    graph_mut.add_one_to_many("subsetting", "C", "D", None, None);
+    graph_mut.add_one_to_many("redefinition", "E", "F", None, None);
+    graph_mut.add_one_to_one("typing", "G", "H", None, None);
+    graph_mut.add_one_to_many("satisfy", "I", "J", None, None);
+    graph_mut.add_one_to_many("perform", "K", "L", None, None);
 
     // Verify all different kinds were added
     let graph = analyzer.relationship_graph();
@@ -757,12 +662,7 @@ fn test_relationship_graph_after_analyzer_with_validator() {
     let mut graph = RelationshipGraph::new();
 
     // Add a relationship
-    graph.add_one_to_many(
-        "specialization",
-        "Child".to_string(),
-        "Parent".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Child", "Parent", None, None);
 
     let validator = create_validator("sysml");
     let analyzer = SemanticAnalyzer::with_validator(table, graph, validator);
@@ -778,8 +678,8 @@ fn test_relationship_graph_query_different_relationship_types() {
     let mut graph = RelationshipGraph::new();
 
     // Add different types of relationships
-    graph.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
-    graph.add_one_to_one("typing", "X".to_string(), "Y".to_string(), None);
+    graph.add_one_to_many("specialization", "A", "B", None, None);
+    graph.add_one_to_one("typing", "X", "Y", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(SymbolTable::new(), graph);
     let retrieved_graph = analyzer.relationship_graph();
@@ -806,12 +706,7 @@ fn test_relationship_graph_mut_modify_then_query() {
     let mut analyzer = SemanticAnalyzer::new();
 
     // Add a relationship
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "Child".to_string(),
-        "Parent".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "Child", "Parent", None, None);
 
     // Query immediately after modification
     let result = analyzer
@@ -821,12 +716,7 @@ fn test_relationship_graph_mut_modify_then_query() {
     assert_eq!(result.unwrap()[0], "Parent");
 
     // Add another relationship
-    analyzer.relationship_graph_mut().add_one_to_many(
-        "specialization",
-        "GrandChild".to_string(),
-        "Child".to_string(),
-        None,
-    );
+    analyzer.relationship_graph_mut().add_one_to_many("specialization", "GrandChild", "Child", None, None);
 
     // Query again
     let result2 = analyzer

@@ -231,27 +231,25 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
-    fn document_link(
-        &mut self,
-        params: DocumentLinkParams,
-    ) -> BoxFuture<'static, Result<Option<Vec<DocumentLink>>, Self::Error>> {
-        let uri = params.text_document.uri;
-        let links = self.server.get_document_links(&uri);
-        let result = if links.is_empty() { None } else { Some(links) };
-        Box::pin(async move { Ok(result) })
-    }
-
     fn code_lens(
         &mut self,
         params: CodeLensParams,
     ) -> BoxFuture<'static, Result<Option<Vec<CodeLens>>, Self::Error>> {
-        let uri = params.text_document.uri;
-        let lenses = self.server.get_code_lenses(&uri);
+        let lenses = self.server.get_code_lenses(&params.text_document.uri);
         let result = if lenses.is_empty() {
             None
         } else {
             Some(lenses)
         };
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn document_link(
+        &mut self,
+        params: DocumentLinkParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<DocumentLink>>, Self::Error>> {
+        let links = self.server.get_document_links(&params.text_document.uri);
+        let result = if links.is_empty() { None } else { Some(links) };
         Box::pin(async move { Ok(result) })
     }
 

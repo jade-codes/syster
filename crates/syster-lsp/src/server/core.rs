@@ -127,7 +127,11 @@ impl LspServer {
 
     /// Create a new LspServer with custom configuration
     pub fn with_config(stdlib_enabled: bool, custom_stdlib_path: Option<PathBuf>) -> Self {
-        let workspace = Workspace::<SyntaxFile>::new();
+        let mut workspace = Workspace::<SyntaxFile>::new();
+
+        // Enable auto-invalidation so that file updates trigger re-population
+        // This clears old symbols/relationships when a file is edited
+        workspace.enable_auto_invalidation();
 
         // Use custom path or let StdLibLoader discover it automatically
         let stdlib_loader = match custom_stdlib_path {

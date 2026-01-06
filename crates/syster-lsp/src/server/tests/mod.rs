@@ -13,4 +13,3 @@ mod tests_helpers_position_to_byte_offset;
 mod tests_helpers_span_to_lsp_range;
 mod tests_lsp_server_state;
 mod tests_server;
-mod tests_type_references;

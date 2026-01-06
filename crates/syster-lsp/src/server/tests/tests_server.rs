@@ -907,10 +907,10 @@ package Outer {
 
     // Debug: check relationship graph
     for (name, _) in server.workspace.symbol_table().all_symbols() {
-        if let Some((_target, _span)) = server
+        if let Some((_target, _loc)) = server
             .workspace
             .relationship_graph()
-            .get_one_to_one_with_span("typing", name)
+            .get_one_to_one_with_location("typing", name)
         {}
     }
 

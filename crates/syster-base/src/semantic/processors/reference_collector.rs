@@ -43,24 +43,23 @@ impl<'a> ReferenceCollector<'a> {
             .into_iter()
             .flat_map(|(_, symbol)| {
                 let qname = symbol.qualified_name().to_string();
-                let file = symbol.source_file()?.to_string();
+                let fallback_file = symbol.source_file()?.to_string();
+                let fallback_span = symbol.span();
 
                 // Get all relationship targets with their spans
                 let mut refs = Vec::new();
 
                 // Typing relationship - use the span of the type reference
-                if let Some((target, span)) = self
+                if let Some((target, loc)) = self
                     .relationship_graph
-                    .get_one_to_one_with_span(REL_TYPING, &qname)
+                    .get_one_to_one_with_location(REL_TYPING, &qname)
                 {
-                    let reference_span = span.copied().or(symbol.span())?;
-                    refs.push((
-                        target.clone(),
-                        SymbolReference {
-                            file: file.clone(),
-                            span: reference_span,
-                        },
-                    ));
+                    // Use location from graph if available, otherwise fall back
+                    let (file, span) = match loc {
+                        Some(l) => (l.file.to_string(), l.span),
+                        None => (fallback_file.clone(), fallback_span?),
+                    };
+                    refs.push((target.to_string(), SymbolReference { file, span }));
                 }
 
                 // One-to-many relationships
@@ -72,17 +71,15 @@ impl<'a> ReferenceCollector<'a> {
                 ] {
                     if let Some(targets) = self
                         .relationship_graph
-                        .get_one_to_many_with_spans(rel_type, &qname)
+                        .get_one_to_many_with_locations(rel_type, &qname)
                     {
-                        for (target, span) in targets {
-                            let reference_span = span.copied().or(symbol.span())?;
-                            refs.push((
-                                target.clone(),
-                                SymbolReference {
-                                    file: file.clone(),
-                                    span: reference_span,
-                                },
-                            ));
+                        for (target, loc) in targets {
+                            // Use location from graph if available, otherwise fall back
+                            let (file, span) = match loc {
+                                Some(l) => (l.file.to_string(), l.span),
+                                None => (fallback_file.clone(), fallback_span?),
+                            };
+                            refs.push((target.to_string(), SymbolReference { file, span }));
                         }
                     }
                 }
@@ -113,9 +110,9 @@ impl<'a> ReferenceCollector<'a> {
         }
     }
 
-    /// Collect references from import statements
+    /// Collect references from import statements and populate the reverse index
     fn collect_import_references(
-        &self,
+        &mut self,
         references_by_target: &mut HashMap<String, Vec<SymbolReference>>,
     ) {
         // Iterate through all scopes and their imports
@@ -137,12 +134,20 @@ impl<'a> ReferenceCollector<'a> {
 
                 if let Some(target_qname) = resolved {
                     // Create a reference for the import statement itself
-                    if let (Some(span), Some(file)) = (import.span, import.file) {
-                        let reference = SymbolReference { file, span };
+                    if let (Some(span), Some(file)) = (import.span, import.file.clone()) {
+                        // Add to the references HashMap for legacy symbol references
+                        let reference = SymbolReference {
+                            file: file.clone(),
+                            span,
+                        };
                         references_by_target
-                            .entry(target_qname)
+                            .entry(target_qname.clone())
                             .or_default()
                             .push(reference);
+
+                        // Also populate the reverse index for O(1) lookup
+                        self.symbol_table
+                            .add_import_reference(target_qname, file, span);
                     }
                 }
             }
