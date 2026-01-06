@@ -1062,3 +1062,175 @@ fn test_is_wildcard_import() {
     assert!(!is_wildcard_import("Base::Vehicle"));
     assert!(!is_wildcard_import("SysML::Items"));
 }
+
+// ============================================================================
+// resolve_in_scope tests
+// ============================================================================
+
+#[test]
+fn test_resolve_in_scope_qualified_name() {
+    // resolve_in_scope should find symbols by qualified name regardless of scope
+    let mut table = SymbolTable::new();
+
+    table
+        .insert(
+            "Base".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+                name: "Base".to_string(),
+                qualified_name: "Base".to_string(),
+            },
+        )
+        .unwrap();
+
+    table.enter_scope();
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Package {
+                scope_id: 1,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+                name: "Vehicle".to_string(),
+                qualified_name: "Base::Vehicle".to_string(),
+            },
+        )
+        .unwrap();
+    table.exit_scope();
+
+    // Create a different scope (scope 2)
+    table.enter_scope();
+    let scope_id = table.current_scope_id();
+
+    // Should find by qualified name from any scope
+    let result = table.resolve_in_scope("Base::Vehicle", scope_id);
+    assert!(result.is_some());
+    assert_eq!(result.unwrap().qualified_name(), "Base::Vehicle");
+}
+
+#[test]
+fn test_resolve_in_scope_with_import() {
+    // resolve_in_scope should use imports from the specified scope
+    let mut table = SymbolTable::new();
+
+    // Create Base::Vehicle in scope 1
+    table
+        .insert(
+            "Base".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+                name: "Base".to_string(),
+                qualified_name: "Base".to_string(),
+            },
+        )
+        .unwrap();
+
+    table.enter_scope();
+    table
+        .insert(
+            "Vehicle".to_string(),
+            Symbol::Package {
+                scope_id: 1,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+                name: "Vehicle".to_string(),
+                qualified_name: "Base::Vehicle".to_string(),
+            },
+        )
+        .unwrap();
+    table.exit_scope();
+
+    // Create a new scope with an import
+    table.enter_scope();
+    let scope_with_import = table.current_scope_id();
+    table.add_import("Base::*".to_string(), false, None, None);
+    table.exit_scope();
+
+    // Create another scope WITHOUT the import
+    table.enter_scope();
+    let scope_without_import = table.current_scope_id();
+
+    // From scope with import, should resolve "Vehicle" via import
+    let result = table.resolve_in_scope("Vehicle", scope_with_import);
+    assert!(result.is_some(), "Should find Vehicle via import");
+    assert_eq!(result.unwrap().qualified_name(), "Base::Vehicle");
+
+    // From scope without import, should NOT find "Vehicle"
+    let result = table.resolve_in_scope("Vehicle", scope_without_import);
+    assert!(result.is_none(), "Should not find Vehicle without import");
+}
+
+#[test]
+fn test_resolve_in_scope_direct_symbol() {
+    // resolve_in_scope should find symbols defined in the scope hierarchy
+    let mut table = SymbolTable::new();
+
+    table
+        .insert(
+            "GlobalPackage".to_string(),
+            Symbol::Package {
+                scope_id: 0,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+                name: "GlobalPackage".to_string(),
+                qualified_name: "GlobalPackage".to_string(),
+            },
+        )
+        .unwrap();
+
+    table.enter_scope();
+    let child_scope = table.current_scope_id();
+    // Insert with key "LocalDef" but qualified name includes parent
+    table
+        .insert(
+            "LocalDef".to_string(),
+            Symbol::Package {
+                scope_id: child_scope,
+                source_file: None,
+                span: None,
+                references: Vec::new(),
+                name: "LocalDef".to_string(),
+                qualified_name: "GlobalPackage::LocalDef".to_string(),
+            },
+        )
+        .unwrap();
+
+    // From child scope, should find local symbol by simple name
+    let result = table.resolve_in_scope("LocalDef", child_scope);
+    assert!(result.is_some(), "Should find LocalDef from child scope");
+
+    // From child scope, should find parent symbol
+    let result = table.resolve_in_scope("GlobalPackage", child_scope);
+    assert!(
+        result.is_some(),
+        "Should find GlobalPackage from child scope"
+    );
+
+    // From root scope (0), should find global
+    let result = table.resolve_in_scope("GlobalPackage", 0);
+    assert!(result.is_some());
+
+    // From root scope (0), should NOT find LocalDef by simple name
+    // (it's not in scope 0's symbols, not imported, and lookup walks UP not DOWN)
+    let result = table.resolve_in_scope("LocalDef", 0);
+    assert!(
+        result.is_none(),
+        "Should not find LocalDef by simple name from root"
+    );
+
+    // But SHOULD find it by qualified name from anywhere
+    let result = table.resolve_in_scope("GlobalPackage::LocalDef", 0);
+    assert!(
+        result.is_some(),
+        "Should find by qualified name from any scope"
+    );
+}

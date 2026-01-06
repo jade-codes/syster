@@ -3,7 +3,11 @@ use super::table::SymbolTable;
 
 impl SymbolTable {
     pub fn lookup(&self, name: &str) -> Option<&Symbol> {
-        let mut current = self.current_scope;
+        self.lookup_in(name, self.current_scope)
+    }
+
+    fn lookup_in(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
+        let mut current = scope_id;
         loop {
             if let Some(symbol) = self.scopes[current].symbols.get(name) {
                 return self.resolve_alias(symbol);
@@ -111,6 +115,15 @@ impl SymbolTable {
         }
     }
 
+    /// Resolve a name using imports from a specific scope
+    ///
+    /// This is useful when you need to resolve a name in the context of
+    /// a specific file's imports without modifying current_scope.
+    pub fn resolve_in_scope(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
+        self.lookup_qualified(name)
+            .or_else(|| self.lookup_in(name, scope_id))
+    }
+
     pub fn lookup_qualified(&self, qualified_name: &str) -> Option<&Symbol> {
         self.scopes.iter().find_map(|scope| {
             scope
@@ -137,6 +150,10 @@ impl SymbolTable {
     }
 
     pub fn remove_symbols_from_file(&mut self, file_path: &str) -> usize {
+        // Clear the file -> symbols index for this file
+        self.symbols_by_file.remove(file_path);
+
+        // Remove symbols from all scopes
         self.scopes
             .iter_mut()
             .map(|scope| {
@@ -147,5 +164,18 @@ impl SymbolTable {
                 before - scope.symbols.len()
             })
             .sum()
+    }
+
+    /// Remove all imports that originated from a specific file
+    pub fn remove_imports_from_file(&mut self, file_path: &str) {
+        // Clear the file -> imports index
+        self.imports_by_file.remove(file_path);
+
+        // Remove imports from all scopes
+        for scope in &mut self.scopes {
+            scope
+                .imports
+                .retain(|import| import.file.as_deref() != Some(file_path));
+        }
     }
 }

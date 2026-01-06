@@ -123,35 +123,30 @@ fn test_symbol_enum_variants_documented() {
 /// Verify relationship graph methods documented in ARCHITECTURE.md exist
 #[test]
 fn test_relationship_graph_api_matches_docs() {
-    use syster::semantic::graphs::OneToManyGraph;
+    use syster::core::constants::REL_SPECIALIZATION;
+    use syster::semantic::graphs::RelationshipGraph;
 
-    let mut graph = OneToManyGraph::new();
+    let mut graph = RelationshipGraph::new();
 
     // These methods are documented - ensure they exist and work correctly
-    graph.add("Vehicle".to_string(), "Car".to_string(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Vehicle", "Car", None, None);
 
-    let targets = graph.get_targets("Vehicle");
+    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Vehicle");
     assert_eq!(targets.as_ref().map(|v| v.len()), Some(1));
-    assert!(targets.unwrap().contains(&&"Car".to_string()));
+    assert!(targets.unwrap().contains(&"Car"));
 
-    let sources = graph.get_sources("Car");
-    assert_eq!(
-        sources,
-        vec![&"Vehicle".to_string()],
-        "Car should have Vehicle as source"
-    );
+    let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Car");
+    assert_eq!(sources.len(), 1);
+    assert!(sources.contains(&"Vehicle"));
 
     assert!(
-        graph.has_path("Vehicle", "Car"),
+        graph.has_transitive_path(REL_SPECIALIZATION, "Vehicle", "Car"),
         "Should have path from Vehicle to Car"
     );
     assert!(
-        !graph.has_path("Car", "Vehicle"),
+        !graph.has_transitive_path(REL_SPECIALIZATION, "Car", "Vehicle"),
         "Should not have reverse path without adding it"
     );
-
-    let cycles = graph.find_cycles();
-    assert!(cycles.is_empty(), "No cycles should exist in simple graph");
 }
 
 /// Verify the three-phase pipeline terminology is accurate

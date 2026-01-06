@@ -92,7 +92,7 @@ fn test_populate_multiple_files() {
         .relationship_graph()
         .get_one_to_many(REL_SPECIALIZATION, "Car");
     assert_eq!(specializes.as_ref().map(|v| v.len()), Some(1));
-    assert!(specializes.unwrap().contains(&&"Vehicle".to_string()));
+    assert!(specializes.unwrap().contains(&"Vehicle"));
 }
 
 #[test]
@@ -1318,12 +1318,7 @@ fn test_relationship_graph_mut_basic() {
     let mut workspace = Workspace::<SyntaxFile>::new();
     let rel_graph = workspace.relationship_graph_mut();
 
-    rel_graph.add_one_to_many(
-        REL_SPECIALIZATION,
-        "Car".to_string(),
-        "Vehicle".to_string(),
-        None,
-    );
+    rel_graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     // Verify the relationship was added
     let specializes = workspace
@@ -1339,14 +1334,16 @@ fn test_relationship_graph_mut_allows_modifications() {
     // Add multiple relationships
     workspace.relationship_graph_mut().add_one_to_many(
         REL_SPECIALIZATION,
-        "Car".to_string(),
-        "Vehicle".to_string(),
+        "Car",
+        "Vehicle",
+        None,
         None,
     );
     workspace.relationship_graph_mut().add_one_to_many(
         REL_SPECIALIZATION,
-        "Truck".to_string(),
-        "Vehicle".to_string(),
+        "Truck",
+        "Vehicle",
+        None,
         None,
     );
 

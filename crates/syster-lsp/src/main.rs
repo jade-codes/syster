@@ -40,6 +40,29 @@ impl LanguageServer for ServerState {
 
         self.server = LspServer::with_config(stdlib_enabled, stdlib_path);
 
+        // Extract workspace folders from initialization params
+        let mut folders = Vec::new();
+
+        // Try workspace_folders first (multi-root workspaces)
+        if let Some(workspace_folders) = params.workspace_folders {
+            for folder in workspace_folders {
+                if let Ok(path) = folder.uri.to_file_path() {
+                    folders.push(path);
+                }
+            }
+        }
+
+        // Fall back to root_uri (single folder workspace, deprecated but still used)
+        #[allow(deprecated)]
+        if folders.is_empty()
+            && let Some(root_uri) = params.root_uri
+            && let Ok(path) = root_uri.to_file_path()
+        {
+            folders.push(path);
+        }
+
+        self.server.set_workspace_folders(folders);
+
         let result = LspServer::initialize_result();
         Box::pin(async move { Ok(result) })
     }
@@ -208,27 +231,25 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
-    fn document_link(
-        &mut self,
-        params: DocumentLinkParams,
-    ) -> BoxFuture<'static, Result<Option<Vec<DocumentLink>>, Self::Error>> {
-        let uri = params.text_document.uri;
-        let links = self.server.get_document_links(&uri);
-        let result = if links.is_empty() { None } else { Some(links) };
-        Box::pin(async move { Ok(result) })
-    }
-
     fn code_lens(
         &mut self,
         params: CodeLensParams,
     ) -> BoxFuture<'static, Result<Option<Vec<CodeLens>>, Self::Error>> {
-        let uri = params.text_document.uri;
-        let lenses = self.server.get_code_lenses(&uri);
+        let lenses = self.server.get_code_lenses(&params.text_document.uri);
         let result = if lenses.is_empty() {
             None
         } else {
             Some(lenses)
         };
+        Box::pin(async move { Ok(result) })
+    }
+
+    fn document_link(
+        &mut self,
+        params: DocumentLinkParams,
+    ) -> BoxFuture<'static, Result<Option<Vec<DocumentLink>>, Self::Error>> {
+        let links = self.server.get_document_links(&params.text_document.uri);
+        let result = if links.is_empty() { None } else { Some(links) };
         Box::pin(async move { Ok(result) })
     }
 

@@ -51,6 +51,11 @@ pub enum UsageKind {
     Case,
     View,
     Enumeration,
+    // Occurrence-based usage types
+    Occurrence,
+    Individual,
+    Snapshot,
+    Timeslice,
     // Domain-specific usage types
     SatisfyRequirement,
     PerformAction,

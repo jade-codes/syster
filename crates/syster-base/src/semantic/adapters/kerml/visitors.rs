@@ -141,8 +141,9 @@ impl<'a> KermlAdapter<'a> {
                     if !source_qname.is_empty() {
                         graph.add_one_to_many(
                             REL_SPECIALIZATION,
-                            source_qname,
-                            spec.general.clone(),
+                            &source_qname,
+                            &spec.general,
+                            self.symbol_table.current_file(),
                             spec.span,
                         );
                     }
@@ -192,28 +193,32 @@ impl<'a> KermlAdapter<'a> {
 
     pub(super) fn visit_feature_member(&mut self, feature_name: &str, member: &FeatureMember) {
         if let Some(graph) = &mut self.relationship_graph {
+            let file = self.symbol_table.current_file();
             match member {
                 FeatureMember::Typing(typing) => {
                     graph.add_one_to_one(
                         REL_TYPING,
-                        feature_name.to_string(),
-                        typing.typed.clone(),
+                        feature_name,
+                        &typing.typed,
+                        file,
                         typing.span,
                     );
                 }
                 FeatureMember::Redefinition(redef) => {
                     graph.add_one_to_one(
                         REL_REDEFINITION,
-                        feature_name.to_string(),
-                        redef.redefined.clone(),
+                        feature_name,
+                        &redef.redefined,
+                        file,
                         redef.span,
                     );
                 }
                 FeatureMember::Subsetting(subset) => {
                     graph.add_one_to_one(
                         REL_SUBSETTING,
-                        feature_name.to_string(),
-                        subset.subset.clone(),
+                        feature_name,
+                        &subset.subset,
+                        file,
                         subset.span,
                     );
                 }
