@@ -1510,8 +1510,16 @@ fn test_symbol_table_mut_allows_modifications() {
         .unwrap();
 
     // Verify both exist
-    assert!(Resolver::new(workspace.symbol_table()).resolve("Symbol1").is_some());
-    assert!(Resolver::new(workspace.symbol_table()).resolve("Symbol2").is_some());
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Symbol1")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(workspace.symbol_table())
+            .resolve("Symbol2")
+            .is_some()
+    );
 }
 
 #[test]

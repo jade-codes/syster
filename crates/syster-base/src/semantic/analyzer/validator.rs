@@ -1,8 +1,8 @@
 use super::AnalysisContext;
+use crate::semantic::SemanticAnalyzer;
 use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::Symbol;
 use crate::semantic::types::SemanticError;
-use crate::semantic::SemanticAnalyzer;
 
 impl SemanticAnalyzer {
     pub(super) fn validate_types(&self, context: &mut AnalysisContext) {

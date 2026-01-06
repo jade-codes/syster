@@ -1,5 +1,4 @@
 #![allow(clippy::unwrap_used)]
-
 #![allow(clippy::panic)]
 use syster::semantic::{
     Resolver, SymbolTable, extract_imports, is_wildcard_import, parse_import_path,

@@ -95,7 +95,11 @@ fn test_kerml_visitor_handles_nested_elements() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(Resolver::new(&symbol_table).resolve("OuterPackage").is_some());
+    assert!(
+        Resolver::new(&symbol_table)
+            .resolve("OuterPackage")
+            .is_some()
+    );
 
     // Nested elements must be looked up via all_symbols since they're in a nested scope
     let all_symbols = symbol_table.all_symbols();
@@ -233,8 +237,16 @@ fn test_kerml_visitor_handles_redefinition() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(Resolver::new(&symbol_table).resolve("baseFeature").is_some());
-    assert!(Resolver::new(&symbol_table).resolve("derivedFeature").is_some());
+    assert!(
+        Resolver::new(&symbol_table)
+            .resolve("baseFeature")
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&symbol_table)
+            .resolve("derivedFeature")
+            .is_some()
+    );
 
     // Verify the relationship graph has the redefinition
     let relationships = graph.get_all_relationships("derivedFeature");
@@ -295,7 +307,11 @@ fn test_kerml_visitor_handles_empty_package() {
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    assert!(Resolver::new(&symbol_table).resolve("EmptyPackage").is_some());
+    assert!(
+        Resolver::new(&symbol_table)
+            .resolve("EmptyPackage")
+            .is_some()
+    );
 }
 
 #[test]
