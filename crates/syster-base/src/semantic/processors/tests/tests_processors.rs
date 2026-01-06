@@ -93,7 +93,7 @@ fn test_typing_relationship_reference() {
 
     // Create relationship graph with typing relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "myCar".to_string(), "Vehicle".to_string(), None);
+    graph.add_one_to_one(REL_TYPING, "myCar", "Vehicle", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -158,12 +158,7 @@ fn test_specialization_relationship_reference() {
 
     // Create specialization relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(
-        REL_SPECIALIZATION,
-        "Car".to_string(),
-        "Vehicle".to_string(),
-        None,
-    );
+    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -268,9 +263,9 @@ fn test_multiple_references_to_same_symbol() {
 
     // Create typing relationships
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "speed".to_string(), "Integer".to_string(), None);
-    graph.add_one_to_one(REL_TYPING, "count".to_string(), "Integer".to_string(), None);
-    graph.add_one_to_one(REL_TYPING, "index".to_string(), "Integer".to_string(), None);
+    graph.add_one_to_one(REL_TYPING, "speed", "Integer", None, None);
+    graph.add_one_to_one(REL_TYPING, "count", "Integer", None, None);
+    graph.add_one_to_one(REL_TYPING, "index", "Integer", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -340,12 +335,7 @@ fn test_redefinition_reference() {
 
     // Create redefinition relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(
-        REL_REDEFINITION,
-        "Car::mass".to_string(),
-        "Vehicle::mass".to_string(),
-        None,
-    );
+    graph.add_one_to_many(REL_REDEFINITION, "Car::mass", "Vehicle::mass", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -407,12 +397,7 @@ fn test_subsetting_reference() {
 
     // Create subsetting relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(
-        REL_SUBSETTING,
-        "engineParts".to_string(),
-        "parts".to_string(),
-        None,
-    );
+    graph.add_one_to_many(REL_SUBSETTING, "engineParts", "parts", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -478,12 +463,7 @@ fn test_reference_subsetting() {
 
     // Create reference subsetting relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(
-        REL_REFERENCE_SUBSETTING,
-        "car".to_string(),
-        "vehicle".to_string(),
-        None,
-    );
+    graph.add_one_to_many(REL_REFERENCE_SUBSETTING, "car", "vehicle", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -581,7 +561,7 @@ fn test_symbol_without_span() {
 
     // Create relationship
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "Source".to_string(), "Target".to_string(), None);
+    graph.add_one_to_one(REL_TYPING, "Source", "Target", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -668,13 +648,8 @@ fn test_mixed_relationships() {
 
     // Create multiple relationship types
     let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(
-        REL_SPECIALIZATION,
-        "Derived".to_string(),
-        "Base".to_string(),
-        None,
-    );
-    graph.add_one_to_one(REL_TYPING, "instance".to_string(), "Base".to_string(), None);
+    graph.add_one_to_many(REL_SPECIALIZATION, "Derived", "Base", None, None);
+    graph.add_one_to_one(REL_TYPING, "instance", "Base", None, None);
 
     // Collect references
     let mut collector = ReferenceCollector::new(&mut table, &graph);
@@ -1517,14 +1492,14 @@ part myCar : Vehicle;
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // The typing relationship should have a span for "Vehicle"
-    let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, "myCar");
+    let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, "myCar");
     assert!(
         typing.is_some(),
         "Should have typing relationship for myCar"
     );
-    let (target, span) = typing.unwrap();
+    let (target, loc) = typing.unwrap();
     assert_eq!(target, "Vehicle");
-    assert!(span.is_some(), "Typing relationship should have a span");
+    assert!(loc.is_some(), "Typing relationship should have a location");
 }
 
 /// Test that specialization relationships (`:>`) generate semantic tokens
@@ -1550,7 +1525,7 @@ part def Car :> Vehicle;
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // The specialization relationship should have a span for "Vehicle"
-    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "Car");
+    let specs = relationship_graph.get_one_to_many_with_locations(REL_SPECIALIZATION, "Car");
     assert!(
         specs.is_some(),
         "Should have specialization relationship for Car"
@@ -1587,7 +1562,7 @@ part def Car :> Vehicle, Motorized;
     symbol_table.set_current_file(Some("test.sysml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
-    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "Car");
+    let specs = relationship_graph.get_one_to_many_with_locations(REL_SPECIALIZATION, "Car");
     assert!(specs.is_some(), "Should have specialization relationships");
     let specs = specs.unwrap();
     assert_eq!(specs.len(), 2, "Should have 2 specializations");
@@ -1823,7 +1798,7 @@ classifier Derived specializes Base;
     symbol_table.set_current_file(Some("test.kerml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
-    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "Derived");
+    let specs = relationship_graph.get_one_to_many_with_locations(REL_SPECIALIZATION, "Derived");
     assert!(
         specs.is_some(),
         "Should have specialization relationship for Derived"
@@ -1864,7 +1839,7 @@ classifier MyClass {
     let qname = feature_qname.unwrap();
 
     // The relationship should use the qualified name
-    let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, &qname);
+    let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
     assert!(
         typing.is_some(),
         "Should have typing relationship for feature using qualified name: {}",
@@ -1906,14 +1881,14 @@ package Main {
         .map(|(_, s)| s.qualified_name().to_string());
 
     if let Some(qname) = mref_qname {
-        let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, &qname);
+        let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
         assert!(typing.is_some(), "Should have typing relationship for mRef");
         // The span should exist for the qualified type reference
-        let (target, span) = typing.unwrap();
+        let (target, loc) = typing.unwrap();
         assert!(target.contains("MyRef"), "Target should reference MyRef");
         assert!(
-            span.is_some(),
-            "Qualified type reference should have a span"
+            loc.is_some(),
+            "Qualified type reference should have a location"
         );
     }
 }
@@ -1941,8 +1916,8 @@ attribute def TensorQuantityValue :> Array;
     symbol_table.set_current_file(Some("test.sysml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
-    let specs =
-        relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, "TensorQuantityValue");
+    let specs = relationship_graph
+        .get_one_to_many_with_locations(REL_SPECIALIZATION, "TensorQuantityValue");
     assert!(
         specs.is_some(),
         "Should have specialization for TensorQuantityValue"
@@ -1987,7 +1962,7 @@ package Vehicles {
     assert!(car_qname.is_some(), "Should find Car symbol");
     let qname = car_qname.unwrap();
 
-    let specs = relationship_graph.get_one_to_many_with_spans(REL_SPECIALIZATION, &qname);
+    let specs = relationship_graph.get_one_to_many_with_locations(REL_SPECIALIZATION, &qname);
     assert!(specs.is_some(), "Should have specialization for {}", qname);
 }
 
@@ -2222,22 +2197,22 @@ package Quantities {
     let qname = mref_qname.unwrap();
 
     // Check that typing relationship was created with span
-    let typing = relationship_graph.get_one_to_one_with_span(REL_TYPING, &qname);
+    let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
     assert!(
         typing.is_some(),
         "Should have typing relationship for mRef (got: {:?})",
         typing
     );
 
-    let (target, span) = typing.unwrap();
+    let (target, loc) = typing.unwrap();
     assert!(
         target.contains("VectorMeasurementReference"),
         "Target should contain VectorMeasurementReference, got: {}",
         target
     );
     assert!(
-        span.is_some(),
-        "Typing relationship should have a span for qualified type reference"
+        loc.is_some(),
+        "Typing relationship should have a location for qualified type reference"
     );
 }
 
@@ -2296,23 +2271,25 @@ package Values {
         let qname = sym.qualified_name();
 
         // Check for typing
-        if let Some((target, span)) = relationship_graph.get_one_to_one_with_span(REL_TYPING, qname)
+        if let Some((target, loc)) =
+            relationship_graph.get_one_to_one_with_location(REL_TYPING, qname)
         {
             assert!(
-                span.is_some(),
-                "Typing for {} -> {} should have span",
+                loc.is_some(),
+                "Typing for {} -> {} should have location",
                 qname,
                 target
             );
         }
 
         // Check for redefinition (one-to-many)
-        if let Some(redefs) = relationship_graph.get_one_to_many_with_spans(REL_REDEFINITION, qname)
+        if let Some(redefs) =
+            relationship_graph.get_one_to_many_with_locations(REL_REDEFINITION, qname)
         {
-            for (target, span) in redefs {
+            for (target, loc) in redefs {
                 assert!(
-                    span.is_some(),
-                    "Redefinition {} -> {} should have span",
+                    loc.is_some(),
+                    "Redefinition {} -> {} should have location",
                     qname,
                     target
                 );

@@ -75,6 +75,10 @@ impl<'a> SysmlAdapter<'a> {
             UsageKind::Case => "Case".to_string(),
             UsageKind::View => "View".to_string(),
             UsageKind::Enumeration => "Enumeration".to_string(),
+            UsageKind::Occurrence => "Occurrence".to_string(),
+            UsageKind::Individual => "Individual".to_string(),
+            UsageKind::Snapshot => "Snapshot".to_string(),
+            UsageKind::Timeslice => "Timeslice".to_string(),
             UsageKind::SatisfyRequirement => "SatisfyRequirement".to_string(),
             UsageKind::PerformAction => "PerformAction".to_string(),
             UsageKind::ExhibitState => "ExhibitState".to_string(),
@@ -132,6 +136,11 @@ impl<'a> SysmlAdapter<'a> {
             UsageKind::PerformAction => SemanticRole::Action,
             UsageKind::ExhibitState => SemanticRole::State,
             UsageKind::IncludeUseCase => SemanticRole::UseCase,
+            // Occurrence-based usages
+            UsageKind::Occurrence => SemanticRole::Component,
+            UsageKind::Individual => SemanticRole::Component,
+            UsageKind::Snapshot => SemanticRole::Component,
+            UsageKind::Timeslice => SemanticRole::Component,
         }
     }
 }

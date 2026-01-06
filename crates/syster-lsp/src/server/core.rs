@@ -5,7 +5,7 @@ use syster::core::ParseError;
 use syster::core::constants::{
     COMPLETION_TRIGGERS, LSP_SERVER_NAME, LSP_SERVER_VERSION, OPT_STDLIB_ENABLED, OPT_STDLIB_PATH,
 };
-use syster::project::StdLibLoader;
+use syster::project::{StdLibLoader, WorkspaceLoader};
 use syster::semantic::{Workspace, resolver::Resolver};
 use syster::syntax::SyntaxFile;
 use tokio_util::sync::CancellationToken;
@@ -25,6 +25,8 @@ pub struct LspServer {
     document_cancel_tokens: HashMap<PathBuf, CancellationToken>,
     /// Whether workspace has been fully initialized
     workspace_initialized: bool,
+    /// Workspace folders to scan for SysML/KerML files
+    workspace_folders: Vec<PathBuf>,
 }
 
 impl Default for LspServer {
@@ -125,7 +127,11 @@ impl LspServer {
 
     /// Create a new LspServer with custom configuration
     pub fn with_config(stdlib_enabled: bool, custom_stdlib_path: Option<PathBuf>) -> Self {
-        let workspace = Workspace::<SyntaxFile>::new();
+        let mut workspace = Workspace::<SyntaxFile>::new();
+
+        // Enable auto-invalidation so that file updates trigger re-population
+        // This clears old symbols/relationships when a file is edited
+        workspace.enable_auto_invalidation();
 
         // Use custom path or let StdLibLoader discover it automatically
         let stdlib_loader = match custom_stdlib_path {
@@ -141,7 +147,13 @@ impl LspServer {
             stdlib_enabled,
             document_cancel_tokens: HashMap::new(),
             workspace_initialized: false,
+            workspace_folders: Vec::new(),
         }
+    }
+
+    /// Set the workspace folders to scan for SysML/KerML files
+    pub fn set_workspace_folders(&mut self, folders: Vec<PathBuf>) {
+        self.workspace_folders = folders;
     }
 
     /// Ensure workspace is fully initialized (stdlib loaded, symbols populated, texts synced).
@@ -156,8 +168,21 @@ impl LspServer {
             self.stdlib_loader.ensure_loaded(&mut self.workspace)?;
         }
 
+        // Load all SysML/KerML files from workspace folders
+        let loader = WorkspaceLoader::new();
+        for folder in self.workspace_folders.clone() {
+            if let Err(err) = loader.load_directory(&folder, &mut self.workspace) {
+                return Err(format!(
+                    "Failed to load workspace folder '{}': {err}",
+                    folder.display()
+                ));
+            }
+        }
+
         // Populate all symbols
-        let _ = self.workspace.populate_all();
+        if let Err(err) = self.workspace.populate_all() {
+            return Err(format!("Failed to populate workspace symbols: {err}"));
+        }
 
         // Sync document texts for hover/features on stdlib files
         self.sync_document_texts_from_workspace();

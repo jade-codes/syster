@@ -1,10 +1,9 @@
 #![allow(clippy::unwrap_used)]
 
-fn assert_targets_eq(result: Option<Vec<&String>>, expected: &[&str]) {
+fn assert_targets_eq(result: Option<Vec<&str>>, expected: &[&str]) {
     match result {
         Some(targets) => {
-            let target_strs: Vec<&str> = targets.iter().map(|s| s.as_str()).collect();
-            assert_eq!(target_strs, expected);
+            assert_eq!(targets, expected);
         }
         None => panic!("Expected Some({expected:?}), got None"),
     }

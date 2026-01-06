@@ -93,6 +93,17 @@ impl<'a> WorkspacePopulator<'a> {
                 .remove_relationships_for_source(qualified_name);
         }
 
+        // Also remove relationships stored by file path (the RefLocation entries)
+        self.relationship_graph
+            .remove_relationships_for_file(&file_path_str);
+
+        // Clear import references for this file
+        self.symbol_table
+            .clear_import_references_for_file(&file_path_str);
+
+        // Remove imports from the file
+        self.symbol_table.remove_imports_from_file(&file_path_str);
+
         // Remove symbols from the file
         self.symbol_table.remove_symbols_from_file(&file_path_str);
         self.symbol_table
@@ -100,9 +111,7 @@ impl<'a> WorkspacePopulator<'a> {
 
         // Delegate to adapter factory - workspace doesn't know about specific languages
         adapters::populate_syntax_file(&content, self.symbol_table, self.relationship_graph)
-            .map_err(|errors| format!("Failed to populate {file_path_str}: {errors:?}"))?;
-
-        Ok(())
+            .map_err(|errors| format!("Failed to populate {file_path_str}: {errors:?}"))
     }
 
     /// Collects references from relationship graph into symbols

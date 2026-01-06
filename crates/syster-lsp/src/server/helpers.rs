@@ -143,22 +143,26 @@ pub fn collect_reference_locations(
     workspace: &Workspace<SyntaxFile>,
     qualified_name: &str,
 ) -> Vec<Location> {
+    use tracing::debug;
+
     let mut locations = Vec::new();
 
     // Add relationship references (typing, specialization, etc.)
+    // Returns (file_path, span) pairs - file path is stored with each reference
     let refs = workspace
         .relationship_graph()
         .get_references_to(qualified_name);
 
-    for (source_qname, span) in refs {
-        let Some(reference_span) = span else {
-            continue; // Skip references without precise spans
-        };
+    debug!("[COLLECT_REFS] relationship refs count={}", refs.len());
+    for (file_path, reference_span) in &refs {
+        debug!(
+            "[COLLECT_REFS]   file={}, span={}:{}",
+            file_path, reference_span.start.line, reference_span.start.column
+        );
+    }
 
-        if let Some(source_symbol) = workspace.symbol_table().lookup_qualified(source_qname)
-            && let Some(file) = source_symbol.source_file()
-            && let Ok(uri) = Url::from_file_path(file)
-        {
+    for (file_path, reference_span) in refs {
+        if let Ok(uri) = Url::from_file_path(file_path) {
             locations.push(Location {
                 uri,
                 range: span_to_lsp_range(reference_span),
@@ -171,6 +175,14 @@ pub fn collect_reference_locations(
         .symbol_table()
         .get_import_references(qualified_name);
 
+    debug!("[COLLECT_REFS] import refs count={}", import_refs.len());
+    for (file, span) in &import_refs {
+        debug!(
+            "[COLLECT_REFS]   import file={}, span={}:{}",
+            file, span.start.line, span.start.column
+        );
+    }
+
     for (file, span) in import_refs {
         if let Ok(uri) = Url::from_file_path(file) {
             locations.push(Location {
@@ -180,6 +192,7 @@ pub fn collect_reference_locations(
         }
     }
 
+    debug!("[COLLECT_REFS] total locations={}", locations.len());
     locations
 }
 
@@ -188,6 +201,14 @@ pub fn format_rich_hover(
     symbol: &Symbol,
     workspace: &syster::semantic::Workspace<SyntaxFile>,
 ) -> String {
+    use tracing::debug;
+
+    debug!(
+        "[FORMAT_HOVER] symbol={}, qname={}",
+        symbol.name(),
+        symbol.qualified_name()
+    );
+
     let mut result = String::new();
 
     // Main declaration
@@ -201,19 +222,82 @@ pub fn format_rich_hover(
         symbol.qualified_name()
     ));
 
-    // Source file
+    // Source file with clickable link that jumps to definition
     if let Some(file) = symbol.source_file() {
-        result.push_str(&format!("\n**Defined in:** `{file}`\n"));
+        debug!("[FORMAT_HOVER] source_file={}", file);
+        if let Ok(uri) = Url::from_file_path(file) {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(file);
+
+            if let Some(span) = symbol.span() {
+                let line = span.start.line + 1; // 0-indexed to 1-indexed
+                let col = span.start.column + 1;
+                result.push_str(&format!(
+                    "\n**Defined in:** [{file_name}:{line}:{col}]({uri}#L{line})\n"
+                ));
+            } else {
+                result.push_str(&format!("\n**Defined in:** [{file_name}]({uri})\n"));
+            }
+        } else {
+            result.push_str(&format!("\n**Defined in:** `{file}`\n"));
+        }
     }
 
-    // Relationships (using relationship graph) - grouped by type
+    // Outgoing relationships (what this symbol references)
     let relationships = get_symbol_relationships(symbol, workspace);
+    debug!(
+        "[FORMAT_HOVER] outgoing relationships count={}",
+        relationships.len()
+    );
+    for (rel_type, targets) in &relationships {
+        debug!(
+            "[FORMAT_HOVER]   rel_type={}, targets={:?}",
+            rel_type, targets
+        );
+    }
     if !relationships.is_empty() {
         for (rel_type, targets) in relationships {
             result.push_str(&format!("\n**{rel_type}:**\n"));
             for target in targets {
-                result.push_str(&format!("- `{target}`\n"));
+                // Try to make targets clickable too
+                if let Some(target_symbol) = workspace.symbol_table().resolve(&target)
+                    && let Some(target_file) = target_symbol.source_file()
+                    && let Ok(target_uri) = Url::from_file_path(target_file)
+                {
+                    if let Some(target_span) = target_symbol.span() {
+                        let line = target_span.start.line + 1;
+                        result.push_str(&format!("- [{target}]({target_uri}#L{line})\n"));
+                    } else {
+                        result.push_str(&format!("- [{target}]({target_uri})\n"));
+                    }
+                } else {
+                    result.push_str(&format!("- `{target}`\n"));
+                }
             }
+        }
+    }
+
+    // Incoming references (use Shift+F12 to see all)
+    // Reuse the shared collect_reference_locations to include both relationship and import refs
+    let references = collect_reference_locations(workspace, symbol.qualified_name());
+    if !references.is_empty() {
+        let count = references.len();
+        let plural = if count == 1 { "" } else { "s" };
+        result.push_str(&format!("\n**Referenced by:** ({count} usage{plural})\n"));
+        for loc in &references {
+            let file_name = loc
+                .uri
+                .path_segments()
+                .and_then(|mut s| s.next_back())
+                .unwrap_or("unknown");
+            let line = loc.range.start.line + 1;
+            let col = loc.range.start.character + 1;
+            result.push_str(&format!(
+                "- [{file_name}:{line}:{col}]({}#L{line})\n",
+                loc.uri
+            ));
         }
     }
 

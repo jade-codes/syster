@@ -1332,3 +1332,297 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
         panic!("Hover content should be a string");
     }
 }
+
+// =============================================================================
+// Tests for hover duplicate prevention after file updates
+// =============================================================================
+
+#[test]
+fn test_hover_no_duplicates_after_file_update() {
+    // BUG: When a file is edited/saved, hover shows duplicate entries
+    // This test replicates the issue by updating a file multiple times
+    // and checking the hover output for duplicates.
+    use async_lsp::lsp_types::{
+        HoverContents, MarkedString, Position, TextDocumentContentChangeEvent, Url,
+    };
+
+    let mut server = LspServer::new();
+
+    let file_path = PathBuf::from("/test/hover_duplicates.sysml");
+    let uri = Url::from_file_path(&file_path).unwrap();
+
+    let source = r#"
+        package Test {
+            part def Vehicle;
+            part def Car :> Vehicle;
+            part myCar : Vehicle;
+        }
+    "#;
+
+    // Open the document
+    server.open_document(&uri, source).unwrap();
+
+    // Parse the document
+    server.parse_document(&uri);
+
+    // Helper to get hover for "Vehicle" and check for duplicates
+    let check_hover = |server: &LspServer, iteration: usize| {
+        // Hover over "Vehicle" in "part def Vehicle"
+        let position = Position {
+            line: 2,
+            character: 22, // Position of "Vehicle" in "part def Vehicle"
+        };
+
+        let hover_result = server.get_hover(&uri, position);
+        assert!(
+            hover_result.is_some(),
+            "Iteration {}: Should get hover result",
+            iteration
+        );
+
+        let hover = hover_result.unwrap();
+        if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+            println!("=== HOVER OUTPUT (iteration {}) ===", iteration);
+            println!("{}", content);
+            println!("=== END ===\n");
+
+            // Count how many times "Referenced by" section appears
+            let referenced_by_count = content.matches("Referenced by").count();
+            assert!(
+                referenced_by_count <= 1,
+                "Iteration {}: 'Referenced by' should appear at most once, found {} times",
+                iteration,
+                referenced_by_count
+            );
+
+            // Count individual reference entries - each should appear once
+            // References to Vehicle: Car (specialization), myCar (typing)
+            let car_refs = content.matches("Car").count();
+            let mycar_refs = content.matches("myCar").count();
+
+            // Car appears once in definition list and possibly once in references
+            // myCar appears once in references
+            assert!(
+                car_refs <= 2,
+                "Iteration {}: 'Car' should appear at most 2 times (def + ref), found {}",
+                iteration,
+                car_refs
+            );
+            assert!(
+                mycar_refs <= 1,
+                "Iteration {}: 'myCar' should appear at most once, found {}",
+                iteration,
+                mycar_refs
+            );
+
+            content
+        } else {
+            panic!("Hover content should be a string");
+        }
+    };
+
+    // Check hover initially
+    let initial_content = check_hover(&server, 0);
+
+    // Simulate multiple file updates (like saving the file repeatedly)
+    for i in 1..=3 {
+        // Apply a "change" (same content, simulating save)
+        let _ = server.apply_text_change_only(
+            &uri,
+            &TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: source.to_string(),
+            },
+        );
+
+        // Reparse
+        server.parse_document(&uri);
+
+        // Check hover again
+        let new_content = check_hover(&server, i);
+
+        // Content should be identical to initial (no accumulating duplicates)
+        assert_eq!(
+            initial_content, new_content,
+            "Iteration {}: Hover content should be identical after update",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_hover_referenced_by_count_stable_after_updates() {
+    // Test that the "Referenced by: (N usages)" count stays stable after updates
+    use async_lsp::lsp_types::{
+        HoverContents, MarkedString, Position, TextDocumentContentChangeEvent, Url,
+    };
+
+    let mut server = LspServer::new();
+
+    let file_path = PathBuf::from("/test/reference_count.sysml");
+    let uri = Url::from_file_path(&file_path).unwrap();
+
+    let source = r#"
+        package Test {
+            part def Base;
+            part def A :> Base;
+            part def B :> Base;
+            part def C :> Base;
+            part x : Base;
+            part y : Base;
+        }
+    "#;
+
+    // Open and parse
+    server.open_document(&uri, source).unwrap();
+    server.parse_document(&uri);
+
+    // Get initial hover for "Base" and count references
+    let get_reference_count = |server: &LspServer| -> Option<usize> {
+        let position = Position {
+            line: 2,
+            character: 22,
+        };
+
+        let hover = server.get_hover(&uri, position)?;
+        if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+            // Extract count from "Referenced by: (N usages)" without regex
+            // Look for pattern like "(5 usages)" or "(1 usage)"
+            if let Some(start) = content.find("Referenced by:") {
+                let after = &content[start..];
+                if let Some(paren_start) = after.find('(') {
+                    let after_paren = &after[paren_start + 1..];
+                    if let Some(space_pos) = after_paren.find(' ') {
+                        let num_str = &after_paren[..space_pos];
+                        return num_str.parse().ok();
+                    }
+                }
+            }
+            None
+        } else {
+            None
+        }
+    };
+
+    let initial_count = get_reference_count(&server);
+    println!("Initial reference count: {:?}", initial_count);
+
+    // The exact count depends on what relationships are tracked
+    // The important thing is that it stays STABLE after updates
+    assert!(
+        initial_count.is_some(),
+        "Should have some references initially"
+    );
+
+    // Update the file 5 times
+    for i in 1..=5 {
+        let _ = server.apply_text_change_only(
+            &uri,
+            &TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: source.to_string(),
+            },
+        );
+        server.parse_document(&uri);
+
+        let count = get_reference_count(&server);
+        println!("Reference count after update {}: {:?}", i, count);
+
+        assert_eq!(
+            count, initial_count,
+            "Reference count should stay at 5 after update {}, got {:?}",
+            i, count
+        );
+    }
+}
+
+#[test]
+fn test_hover_no_duplicates_with_stdlib_after_updates() {
+    // Test with stdlib loaded - this is closer to real usage
+    // The issue might be with cross-file references to stdlib symbols
+    use async_lsp::lsp_types::{
+        HoverContents, MarkedString, Position, TextDocumentContentChangeEvent, Url,
+    };
+
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let mut server = LspServer::with_config(true, Some(stdlib_path));
+
+    // Load stdlib
+    server
+        .ensure_workspace_loaded()
+        .expect("Should load stdlib");
+
+    let file_path = PathBuf::from("/test/with_stdlib.sysml");
+    let uri = Url::from_file_path(&file_path).unwrap();
+
+    // Source using syntax that the parser fully supports
+    // Two packages: one defines a type, other uses it
+    let source = r#"
+package TestWithStdlib {
+
+part def Calculator {
+    attribute result : ScalarValues::Real;
+}
+
+part cal : Calculator;
+}
+    "#;
+
+    // Open and parse
+    server.open_document(&uri, source).unwrap();
+    server.parse_document(&uri);
+
+    // Helper to get hover content for "Calculator"
+    let get_hover_content = |server: &LspServer| -> Option<String> {
+        let position = Position {
+            line: 3,
+            character: 12, // Position of "Calculator" in "part def Calculator"
+        };
+
+        let hover = server.get_hover(&uri, position)?;
+        if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+            Some(content)
+        } else {
+            None
+        }
+    };
+
+    let initial_content = get_hover_content(&server);
+    println!("=== INITIAL HOVER ===\n{:?}\n", initial_content);
+    assert!(initial_content.is_some(), "Should get initial hover");
+
+    // Count references in initial content
+    let count_refs = |content: &str| -> usize { content.matches("Referenced by").count() };
+
+    let initial_ref_sections = initial_content.as_ref().map(|c| count_refs(c)).unwrap_or(0);
+    println!("Initial 'Referenced by' sections: {}", initial_ref_sections);
+
+    // Update the file 5 times
+    for i in 1..=5 {
+        let _ = server.apply_text_change_only(
+            &uri,
+            &TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: source.to_string(),
+            },
+        );
+        server.parse_document(&uri);
+
+        let content = get_hover_content(&server);
+        let ref_sections = content.as_ref().map(|c| count_refs(c)).unwrap_or(0);
+        println!("Update {}: 'Referenced by' sections = {}", i, ref_sections);
+
+        assert_eq!(
+            ref_sections, initial_ref_sections,
+            "Iteration {}: 'Referenced by' count should stay at {}, got {}",
+            i, initial_ref_sections, ref_sections
+        );
+    }
+}
