@@ -139,8 +139,8 @@ fn test_multiple_specializations() {
     assert!(c_specializes.is_some());
     let specializes = c_specializes.unwrap();
     assert_eq!(specializes.len(), 2);
-    assert!(specializes.iter().any(|s| *s == "A"));
-    assert!(specializes.iter().any(|s| *s == "B"));
+    assert!(specializes.contains(&"A"));
+    assert!(specializes.contains(&"B"));
 }
 
 #[test]
@@ -298,8 +298,8 @@ fn test_multiple_subsettings() {
     assert!(subsets.is_some());
     let subsets = subsets.unwrap();
     assert_eq!(subsets.len(), 2);
-    assert!(subsets.iter().any(|s| *s == "v1"));
-    assert!(subsets.iter().any(|s| *s == "v2"));
+    assert!(subsets.contains(&"v1"));
+    assert!(subsets.contains(&"v2"));
 }
 
 #[test]
@@ -420,8 +420,7 @@ fn test_satisfy_requirement_relationship() {
     // Verify satisfy relationship
     let satisfies = relationship_graph.get_one_to_many(REL_SATISFY, "SafetyCase");
     assert!(satisfies.is_some(), "Expected satisfy relationship");
-    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| *s).collect();
-    assert_eq!(result, vec!["SafetyReq"]);
+    assert_eq!(satisfies.unwrap(), vec!["SafetyReq"]);
 }
 
 #[test]
@@ -445,8 +444,7 @@ fn test_satisfy_with_requirement_keyword() {
         satisfies.is_some(),
         "Expected satisfy relationship with requirement keyword"
     );
-    let result: Vec<&str> = satisfies.unwrap().iter().map(|s| *s).collect();
-    assert_eq!(result, vec!["SafetyReq"]);
+    assert_eq!(satisfies.unwrap(), vec!["SafetyReq"]);
 }
 
 #[test]
@@ -470,8 +468,7 @@ fn test_perform_action_relationship() {
     // Verify perform relationship
     let performs = relationship_graph.get_one_to_many(REL_PERFORM, "Robot");
     assert!(performs.is_some(), "Expected perform relationship");
-    let result: Vec<&str> = performs.unwrap().iter().map(|s| *s).collect();
-    assert_eq!(result, vec!["Move"]);
+    assert_eq!(performs.unwrap(), vec!["Move"]);
 }
 
 #[test]
@@ -501,8 +498,7 @@ fn test_exhibit_state_relationship() {
     // Verify exhibit relationship
     let exhibits = relationship_graph.get_one_to_many(REL_EXHIBIT, "Vehicle");
     assert!(exhibits.is_some(), "Expected exhibit relationship");
-    let result: Vec<&str> = exhibits.unwrap().iter().map(|s| *s).collect();
-    assert_eq!(result, vec!["Moving"]);
+    assert_eq!(exhibits.unwrap(), vec!["Moving"]);
 }
 
 #[test]
@@ -526,8 +522,7 @@ fn test_include_use_case_relationship() {
     // Verify include relationship
     let includes = relationship_graph.get_one_to_many(REL_INCLUDE, "ManageAccount");
     assert!(includes.is_some(), "Expected include relationship");
-    let result: Vec<&str> = includes.unwrap().iter().map(|s| *s).collect();
-    assert_eq!(result, vec!["Login"]);
+    assert_eq!(includes.unwrap(), vec!["Login"]);
 }
 
 #[test]
@@ -553,8 +548,8 @@ fn test_multiple_satisfy_relationships() {
     let satisfies = satisfies.unwrap();
     // Found satisfy relationships
     assert_eq!(satisfies.len(), 2);
-    assert!(satisfies.iter().any(|s| *s == "Req1"));
-    assert!(satisfies.iter().any(|s| *s == "Req2"));
+    assert!(satisfies.contains(&"Req1"));
+    assert!(satisfies.contains(&"Req2"));
 }
 
 #[test]
@@ -1149,8 +1144,8 @@ fn test_add_multiple_relationships_same_source() {
     assert!(targets.is_some());
     let targets = targets.unwrap();
     assert_eq!(targets.len(), 2);
-    assert!(targets.iter().any(|t| *t == "Vehicle"));
-    assert!(targets.iter().any(|t| *t == "Machine"));
+    assert!(targets.contains(&"Vehicle"));
+    assert!(targets.contains(&"Machine"));
 }
 
 /// Test adding relationships for different sources
@@ -1229,29 +1224,14 @@ fn test_one_to_one_add_and_remove() {
     graph.add_one_to_one(REL_TYPING, "myCar", "Car", None, None);
     graph.add_one_to_one(REL_TYPING, "myTruck", "Truck", None, None);
 
-    assert_eq!(
-        graph
-            .get_one_to_one(REL_TYPING, "myCar")
-            .map(|s| s.as_ref()),
-        Some("Car")
-    );
-    assert_eq!(
-        graph
-            .get_one_to_one(REL_TYPING, "myTruck")
-            .map(|s| s.as_ref()),
-        Some("Truck")
-    );
+    assert_eq!(graph.get_one_to_one(REL_TYPING, "myCar"), Some("Car"));
+    assert_eq!(graph.get_one_to_one(REL_TYPING, "myTruck"), Some("Truck"));
 
     // Remove myCar
     graph.remove_relationships_for_source("myCar");
 
     assert!(graph.get_one_to_one(REL_TYPING, "myCar").is_none());
-    assert_eq!(
-        graph
-            .get_one_to_one(REL_TYPING, "myTruck")
-            .map(|s| s.as_ref()),
-        Some("Truck")
-    );
+    assert_eq!(graph.get_one_to_one(REL_TYPING, "myTruck"), Some("Truck"));
 }
 
 /// Test repopulation scenario: add, remove, add again should not duplicate
@@ -1325,9 +1305,9 @@ fn test_remove_source_doesnt_affect_reverse_lookups() {
     // Vehicle should still be referenced by Truck and Bus
     let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Vehicle");
     assert_eq!(sources.len(), 2);
-    assert!(sources.iter().any(|s| *s == "Truck"));
-    assert!(sources.iter().any(|s| *s == "Bus"));
-    assert!(!sources.iter().any(|s| *s == "Car"));
+    assert!(sources.contains(&"Truck"));
+    assert!(sources.contains(&"Bus"));
+    assert!(!sources.contains(&"Car"));
 }
 
 /// Test full workspace repopulation scenario with symbols and relationships

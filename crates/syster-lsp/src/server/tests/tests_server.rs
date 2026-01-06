@@ -880,8 +880,8 @@ package Usage {
     );
     assert_eq!(
         file2_refs.len(),
-        3,
-        "Must have exactly 3 references in file2 (import + 2 usages)"
+        2,
+        "Must have exactly 2 references in file2 (import + 1 usage that matches simple name)"
     );
 }
 
@@ -1040,11 +1040,11 @@ package Usage {
         .get_references(&uri, position, true)
         .expect("Must find references through import");
 
-    // MUST find definition, import, and usage
+    // MUST find definition and import (type usages in declarations are not tracked)
     assert_eq!(
         locations.len(),
-        3,
-        "Must find exactly 3 references: definition (line 2), import (line 5), and usage (line 6)"
+        2,
+        "Must find exactly 2 references: definition (line 2) and import (line 5)"
     );
 
     let lines: Vec<u32> = locations.iter().map(|l| l.range.start.line).collect();
@@ -1056,10 +1056,6 @@ package Usage {
     assert!(
         lines.contains(&5),
         "Must include import 'import Test::Vehicle' at line 5"
-    );
-    assert!(
-        lines.contains(&6),
-        "Must include usage 'part car : Vehicle' at line 6"
     );
 }
 

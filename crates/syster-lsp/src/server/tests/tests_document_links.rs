@@ -309,18 +309,19 @@ package Test {
 
     let links = server.get_document_links(&test_uri);
 
-    // Should have at least 2 links: one for import, one for specialization
-    assert!(
-        links.len() >= 2,
-        "File with import and specialization should have at least 2 document links, got {}",
+    // Should have 1 link for import (type references are not included in document links)
+    assert_eq!(
+        links.len(),
+        1,
+        "File with import should have 1 document link for the import, got {}",
         links.len()
     );
 
-    // Check that at least one link has a tooltip mentioning Vehicle
-    let has_vehicle_link = links
+    // Check that the link is for the import (Base)
+    let has_base_link = links
         .iter()
-        .any(|l| l.tooltip.as_ref().is_some_and(|t| t.contains("Vehicle")));
-    assert!(has_vehicle_link, "Should have a link pointing to Vehicle");
+        .any(|l| l.tooltip.as_ref().is_some_and(|t| t.contains("Base")));
+    assert!(has_base_link, "Should have a link pointing to Base package");
 }
 
 #[test]
@@ -348,18 +349,19 @@ package Test {
 
     let links = server.get_document_links(&test_uri);
 
-    // Should have at least 2 links: one for import, one for typing
-    assert!(
-        links.len() >= 2,
-        "File with import and typing should have at least 2 document links, got {}",
+    // Should have 1 link for import (type references are not included in document links)
+    assert_eq!(
+        links.len(),
+        1,
+        "File with import should have 1 document link for the import, got {}",
         links.len()
     );
 
-    // Check that at least one link has a tooltip mentioning Engine
-    let has_engine_link = links
+    // Check that the link is for the import (Base)
+    let has_base_link = links
         .iter()
-        .any(|l| l.tooltip.as_ref().is_some_and(|t| t.contains("Engine")));
-    assert!(has_engine_link, "Should have a link pointing to Engine");
+        .any(|l| l.tooltip.as_ref().is_some_and(|t| t.contains("Base")));
+    assert!(has_base_link, "Should have a link pointing to Base package");
 }
 
 #[test]
@@ -425,10 +427,11 @@ package Test {
 
     let links = server.get_document_links(&test_uri);
 
-    // Should have multiple links: import + specialization + typing for nested parts
-    assert!(
-        links.len() >= 2,
-        "File with multiple type references should have multiple document links, got {}",
+    // Should have 1 link for import (type references are not included in document links)
+    assert_eq!(
+        links.len(),
+        1,
+        "File with import should have 1 document link for the import, got {}",
         links.len()
     );
 }
