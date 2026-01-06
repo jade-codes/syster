@@ -95,10 +95,17 @@ impl<'a> Resolver<'a> {
     // Alias Resolution
     // ============================================================
 
-    fn resolve_alias(&self, symbol: &Symbol) -> Option<&Symbol> {
+    /// Resolve an alias to its target symbol.
+    /// For non-alias symbols, returns the symbol itself.
+    fn resolve_alias<'b>(&self, symbol: &'b Symbol) -> Option<&'b Symbol>
+    where
+        'a: 'b,
+    {
         match symbol {
-            Symbol::Alias { target, .. } => self.resolve(target),
-            _ => self.resolve_qualified(symbol.qualified_name()),
+            // For aliases, resolve the target by qualified name
+            Symbol::Alias { target, .. } => self.symbol_table.find_by_qualified_name(target),
+            // For non-aliases, return the symbol directly
+            _ => Some(symbol),
         }
     }
 }

@@ -53,8 +53,8 @@ fn test_new_adapter_can_access_symbol_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify adapter can access the symbol table
-    let _resolver = Resolver::new(&adapter.symbol_table);
-    let symbol = _resolver.resolve("TestSymbol");
+    let resolver = Resolver::new(&adapter.symbol_table);
+    let symbol = resolver.resolve("TestSymbol");
     assert!(symbol.is_some());
 }
 

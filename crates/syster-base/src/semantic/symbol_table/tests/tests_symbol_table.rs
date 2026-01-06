@@ -24,8 +24,8 @@ fn test_insert_and_lookup() {
     table
         .insert("MyPackage".to_string(), symbol.clone())
         .unwrap();
-    let _resolver = Resolver::new(&table);
-    let found = _resolver.resolve("MyPackage");
+    let resolver = Resolver::new(&table);
+    let found = resolver.resolve("MyPackage");
     assert!(found.is_some());
     assert_eq!(found.unwrap(), &symbol);
 }

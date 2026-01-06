@@ -726,8 +726,8 @@ fn test_context_symbol_table_reference() {
 
     let graph = RelationshipGraph::new();
     let context = AnalysisContext::new(&table, &graph);
-    let _resolver = Resolver::new(&context.symbol_table);
-    let lookup_result = _resolver.resolve("Test");
+    let resolver = Resolver::new(&context.symbol_table);
+    let lookup_result = resolver.resolve("Test");
     assert!(lookup_result.is_some());
 }
 
