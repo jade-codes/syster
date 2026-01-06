@@ -57,10 +57,9 @@ impl<'a> Resolver<'a> {
                 let qname = symbol.qualified_name();
                 if let Some(remainder) = qname.strip_prefix(prefix)
                     && let Some(remainder) = remainder.strip_prefix("::")
+                    && !remainder.contains("::")
                 {
-                    if !remainder.contains("::") {
-                        return Some(qname.to_string());
-                    }
+                    return Some(qname.to_string());
                 }
                 None
             })

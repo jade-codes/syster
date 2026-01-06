@@ -1976,7 +1976,7 @@ fn test_cross_file_reference_resolution_basic() {
     // Check if BaseUnit is in the symbol table
     let symbol_table = server.workspace().symbol_table();
 
-    let resolver = Resolver::new(&symbol_table);
+    let resolver = Resolver::new(symbol_table);
     let by_simple = resolver.resolve("BaseUnit");
     let by_qualified = resolver.resolve_qualified("BasePackage::BaseUnit");
 

@@ -41,7 +41,7 @@ fn test_workspace_api_exists() {
 
     // Verify they work correctly
     assert!(
-        Resolver::new(&symbol_table).resolve("NonExistent").is_none(),
+        Resolver::new(symbol_table).resolve("NonExistent").is_none(),
         "Empty workspace should have no symbols"
     );
 }

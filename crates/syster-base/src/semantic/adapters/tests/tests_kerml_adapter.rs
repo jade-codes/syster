@@ -53,7 +53,7 @@ fn test_new_adapter_can_access_symbol_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify adapter can access the symbol table
-    let resolver = Resolver::new(&adapter.symbol_table);
+    let resolver = Resolver::new(adapter.symbol_table);
     let symbol = resolver.resolve("TestSymbol");
     assert!(symbol.is_some());
 }
@@ -203,7 +203,7 @@ fn test_adapter_can_be_created_in_nested_scope() {
 
     // Adapter should still be able to access the symbol
     assert!(
-        Resolver::new(&adapter.symbol_table)
+        Resolver::new(adapter.symbol_table)
             .resolve("InnerSymbol")
             .is_some()
     );

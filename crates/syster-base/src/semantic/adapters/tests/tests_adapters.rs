@@ -738,7 +738,7 @@ fn test_kerml_adapter_new_symbol_table_accessible() {
         .insert("TestPackage".to_string(), test_symbol);
     assert!(result.is_ok());
     assert!(
-        Resolver::new(&adapter.symbol_table)
+        Resolver::new(adapter.symbol_table)
             .resolve("TestPackage")
             .is_some()
     );
@@ -777,7 +777,7 @@ fn test_kerml_adapter_new_with_populated_table() {
 
     // Verify the adapter can access the existing symbols
     assert!(
-        Resolver::new(&adapter.symbol_table)
+        Resolver::new(adapter.symbol_table)
             .resolve("ExistingSymbol")
             .is_some()
     );
