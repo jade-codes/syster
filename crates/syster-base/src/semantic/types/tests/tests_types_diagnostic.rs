@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used)]
 #![allow(clippy::panic)]
 
-use crate::semantic::types::diagnostic::{Diagnostic, Location, Position, Span, Severity};
+use crate::semantic::types::diagnostic::{Diagnostic, Location, Position, Severity, Span};
 
 // ============================================================================
 // Tests for Position::new (Issue #342)
