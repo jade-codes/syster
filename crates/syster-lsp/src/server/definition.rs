@@ -1,6 +1,6 @@
 use super::LspServer;
 use super::helpers::{span_to_lsp_range, uri_to_path};
-use async_lsp::lsp_types::{Location, Position, Url};
+use async_lsp::lsp_types::{Location, Position, Range, Url};
 
 impl LspServer {
     /// Get the definition location for a symbol at the given position
@@ -21,14 +21,28 @@ impl LspServer {
 
         // Get definition location from symbol
         let source_file = symbol.source_file()?;
-        let span = symbol.span()?;
 
         // Convert file path to URI
         let def_uri = Url::from_file_path(source_file).ok()?;
 
+        // Use symbol's span if available, otherwise default to start of file
+        let range = symbol
+            .span()
+            .map(|s| span_to_lsp_range(&s))
+            .unwrap_or(Range {
+                start: Position {
+                    line: 0,
+                    character: 0,
+                },
+                end: Position {
+                    line: 0,
+                    character: 0,
+                },
+            });
+
         Some(Location {
             uri: def_uri,
-            range: span_to_lsp_range(&span),
+            range,
         })
     }
 }

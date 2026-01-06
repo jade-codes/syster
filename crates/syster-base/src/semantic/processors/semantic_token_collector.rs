@@ -165,20 +165,20 @@ impl SemanticTokenCollector {
             let qname = symbol.qualified_name();
 
             // Typing (one-to-one relationship) → Type token
-            if let Some((_target, Some(span))) =
-                relationship_graph.get_one_to_one_with_span(REL_TYPING, qname)
+            if let Some((_target, Some(loc))) =
+                relationship_graph.get_one_to_one_with_location(REL_TYPING, qname)
             {
-                tokens.push(SemanticToken::from_span(span, TokenType::Type));
+                tokens.push(SemanticToken::from_span(&loc.span, TokenType::Type));
             }
 
             // Type reference relationships (specialization, satisfy, etc.) → Type tokens
             for rel_type in TYPE_REFERENCE_RELATIONSHIPS {
-                if let Some(targets_with_spans) =
-                    relationship_graph.get_one_to_many_with_spans(rel_type, qname)
+                if let Some(targets_with_locs) =
+                    relationship_graph.get_one_to_many_with_locations(rel_type, qname)
                 {
-                    for (_target, span_opt) in targets_with_spans {
-                        if let Some(span) = span_opt {
-                            tokens.push(SemanticToken::from_span(span, TokenType::Type));
+                    for (_target, loc_opt) in targets_with_locs {
+                        if let Some(loc) = loc_opt {
+                            tokens.push(SemanticToken::from_span(&loc.span, TokenType::Type));
                         }
                     }
                 }
@@ -186,12 +186,12 @@ impl SemanticTokenCollector {
 
             // Property reference relationships (redefinition, subsetting, etc.) → Property tokens
             for rel_type in PROPERTY_REFERENCE_RELATIONSHIPS {
-                if let Some(targets_with_spans) =
-                    relationship_graph.get_one_to_many_with_spans(rel_type, qname)
+                if let Some(targets_with_locs) =
+                    relationship_graph.get_one_to_many_with_locations(rel_type, qname)
                 {
-                    for (_target, span_opt) in targets_with_spans {
-                        if let Some(span) = span_opt {
-                            tokens.push(SemanticToken::from_span(span, TokenType::Property));
+                    for (_target, loc_opt) in targets_with_locs {
+                        if let Some(loc) = loc_opt {
+                            tokens.push(SemanticToken::from_span(&loc.span, TokenType::Property));
                         }
                     }
                 }

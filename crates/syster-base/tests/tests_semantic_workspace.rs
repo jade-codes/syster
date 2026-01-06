@@ -92,7 +92,7 @@ fn test_populate_multiple_files() {
         .relationship_graph()
         .get_one_to_many(REL_SPECIALIZATION, "Car");
     assert_eq!(specializes.as_ref().map(|v| v.len()), Some(1));
-    assert!(specializes.unwrap().contains(&&"Vehicle".to_string()));
+    assert!(specializes.unwrap().contains(&"Vehicle"));
 }
 
 #[test]
@@ -1266,12 +1266,7 @@ fn test_relationship_graph_mut_basic() {
     let mut workspace = Workspace::<SyntaxFile>::new();
     let rel_graph = workspace.relationship_graph_mut();
 
-    rel_graph.add_one_to_many(
-        REL_SPECIALIZATION,
-        "Car".to_string(),
-        "Vehicle".to_string(),
-        None,
-    );
+    rel_graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
 
     // Verify the relationship was added
     let specializes = workspace
@@ -1287,14 +1282,16 @@ fn test_relationship_graph_mut_allows_modifications() {
     // Add multiple relationships
     workspace.relationship_graph_mut().add_one_to_many(
         REL_SPECIALIZATION,
-        "Car".to_string(),
-        "Vehicle".to_string(),
+        "Car",
+        "Vehicle",
+        None,
         None,
     );
     workspace.relationship_graph_mut().add_one_to_many(
         REL_SPECIALIZATION,
-        "Truck".to_string(),
-        "Vehicle".to_string(),
+        "Truck",
+        "Vehicle",
+        None,
         None,
     );
 
@@ -1538,4 +1535,102 @@ fn test_get_file_dependents_empty_graph() {
 
     let dependents = workspace.get_file_dependents(&path);
     assert!(dependents.is_empty());
+}
+
+// =============================================================================
+// Tests for file update clearing relationships (Issue: hover shows duplicates)
+// =============================================================================
+
+#[test]
+fn test_update_file_clears_relationships() {
+    // BUG: When a file is updated, old relationships should be cleared
+    // before reparsing. Otherwise, duplicates accumulate.
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.enable_auto_invalidation();
+
+    let path = PathBuf::from("/test/file.sysml");
+    let source = r#"
+        part def Vehicle;
+        part def Car :> Vehicle;
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    // Add and populate the file
+    workspace.add_file(path.clone(), syster::syntax::SyntaxFile::SysML(file));
+    workspace.populate_file(&path).unwrap();
+
+    // Verify initial state - one specialization relationship
+    let refs = workspace.relationship_graph().get_references_to("Vehicle");
+    assert_eq!(
+        refs.len(),
+        1,
+        "Should have 1 reference to Vehicle initially"
+    );
+
+    // Now update the file with the same content (simulating a save/edit)
+    let source2 = r#"
+        part def Vehicle;
+        part def Car :> Vehicle;
+    "#;
+    let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
+    let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+
+    workspace.update_file(&path, syster::syntax::SyntaxFile::SysML(file2));
+    workspace.populate_affected().unwrap();
+
+    // After update + repopulate, should still have exactly 1 reference, not 2
+    let refs_after = workspace.relationship_graph().get_references_to("Vehicle");
+    assert_eq!(
+        refs_after.len(),
+        1,
+        "Should still have 1 reference after update, not duplicates. Got: {}",
+        refs_after.len()
+    );
+}
+
+#[test]
+fn test_update_file_clears_multiple_relationship_types() {
+    // Test that all relationship types are cleared on update
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.enable_auto_invalidation();
+
+    let path = PathBuf::from("/test/file.sysml");
+    let source = r#"
+        part def Base;
+        part def Derived :> Base;
+        part instance : Base;
+    "#;
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    workspace.add_file(path.clone(), syster::syntax::SyntaxFile::SysML(file));
+    workspace.populate_file(&path).unwrap();
+
+    // Should have 2 references: specialization + typing
+    let refs = workspace.relationship_graph().get_references_to("Base");
+    assert_eq!(refs.len(), 2, "Should have 2 references initially");
+
+    // Update 3 times (simulating multiple edits)
+    for _ in 0..3 {
+        let source2 = r#"
+            part def Base;
+            part def Derived :> Base;
+            part instance : Base;
+        "#;
+        let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
+        let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+
+        workspace.update_file(&path, syster::syntax::SyntaxFile::SysML(file2));
+        workspace.populate_affected().unwrap();
+    }
+
+    // Should still have exactly 2 references, not 8 (2 * 4)
+    let refs_after = workspace.relationship_graph().get_references_to("Base");
+    assert_eq!(
+        refs_after.len(),
+        2,
+        "Should still have 2 references after 3 updates, not duplicates. Got: {}",
+        refs_after.len()
+    );
 }

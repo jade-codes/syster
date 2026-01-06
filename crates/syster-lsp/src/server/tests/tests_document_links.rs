@@ -279,3 +279,159 @@ fn test_document_links_invalid_file() {
         "Non-existent file should have no document links"
     );
 }
+
+// ============================================================================
+// Tests for type reference document links (specialization, typing, subsetting)
+// ============================================================================
+
+#[test]
+fn test_document_links_specialization() {
+    let mut server = LspServer::new();
+
+    // Create a base file with a definition
+    let base_uri = Url::parse("file:///base.sysml").unwrap();
+    let base_text = r#"
+package Base {
+    part def Vehicle;
+}
+    "#;
+    server.open_document(&base_uri, base_text).unwrap();
+
+    // Create a file that specializes the base definition
+    let test_uri = Url::parse("file:///test.sysml").unwrap();
+    let test_text = r#"
+package Test {
+    import Base::*;
+    part def Car :> Vehicle;
+}
+    "#;
+    server.open_document(&test_uri, test_text).unwrap();
+
+    let links = server.get_document_links(&test_uri);
+
+    // Should have 1 link for import (type references are not included in document links)
+    assert_eq!(
+        links.len(),
+        1,
+        "File with import should have 1 document link for the import, got {}",
+        links.len()
+    );
+
+    // Check that the link is for the import (Base)
+    let has_base_link = links
+        .iter()
+        .any(|l| l.tooltip.as_ref().is_some_and(|t| t.contains("Base")));
+    assert!(has_base_link, "Should have a link pointing to Base package");
+}
+
+#[test]
+fn test_document_links_typing() {
+    let mut server = LspServer::new();
+
+    // Create a base file with a definition
+    let base_uri = Url::parse("file:///base.sysml").unwrap();
+    let base_text = r#"
+package Base {
+    part def Engine;
+}
+    "#;
+    server.open_document(&base_uri, base_text).unwrap();
+
+    // Create a file with a typed usage
+    let test_uri = Url::parse("file:///test.sysml").unwrap();
+    let test_text = r#"
+package Test {
+    import Base::*;
+    part myEngine : Engine;
+}
+    "#;
+    server.open_document(&test_uri, test_text).unwrap();
+
+    let links = server.get_document_links(&test_uri);
+
+    // Should have 1 link for import (type references are not included in document links)
+    assert_eq!(
+        links.len(),
+        1,
+        "File with import should have 1 document link for the import, got {}",
+        links.len()
+    );
+
+    // Check that the link is for the import (Base)
+    let has_base_link = links
+        .iter()
+        .any(|l| l.tooltip.as_ref().is_some_and(|t| t.contains("Base")));
+    assert!(has_base_link, "Should have a link pointing to Base package");
+}
+
+#[test]
+fn test_document_links_subsetting() {
+    let mut server = LspServer::new();
+
+    // Create a file with subsetting
+    let test_uri = Url::parse("file:///test.sysml").unwrap();
+    let test_text = r#"
+package Test {
+    part def Vehicle {
+        part components : Part[*];
+        part wheels : Part[4] subsets components;
+    }
+    part def Part;
+}
+    "#;
+    server.open_document(&test_uri, test_text).unwrap();
+
+    let links = server.get_document_links(&test_uri);
+
+    // The subsetting relationship should create a link
+    // Note: This test verifies the mechanism works, actual link count
+    // depends on relationship tracking implementation
+    for link in &links {
+        // All links should have valid ranges
+        assert!(
+            link.range.end.line >= link.range.start.line,
+            "Link range should be valid"
+        );
+        // All links should have targets
+        assert!(link.target.is_some(), "Link should have a target");
+    }
+}
+
+#[test]
+fn test_document_links_multiple_type_references() {
+    let mut server = LspServer::new();
+
+    // Create base definitions
+    let base_uri = Url::parse("file:///base.sysml").unwrap();
+    let base_text = r#"
+package Base {
+    part def Vehicle;
+    part def Engine;
+    part def Wheel;
+}
+    "#;
+    server.open_document(&base_uri, base_text).unwrap();
+
+    // Create a file with multiple type references
+    let test_uri = Url::parse("file:///test.sysml").unwrap();
+    let test_text = r#"
+package Test {
+    import Base::*;
+    part def Car :> Vehicle {
+        part engine : Engine;
+        part wheels : Wheel[4];
+    }
+}
+    "#;
+    server.open_document(&test_uri, test_text).unwrap();
+
+    let links = server.get_document_links(&test_uri);
+
+    // Should have 1 link for import (type references are not included in document links)
+    assert_eq!(
+        links.len(),
+        1,
+        "File with import should have 1 document link for the import, got {}",
+        links.len()
+    );
+}

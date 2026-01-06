@@ -5,7 +5,7 @@ mod relationship_graph;
 mod symmetric_graph;
 
 pub use dependency_graph::DependencyGraph;
-pub use one_to_many_graph::OneToManyGraph;
+pub use one_to_many_graph::{OneToManyGraph, RefLocation};
 pub use one_to_one_graph::OneToOneGraph;
 pub use relationship_graph::RelationshipGraph;
 pub use symmetric_graph::SymmetricGraph;

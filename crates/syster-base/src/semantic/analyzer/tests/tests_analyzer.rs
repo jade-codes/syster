@@ -1565,12 +1565,7 @@ fn test_relationship_validation_undefined_target() {
         .unwrap();
 
     // Add a specialization relationship to a non-existent target
-    graph.add_one_to_many(
-        "specialization",
-        "Vehicle".to_string(),
-        "NonExistent".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Vehicle", "NonExistent", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -1608,12 +1603,7 @@ fn test_relationship_validation_typing_undefined_target() {
         .unwrap();
 
     // Add a typing relationship to a non-existent definition
-    graph.add_one_to_one(
-        "typing",
-        "myPart".to_string(),
-        "UndefinedDef".to_string(),
-        None,
-    );
+    graph.add_one_to_one("typing", "myPart", "UndefinedDef", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -1682,9 +1672,9 @@ fn test_circular_specialization_detection() {
         .unwrap();
 
     // Create circular specialization: A -> B -> C -> A
-    graph.add_one_to_many("specialization", "A".to_string(), "B".to_string(), None);
-    graph.add_one_to_many("specialization", "B".to_string(), "C".to_string(), None);
-    graph.add_one_to_many("specialization", "C".to_string(), "A".to_string(), None);
+    graph.add_one_to_many("specialization", "A", "B", None, None);
+    graph.add_one_to_many("specialization", "B", "C", None, None);
+    graph.add_one_to_many("specialization", "C", "A", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -1724,12 +1714,7 @@ fn test_self_specialization_detection() {
         .unwrap();
 
     // Vehicle specializes itself
-    graph.add_one_to_many(
-        "specialization",
-        "Vehicle".to_string(),
-        "Vehicle".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Vehicle", "Vehicle", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -1800,18 +1785,8 @@ fn test_valid_specialization_chain() {
         .unwrap();
 
     // Create linear specialization chain (no cycles)
-    graph.add_one_to_many(
-        "specialization",
-        "Car".to_string(),
-        "Vehicle".to_string(),
-        None,
-    );
-    graph.add_one_to_many(
-        "specialization",
-        "SportsCar".to_string(),
-        "Car".to_string(),
-        None,
-    );
+    graph.add_one_to_many("specialization", "Car", "Vehicle", None, None);
+    graph.add_one_to_many("specialization", "SportsCar", "Car", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -1862,20 +1837,10 @@ fn test_multiple_relationship_types_validation() {
         .unwrap();
 
     // Valid typing relationship
-    graph.add_one_to_one(
-        "typing",
-        "myVehicle".to_string(),
-        "VehicleDef".to_string(),
-        None,
-    );
+    graph.add_one_to_one("typing", "myVehicle", "VehicleDef", None, None);
 
     // Invalid subsetting relationship (target doesn't exist)
-    graph.add_one_to_many(
-        "subsetting",
-        "myVehicle".to_string(),
-        "NonExistent".to_string(),
-        None,
-    );
+    graph.add_one_to_many("subsetting", "myVehicle", "NonExistent", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -1947,8 +1912,9 @@ fn test_relationship_validation_with_qualified_names() {
     // Valid relationship using qualified names
     graph.add_one_to_many(
         "specialization",
-        "Vehicles::SportsCar".to_string(),
-        "Vehicles::Car".to_string(),
+        "Vehicles::SportsCar",
+        "Vehicles::Car",
+        None,
         None,
     );
 
@@ -2001,12 +1967,7 @@ fn test_satisfy_relationship_validation_valid() {
         .unwrap();
 
     // Valid satisfy relationship
-    graph.add_one_to_many(
-        "satisfy",
-        "SafetyCase".to_string(),
-        "SafetyReq".to_string(),
-        None,
-    );
+    graph.add_one_to_many("satisfy", "SafetyCase", "SafetyReq", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -2057,7 +2018,7 @@ fn test_satisfy_relationship_validation_invalid_target() {
         .unwrap();
 
     // Invalid satisfy relationship - targeting a part instead of requirement
-    graph.add_one_to_many("satisfy", "MyCase".to_string(), "Vehicle".to_string(), None);
+    graph.add_one_to_many("satisfy", "MyCase", "Vehicle", None, None);
 
     let validator = create_validator("sysml");
     let analyzer = SemanticAnalyzer::with_validator(table, graph, validator);
@@ -2113,7 +2074,7 @@ fn test_perform_relationship_validation() {
         .unwrap();
 
     // Valid perform relationship
-    graph.add_one_to_many("perform", "Robot".to_string(), "Move".to_string(), None);
+    graph.add_one_to_many("perform", "Robot", "Move", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -2164,7 +2125,7 @@ fn test_perform_relationship_invalid_target() {
         .unwrap();
 
     // Invalid perform relationship - targeting a part instead of action
-    graph.add_one_to_many("perform", "Robot".to_string(), "Tool".to_string(), None);
+    graph.add_one_to_many("perform", "Robot", "Tool", None, None);
 
     let validator = create_validator("sysml");
     let analyzer = SemanticAnalyzer::with_validator(table, graph, validator);
@@ -2220,7 +2181,7 @@ fn test_exhibit_relationship_validation() {
         .unwrap();
 
     // Valid exhibit relationship
-    graph.add_one_to_many("exhibit", "Vehicle".to_string(), "Moving".to_string(), None);
+    graph.add_one_to_many("exhibit", "Vehicle", "Moving", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();
@@ -2270,12 +2231,7 @@ fn test_include_relationship_validation() {
         .unwrap();
 
     // Valid include relationship
-    graph.add_one_to_many(
-        "include",
-        "ManageAccount".to_string(),
-        "Login".to_string(),
-        None,
-    );
+    graph.add_one_to_many("include", "ManageAccount", "Login", None, None);
 
     let analyzer = SemanticAnalyzer::with_symbol_table_and_relationships(table, graph);
     let result = analyzer.analyze();

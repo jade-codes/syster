@@ -8,14 +8,14 @@ impl LspServer {
     /// Get all symbols in a document for the outline view
     pub fn get_document_symbols(&self, file_path: &Path) -> Vec<DocumentSymbol> {
         let mut flat_symbols = Vec::new();
+        let file_path_str = file_path.to_str().unwrap_or("");
 
-        // Collect all symbols from this file
-        for (_, symbol) in self.workspace.symbol_table().all_symbols() {
-            // Only include symbols defined in this file
-            if symbol.source_file() != Some(file_path.to_str().unwrap_or("")) {
-                continue;
-            }
-
+        // Use indexed lookup for O(1) file access instead of iterating all symbols
+        for symbol in self
+            .workspace
+            .symbol_table()
+            .get_symbols_for_file(file_path_str)
+        {
             if let Some(span) = symbol.span() {
                 let range = super::helpers::span_to_lsp_range(&span);
                 let selection_range = range;

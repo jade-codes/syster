@@ -12,11 +12,12 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         // Create the Package symbol for the file-level namespace
         let qualified_name = self.qualified_name(&namespace.name);
         let scope_id = self.symbol_table.current_scope_id();
+        let current_file = self.symbol_table.current_file().map(String::from);
         let symbol = Symbol::Package {
             name: namespace.name.clone(),
             qualified_name,
             scope_id,
-            source_file: self.symbol_table.current_file().map(String::from),
+            source_file: current_file,
             span: namespace.span,
             references: Vec::new(),
         };
@@ -31,11 +32,12 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         if let Some(name) = &package.name {
             let qualified_name = self.qualified_name(name);
             let scope_id = self.symbol_table.current_scope_id();
+            let source_file = self.symbol_table.current_file().map(String::from);
             let symbol = Symbol::Package {
                 name: name.clone(),
                 qualified_name,
                 scope_id,
-                source_file: self.symbol_table.current_file().map(String::from),
+                source_file,
                 span: package.span,
                 references: Vec::new(),
             };
@@ -64,11 +66,13 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             self.insert_symbol(name.clone(), symbol);
 
             if let Some(ref mut graph) = self.relationship_graph {
+                let file = self.symbol_table.current_file();
                 for spec in &definition.relationships.specializes {
                     graph.add_one_to_many(
                         REL_SPECIALIZATION,
-                        qualified_name.clone(),
-                        spec.target.clone(),
+                        &qualified_name,
+                        &spec.target,
+                        file,
                         spec.span,
                     );
                 }
@@ -76,8 +80,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 for redef in &definition.relationships.redefines {
                     graph.add_one_to_many(
                         REL_REDEFINITION,
-                        qualified_name.clone(),
-                        redef.target.clone(),
+                        &qualified_name,
+                        &redef.target,
+                        file,
                         redef.span,
                     );
                 }
@@ -87,8 +92,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 for include in &definition.relationships.includes {
                     graph.add_one_to_many(
                         REL_INCLUDE,
-                        qualified_name.clone(),
-                        include.target.clone(),
+                        &qualified_name,
+                        &include.target,
+                        file,
                         include.span,
                     );
                 }
@@ -101,8 +107,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                         for satisfy in &usage.relationships.satisfies {
                             graph.add_one_to_many(
                                 REL_SATISFY,
-                                qualified_name.clone(),
-                                satisfy.target.clone(),
+                                &qualified_name,
+                                &satisfy.target,
+                                file,
                                 satisfy.span,
                             );
                         }
@@ -110,8 +117,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                         for perform in &usage.relationships.performs {
                             graph.add_one_to_many(
                                 REL_PERFORM,
-                                qualified_name.clone(),
-                                perform.target.clone(),
+                                &qualified_name,
+                                &perform.target,
+                                file,
                                 perform.span,
                             );
                         }
@@ -119,8 +127,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                         for exhibit in &usage.relationships.exhibits {
                             graph.add_one_to_many(
                                 REL_EXHIBIT,
-                                qualified_name.clone(),
-                                exhibit.target.clone(),
+                                &qualified_name,
+                                &exhibit.target,
+                                file,
                                 exhibit.span,
                             );
                         }
@@ -128,8 +137,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                         for include in &usage.relationships.includes {
                             graph.add_one_to_many(
                                 REL_INCLUDE,
-                                qualified_name.clone(),
-                                include.target.clone(),
+                                &qualified_name,
+                                &include.target,
+                                file,
                                 include.span,
                             );
                         }
@@ -198,12 +208,14 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
 
         // Store relationships for both named and anonymous usages
         if let Some(ref mut graph) = self.relationship_graph {
+            let file = self.symbol_table.current_file();
             // Redefinitions (:>>)
             for rel in &usage.relationships.redefines {
                 graph.add_one_to_many(
                     REL_REDEFINITION,
-                    qualified_name.clone(),
-                    rel.target.clone(),
+                    &qualified_name,
+                    &rel.target,
+                    file,
                     rel.span,
                 );
             }
@@ -211,8 +223,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             for subset in &usage.relationships.subsets {
                 graph.add_one_to_many(
                     REL_SUBSETTING,
-                    qualified_name.clone(),
-                    subset.target.clone(),
+                    &qualified_name,
+                    &subset.target,
+                    file,
                     subset.span,
                 );
             }
@@ -235,8 +248,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
 
                 graph.add_one_to_one(
                     REL_TYPING,
-                    qualified_name.clone(),
-                    resolved_target,
+                    &qualified_name,
+                    &resolved_target,
+                    file,
                     usage.relationships.typed_by_span,
                 );
             }
@@ -244,8 +258,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             for reference in &usage.relationships.references {
                 graph.add_one_to_many(
                     REL_REFERENCE_SUBSETTING,
-                    qualified_name.clone(),
-                    reference.target.clone(),
+                    &qualified_name,
+                    &reference.target,
+                    file,
                     reference.span,
                 );
             }
@@ -253,8 +268,9 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             for cross in &usage.relationships.crosses {
                 graph.add_one_to_many(
                     REL_CROSS_SUBSETTING,
-                    qualified_name.clone(),
-                    cross.target.clone(),
+                    &qualified_name,
+                    &cross.target,
+                    file,
                     cross.span,
                 );
             }

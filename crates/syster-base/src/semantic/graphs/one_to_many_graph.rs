@@ -1,95 +1,143 @@
 //! One-to-many directed graph (e.g., specialization, subsetting)
 //!
-//! Relationships are deduplicated by (source, target) pair - if the same
-//! relationship is added multiple times (e.g., from duplicate file loads),
-//! only one is kept.
+//! Stores file paths with spans for O(1) reference lookups without symbol table queries.
 
-use crate::core::Span;
+use crate::core::{IStr, Span};
 use std::collections::{HashMap, HashSet};
+
+/// Reference location: file path + span
+#[derive(Debug, Clone, PartialEq)]
+pub struct RefLocation {
+    pub file: IStr,
+    pub span: Span,
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct OneToManyGraph {
-    relationships: HashMap<String, Vec<(String, Option<Span>)>>,
+    /// Forward relationships: source → [(target, location)]
+    relationships: HashMap<IStr, Vec<(IStr, Option<RefLocation>)>>,
+    /// Reverse index: target → [(source, location)] for O(1) reverse lookups
+    reverse_index: HashMap<IStr, Vec<(IStr, Option<RefLocation>)>>,
+    /// File index: file → [(source, target)] for O(1) file cleanup
+    entries_by_file: HashMap<IStr, Vec<(IStr, IStr)>>,
 }
 
 impl OneToManyGraph {
     pub fn new() -> Self {
-        Self {
-            relationships: HashMap::new(),
-        }
+        Self::default()
     }
 
-    /// Add a relationship from source to target.
-    ///
-    /// Deduplicates by (source, target) pair - if this exact relationship already
-    /// exists, the call is a no-op and the original span is preserved.
-    ///
-    /// # Span Handling
-    ///
-    /// When duplicate relationships are added (e.g., from the same file loaded via
-    /// different paths), only the first occurrence is stored. This means:
-    /// - The span from the first `add()` call is kept
-    /// - Subsequent `add()` calls with different spans are ignored
-    /// - This is semantically correct: the relationship represents the same logical
-    ///   fact regardless of which file path was used to discover it
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use syster::semantic::graphs::OneToManyGraph;
-    /// # use syster::core::{Span, Position};
-    /// let mut graph = OneToManyGraph::new();
-    /// let span1 = Some(Span::new(Position::new(0, 0), Position::new(0, 10)));
-    /// let span2 = Some(Span::new(Position::new(0, 20), Position::new(0, 30)));
-    ///
-    /// graph.add("A".to_string(), "B".to_string(), span1);
-    /// graph.add("A".to_string(), "B".to_string(), span2); // Ignored, keeps span1
-    /// ```
-    pub fn add(&mut self, source: String, target: String, span: Option<Span>) {
-        let targets = self.relationships.entry(source).or_default();
+    /// Add a relationship from source to target with optional location info.
+    pub fn add(&mut self, source: IStr, target: IStr, file: Option<IStr>, span: Option<Span>) {
+        let location = match (&file, span) {
+            (Some(f), Some(s)) => Some(RefLocation {
+                file: f.clone(),
+                span: s,
+            }),
+            _ => None,
+        };
+
+        let targets = self.relationships.entry(source.clone()).or_default();
         if !targets.iter().any(|(t, _)| t == &target) {
-            targets.push((target, span));
+            targets.push((target.clone(), location.clone()));
+            self.reverse_index
+                .entry(target.clone())
+                .or_default()
+                .push((source.clone(), location));
+
+            // Add to file index
+            if let Some(f) = file {
+                self.entries_by_file
+                    .entry(f)
+                    .or_default()
+                    .push((source, target));
+            }
         }
     }
 
-    pub fn get_targets(&self, source: &str) -> Option<Vec<&String>> {
+    pub fn get_targets(&self, source: &str) -> Option<Vec<&IStr>> {
         self.relationships
             .get(source)
             .map(|v| v.iter().map(|(target, _)| target).collect())
     }
 
-    pub fn get_targets_with_spans(&self, source: &str) -> Option<Vec<(&String, Option<&Span>)>> {
+    pub fn get_targets_with_locations(
+        &self,
+        source: &str,
+    ) -> Option<Vec<(&IStr, Option<&RefLocation>)>> {
         self.relationships.get(source).map(|v| {
             v.iter()
-                .map(|(target, span)| (target, span.as_ref()))
+                .map(|(target, loc)| (target, loc.as_ref()))
                 .collect()
         })
     }
 
-    pub fn get_sources(&self, target: &str) -> Vec<&String> {
-        self.relationships
-            .iter()
-            .filter(|(_, targets)| targets.iter().any(|(t, _)| t == target))
-            .map(|(source, _)| source)
-            .collect()
+    pub fn get_sources(&self, target: &str) -> Vec<&IStr> {
+        self.reverse_index
+            .get(target)
+            .map(|v| v.iter().map(|(source, _)| source).collect())
+            .unwrap_or_default()
     }
 
-    /// Get all sources that reference the given target, with their spans
-    pub fn get_sources_with_spans(&self, target: &str) -> Vec<(&String, Option<&Span>)> {
-        self.relationships
-            .iter()
-            .flat_map(|(source, targets)| {
-                targets
-                    .iter()
-                    .filter(|(t, _)| t == target)
-                    .map(move |(_, span)| (source, span.as_ref()))
+    /// Get all sources that reference the given target, with their locations.
+    /// O(1) lookup using reverse index.
+    pub fn get_sources_with_locations(&self, target: &str) -> Vec<(&IStr, Option<&RefLocation>)> {
+        self.reverse_index
+            .get(target)
+            .map(|v| {
+                v.iter()
+                    .map(|(source, loc)| (source, loc.as_ref()))
+                    .collect()
             })
-            .collect()
+            .unwrap_or_default()
+    }
+
+    /// Count how many sources reference the given target.
+    pub fn count_sources(&self, target: &str) -> usize {
+        self.reverse_index.get(target).map(|v| v.len()).unwrap_or(0)
     }
 
     /// Remove all relationships where the given source is the origin
     pub fn remove_source(&mut self, source: &str) {
+        if let Some(targets) = self.relationships.get(source) {
+            for (target, _) in targets {
+                if let Some(sources) = self.reverse_index.get_mut(target.as_ref()) {
+                    sources.retain(|(s, _)| s.as_ref() != source);
+                    if sources.is_empty() {
+                        self.reverse_index.remove(target.as_ref());
+                    }
+                }
+            }
+        }
         self.relationships.remove(source);
+    }
+
+    /// Remove all relationships that have RefLocation pointing to the given file.
+    /// O(1) lookup using file index.
+    pub fn remove_by_file(&mut self, file_path: &str) {
+        // Get entries from file index (O(1) lookup)
+        let Some(entries) = self.entries_by_file.remove(file_path) else {
+            return;
+        };
+
+        // Remove each (source, target) pair
+        for (source, target) in entries {
+            // Remove from forward index
+            if let Some(targets) = self.relationships.get_mut(&source) {
+                targets.retain(|(t, _)| t.as_ref() != target.as_ref());
+                if targets.is_empty() {
+                    self.relationships.remove(&source);
+                }
+            }
+
+            // Remove from reverse index
+            if let Some(sources) = self.reverse_index.get_mut(target.as_ref()) {
+                sources.retain(|(s, _)| s.as_ref() != source.as_ref());
+                if sources.is_empty() {
+                    self.reverse_index.remove(target.as_ref());
+                }
+            }
+        }
     }
 
     pub fn has_path(&self, from: &str, to: &str) -> bool {
@@ -98,20 +146,20 @@ impl OneToManyGraph {
         }
 
         let mut visited = HashSet::new();
-        let mut stack = vec![from];
+        let mut stack = vec![from.to_string()];
 
         while let Some(current) = stack.pop() {
             if current == to {
                 return true;
             }
 
-            if !visited.insert(current) {
+            if !visited.insert(current.clone()) {
                 continue;
             }
 
-            if let Some(targets) = self.get_targets(current) {
+            if let Some(targets) = self.get_targets(&current) {
                 for target in targets {
-                    stack.push(target);
+                    stack.push(target.to_string());
                 }
             }
         }
@@ -125,7 +173,7 @@ impl OneToManyGraph {
         let mut path = Vec::new();
 
         for start in self.relationships.keys() {
-            if !visited.contains(start.as_str()) {
+            if !visited.contains(start.as_ref()) {
                 self.dfs_cycles(start, &mut visited, &mut path, &mut cycles);
             }
         }
@@ -175,7 +223,7 @@ impl OneToManyGraph {
 
         if let Some(deps) = self.get_targets(current) {
             for dep in deps {
-                if dep == target {
+                if dep.as_ref() == target {
                     return true;
                 }
                 if self.dfs_circular(dep, target, visited) {

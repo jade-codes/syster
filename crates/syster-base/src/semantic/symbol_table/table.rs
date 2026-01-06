@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::core::Span;
 use crate::core::events::EventEmitter;
 use crate::core::operation::{EventBus, OperationResult};
@@ -11,6 +13,12 @@ pub struct SymbolTable {
     pub(super) current_scope: usize,
     current_file: Option<String>,
     pub events: EventEmitter<SymbolTableEvent, SymbolTable>,
+    /// Index mapping file paths to qualified names of symbols defined in that file
+    pub(super) symbols_by_file: HashMap<String, Vec<String>>,
+    /// Index mapping file paths to imports originating from that file
+    pub(super) imports_by_file: HashMap<String, Vec<Import>>,
+    /// Reverse index: target_qname -> [(file, span)] for O(1) import reference lookups
+    import_references: HashMap<String, Vec<(String, Span)>>,
 }
 
 impl SymbolTable {
@@ -20,6 +28,9 @@ impl SymbolTable {
             current_scope: 0,
             current_file: None,
             events: EventEmitter::new(),
+            symbols_by_file: HashMap::new(),
+            imports_by_file: HashMap::new(),
+            import_references: HashMap::new(),
         }
     }
 
@@ -58,6 +69,7 @@ impl SymbolTable {
     pub fn insert(&mut self, name: String, symbol: Symbol) -> Result<(), String> {
         {
             let qualified_name = symbol.qualified_name().to_string();
+            let source_file = symbol.source_file().map(|s| s.to_string());
             let symbol_id = self.scopes.iter().map(|s| s.symbols.len()).sum::<usize>();
 
             let scope = &mut self.scopes[self.current_scope];
@@ -69,6 +81,14 @@ impl SymbolTable {
             }
 
             scope.symbols.insert(name, symbol);
+
+            // Update the file -> symbols index
+            if let Some(file_path) = source_file {
+                self.symbols_by_file
+                    .entry(file_path)
+                    .or_default()
+                    .push(qualified_name.clone());
+            }
 
             let event = SymbolTableEvent::SymbolInserted {
                 qualified_name,
@@ -93,9 +113,17 @@ impl SymbolTable {
                 is_recursive,
                 is_namespace,
                 span,
-                file,
+                file: file.clone(),
             };
-            self.scopes[self.current_scope].imports.push(import);
+            self.scopes[self.current_scope].imports.push(import.clone());
+
+            // Update the file -> imports index
+            if let Some(file_path) = file {
+                self.imports_by_file
+                    .entry(file_path)
+                    .or_default()
+                    .push(import);
+            }
 
             let event = SymbolTableEvent::ImportAdded { import_path: path };
             OperationResult::<(), String, SymbolTableEvent>::success((), Some(event))
@@ -137,53 +165,71 @@ impl SymbolTable {
     }
 
     /// Get all imports that reference a given target (for "Find References")
-    /// Returns (file, span) pairs for each import of the target
-    ///
-    /// TODO: Consider optimizing with a reverse index if performance becomes an issue
-    /// with large projects. Current O(n*m) complexity where n=imports, m=scopes/symbols.
+    /// Returns (file, span) pairs for each import of the target.
+    /// O(1) lookup using reverse index.
     pub fn get_import_references(&self, target_qname: &str) -> Vec<(&str, &Span)> {
-        let mut refs = Vec::new();
-        for scope in &self.scopes {
-            for import in &scope.imports {
-                // Skip wildcard imports - they don't directly reference a symbol
-                if import.path.ends_with("::*") || import.path.ends_with("::**") {
-                    continue;
-                }
+        self.import_references
+            .get(target_qname)
+            .map(|refs| {
+                refs.iter()
+                    .map(|(file, span)| (file.as_str(), span))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
 
-                // Check if this import targets the symbol (either exact or qualified)
-                let matches = import.path == target_qname
-                    || self
-                        .lookup_qualified(&import.path)
-                        .map(|s| s.qualified_name() == target_qname)
-                        .unwrap_or(false)
-                    || self
-                        .lookup(&import.path)
-                        .map(|s| s.qualified_name() == target_qname)
-                        .unwrap_or(false);
+    /// Register an import reference for reverse lookup.
+    /// Called during import resolution when we know the target.
+    pub fn add_import_reference(&mut self, target_qname: String, file: String, span: Span) {
+        self.import_references
+            .entry(target_qname)
+            .or_default()
+            .push((file, span));
+    }
 
-                if matches && let (Some(span), Some(file)) = (&import.span, &import.file) {
-                    refs.push((file.as_str(), span));
-                }
-            }
+    /// Clear import references for a file (called when file is reparsed)
+    pub fn clear_import_references_for_file(&mut self, file_path: &str) {
+        for refs in self.import_references.values_mut() {
+            refs.retain(|(file, _)| file != file_path);
         }
-        refs
+        // Clean up empty entries
+        self.import_references.retain(|_, refs| !refs.is_empty());
     }
 
     /// Get all imports from a specific file
     ///
-    /// Returns a vector of (import_path, span) tuples for all imports in the given file
+    /// Returns a vector of (import_path, span) tuples for all imports in the given file.
+    /// Uses an internal index for O(1) file lookup.
     pub fn get_file_imports(&self, file_path: &str) -> Vec<(String, Span)> {
-        let mut imports = Vec::new();
-        for scope in &self.scopes {
-            for import in &scope.imports {
-                if let (Some(import_file), Some(span)) = (&import.file, &import.span)
-                    && import_file == file_path
-                {
-                    imports.push((import.path.clone(), *span));
-                }
-            }
-        }
-        imports
+        self.imports_by_file
+            .get(file_path)
+            .into_iter()
+            .flatten()
+            .filter_map(|import| import.span.map(|span| (import.path.clone(), span)))
+            .collect()
+    }
+
+    /// Get all symbols defined in a specific file
+    ///
+    /// Returns an iterator of symbols whose source_file matches the given path.
+    /// Uses an internal index for O(1) file lookup instead of iterating all symbols.
+    pub fn get_symbols_for_file(&self, file_path: &str) -> impl Iterator<Item = &Symbol> {
+        self.symbols_by_file
+            .get(file_path)
+            .into_iter()
+            .flatten()
+            .filter_map(|qname| self.lookup_qualified(qname))
+    }
+
+    /// Get qualified names of all symbols defined in a specific file
+    ///
+    /// Returns a cloned Vec of qualified names for the file.
+    /// Used by enable_auto_invalidation to know which symbols to remove.
+    pub fn get_qualified_names_for_file(&self, file_path: &str) -> Vec<String> {
+        self.symbols_by_file
+            .get(file_path)
+            .cloned()
+            .unwrap_or_default()
     }
 }
 

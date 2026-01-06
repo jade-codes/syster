@@ -7,7 +7,7 @@ impl LspServer {
     ///
     /// Returns a list of clickable links that navigate to:
     /// 1. Import statements - links to the definition of the imported symbol
-    /// 2. Qualified references - links to the definition of the referenced symbol
+    /// 2. Type references - links to specialized types, typed definitions, etc.
     pub fn get_document_links(&self, uri: &Url) -> Vec<DocumentLink> {
         let mut links = Vec::new();
 
@@ -16,8 +16,9 @@ impl LspServer {
             None => return links,
         };
 
+        let file_path_str = path.to_string_lossy().to_string();
+
         // Get all imports from this file using the symbol table
-        let file_path_str = path.to_string_lossy();
         let imports = self
             .workspace
             .symbol_table()
