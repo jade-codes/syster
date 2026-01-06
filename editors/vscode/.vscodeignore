@@ -10,3 +10,8 @@ tsconfig.json
 **/*.ts
 !out/**/*.js
 *.vsix
+scripts/**
+
+# Include bundled assets (don't ignore them)
+!server/**
+!sysml.library/**
