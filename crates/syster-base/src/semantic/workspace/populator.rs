@@ -61,9 +61,10 @@ impl<'a> WorkspacePopulator<'a> {
             }
         }
 
-        // NOTE: collect_references removed - references are now queried
-        // directly from RelationshipGraph via get_references_to() for O(1) lookup
-        // instead of O(n) on every keystroke
+        // Collect references to populate import reverse index
+        // This is needed for "Find References" to include import statements
+        self.collect_references();
+
         Ok(unpopulated)
     }
 
