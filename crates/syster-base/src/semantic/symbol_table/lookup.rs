@@ -2,31 +2,9 @@ use super::symbol::Symbol;
 use super::table::SymbolTable;
 
 impl SymbolTable {
-    pub fn lookup(&self, name: &str) -> Option<&Symbol> {
-        self.lookup_in(name, self.current_scope)
-    }
-
-    fn lookup_in(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
-        let mut current = scope_id;
-        loop {
-            if let Some(symbol) = self.scopes[current].symbols.get(name) {
-                return self.resolve_alias(symbol);
-            }
-
-            if let Some(symbol) = self.lookup_in_imports(name, current) {
-                return self.resolve_alias(symbol);
-            }
-
-            current = self.scopes[current].parent?;
-        }
-    }
-
-    fn resolve_alias<'a>(&'a self, symbol: &'a Symbol) -> Option<&'a Symbol> {
-        match symbol {
-            Symbol::Alias { target, .. } => self.lookup(target),
-            _ => Some(symbol),
-        }
-    }
+    // ============================================================
+    // Mutable Lookups (required for population)
+    // ============================================================
 
     pub fn lookup_mut(&mut self, name: &str) -> Option<&mut Symbol> {
         let scope_chain = self.build_scope_chain(self.current_scope);
@@ -61,86 +39,9 @@ impl SymbolTable {
             .find_map(|scope| scope.symbols.get_mut(name))
     }
 
-    pub(super) fn lookup_in_imports(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
-        self.scopes[scope_id].imports.iter().find_map(|import| {
-            if import.is_namespace {
-                self.lookup_namespace_import(name, &import.path, import.is_recursive)
-            } else {
-                self.lookup_member_import(name, &import.path)
-            }
-        })
-    }
-
-    fn lookup_namespace_import(
-        &self,
-        name: &str,
-        import_path: &str,
-        is_recursive: bool,
-    ) -> Option<&Symbol> {
-        let namespace = import_path.trim_end_matches("::*").trim_end_matches("::**");
-        let qualified = format!("{namespace}::{name}");
-
-        self.lookup_qualified(&qualified)
-            .or_else(|| is_recursive.then(|| self.lookup_recursive_import(name, namespace))?)
-    }
-
-    fn lookup_member_import(&self, name: &str, import_path: &str) -> Option<&Symbol> {
-        if import_path.ends_with(&format!("::{name}")) || import_path == name {
-            self.lookup_qualified(import_path)
-        } else {
-            None
-        }
-    }
-
-    fn lookup_recursive_import(&self, name: &str, namespace: &str) -> Option<&Symbol> {
-        let prefix = format!("{namespace}::");
-        let suffix = format!("::{name}");
-
-        self.scopes.iter().find_map(|scope| {
-            scope
-                .symbols
-                .iter()
-                .find(|(qname, _)| qname.starts_with(&prefix) && qname.ends_with(&suffix))
-                .map(|(_, symbol)| symbol)
-        })
-    }
-
-    pub fn lookup_from_scope(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
-        let mut current = scope_id;
-        loop {
-            if let Some(symbol) = self.scopes[current].symbols.get(name) {
-                return Some(symbol);
-            }
-            current = self.scopes[current].parent?;
-        }
-    }
-
-    /// Resolve a name using imports from a specific scope
-    ///
-    /// This is useful when you need to resolve a name in the context of
-    /// a specific file's imports without modifying current_scope.
-    pub fn resolve_in_scope(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
-        self.lookup_qualified(name)
-            .or_else(|| self.lookup_in(name, scope_id))
-    }
-
-    pub fn lookup_qualified(&self, qualified_name: &str) -> Option<&Symbol> {
-        self.scopes.iter().find_map(|scope| {
-            scope
-                .symbols
-                .values()
-                .find(|symbol| symbol.qualified_name() == qualified_name)
-        })
-    }
-
-    /// Resolve a symbol by name, trying qualified lookup first, then simple lookup
-    ///
-    /// This is the standard pattern for symbol resolution:
-    /// 1. Try lookup_qualified (for fully qualified names like "Package::Element")
-    /// 2. Fall back to simple lookup (for unqualified names like "Element")
-    pub fn resolve(&self, name: &str) -> Option<&Symbol> {
-        self.lookup_qualified(name).or_else(|| self.lookup(name))
-    }
+    // ============================================================
+    // Enumeration
+    // ============================================================
 
     pub fn all_symbols(&self) -> Vec<(&String, &Symbol)> {
         self.scopes
@@ -149,11 +50,13 @@ impl SymbolTable {
             .collect()
     }
 
+    // ============================================================
+    // File-based Operations
+    // ============================================================
+
     pub fn remove_symbols_from_file(&mut self, file_path: &str) -> usize {
-        // Clear the file -> symbols index for this file
         self.symbols_by_file.remove(file_path);
 
-        // Remove symbols from all scopes
         self.scopes
             .iter_mut()
             .map(|scope| {
@@ -166,12 +69,9 @@ impl SymbolTable {
             .sum()
     }
 
-    /// Remove all imports that originated from a specific file
     pub fn remove_imports_from_file(&mut self, file_path: &str) {
-        // Clear the file -> imports index
         self.imports_by_file.remove(file_path);
 
-        // Remove imports from all scopes
         for scope in &mut self.scopes {
             scope
                 .imports

@@ -14,6 +14,7 @@ use super::super::*;
 use crate::core::constants::{REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_SATISFY};
 use crate::semantic::analyzer::validation::RelationshipValidator;
 use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::types::{SemanticError, SemanticRole};
 use crate::syntax::SyntaxFile;
@@ -556,7 +557,7 @@ fn test_populate_preserves_existing_symbols() {
     let result = populate_syntax_file(&syntax_file, &mut table, &mut graph);
 
     assert!(result.is_ok());
-    assert!(table.lookup("ExistingSymbol").is_some());
+    assert!(Resolver::new(&table).resolve("ExistingSymbol").is_some());
 }
 
 #[test]
@@ -619,7 +620,8 @@ fn test_populate_single_package() {
     let result = populator.populate(&file);
     assert!(result.is_ok());
 
-    let symbol = table.lookup("TestPackage");
+    let _resolver = Resolver::new(&table);
+    let symbol = _resolver.resolve("TestPackage");
     assert!(symbol.is_some());
 
     let Some(Symbol::Package {
@@ -656,7 +658,8 @@ fn test_populate_nested_packages() {
     let result = populator.populate(&file);
     assert!(result.is_ok());
 
-    let outer = table.lookup("Outer");
+    let _resolver = Resolver::new(&table);
+    let outer = _resolver.resolve("Outer");
     assert!(outer.is_some());
 
     // Verify Inner package exists in the symbol table with correct qualified name
@@ -695,7 +698,8 @@ fn test_populate_definition() {
     let result = populator.populate(&file);
     assert!(result.is_ok());
 
-    let symbol = table.lookup("MyPart");
+    let _resolver = Resolver::new(&table);
+    let symbol = _resolver.resolve("MyPart");
     assert!(symbol.is_some());
 }
 
@@ -733,7 +737,11 @@ fn test_kerml_adapter_new_symbol_table_accessible() {
         .symbol_table
         .insert("TestPackage".to_string(), test_symbol);
     assert!(result.is_ok());
-    assert!(adapter.symbol_table.lookup("TestPackage").is_some());
+    assert!(
+        Resolver::new(&adapter.symbol_table)
+            .resolve("TestPackage")
+            .is_some()
+    );
 }
 
 #[test]
@@ -768,7 +776,11 @@ fn test_kerml_adapter_new_with_populated_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify the adapter can access the existing symbols
-    assert!(adapter.symbol_table.lookup("ExistingSymbol").is_some());
+    assert!(
+        Resolver::new(&adapter.symbol_table)
+            .resolve("ExistingSymbol")
+            .is_some()
+    );
     assert!(adapter.errors.is_empty());
 }
 
@@ -847,5 +859,5 @@ fn test_kerml_adapter_new_lifetime_handling() {
     } // adapter goes out of scope here
 
     // Verify we can still use the table after adapter is dropped
-    assert!(table.lookup("NonExistent").is_none());
+    assert!(Resolver::new(&table).resolve("NonExistent").is_none());
 }

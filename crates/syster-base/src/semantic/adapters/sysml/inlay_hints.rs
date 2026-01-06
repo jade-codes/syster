@@ -3,6 +3,7 @@
 //! Provides inline annotations for types, parameter names, and other contextual information.
 
 use crate::core::Position;
+use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::types::{InlayHint, InlayHintKind};
 use crate::syntax::sysml::ast::{
@@ -80,7 +81,8 @@ fn collect_usage_hints(
 
         if !has_typing && usage.span.is_some() {
             // Try to infer type from symbol table
-            if let Some(symbol) = symbol_table.lookup(name) {
+            let resolver = Resolver::new(symbol_table);
+            if let Some(symbol) = resolver.resolve(name) {
                 // For usage symbols, check usage_type field
                 let type_name = match symbol {
                     crate::semantic::symbol_table::Symbol::Usage { usage_type, .. } => {

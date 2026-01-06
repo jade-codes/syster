@@ -10,6 +10,7 @@
 
 use std::path::PathBuf;
 use syster::core::Position;
+use syster::semantic::resolver::Resolver;
 use syster::syntax::SyntaxFile;
 use syster::syntax::parser::parse_with_result;
 use syster::syntax::sysml::ast::SysMLFile;
@@ -323,10 +324,11 @@ part myVehicle: Vehicle;"#;
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     let symbol_table = workspace.symbol_table();
+    let resolver = Resolver::new(&symbol_table);
 
     // Check that Package symbol has span
-    let package_symbol = symbol_table
-        .lookup("Test")
+    let package_symbol = resolver
+        .resolve("Test")
         .expect("Package 'Test' should be in symbol table");
     assert!(
         package_symbol.span().is_some(),
@@ -334,8 +336,8 @@ part myVehicle: Vehicle;"#;
     );
 
     // Check that Definition symbol has span
-    let def_symbol = symbol_table
-        .lookup_qualified("Test::Vehicle")
+    let def_symbol = resolver
+        .resolve_qualified("Test::Vehicle")
         .expect("Definition 'Test::Vehicle' should be in symbol table");
     assert!(
         def_symbol.span().is_some(),
@@ -343,8 +345,8 @@ part myVehicle: Vehicle;"#;
     );
 
     // Check that Usage symbol has span
-    let usage_symbol = symbol_table
-        .lookup_qualified("Test::myVehicle")
+    let usage_symbol = resolver
+        .resolve_qualified("Test::myVehicle")
         .expect("Usage 'Test::myVehicle' should be in symbol table");
     assert!(
         usage_symbol.span().is_some(),

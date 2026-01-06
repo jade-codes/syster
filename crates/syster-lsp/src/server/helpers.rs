@@ -1,5 +1,6 @@
 use async_lsp::lsp_types::{Location, Position, Range, Url};
 use std::path::PathBuf;
+use syster::semantic::resolver::Resolver;
 use syster::semantic::symbol_table::Symbol;
 use syster::syntax::SyntaxFile;
 
@@ -147,19 +148,13 @@ pub fn collect_reference_locations(
 
     let mut locations = Vec::new();
 
-    // Add relationship references (typing, specialization, etc.)
-    // Returns (file_path, span) pairs - file path is stored with each reference
+    // Query relationship graph by qualified name
+    // The graph stores resolved qualified names, so this matches correctly
     let refs = workspace
         .relationship_graph()
         .get_references_to(qualified_name);
 
     debug!("[COLLECT_REFS] relationship refs count={}", refs.len());
-    for (file_path, reference_span) in &refs {
-        debug!(
-            "[COLLECT_REFS]   file={}, span={}:{}",
-            file_path, reference_span.start.line, reference_span.start.column
-        );
-    }
 
     for (file_path, reference_span) in refs {
         if let Ok(uri) = Url::from_file_path(file_path) {
@@ -258,11 +253,12 @@ pub fn format_rich_hover(
         );
     }
     if !relationships.is_empty() {
+        let resolver = Resolver::new(workspace.symbol_table());
         for (rel_type, targets) in relationships {
             result.push_str(&format!("\n**{rel_type}:**\n"));
             for target in targets {
                 // Try to make targets clickable too
-                if let Some(target_symbol) = workspace.symbol_table().resolve(&target)
+                if let Some(target_symbol) = resolver.resolve(&target)
                     && let Some(target_file) = target_symbol.source_file()
                     && let Ok(target_uri) = Url::from_file_path(target_file)
                 {
@@ -281,7 +277,7 @@ pub fn format_rich_hover(
 
     // Incoming references (use Shift+F12 to see all)
     // Reuse the shared collect_reference_locations to include both relationship and import refs
-    let references = collect_reference_locations(workspace, symbol.qualified_name());
+    let references: Vec<Location> = collect_reference_locations(workspace, symbol.qualified_name());
     if !references.is_empty() {
         let count = references.len();
         let plural = if count == 1 { "" } else { "s" };

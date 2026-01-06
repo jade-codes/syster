@@ -3,6 +3,7 @@ use async_lsp::lsp_types::{
     DiagnosticSeverity, HoverContents, MarkedString, Position, PrepareRenameResponse, Url,
 };
 use syster::core::constants::REL_TYPING;
+use syster::semantic::resolver::Resolver;
 use syster::semantic::symbol_table::Symbol;
 
 #[test]
@@ -121,10 +122,8 @@ part car : VehicleA;
     // Verify the old name has no references
     // (Vehicle no longer exists, so lookup should fail)
     assert!(
-        server
-            .workspace()
-            .symbol_table()
-            .lookup("Vehicle")
+        Resolver::new(server.workspace().symbol_table())
+            .resolve("Vehicle")
             .is_none(),
         "Old symbol 'Vehicle' should no longer exist"
     );
@@ -723,7 +722,7 @@ fn test_find_references_nested_elements() {
     for _loc in &locations {}
 
     // Debug: check the symbol
-    let _symbol = server.workspace().symbol_table().lookup("Auto::Wheel");
+    let _symbol = Resolver::new(server.workspace().symbol_table()).resolve("Auto::Wheel");
 
     // Debug: check all symbols
     for (_key, _sym) in server.workspace().symbol_table().all_symbols() {}
@@ -1977,8 +1976,9 @@ fn test_cross_file_reference_resolution_basic() {
     // Check if BaseUnit is in the symbol table
     let symbol_table = server.workspace().symbol_table();
 
-    let by_simple = symbol_table.lookup("BaseUnit");
-    let by_qualified = symbol_table.lookup_qualified("BasePackage::BaseUnit");
+    let resolver = Resolver::new(&symbol_table);
+    let by_simple = resolver.resolve("BaseUnit");
+    let by_qualified = resolver.resolve_qualified("BasePackage::BaseUnit");
 
     assert!(
         by_simple.is_some() || by_qualified.is_some(),
@@ -2078,10 +2078,9 @@ fn test_cross_file_stdlib_reference_resolution() {
     server.open_document(&uri, text).unwrap();
 
     // Check if DimensionOneUnit is in symbol table
-    if server
-        .workspace()
-        .symbol_table()
-        .lookup_qualified("MeasurementReferences::DimensionOneUnit")
+    let resolver = Resolver::new(server.workspace().symbol_table());
+    if resolver
+        .resolve_qualified("MeasurementReferences::DimensionOneUnit")
         .is_some()
     {
     } else {
@@ -2262,9 +2261,8 @@ fn test_dimension_one_unit_cross_file_resolution() {
     }
 
     // Check DimensionOneUnit exists
-    let found = workspace
-        .symbol_table()
-        .lookup_qualified("MeasurementReferences::DimensionOneUnit");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let found = resolver.resolve_qualified("MeasurementReferences::DimensionOneUnit");
     assert!(
         found.is_some(),
         "DimensionOneUnit should be found in stdlib"
@@ -2286,13 +2284,12 @@ package TestPkg {
     let _ = workspace.populate_all();
 
     // Verify MyUnit is in the table
-    let my_unit = workspace.symbol_table().lookup_qualified("TestPkg::MyUnit");
+    let resolver = Resolver::new(workspace.symbol_table());
+    let my_unit = resolver.resolve_qualified("TestPkg::MyUnit");
     assert!(my_unit.is_some(), "MyUnit should be found");
 
     // Verify DimensionOneUnit is still findable
-    let dim_one = workspace
-        .symbol_table()
-        .lookup_qualified("MeasurementReferences::DimensionOneUnit");
+    let dim_one = resolver.resolve_qualified("MeasurementReferences::DimensionOneUnit");
     assert!(
         dim_one.is_some(),
         "DimensionOneUnit should still be found after adding user file"

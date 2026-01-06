@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use crate::semantic::resolver::Resolver;
 
 use super::super::*;
 
@@ -20,7 +21,8 @@ fn test_lookup_from_scope_in_current_scope() {
     table.insert("RootSymbol".to_string(), symbol).unwrap();
 
     // Lookup from scope 0 should find it
-    let found = table.lookup_from_scope("RootSymbol", 0);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("RootSymbol", 0);
     assert!(found.is_some());
     assert_eq!(found.unwrap().name(), "RootSymbol");
 }
@@ -48,7 +50,8 @@ fn test_lookup_from_scope_in_parent_scope() {
     let child_scope = table.enter_scope();
 
     // Lookup from child scope should find symbol in parent
-    let found = table.lookup_from_scope("ParentSymbol", child_scope);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("ParentSymbol", child_scope);
     assert!(found.is_some());
     assert_eq!(found.unwrap().name(), "ParentSymbol");
 }
@@ -79,7 +82,8 @@ fn test_lookup_from_scope_in_grandparent_scope() {
     let grandchild_scope = table.enter_scope();
 
     // Lookup from grandchild should find symbol in grandparent
-    let found = table.lookup_from_scope("GrandparentSymbol", grandchild_scope);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("GrandparentSymbol", grandchild_scope);
     assert!(found.is_some());
     assert_eq!(found.unwrap().name(), "GrandparentSymbol");
 }
@@ -102,7 +106,8 @@ fn test_lookup_from_scope_not_found() {
     table.insert("ExistingSymbol".to_string(), symbol).unwrap();
 
     // Try to find a non-existent symbol from root scope
-    let found = table.lookup_from_scope("NonExistentSymbol", 0);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("NonExistentSymbol", 0);
     assert!(found.is_none());
 }
 
@@ -141,7 +146,8 @@ fn test_lookup_from_scope_symbol_shadowing() {
     table.insert("Symbol".to_string(), child_symbol).unwrap();
 
     // Lookup from child scope should find the child scope symbol (shadowing)
-    let found = table.lookup_from_scope("Symbol", child_scope);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("Symbol", child_scope);
     assert!(found.is_some());
     let symbol = found.unwrap();
     assert_eq!(symbol.qualified_name(), "Parent::Child::Symbol");
@@ -169,7 +175,8 @@ fn test_lookup_from_scope_from_root() {
     table.enter_scope();
 
     // Lookup from root scope should only find root symbol, not check children
-    let found = table.lookup_from_scope("RootSymbol", 0);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("RootSymbol", 0);
     assert!(found.is_some());
 }
 
@@ -199,7 +206,9 @@ fn test_lookup_from_scope_no_sibling_access() {
     let sibling2_scope = table.enter_scope();
 
     // Lookup from sibling2 scope should not find sibling1's symbol
-    let found = table.lookup_from_scope("Sibling1", sibling2_scope);
+    // Using resolve_from_scope_direct to test scope-chain isolation (no global lookup)
+    let resolver = Resolver::new(&table);
+    let found = resolver.resolve_from_scope_direct("Sibling1", sibling2_scope);
     assert!(found.is_none());
 }
 
@@ -259,15 +268,18 @@ fn test_lookup_from_scope_different_symbol_types() {
         .unwrap();
 
     // From feature scope, should find all three up the chain
-    let pkg = table.lookup_from_scope("RootPkg", feature_scope);
+    let _resolver = Resolver::new(&table);
+    let pkg = _resolver.resolve_in_scope("RootPkg", feature_scope);
     assert!(pkg.is_some());
     assert!(matches!(pkg.unwrap(), Symbol::Package { .. }));
 
-    let class = table.lookup_from_scope("MyClass", feature_scope);
+    let _resolver = Resolver::new(&table);
+    let class = _resolver.resolve_in_scope("MyClass", feature_scope);
     assert!(class.is_some());
     assert!(matches!(class.unwrap(), Symbol::Classifier { .. }));
 
-    let feature = table.lookup_from_scope("MyFeature", feature_scope);
+    let _resolver = Resolver::new(&table);
+    let feature = _resolver.resolve_in_scope("MyFeature", feature_scope);
     assert!(feature.is_some());
     assert!(matches!(feature.unwrap(), Symbol::Feature { .. }));
 }
@@ -307,19 +319,59 @@ fn test_lookup_from_scope_deeply_nested() {
 
     // From the deepest scope (level 4), we should be able to find all symbols
     let deepest_scope = *scope_ids.last().unwrap();
-    assert!(table.lookup_from_scope("Level0", deepest_scope).is_some());
-    assert!(table.lookup_from_scope("Level1", deepest_scope).is_some());
-    assert!(table.lookup_from_scope("Level2", deepest_scope).is_some());
-    assert!(table.lookup_from_scope("Level3", deepest_scope).is_some());
-    assert!(table.lookup_from_scope("Level4", deepest_scope).is_some());
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level0", deepest_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level1", deepest_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level2", deepest_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level3", deepest_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level4", deepest_scope)
+            .is_some()
+    );
 
     // From level 2, we should only find Level0, Level1, and Level2
     let level2_scope = scope_ids[2];
-    assert!(table.lookup_from_scope("Level0", level2_scope).is_some());
-    assert!(table.lookup_from_scope("Level1", level2_scope).is_some());
-    assert!(table.lookup_from_scope("Level2", level2_scope).is_some());
-    assert!(table.lookup_from_scope("Level3", level2_scope).is_none());
-    assert!(table.lookup_from_scope("Level4", level2_scope).is_none());
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level0", level2_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level1", level2_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level2", level2_scope)
+            .is_some()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level3", level2_scope)
+            .is_none()
+    );
+    assert!(
+        Resolver::new(&table)
+            .resolve_in_scope("Level4", level2_scope)
+            .is_none()
+    );
 }
 
 /// Test that lookup_from_scope doesn't check child scopes
@@ -353,7 +405,9 @@ fn test_lookup_from_scope_no_child_access() {
     table.insert("Child".to_string(), child_symbol).unwrap();
 
     // Lookup from root scope should NOT find child's symbol
-    let found = table.lookup_from_scope("Child", 0);
+    // Using resolve_from_scope_direct to test scope-chain isolation (no global lookup)
+    let resolver = Resolver::new(&table);
+    let found = resolver.resolve_from_scope_direct("Child", 0);
     assert!(found.is_none());
 }
 
@@ -396,12 +450,14 @@ fn test_lookup_from_scope_with_alias() {
         .unwrap();
 
     // lookup_from_scope should find the alias (doesn't resolve it)
-    let found = table.lookup_from_scope("AliasSymbol", child_scope);
+    let _resolver = Resolver::new(&table);
+    let found = _resolver.resolve_in_scope("AliasSymbol", child_scope);
     assert!(found.is_some());
     assert!(matches!(found.unwrap(), Symbol::Alias { .. }));
 
     // Should also find the real symbol from child scope
-    let real = table.lookup_from_scope("RealSymbol", child_scope);
+    let _resolver = Resolver::new(&table);
+    let real = _resolver.resolve_in_scope("RealSymbol", child_scope);
     assert!(real.is_some());
     assert!(matches!(real.unwrap(), Symbol::Package { .. }));
 }
@@ -448,19 +504,21 @@ fn test_lookup_from_scope_definition_and_usage() {
         .unwrap();
 
     // From child scope, should find both
-    let def = table.lookup_from_scope("MyDef", child_scope);
+    let resolver = Resolver::new(&table);
+    let def = resolver.resolve_from_scope_direct("MyDef", child_scope);
     assert!(def.is_some());
     assert!(matches!(def.unwrap(), Symbol::Definition { .. }));
 
-    let usage = table.lookup_from_scope("MyUsage", child_scope);
+    let usage = resolver.resolve_from_scope_direct("MyUsage", child_scope);
     assert!(usage.is_some());
     assert!(matches!(usage.unwrap(), Symbol::Usage { .. }));
 
     // From root scope, should only find definition
-    let def_from_root = table.lookup_from_scope("MyDef", 0);
+    // Using resolve_from_scope_direct to test scope-chain isolation (no global lookup)
+    let def_from_root = resolver.resolve_from_scope_direct("MyDef", 0);
     assert!(def_from_root.is_some());
 
-    let usage_from_root = table.lookup_from_scope("MyUsage", 0);
+    let usage_from_root = resolver.resolve_from_scope_direct("MyUsage", 0);
     assert!(usage_from_root.is_none());
 }
 
@@ -481,9 +539,12 @@ fn test_lookup_from_scope_idempotent() {
     table.insert("Symbol".to_string(), symbol).unwrap();
 
     // Multiple lookups should return the same result
-    let found1 = table.lookup_from_scope("Symbol", 0);
-    let found2 = table.lookup_from_scope("Symbol", 0);
-    let found3 = table.lookup_from_scope("Symbol", 0);
+    let _resolver = Resolver::new(&table);
+    let found1 = _resolver.resolve_in_scope("Symbol", 0);
+    let _resolver = Resolver::new(&table);
+    let found2 = _resolver.resolve_in_scope("Symbol", 0);
+    let _resolver = Resolver::new(&table);
+    let found3 = _resolver.resolve_in_scope("Symbol", 0);
 
     assert!(found1.is_some());
     assert!(found2.is_some());

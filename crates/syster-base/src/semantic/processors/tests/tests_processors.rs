@@ -4,6 +4,7 @@ use crate::core::constants::{
 };
 use crate::core::{Position, Span};
 use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::{NoOpValidator, RelationshipValidator};
 use crate::syntax::sysml::ast::{
@@ -100,7 +101,8 @@ fn test_typing_relationship_reference() {
     collector.collect();
 
     // Verify Vehicle has a reference from myCar
-    let vehicle = table.lookup("Vehicle").unwrap();
+    let _resolver = Resolver::new(&table);
+    let vehicle = _resolver.resolve("Vehicle").unwrap();
     assert_eq!(vehicle.references().len(), 1);
     assert_eq!(vehicle.references()[0].span.start.line, 5);
     assert_eq!(vehicle.references()[0].span.start.column, 0);
@@ -165,7 +167,8 @@ fn test_specialization_relationship_reference() {
     collector.collect();
 
     // Verify Vehicle has a reference from Car
-    let vehicle = table.lookup("Vehicle").unwrap();
+    let _resolver = Resolver::new(&table);
+    let vehicle = _resolver.resolve("Vehicle").unwrap();
     assert_eq!(vehicle.references().len(), 1);
     assert_eq!(vehicle.references()[0].span.start.line, 3);
 }
@@ -272,7 +275,8 @@ fn test_multiple_references_to_same_symbol() {
     collector.collect();
 
     // Verify Integer has references from all three features
-    let integer = table.lookup("Integer").unwrap();
+    let _resolver = Resolver::new(&table);
+    let integer = _resolver.resolve("Integer").unwrap();
     assert_eq!(integer.references().len(), 3);
 
     let lines: Vec<_> = integer
@@ -342,7 +346,8 @@ fn test_redefinition_reference() {
     collector.collect();
 
     // Verify Vehicle::mass has a reference from Car::mass
-    let base_mass = table.lookup("Vehicle::mass").unwrap();
+    let _resolver = Resolver::new(&table);
+    let base_mass = _resolver.resolve("Vehicle::mass").unwrap();
     assert_eq!(base_mass.references().len(), 1);
     assert_eq!(base_mass.references()[0].span.start.line, 6);
 }
@@ -404,7 +409,8 @@ fn test_subsetting_reference() {
     collector.collect();
 
     // Verify parts has a reference from engineParts
-    let parts = table.lookup("parts").unwrap();
+    let _resolver = Resolver::new(&table);
+    let parts = _resolver.resolve("parts").unwrap();
     assert_eq!(parts.references().len(), 1);
     assert_eq!(parts.references()[0].span.start.line, 4);
 }
@@ -470,7 +476,8 @@ fn test_reference_subsetting() {
     collector.collect();
 
     // Verify vehicle has a reference from car
-    let vehicle = table.lookup("vehicle").unwrap();
+    let _resolver = Resolver::new(&table);
+    let vehicle = _resolver.resolve("vehicle").unwrap();
     assert_eq!(vehicle.references().len(), 1);
     assert_eq!(vehicle.references()[0].span.start.line, 4);
 }
@@ -510,7 +517,8 @@ fn test_no_references() {
     collector.collect();
 
     // Verify no references collected
-    let standalone = table.lookup("StandaloneClass").unwrap();
+    let _resolver = Resolver::new(&table);
+    let standalone = _resolver.resolve("StandaloneClass").unwrap();
     assert_eq!(standalone.references().len(), 0);
 }
 
@@ -568,7 +576,8 @@ fn test_symbol_without_span() {
     collector.collect();
 
     // Verify no reference collected (source has no span)
-    let target = table.lookup("Target").unwrap();
+    let _resolver = Resolver::new(&table);
+    let target = _resolver.resolve("Target").unwrap();
     assert_eq!(target.references().len(), 0);
 }
 
@@ -656,7 +665,8 @@ fn test_mixed_relationships() {
     collector.collect();
 
     // Verify Base has references from both relationships
-    let base = table.lookup("Base").unwrap();
+    let _resolver = Resolver::new(&table);
+    let base = _resolver.resolve("Base").unwrap();
     assert_eq!(base.references().len(), 2);
 
     let lines: Vec<_> = base

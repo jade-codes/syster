@@ -5,6 +5,7 @@ use super::super::*;
 use crate::semantic::RelationshipGraph;
 use crate::semantic::SemanticErrorKind;
 use crate::semantic::create_validator;
+use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::types::{SemanticError, SemanticResult, SemanticRole};
 
@@ -263,7 +264,11 @@ fn test_analyzer_symbol_table_access() {
         )
         .unwrap();
 
-    assert!(analyzer.symbol_table().lookup("NewSymbol").is_some());
+    assert!(
+        Resolver::new(analyzer.symbol_table())
+            .resolve("NewSymbol")
+            .is_some()
+    );
 }
 
 #[test]
@@ -415,7 +420,7 @@ fn test_analyzer_immutable_access() {
 
     let analyzer = SemanticAnalyzer::with_symbol_table(table);
     let sym_table = analyzer.symbol_table();
-    assert!(sym_table.lookup("Test").is_some());
+    assert!(Resolver::new(&sym_table).resolve("Test").is_some());
 }
 
 #[test]
@@ -721,7 +726,8 @@ fn test_context_symbol_table_reference() {
 
     let graph = RelationshipGraph::new();
     let context = AnalysisContext::new(&table, &graph);
-    let lookup_result = context.symbol_table.lookup("Test");
+    let _resolver = Resolver::new(&context.symbol_table);
+    let lookup_result = _resolver.resolve("Test");
     assert!(lookup_result.is_some());
 }
 

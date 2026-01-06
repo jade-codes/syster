@@ -182,7 +182,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         if is_anonymous
             && self
                 .symbol_table
-                .lookup_qualified(&qualified_name)
+                .find_by_qualified_name(&qualified_name)
                 .is_some()
         {
             return;
@@ -229,27 +229,12 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                     subset.span,
                 );
             }
-            // Feature typing (:)
+            // Feature typing (:) - store raw target name, resolved post-population
             if let Some(ref target) = usage.relationships.typed_by {
-                // Resolve target to fully qualified name using symbol table lookup
-                let resolved_target = self
-                    .symbol_table
-                    .lookup(target)
-                    .or_else(|| self.symbol_table.lookup_qualified(target))
-                    .map(|s| s.qualified_name().to_string())
-                    .unwrap_or_else(|| {
-                        // If lookup fails and target contains ::, try prepending current namespace
-                        if target.contains("::") {
-                            format!("{}::{}", self.current_namespace.join("::"), target)
-                        } else {
-                            target.clone()
-                        }
-                    });
-
                 graph.add_one_to_one(
                     REL_TYPING,
                     &qualified_name,
-                    &resolved_target,
+                    target,
                     file,
                     usage.relationships.typed_by_span,
                 );
