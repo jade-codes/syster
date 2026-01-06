@@ -2,3 +2,7 @@ node_modules/
 out/
 *.vsix
 .vscode-test/
+
+# Bundled assets (generated during packaging)
+server/
+sysml.library/

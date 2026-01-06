@@ -33,8 +33,8 @@ fn test_visit_namespace_creates_package_symbol() {
     assert!(result.is_ok());
 
     // Verify the namespace was added as a Package symbol
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("TestNamespace");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("TestNamespace");
     assert!(symbol.is_some());
 
     let Some(Symbol::Package {
@@ -69,8 +69,8 @@ fn test_visit_namespace_enters_namespace_scope() {
     // After populate, the adapter should have entered the namespace
     // We can't directly test current_namespace (it's private), but we can test
     // that the namespace affects scope by checking all_symbols
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("MyNamespace");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("MyNamespace");
     assert!(symbol.is_some());
 }
 
@@ -92,8 +92,8 @@ fn test_visit_namespace_with_empty_name() {
     assert!(result.is_ok());
 
     // Even with empty name, should create a symbol
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("");
     assert!(symbol.is_some());
 }
 
@@ -114,8 +114,8 @@ fn test_visit_namespace_with_special_characters() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("Name_With_Underscores123");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("Name_With_Underscores123");
     assert!(symbol.is_some());
 }
 
@@ -136,8 +136,8 @@ fn test_visit_namespace_stores_scope_id() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("ScopedNamespace");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("ScopedNamespace");
     assert!(symbol.is_some());
 
     if let Some(Symbol::Package { scope_id, .. }) = symbol {
@@ -172,8 +172,8 @@ fn test_visit_namespace_with_span() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("SpannedNamespace");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("SpannedNamespace");
     assert!(symbol.is_some());
 
     if let Some(Symbol::Package { span, .. }) = symbol {
@@ -230,8 +230,8 @@ fn test_visit_namespace_affects_subsequent_elements() {
     assert!(result.is_ok());
 
     // The namespace should exist
-    let _resolver = Resolver::new(&table);
-    let ns_symbol = _resolver.resolve("OuterNamespace");
+    let resolver = Resolver::new(&table);
+    let ns_symbol = resolver.resolve("OuterNamespace");
     assert!(ns_symbol.is_some());
 
     // The inner part should be qualified with the namespace
@@ -266,8 +266,8 @@ fn test_visit_namespace_multiple_namespaces_not_supported() {
     assert!(result.is_ok());
 
     // Only the first namespace should be in the symbol table
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("FirstNamespace");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("FirstNamespace");
     assert!(symbol.is_some());
 }
 
@@ -607,8 +607,8 @@ fn test_comment_before_namespace_not_typical_but_handled() {
     assert!(result.is_ok());
 
     // The namespace should still be created
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("LateNamespace");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("LateNamespace");
     assert!(symbol.is_some());
 
     // The comment should not create a symbol

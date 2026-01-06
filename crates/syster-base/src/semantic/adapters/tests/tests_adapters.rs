@@ -620,8 +620,8 @@ fn test_populate_single_package() {
     let result = populator.populate(&file);
     assert!(result.is_ok());
 
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("TestPackage");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("TestPackage");
     assert!(symbol.is_some());
 
     let Some(Symbol::Package {
@@ -658,8 +658,8 @@ fn test_populate_nested_packages() {
     let result = populator.populate(&file);
     assert!(result.is_ok());
 
-    let _resolver = Resolver::new(&table);
-    let outer = _resolver.resolve("Outer");
+    let resolver = Resolver::new(&table);
+    let outer = resolver.resolve("Outer");
     assert!(outer.is_some());
 
     // Verify Inner package exists in the symbol table with correct qualified name
@@ -698,8 +698,8 @@ fn test_populate_definition() {
     let result = populator.populate(&file);
     assert!(result.is_ok());
 
-    let _resolver = Resolver::new(&table);
-    let symbol = _resolver.resolve("MyPart");
+    let resolver = Resolver::new(&table);
+    let symbol = resolver.resolve("MyPart");
     assert!(symbol.is_some());
 }
 
@@ -738,7 +738,7 @@ fn test_kerml_adapter_new_symbol_table_accessible() {
         .insert("TestPackage".to_string(), test_symbol);
     assert!(result.is_ok());
     assert!(
-        Resolver::new(&adapter.symbol_table)
+        Resolver::new(adapter.symbol_table)
             .resolve("TestPackage")
             .is_some()
     );
@@ -777,7 +777,7 @@ fn test_kerml_adapter_new_with_populated_table() {
 
     // Verify the adapter can access the existing symbols
     assert!(
-        Resolver::new(&adapter.symbol_table)
+        Resolver::new(adapter.symbol_table)
             .resolve("ExistingSymbol")
             .is_some()
     );

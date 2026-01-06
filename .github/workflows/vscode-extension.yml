@@ -1,0 +1,242 @@
+name: VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to marketplace'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-server:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: syster-lsp
+            platform: linux-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            binary: syster-lsp
+            platform: linux-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary: syster-lsp
+            platform: darwin-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary: syster-lsp
+            platform: darwin-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: syster-lsp.exe
+            platform: win32-x64
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+      
+      - name: Build LSP server
+        run: cargo build --release --target ${{ matrix.target }} -p syster-lsp
+      
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: syster-lsp-${{ matrix.platform }}
+          path: target/${{ matrix.target }}/release/${{ matrix.binary }}
+
+  package-extension:
+    needs: build-server
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - platform: linux-x64
+            vsce-target: linux-x64
+          - platform: linux-arm64
+            vsce-target: linux-arm64
+          - platform: darwin-x64
+            vsce-target: darwin-x64
+          - platform: darwin-arm64
+            vsce-target: darwin-arm64
+          - platform: win32-x64
+            vsce-target: win32-x64
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Download server binary
+        uses: actions/download-artifact@v4
+        with:
+          name: syster-lsp-${{ matrix.platform }}
+          path: editors/vscode/server/
+      
+      - name: Rename binary to platform-specific name
+        run: |
+          cd editors/vscode/server
+          if [ "${{ matrix.platform }}" = "win32-x64" ]; then
+            mv syster-lsp.exe syster-lsp-${{ matrix.platform }}.exe
+          else
+            mv syster-lsp syster-lsp-${{ matrix.platform }}
+            chmod +x syster-lsp-${{ matrix.platform }}
+          fi
+      
+      - name: Copy stdlib
+        run: |
+          cp -r crates/syster-base/sysml.library editors/vscode/sysml.library
+      
+      - name: Install dependencies
+        working-directory: editors/vscode
+        run: npm ci
+      
+      - name: Compile TypeScript
+        working-directory: editors/vscode
+        run: npm run compile
+      
+      - name: Package extension
+        working-directory: editors/vscode
+        run: npx vsce package --target ${{ matrix.vsce-target }} -o sysml-language-support-${{ matrix.platform }}.vsix
+      
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.platform }}
+          path: editors/vscode/*.vsix
+
+  # Universal package (all platforms in one - larger but simpler)
+  package-universal:
+    needs: build-server
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: syster-lsp-*
+          path: editors/vscode/server/
+          merge-multiple: true
+      
+      - name: Rename binaries
+        run: |
+          cd editors/vscode/server
+          for f in *; do
+            if [ -f "$f" ]; then
+              case "$f" in
+                *.exe) mv "$f" "syster-lsp-win32-x64.exe" 2>/dev/null || true ;;
+                *) 
+                  # Determine platform from artifact structure
+                  chmod +x "$f" 2>/dev/null || true
+                  ;;
+              esac
+            fi
+          done
+          ls -la
+      
+      - name: Copy stdlib
+        run: |
+          cp -r crates/syster-base/sysml.library editors/vscode/sysml.library
+      
+      - name: Install dependencies
+        working-directory: editors/vscode
+        run: npm ci
+      
+      - name: Compile TypeScript
+        working-directory: editors/vscode
+        run: npm run compile
+      
+      - name: Package universal extension
+        working-directory: editors/vscode
+        run: npx vsce package -o sysml-language-support-universal.vsix
+      
+      - name: Upload universal VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-universal
+          path: editors/vscode/*.vsix
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') || github.event.inputs.publish == 'true'
+    needs: package-extension
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Download all VSIXs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          path: vsix/
+          merge-multiple: true
+      
+      - name: Publish to Open VSX
+        run: |
+          npm install -g ovsx
+          for vsix in vsix/*.vsix; do
+            echo "Publishing $vsix to Open VSX..."
+            ovsx publish "$vsix" -p ${{ secrets.OPENVSX_TOKEN }}
+          done
+      
+      - name: Publish to VS Code Marketplace (optional)
+        if: secrets.VSCE_PAT != ''
+        continue-on-error: true
+        run: |
+          npm install -g @vscode/vsce
+          for vsix in vsix/*.vsix; do
+            echo "Publishing $vsix to VS Code Marketplace..."
+            vsce publish --packagePath "$vsix" -p ${{ secrets.VSCE_PAT }}
+          done
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [package-extension, package-universal]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all VSIXs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          path: vsix/
+          merge-multiple: true
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: vsix/*.vsix
+          generate_release_notes: true

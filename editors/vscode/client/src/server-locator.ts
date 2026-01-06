@@ -6,18 +6,58 @@ import { execSync } from 'child_process';
 export interface ServerLocatorOptions {
     workspaceFolder?: vscode.WorkspaceFolder;
     outputChannel?: vscode.OutputChannel;
+    extensionPath?: string;
+}
+
+/**
+ * Get the platform-specific binary name
+ */
+function getPlatformBinaryName(): string {
+    const platform = process.platform;
+    const arch = process.arch;
+    let name = `syster-lsp-${platform}-${arch}`;
+    if (platform === 'win32') {
+        name += '.exe';
+    }
+    return name;
 }
 
 /**
  * Find the syster-lsp binary using multiple search strategies
  */
 export async function findServerBinary(options: ServerLocatorOptions = {}): Promise<string> {
-    const { outputChannel } = options;
+    const { outputChannel, extensionPath } = options;
 
     const searchLocations: Array<{ name: string; path: () => string | null }> = [
+        // 1. User-configured path (highest priority)
         {
             name: 'Configuration setting (syster.lsp.path)',
-            path: () => vscode.workspace.getConfiguration('syster').get<string>('lsp.path') || null
+            path: () => {
+                const configured = vscode.workspace.getConfiguration('syster').get<string>('lsp.path');
+                // Only use if it's not the default dev path
+                if (configured && !configured.includes('/workspaces/syster/')) {
+                    return configured;
+                }
+                return null;
+            }
+        },
+        // 2. Bundled with extension (for published extension)
+        {
+            name: 'Bundled server',
+            path: () => {
+                if (!extensionPath) return null;
+                const binaryName = getPlatformBinaryName();
+                return path.join(extensionPath, 'server', binaryName);
+            }
+        },
+        // 3. Development fallback - check if running in dev container
+        {
+            name: 'Development build (release)',
+            path: () => '/workspaces/syster/target/release/syster-lsp'
+        },
+        {
+            name: 'Development build (debug)',
+            path: () => '/workspaces/syster/target/debug/syster-lsp'
         }
     ];
 
@@ -47,7 +87,7 @@ export async function findServerBinary(options: ServerLocatorOptions = {}): Prom
         '',
         'Please set the path in settings: "syster.lsp.path"',
         '',
-        'Default location: /workspaces/syster/target/release/syster-lsp'
+        'Or build from source: cargo build --release -p syster-lsp'
     ].join('\n');
 
     throw new Error(errorMessage);

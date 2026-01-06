@@ -1976,7 +1976,7 @@ fn test_cross_file_reference_resolution_basic() {
     // Check if BaseUnit is in the symbol table
     let symbol_table = server.workspace().symbol_table();
 
-    let resolver = Resolver::new(&symbol_table);
+    let resolver = Resolver::new(symbol_table);
     let by_simple = resolver.resolve("BaseUnit");
     let by_qualified = resolver.resolve_qualified("BasePackage::BaseUnit");
 
@@ -2211,7 +2211,15 @@ fn test_dimension_one_unit_cross_file_resolution() {
     use syster::semantic::Workspace;
     use syster::syntax::parser::parse_content;
 
-    let stdlib_path = std::path::PathBuf::from("../../target/debug/sysml.library");
+    // Use current_exe to find stdlib in correct target folder (debug or release)
+    let stdlib_path = std::env::current_exe()
+        .ok()
+        .and_then(|exe| {
+            exe.parent()
+                .and_then(|deps| deps.parent())
+                .map(|target| target.join("sysml.library"))
+        })
+        .unwrap_or_else(|| std::path::PathBuf::from("../../target/debug/sysml.library"));
 
     let mut workspace = Workspace::new();
     let loader = StdLibLoader::with_path(stdlib_path);
