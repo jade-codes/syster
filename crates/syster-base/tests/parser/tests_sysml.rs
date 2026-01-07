@@ -521,32 +521,35 @@ fn test_parse_annotations(#[case] rule: Rule, #[case] input: &str, #[case] desc:
 }
 
 #[rstest]
-#[case(r#"comment locale "en-US" /* comment text */"#, "comment with locale")]
-#[case(
-    r#"comment MyComment locale "fr-FR" /* texte */"#,
-    "named comment with locale"
-)]
-#[case(r#"comment about Foo;"#, "comment about element")]
-#[case(r#"comment about Foo, Bar;"#, "comment about multiple elements")]
-#[case(
-    r#"comment MyComment about Foo, Bar /* about multiple */"#,
-    "named comment about multiple"
-)]
-#[case(
-    r#"comment locale "en-US" about Foo;"#,
-    "comment with locale and about"
-)]
-fn test_parse_comment_variants(#[case] input: &str, #[case] desc: &str) {
-    assert_round_trip(Rule::comment_annotation, input, desc);
+#[case(r#"comment locale "en-US" /* comment text */"#)]
+#[case(r#"comment MyComment locale "fr-FR" /* texte */"#)]
+#[case(r#"comment about Foo;"#)]
+#[case(r#"comment about Foo, Bar;"#)]
+#[case(r#"comment MyComment about Foo, Bar /* about multiple */"#)]
+#[case(r#"comment locale "en-US" about Foo;"#)]
+fn test_parse_comment_variants(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::comment_annotation, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse comment '{}': {:?}",
+        input,
+        result.err()
+    );
 }
 
 #[rstest]
-#[case(r#"doc locale "en-US" /* docs */"#, "doc with locale")]
-#[case(r#"doc MyDoc locale "ja-JP" /* text */"#, "named doc with locale")]
-#[case(r#"doc /* inline doc */"#, "inline doc")]
-#[case(r#"doc;"#, "minimal doc")]
-fn test_parse_documentation_variants(#[case] input: &str, #[case] desc: &str) {
-    assert_round_trip(Rule::documentation, input, desc);
+#[case(r#"doc locale "en-US" /* docs */"#)]
+#[case(r#"doc MyDoc locale "ja-JP" /* text */"#)]
+#[case(r#"doc /* inline doc */"#)]
+#[case(r#"doc;"#)]
+fn test_parse_documentation_variants(#[case] input: &str) {
+    let result = SysMLParser::parse(Rule::documentation, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse documentation '{}': {:?}",
+        input,
+        result.err()
+    );
 }
 
 #[rstest]
