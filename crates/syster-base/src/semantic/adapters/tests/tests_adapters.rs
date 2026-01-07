@@ -692,6 +692,7 @@ fn test_populate_definition() {
             is_abstract: false,
             is_variation: false,
             span: None,
+            short_name: None,
         })],
     };
 

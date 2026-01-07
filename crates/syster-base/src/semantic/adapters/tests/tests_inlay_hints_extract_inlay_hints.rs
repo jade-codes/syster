@@ -81,6 +81,7 @@ fn test_extract_inlay_hints_delegates_to_sysml_adapter() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(1, 0, 1, 6)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -170,6 +171,7 @@ fn test_extract_inlay_hints_respects_range_filter_sysml() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(5, 0, 5, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -288,6 +290,7 @@ fn test_sysml_usage_without_explicit_type_shows_hint() {
         relationships: Relationships::default(), // No explicit type
         body: vec![],
         span: Some(Span::from_coords(1, 4, 1, 10)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -326,6 +329,7 @@ fn test_sysml_usage_with_explicit_type_no_hint() {
         relationships, // Has explicit type
         body: vec![],
         span: Some(Span::from_coords(1, 4, 1, 10)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -354,6 +358,7 @@ fn test_sysml_usage_without_name_no_hint() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(1, 4, 1, 10)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -399,6 +404,7 @@ fn test_sysml_usage_without_span_no_hint() {
         relationships: Relationships::default(),
         body: vec![],
         span: None, // No span
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -427,6 +433,7 @@ fn test_sysml_usage_not_in_symbol_table_no_hint() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(1, 4, 1, 15)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -473,6 +480,7 @@ fn test_sysml_usage_symbol_without_type_no_hint() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(1, 4, 1, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -518,6 +526,7 @@ fn test_sysml_non_usage_symbol_no_hint() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(1, 4, 1, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -563,6 +572,7 @@ fn test_sysml_nested_usages_in_definition() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(3, 8, 3, 13)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -573,6 +583,7 @@ fn test_sysml_nested_usages_in_definition() {
         relationships: Relationships::default(),
         body: vec![DefinitionMember::Usage(Box::new(nested_usage))],
         span: Some(Span::from_coords(1, 0, 4, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -620,6 +631,7 @@ fn test_sysml_deeply_nested_usages() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(5, 12, 5, 18)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -630,6 +642,7 @@ fn test_sysml_deeply_nested_usages() {
         relationships: Relationships::default(),
         body: vec![UsageMember::Usage(Box::new(deep_usage))],
         span: Some(Span::from_coords(3, 8, 6, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -640,6 +653,7 @@ fn test_sysml_deeply_nested_usages() {
         relationships: Relationships::default(),
         body: vec![UsageMember::Usage(Box::new(mid_usage))],
         span: Some(Span::from_coords(1, 4, 7, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -703,6 +717,7 @@ fn test_sysml_multiple_usages_multiple_hints() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(1, 0, 1, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -713,6 +728,7 @@ fn test_sysml_multiple_usages_multiple_hints() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(2, 0, 2, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -760,6 +776,7 @@ fn test_sysml_range_filter_excludes_usage_before_range() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(2, 0, 2, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -813,6 +830,7 @@ fn test_sysml_range_filter_excludes_usage_after_range() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(10, 0, 10, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -863,6 +881,7 @@ fn test_sysml_range_filter_includes_usage_in_range() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(5, 0, 5, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -916,6 +935,7 @@ fn test_sysml_package_traversal() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -969,6 +989,7 @@ fn test_sysml_hint_position_calculation() {
         relationships: Relationships::default(),
         body: vec![],
         span: Some(Span::from_coords(5, 10, 5, 18)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };

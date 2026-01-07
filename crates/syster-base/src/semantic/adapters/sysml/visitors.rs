@@ -65,6 +65,22 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             };
             self.insert_symbol(name.clone(), symbol);
 
+            // If there's a short name (e.g., <mV> MassValue), create an alias for it
+            if let Some(ref short_name) = definition.short_name {
+                let short_qualified_name = self.qualified_name(short_name);
+                let alias_symbol = Symbol::Alias {
+                    name: short_name.clone(),
+                    qualified_name: short_qualified_name,
+                    target: qualified_name.clone(),
+                    target_span: definition.span,
+                    scope_id,
+                    source_file: self.symbol_table.current_file().map(String::from),
+                    span: definition.span,
+                    references: Vec::new(),
+                };
+                self.insert_symbol(short_name.clone(), alias_symbol);
+            }
+
             if let Some(ref mut graph) = self.relationship_graph {
                 let file = self.symbol_table.current_file();
                 for spec in &definition.relationships.specializes {
@@ -205,6 +221,22 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             references: Vec::new(),
         };
         self.insert_symbol(name.clone(), symbol);
+
+        // If there's a short name (e.g., <kg> kilogram), create an alias for it
+        if let Some(ref short_name) = usage.short_name {
+            let short_qualified_name = self.qualified_name(short_name);
+            let alias_symbol = Symbol::Alias {
+                name: short_name.clone(),
+                qualified_name: short_qualified_name,
+                target: qualified_name.clone(),
+                target_span: usage.span,
+                scope_id,
+                source_file: self.symbol_table.current_file().map(String::from),
+                span: usage.span,
+                references: Vec::new(),
+            };
+            self.insert_symbol(short_name.clone(), alias_symbol);
+        }
 
         // Store relationships for both named and anonymous usages
         if let Some(ref mut graph) = self.relationship_graph {

@@ -22,6 +22,7 @@ fn test_collect_definition_spans_simple_definition() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(0, 0, 3, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -49,6 +50,7 @@ fn test_collect_definition_spans_with_usage() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(2, 4, 3, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -59,6 +61,7 @@ fn test_collect_definition_spans_with_usage() {
         relationships: Relationships::none(),
         body: vec![DefinitionMember::Usage(Box::new(usage))],
         span: Some(make_span(0, 0, 5, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -92,6 +95,7 @@ fn test_collect_definition_spans_with_comment() {
         relationships: Relationships::none(),
         body: vec![DefinitionMember::Comment(Box::new(comment))],
         span: Some(make_span(0, 0, 3, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -120,6 +124,7 @@ fn test_collect_definition_spans_multiple_members() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(1, 4, 2, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -135,6 +140,7 @@ fn test_collect_definition_spans_multiple_members() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(4, 4, 5, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -149,6 +155,7 @@ fn test_collect_definition_spans_multiple_members() {
             DefinitionMember::Usage(Box::new(usage2)),
         ],
         span: Some(make_span(0, 0, 7, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -177,6 +184,7 @@ fn test_collect_definition_spans_nested_usages() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(3, 8, 4, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -187,6 +195,7 @@ fn test_collect_definition_spans_nested_usages() {
         relationships: Relationships::none(),
         body: vec![UsageMember::Usage(Box::new(inner_usage))],
         span: Some(make_span(2, 4, 5, 5)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -197,6 +206,7 @@ fn test_collect_definition_spans_nested_usages() {
         relationships: Relationships::none(),
         body: vec![DefinitionMember::Usage(Box::new(outer_usage))],
         span: Some(make_span(0, 0, 7, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -226,6 +236,7 @@ fn test_collect_definition_spans_position_outside() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(0, 0, 3, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };

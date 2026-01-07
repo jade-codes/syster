@@ -31,6 +31,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>, _body: Vec<()>) -
     Usage {
         kind,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body: vec![],
         span,
@@ -50,6 +51,7 @@ fn make_definition(
         is_abstract: false,
         is_variation: false,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body,
         span,
@@ -314,6 +316,7 @@ fn test_collect_definition_hints_usage_with_explicit_typing() {
         relationships,
         body: vec![],
         span: Some(make_span(2, 4, 2, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };

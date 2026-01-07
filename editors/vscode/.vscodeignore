@@ -1,17 +1,17 @@
 .vscode/**
 .vscode-test/**
-client/src/**
-client/tsconfig.json
+client/**
 node_modules/**
 .gitignore
 .eslintrc.json
 tsconfig.json
 **/*.map
 **/*.ts
-!out/**/*.js
+out/**
 *.vsix
 scripts/**
 
 # Include bundled assets (don't ignore them)
+!dist/**
 !server/**
 !sysml.library/**

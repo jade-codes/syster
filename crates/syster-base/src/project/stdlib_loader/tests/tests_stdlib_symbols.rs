@@ -74,3 +74,47 @@ fn test_stdlib_symbol_count() {
         }
     }
 }
+
+#[test]
+fn test_stdlib_si_symbols() {
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    let loader = StdLibLoader::with_path(stdlib_path);
+    loader.load(&mut workspace).expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate stdlib");
+
+    // Check if SI package exists
+    let si_package = workspace.symbol_table().find_by_qualified_name("SI");
+    assert!(
+        si_package.is_some(),
+        "SI package should exist in symbol table"
+    );
+
+    // Get all SI symbols
+    let all_symbols = workspace.symbol_table().all_symbols();
+    let si_symbols: Vec<_> = all_symbols
+        .iter()
+        .filter(|(qname, _)| qname.starts_with("SI::"))
+        .take(30)
+        .map(|(qn, _)| qn.as_str())
+        .collect();
+
+    // Check for gram (without short name)
+    let gram = workspace.symbol_table().find_by_qualified_name("SI::gram");
+    assert!(
+        gram.is_some(),
+        "SI::gram should exist. Found SI symbols: {:?}",
+        si_symbols
+    );
+
+    // Check for kilogram (without short name)
+    let kilogram = workspace
+        .symbol_table()
+        .find_by_qualified_name("SI::kilogram");
+    assert!(
+        kilogram.is_some(),
+        "SI::kilogram should exist. Found SI symbols: {:?}",
+        si_symbols
+    );
+}

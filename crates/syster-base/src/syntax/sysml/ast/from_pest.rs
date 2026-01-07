@@ -2,7 +2,9 @@ use super::{
     enums::Element,
     parsers::{parse_definition, parse_usage},
     types::{Alias, Comment, Definition, Import, NamespaceDeclaration, Package, SysMLFile, Usage},
-    utils::{find_in, is_definition_rule, is_usage_rule, to_span},
+    utils::{
+        extract_name_from_identification, find_in, is_definition_rule, is_usage_rule, to_span,
+    },
 };
 use crate::parser::sysml::Rule;
 use from_pest::{ConversionError, FromPest, Void};
@@ -33,9 +35,12 @@ impl_from_pest!(Package, |pest: &mut Pairs<Rule>| {
         match pair.as_rule() {
             Rule::package_declaration => {
                 if let Some(p) = find_in(&pair, Rule::identification) {
-                    name = Some(p.as_str().to_string());
-                    // Set span to the identifier, not the whole declaration
-                    span = Some(to_span(p.as_span()));
+                    // Use extract_name_from_identification to properly handle short names
+                    // e.g., `<USCU> USCustomaryUnits` → name = "USCustomaryUnits"
+                    // e.g., `<kg>` → name = "kg" (if only short name is present)
+                    let (extracted_name, extracted_span) = extract_name_from_identification(p);
+                    name = extracted_name;
+                    span = extracted_span;
                 }
             }
             Rule::package_body => {
@@ -114,8 +119,10 @@ impl_from_pest!(Alias, |pest: &mut Pairs<Rule>| {
     for pair in pest {
         match pair.as_rule() {
             Rule::identification => {
-                span.get_or_insert_with(|| to_span(pair.as_span()));
-                name = Some(pair.as_str().to_string());
+                // Use extract_name_from_identification to properly handle short names
+                let (extracted_name, extracted_span) = extract_name_from_identification(pair);
+                name = extracted_name;
+                span = extracted_span;
             }
             Rule::element_reference => {
                 target = pair.as_str().to_string();

@@ -68,6 +68,7 @@ fn test_visit_namespace_with_elements() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -310,6 +311,7 @@ fn test_visit_usage_single() {
             is_derived: false,
             is_readonly: false,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -339,6 +341,7 @@ fn test_visit_usage_multiple_kinds() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Action,
@@ -348,6 +351,7 @@ fn test_visit_usage_multiple_kinds() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Port,
@@ -357,6 +361,7 @@ fn test_visit_usage_multiple_kinds() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -380,6 +385,7 @@ fn test_visit_usage_anonymous() {
             is_derived: false,
             is_readonly: false,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -397,6 +403,7 @@ fn test_visit_usage_with_relationships() {
         elements: vec![Element::Usage(Usage {
             kind: UsageKind::Part,
             name: Some("myPart".to_string()),
+            short_name: None,
             body: vec![],
             relationships: Relationships {
                 typed_by: Some("PartType".to_string()),
@@ -432,6 +439,7 @@ fn test_visit_usage_derived_readonly() {
             is_derived: true,
             is_readonly: true,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -597,6 +605,7 @@ fn test_visit_all_element_types() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Part,
@@ -606,6 +615,7 @@ fn test_visit_all_element_types() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -648,6 +658,7 @@ fn test_visit_nested_elements_in_package() {
                     is_abstract: false,
                     is_variation: false,
                     span: None,
+                    short_name: None,
                 }),
                 Element::Usage(Usage {
                     kind: UsageKind::Part,
@@ -657,6 +668,7 @@ fn test_visit_nested_elements_in_package() {
                     is_derived: false,
                     is_readonly: false,
                     span: None,
+                    short_name: None,
                 }),
                 Element::Alias(Alias {
                     name: Some("InnerAlias".to_string()),
@@ -700,6 +712,7 @@ fn test_visit_deeply_nested_packages() {
                             is_abstract: false,
                             is_variation: false,
                             span: None,
+                            short_name: None,
                         })],
                         span: None,
                     })],
@@ -713,6 +726,7 @@ fn test_visit_deeply_nested_packages() {
                     is_abstract: false,
                     is_variation: false,
                     span: None,
+                    short_name: None,
                 }),
             ],
             span: None,
@@ -753,6 +767,7 @@ fn test_visit_multiple_of_each_type() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Definition(Definition {
                 kind: DefinitionKind::Action,
@@ -762,6 +777,7 @@ fn test_visit_multiple_of_each_type() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Part,
@@ -771,6 +787,7 @@ fn test_visit_multiple_of_each_type() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Action,
@@ -780,6 +797,7 @@ fn test_visit_multiple_of_each_type() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Comment(Comment {
                 content: "Comment 1".to_string(),
@@ -852,6 +870,7 @@ fn test_visit_large_file() {
             is_abstract: false,
             is_variation: false,
             span: None,
+            short_name: None,
         }));
     }
 
@@ -865,6 +884,7 @@ fn test_visit_large_file() {
             is_derived: false,
             is_readonly: false,
             span: None,
+            short_name: None,
         }));
     }
 

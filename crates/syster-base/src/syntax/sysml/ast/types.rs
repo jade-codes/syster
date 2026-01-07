@@ -132,10 +132,12 @@ impl Relationships {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Definition {
     pub kind: DefinitionKind,
     pub name: Option<String>,
+    /// Short name (e.g., "kg" from `<kg> kilogram`)
+    pub short_name: Option<String>,
     pub relationships: Relationships,
     pub body: Vec<DefinitionMember>,
     /// Span of the definition name identifier
@@ -157,6 +159,7 @@ impl Definition {
         Self {
             kind,
             name,
+            short_name: None,
             relationships,
             body,
             span: None,
@@ -166,10 +169,12 @@ impl Definition {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Usage {
     pub kind: UsageKind,
     pub name: Option<String>,
+    /// Short name (e.g., "kg" from `<kg> kilogram`)
+    pub short_name: Option<String>,
     pub relationships: Relationships,
     pub body: Vec<UsageMember>,
     /// Span of the usage name identifier
@@ -192,6 +197,7 @@ impl Usage {
         Self {
             kind,
             name,
+            short_name: None,
             relationships,
             body,
             span: None,

@@ -18,6 +18,7 @@ fn test_usage_creation() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -66,6 +67,7 @@ fn test_usage_with_span() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(span),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -88,6 +90,7 @@ fn test_usage_derived_flag() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: true,
         is_readonly: false,
     };
@@ -104,6 +107,7 @@ fn test_usage_readonly_flag() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: false,
         is_readonly: true,
     };
@@ -120,6 +124,7 @@ fn test_usage_derived_and_readonly() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: true,
         is_readonly: true,
     };
@@ -568,6 +573,7 @@ fn test_usage_visitable_with_span() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(span),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -636,6 +642,7 @@ fn test_usage_visitable_derived_readonly() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: true,
         is_readonly: true,
     };
@@ -840,6 +847,7 @@ fn test_usage_counting_mixed_elements() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage::new(
                 UsageKind::Action,
@@ -1037,6 +1045,7 @@ fn test_usage_multiple_spans() {
         relationships,
         body: vec![],
         span: Some(name_span),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1053,6 +1062,7 @@ fn test_usage_comparison_with_different_flags() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: true,
         is_readonly: false,
     };
@@ -1063,6 +1073,7 @@ fn test_usage_comparison_with_different_flags() {
         relationships: Relationships::none(),
         body: vec![],
         span: None,
+        short_name: None,
         is_derived: false,
         is_readonly: true,
     };
