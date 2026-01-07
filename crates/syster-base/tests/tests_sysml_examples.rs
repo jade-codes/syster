@@ -230,11 +230,6 @@ fn test_no_regressions() {
     }
 }
 
-// ============================================================================
-// Individual tests for each failing example file
-// These tests are marked #[ignore] and will fail until the grammar supports them
-// ============================================================================
-
 macro_rules! example_test {
     ($name:ident, $path:expr) => {
         #[test]

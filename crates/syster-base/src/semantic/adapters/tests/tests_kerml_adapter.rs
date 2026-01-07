@@ -45,7 +45,6 @@ fn test_new_adapter_can_access_symbol_table() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -82,7 +81,6 @@ fn test_new_with_populated_symbol_table() {
                     scope_id: 0,
                     source_file: None,
                     span: None,
-                    references: Vec::new(),
                 },
             )
             .unwrap();
@@ -193,7 +191,6 @@ fn test_adapter_can_be_created_in_nested_scope() {
                     scope_id: 0,
                     source_file: None,
                     span: None,
-                    references: Vec::new(),
                 },
             )
             .unwrap();

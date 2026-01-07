@@ -35,15 +35,12 @@ pub mod kerml_adapter;
 pub mod syntax_factory;
 mod sysml;
 pub mod sysml_adapter;
-mod validator_factory;
 
 pub use kerml_adapter::KermlAdapter;
 pub use syntax_factory::{
     extract_folding_ranges, extract_inlay_hints, find_selection_spans, populate_syntax_file,
 };
-pub use sysml::validator::SysmlValidator;
 pub use sysml_adapter::SysmlAdapter;
-pub use validator_factory::create_validator;
 
 // Re-export types used by the factory functions
 pub use crate::semantic::types::FoldingRangeInfo;

@@ -12,7 +12,6 @@ fn test_find_in_current_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "RootSymbol".to_string(),
         qualified_name: "RootSymbol".to_string(),
     };
@@ -35,7 +34,6 @@ fn test_find_in_parent_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "ParentSymbol".to_string(),
         qualified_name: "ParentSymbol".to_string(),
     };
@@ -63,7 +61,6 @@ fn test_find_in_grandparent_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "GrandparentSymbol".to_string(),
         qualified_name: "GrandparentSymbol".to_string(),
     };
@@ -94,7 +91,6 @@ fn test_symbol_not_found_in_chain() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "ExistingSymbol".to_string(),
         qualified_name: "ExistingSymbol".to_string(),
     };
@@ -116,7 +112,6 @@ fn test_symbol_precedence_current_over_parent() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Symbol".to_string(),
         qualified_name: "Parent::Symbol".to_string(),
     };
@@ -131,7 +126,6 @@ fn test_symbol_precedence_current_over_parent() {
         scope_id: 1,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Symbol".to_string(),
         qualified_name: "Parent::Child::Symbol".to_string(),
         kind: "Class".to_string(),
@@ -159,36 +153,16 @@ fn test_mutable_access_to_found_symbol() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "MutableSymbol".to_string(),
         qualified_name: "MutableSymbol".to_string(),
     };
 
     table.insert("MutableSymbol".to_string(), symbol).unwrap();
 
-    // Get mutable reference and add a reference to it
+    // Get mutable reference and verify it exists
     let found = table.lookup_mut("MutableSymbol");
     assert!(found.is_some());
-
-    let symbol_mut = found.unwrap();
-    assert_eq!(symbol_mut.references().len(), 0);
-
-    // Add a reference
-    symbol_mut.add_reference(SymbolReference {
-        file: "test.sysml".to_string(),
-        span: crate::core::Span {
-            start: crate::core::Position { line: 1, column: 1 },
-            end: crate::core::Position {
-                line: 1,
-                column: 10,
-            },
-        },
-    });
-
-    // Verify the reference was added
-    let found_again = table.lookup_mut("MutableSymbol");
-    assert!(found_again.is_some());
-    assert_eq!(found_again.unwrap().references().len(), 1);
+    assert_eq!(found.unwrap().name(), "MutableSymbol");
 }
 
 /// Test finding symbols in deeply nested scopes
@@ -201,7 +175,6 @@ fn test_deeply_nested_scopes() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Level0".to_string(),
         qualified_name: "Level0".to_string(),
     };
@@ -215,7 +188,6 @@ fn test_deeply_nested_scopes() {
             scope_id: i,
             source_file: None,
             span: None,
-            references: Vec::new(),
             name: format!("Level{}", i),
             qualified_name: format!("Level0::Level{}", i),
         };
@@ -254,7 +226,6 @@ fn test_different_symbol_types_in_chain() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "RootPkg".to_string(),
                 qualified_name: "RootPkg".to_string(),
             },
@@ -270,7 +241,6 @@ fn test_different_symbol_types_in_chain() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "MyClass".to_string(),
                 qualified_name: "RootPkg::MyClass".to_string(),
                 kind: "Class".to_string(),
@@ -288,7 +258,6 @@ fn test_different_symbol_types_in_chain() {
                 scope_id: 2,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "MyFeature".to_string(),
                 qualified_name: "RootPkg::MyClass::MyFeature".to_string(),
                 feature_type: Some("String".to_string()),
@@ -325,7 +294,6 @@ fn test_scope_chain_after_enter_exit() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Root".to_string(),
                 qualified_name: "Root".to_string(),
             },
@@ -341,7 +309,6 @@ fn test_scope_chain_after_enter_exit() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Child1".to_string(),
                 qualified_name: "Root::Child1".to_string(),
             },
@@ -357,7 +324,6 @@ fn test_scope_chain_after_enter_exit() {
                 scope_id: 2,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Child2".to_string(),
                 qualified_name: "Root::Child1::Child2".to_string(),
             },
@@ -388,7 +354,6 @@ fn test_scope_chain_after_enter_exit() {
                 scope_id: 3,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Child2New".to_string(),
                 qualified_name: "Root::Child1::Child2New".to_string(),
             },
@@ -413,7 +378,6 @@ fn test_alias_symbols_in_chain() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "RealSymbol".to_string(),
                 qualified_name: "RealSymbol".to_string(),
             },
@@ -429,7 +393,6 @@ fn test_alias_symbols_in_chain() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "AliasSymbol".to_string(),
                 qualified_name: "AliasSymbol".to_string(),
                 target: "RealSymbol".to_string(),
@@ -459,7 +422,6 @@ fn test_empty_string_name() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "".to_string(),
         qualified_name: "".to_string(),
     };
@@ -491,7 +453,6 @@ fn test_special_characters_in_name() {
             scope_id: 0,
             source_file: None,
             span: None,
-            references: Vec::new(),
             name: name.to_string(),
             qualified_name: name.to_string(),
         };
@@ -520,7 +481,6 @@ fn test_symbol_in_middle_of_chain() {
         scope_id: 1,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "MiddleSymbol".to_string(),
         qualified_name: "MiddleSymbol".to_string(),
     };

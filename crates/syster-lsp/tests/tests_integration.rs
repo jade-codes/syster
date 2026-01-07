@@ -34,7 +34,7 @@ fn test_server_initialization() {
     );
 
     // Verify symbols are populated
-    let symbol_count = server.workspace().symbol_table().all_symbols().len();
+    let symbol_count = server.workspace().symbol_table().iter_symbols().count();
     assert!(
         symbol_count > 0,
         "Symbol table should be populated with stdlib symbols"
@@ -180,12 +180,15 @@ fn test_hover_on_cross_file_symbol() {
         let _scalar_value_symbols: Vec<_> = server
             .workspace()
             .symbol_table()
-            .all_symbols()
-            .iter()
-            .filter(|(_, s)| {
-                s.name() == "ScalarValue" || s.qualified_name().contains("ScalarValue")
+            .iter_symbols()
+            .filter(|s| s.name() == "ScalarValue" || s.qualified_name().contains("ScalarValue"))
+            .map(|s| {
+                (
+                    s.name().to_string(),
+                    s.qualified_name().to_string(),
+                    s.span().is_some(),
+                )
             })
-            .map(|(_, s)| (s.name(), s.qualified_name(), s.span().is_some()))
             .collect();
 
         panic!("Hover should work for cross-file symbol ScalarValue");
@@ -215,31 +218,30 @@ fn test_stdlib_symbols_present() {
         .expect("Failed to populate symbols");
 
     let symbol_table = server.workspace().symbol_table();
-    let all_symbols = symbol_table.all_symbols();
 
     // Show what packages are actually loaded
-    let packages: Vec<_> = all_symbols
-        .iter()
-        .filter(|(_, s)| s.qualified_name() == s.name() && !s.name().contains("::"))
+    let packages: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|s| s.qualified_name() == s.name() && !s.name().contains("::"))
         .take(20)
         .collect();
 
-    for (_key, _symbol) in packages {}
+    for _symbol in packages {}
 
     // Show symbols containing "Case" to debug why Case isn't found
-    let case_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(_, s)| s.name().contains("Case") || s.qualified_name().contains("Case"))
+    let case_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|s| s.name().contains("Case") || s.qualified_name().contains("Case"))
         .take(10)
         .collect();
 
-    for (_key, _symbol) in case_symbols {}
+    for _symbol in case_symbols {}
 
     // Try finding some basic symbols that should be in SysML stdlib
     let test_symbols = vec!["Part", "Attribute", "Item"];
 
     for simple_name in test_symbols {
-        let _found = all_symbols.iter().any(|(_, s)| s.name() == simple_name);
+        let _found = symbol_table.iter_symbols().any(|s| s.name() == simple_name);
     }
 }
 
@@ -290,17 +292,17 @@ fn test_symbol_resolution_after_population() {
         .expect("Failed to populate symbols");
 
     // Get some actual symbols from the table to verify resolution works
-    let all_symbols = server.workspace().symbol_table().all_symbols();
+    let symbol_table = server.workspace().symbol_table();
 
-    if all_symbols.is_empty() {
+    if symbol_table.iter_symbols().next().is_none() {
         panic!("Symbol table is empty - stdlib population may have failed");
     }
 
     // Test resolving the first few symbols by their simple names
     let resolver = server.resolver();
-    let test_count = all_symbols.len().min(10);
+    let symbols_vec: Vec<_> = symbol_table.iter_symbols().take(10).collect();
 
-    for (_qualified_name, symbol) in all_symbols.iter().take(test_count) {
+    for symbol in &symbols_vec {
         let simple_name = symbol.name();
         let _resolved = resolver.resolve(simple_name);
     }
@@ -334,12 +336,13 @@ package AnotherPackage {
     assert!(server.open_document(&file2_uri, file2_content).is_ok());
 
     // Debug: Show what's actually in the symbol table FIRST
-    let all_symbols = server.workspace().symbol_table().all_symbols();
-    let our_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(key, _)| key.contains("My"))
+    let our_symbols: Vec<_> = server
+        .workspace()
+        .symbol_table()
+        .iter_symbols()
+        .filter(|s| s.qualified_name().contains("My"))
         .collect();
-    for (_key, _symbol) in our_symbols {}
+    for _symbol in our_symbols {}
 
     // Now try to resolve symbols
     let resolver = server.resolver();
@@ -828,7 +831,7 @@ fn test_timing_with_stdlib_loaded() {
     println!("Workspace files: {}", server.workspace().files().len());
     println!(
         "Symbols: {}",
-        server.workspace().symbol_table().all_symbols().len()
+        server.workspace().symbol_table().iter_symbols().count()
     );
 
     // Find AnalysisTooling.sysml
@@ -912,16 +915,15 @@ fn test_hover_temperature_difference_value_no_duplicate_specialization() {
 
     // Find ISQ::TemperatureDifferenceValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let temp_diff_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
+    let temp_diff_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
 
     assert!(
         temp_diff_symbol.is_some(),
         "Should find TemperatureDifferenceValue"
     );
-    let (_, symbol) = temp_diff_symbol.unwrap();
+    let symbol = temp_diff_symbol.unwrap();
 
     // Get relationships the same way hover does
     let graph = workspace.relationship_graph();
@@ -992,16 +994,15 @@ fn test_hover_output_temperature_difference_value() {
 
     // Find ISQ::TemperatureDifferenceValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let temp_diff_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
+    let temp_diff_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
 
     assert!(
         temp_diff_symbol.is_some(),
         "Should find TemperatureDifferenceValue"
     );
-    let (_, symbol) = temp_diff_symbol.unwrap();
+    let symbol = temp_diff_symbol.unwrap();
 
     // Generate the actual hover output
     let hover_output = format_rich_hover(symbol, &workspace);
@@ -1043,16 +1044,15 @@ fn test_hover_output_celsius_temperature_value() {
 
     // Find ISQThermodynamics::CelsiusTemperatureValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let celsius_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
+    let celsius_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
 
     assert!(
         celsius_symbol.is_some(),
         "Should find CelsiusTemperatureValue"
     );
-    let (_, symbol) = celsius_symbol.unwrap();
+    let symbol = celsius_symbol.unwrap();
 
     // Generate the actual hover output
     let hover_output = format_rich_hover(symbol, &workspace);
@@ -1094,20 +1094,19 @@ fn test_hover_at_position_temperature_difference_value() {
 
     // Check: are there multiple symbols with name "TemperatureDifferenceValue"?
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let matching_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(_, sym)| sym.name() == "TemperatureDifferenceValue")
+    let matching_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "TemperatureDifferenceValue")
         .collect();
 
     println!("=== Symbols named 'TemperatureDifferenceValue' ===");
-    for (key, sym) in &matching_symbols {
-        println!("  Key: {}, QName: {}", key, sym.qualified_name());
+    for sym in &matching_symbols {
+        println!("  QName: {}", sym.qualified_name());
     }
     println!("Total: {}", matching_symbols.len());
 
     // Now generate hover for each and check
-    for (_, sym) in &matching_symbols {
+    for sym in &matching_symbols {
         let hover = format_rich_hover(sym, &workspace);
         let count = hover.matches("ScalarQuantityValue").count();
         println!("\n--- Hover for {} ---\n{}", sym.qualified_name(), hover);
@@ -1835,32 +1834,7 @@ package Refs {
     // For now, we just verify the tokens are regenerated (not stale)
 }
 
-/// Test that hover on a usage site shows stale import info after import is removed.
-///
-/// This test is currently EXPECTED TO FAIL - it demonstrates a known bug.
-///
-/// This replicates the user-reported bug:
-/// 1. File A defines `Engine`
-/// 2. File B imports `Engine` and uses it: `part myEngine : Engine`
-/// 3. Hover on `Engine` in file B shows info about the imported type
-/// 4. User removes the import from file B (now `Engine` is unresolved)
-/// 5. BUG: Hover on the same position still shows old import information
-///
-/// ROOT CAUSE (in `server/position.rs::find_symbol_at_position`):
-/// The fallback logic at lines 52-60 searches ALL symbols by simple name,
-/// completely ignoring scope and imports. When `resolver.resolve(&word)` fails
-/// (correctly, because the import was removed), the fallback finds `Engine`
-/// by matching the simple name against all symbols in the workspace.
-///
-/// FIX OPTIONS:
-/// 1. Remove the fallback entirely - only resolve symbols that are in scope
-/// 2. Make the fallback scope-aware by passing the file path and using
-///    `lookup_from_scope` with the file's scope ID
-/// 3. Return None when resolver fails, indicating unresolved reference
-///
-/// The hover should either show nothing or indicate the type is unresolved.
 #[test]
-#[ignore = "Known bug: stale import references shown after import removal"]
 fn test_hover_on_usage_site_cleared_when_import_removed() {
     use async_lsp::lsp_types::{
         HoverContents, MarkedString, Position, TextDocumentContentChangeEvent, Url,

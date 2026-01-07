@@ -19,7 +19,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             scope_id,
             source_file: current_file,
             span: namespace.span,
-            references: Vec::new(),
         };
         self.insert_symbol(namespace.name.clone(), symbol);
 
@@ -39,7 +38,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 scope_id,
                 source_file,
                 span: package.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
             self.enter_namespace(name.clone());
@@ -61,7 +59,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 source_file: self.symbol_table.current_file().map(String::from),
                 // Use name_span if available, fallback to full span
                 span: definition.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
 
@@ -76,7 +73,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                     scope_id,
                     source_file: self.symbol_table.current_file().map(String::from),
                     span: definition.span,
-                    references: Vec::new(),
                 };
                 self.insert_symbol(short_name.clone(), alias_symbol);
             }
@@ -218,7 +214,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             scope_id,
             source_file: self.symbol_table.current_file().map(String::from),
             span: usage.span,
-            references: Vec::new(),
         };
         self.insert_symbol(name.clone(), symbol);
 
@@ -233,7 +228,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: usage.span,
-                references: Vec::new(),
             };
             self.insert_symbol(short_name.clone(), alias_symbol);
         }
@@ -360,7 +354,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: alias.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
         }

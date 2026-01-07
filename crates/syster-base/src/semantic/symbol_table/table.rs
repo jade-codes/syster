@@ -48,8 +48,6 @@ pub struct SymbolTable {
     pub(super) symbols_by_file: HashMap<String, Vec<SymbolId>>,
     /// Index mapping file paths to imports originating from that file
     pub(super) imports_by_file: HashMap<String, Vec<Import>>,
-    /// Reverse index: target_qname -> [(file, span)] for O(1) import reference lookups
-    import_references: HashMap<String, Vec<(String, Span)>>,
     /// Index for O(1) qualified name lookups: qname -> SymbolId
     pub(super) symbols_by_qname: HashMap<String, SymbolId>,
 }
@@ -64,7 +62,6 @@ impl SymbolTable {
             events: EventEmitter::new(),
             symbols_by_file: HashMap::new(),
             imports_by_file: HashMap::new(),
-            import_references: HashMap::new(),
             symbols_by_qname: HashMap::new(),
         }
     }
@@ -241,53 +238,6 @@ impl SymbolTable {
             .get(scope_id)
             .map(|scope| scope.imports.clone())
             .unwrap_or_default()
-    }
-
-    /// Add references to a symbol identified by its qualified name
-    pub fn add_references_to_symbol(
-        &mut self,
-        qualified_name: &str,
-        references: Vec<super::symbol::SymbolReference>,
-    ) {
-        if let Some(id) = self.find_id_by_qualified_name(qualified_name) {
-            if let Some(symbol) = self.arena.get_mut(id.index()) {
-                for reference in references {
-                    symbol.add_reference(reference);
-                }
-            }
-        }
-    }
-
-    /// Get all imports that reference a given target (for "Find References")
-    /// Returns (file, span) pairs for each import of the target.
-    /// O(1) lookup using reverse index.
-    pub fn get_import_references(&self, target_qname: &str) -> Vec<(&str, &Span)> {
-        self.import_references
-            .get(target_qname)
-            .map(|refs| {
-                refs.iter()
-                    .map(|(file, span)| (file.as_str(), span))
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    /// Register an import reference for reverse lookup.
-    /// Called during import resolution when we know the target.
-    pub fn add_import_reference(&mut self, target_qname: String, file: String, span: Span) {
-        self.import_references
-            .entry(target_qname)
-            .or_default()
-            .push((file, span));
-    }
-
-    /// Clear import references for a file (called when file is reparsed)
-    pub fn clear_import_references_for_file(&mut self, file_path: &str) {
-        for refs in self.import_references.values_mut() {
-            refs.retain(|(file, _)| file != file_path);
-        }
-        // Clean up empty entries
-        self.import_references.retain(|_, refs| !refs.is_empty());
     }
 
     /// Get all imports from a specific file

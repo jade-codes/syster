@@ -1,6 +1,8 @@
 use super::LspServer;
 use async_lsp::lsp_types::{Position, Range};
 use std::path::PathBuf;
+use syster::core::Span;
+use syster::semantic::symbol_table::Symbol;
 
 impl LspServer {
     /// Find the symbol and range at the given position by querying the AST
@@ -39,15 +41,38 @@ impl LspServer {
 
         // First, check if the word matches a symbol defined in THIS file.
         // This handles hovering on definitions like "part def Engine".
-        for (_key, symbol) in self.workspace.symbol_table().all_symbols() {
+        // When there are multiple symbols with the same name, prefer the one whose
+        // span contains the cursor position.
+        let mut exact_match: Option<(&Symbol, Span)> = None;
+        let mut any_match: Option<(&Symbol, Range)> = None;
+
+        for symbol in self.workspace.symbol_table().iter_symbols() {
             if symbol.name() == word && symbol.source_file() == Some(&file_path_str) {
-                let qualified_name = symbol.qualified_name().to_string();
-                let range = symbol
-                    .span()
-                    .map(|s| span_to_lsp_range(&s))
-                    .unwrap_or(word_range);
-                return Some((qualified_name, range));
+                if let Some(span) = symbol.span() {
+                    // Check if cursor is within the symbol's span (exact match)
+                    if position.line == span.start.line as u32
+                        && position.character >= span.start.column as u32
+                        && position.character <= span.end.column as u32
+                    {
+                        exact_match = Some((symbol, span.clone()));
+                    }
+                    // Track any match in case no exact match found
+                    if any_match.is_none() {
+                        any_match = Some((symbol, span_to_lsp_range(&span)));
+                    }
+                }
             }
+        }
+
+        // Prefer exact match (cursor on definition) over any match
+        if let Some((symbol, span)) = exact_match {
+            return Some((
+                symbol.qualified_name().to_string(),
+                span_to_lsp_range(&span),
+            ));
+        }
+        if let Some((symbol, range)) = any_match {
+            return Some((symbol.qualified_name().to_string(), range));
         }
 
         // Second, try to resolve using the file's scope for proper import resolution.

@@ -1409,7 +1409,6 @@ fn test_symbol_table_mut_basic() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
     symbol_table
         .insert("TestPackage".to_string(), symbol)
@@ -1438,7 +1437,6 @@ fn test_symbol_table_mut_allows_modifications() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1452,7 +1450,6 @@ fn test_symbol_table_mut_allows_modifications() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1487,7 +1484,6 @@ fn test_symbol_table_mut_independent_from_immutable() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();

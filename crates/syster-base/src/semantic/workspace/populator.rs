@@ -5,7 +5,6 @@
 
 use crate::semantic::adapters;
 use crate::semantic::graphs::RelationshipGraph;
-use crate::semantic::processors::ReferenceCollector;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::workspace::WorkspaceFile;
 use crate::syntax::SyntaxFile;
@@ -42,8 +41,6 @@ impl<'a> WorkspacePopulator<'a> {
                 // Duplicate symbols are a known issue with qualified redefinitions
             }
         }
-
-        self.collect_references();
 
         // Always succeed even if some files had errors
         // This allows stdlib to load despite duplicate symbol issues
@@ -96,10 +93,6 @@ impl<'a> WorkspacePopulator<'a> {
         self.relationship_graph
             .remove_relationships_for_file(&file_path_str);
 
-        // Clear import references for this file
-        self.symbol_table
-            .clear_import_references_for_file(&file_path_str);
-
         // Remove imports from the file
         self.symbol_table.remove_imports_from_file(&file_path_str);
 
@@ -111,12 +104,6 @@ impl<'a> WorkspacePopulator<'a> {
         // Delegate to adapter factory - workspace doesn't know about specific languages
         adapters::populate_syntax_file(&content, self.symbol_table, self.relationship_graph)
             .map_err(|errors| format!("Failed to populate {file_path_str}: {errors:?}"))
-    }
-
-    /// Collects references from relationship graph into symbols
-    fn collect_references(&mut self) {
-        let mut collector = ReferenceCollector::new(self.symbol_table, self.relationship_graph);
-        collector.collect();
     }
 
     /// Gets all file paths sorted for deterministic ordering

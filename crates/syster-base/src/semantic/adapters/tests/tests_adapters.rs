@@ -12,7 +12,6 @@
 
 use super::super::*;
 use crate::core::constants::{REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_SATISFY};
-use crate::semantic::analyzer::validation::RelationshipValidator;
 use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
@@ -101,7 +100,6 @@ fn test_sysml_validator_actually_validates() {
         semantic_role: Some(SemanticRole::Component),
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     let valid_target = Symbol::Definition {
@@ -112,7 +110,6 @@ fn test_sysml_validator_actually_validates() {
         semantic_role: Some(SemanticRole::Requirement),
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     let invalid_target = Symbol::Definition {
@@ -123,7 +120,6 @@ fn test_sysml_validator_actually_validates() {
         semantic_role: Some(SemanticRole::Action),
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     // Valid satisfy relationship
@@ -145,7 +141,6 @@ fn test_noop_validator_accepts_everything() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     let target = Symbol::Package {
@@ -154,7 +149,6 @@ fn test_noop_validator_accepts_everything() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     // NoOpValidator should accept any relationship
@@ -175,7 +169,6 @@ fn create_requirement(name: &str) -> Symbol {
         semantic_role: Some(SemanticRole::Requirement),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
 }
 
@@ -188,7 +181,6 @@ fn create_action(name: &str) -> Symbol {
         semantic_role: Some(SemanticRole::Action),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
 }
 
@@ -201,7 +193,6 @@ fn create_state(name: &str) -> Symbol {
         semantic_role: Some(SemanticRole::State),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
 }
 
@@ -214,7 +205,6 @@ fn create_use_case(name: &str) -> Symbol {
         semantic_role: Some(SemanticRole::UseCase),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
 }
 
@@ -227,263 +217,7 @@ fn create_part(name: &str) -> Symbol {
         semantic_role: Some(SemanticRole::Component),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
-}
-
-#[test]
-fn test_satisfy_accepts_requirement() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_requirement("Req1");
-
-    let result = validator.validate_relationship(REL_SATISFY, &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_satisfy_rejects_non_requirement() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_action("Action1");
-
-    let result = validator.validate_relationship(REL_SATISFY, &source, &target);
-    assert!(result.is_err());
-    assert!(
-        result
-            .unwrap_err()
-            .to_string()
-            .contains("must target a requirement")
-    );
-}
-
-#[test]
-fn test_perform_accepts_action() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_action("Action1");
-
-    let result = validator.validate_relationship(REL_PERFORM, &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_perform_rejects_non_action() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_requirement("Req1");
-
-    let result = validator.validate_relationship(REL_PERFORM, &source, &target);
-    assert!(result.is_err());
-    assert!(
-        result
-            .unwrap_err()
-            .to_string()
-            .contains("must target an action")
-    );
-}
-
-#[test]
-fn test_exhibit_accepts_state() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_state("State1");
-
-    let result = validator.validate_relationship(REL_EXHIBIT, &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_exhibit_rejects_non_state() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_action("Action1");
-
-    let result = validator.validate_relationship(REL_EXHIBIT, &source, &target);
-    assert!(result.is_err());
-    assert!(
-        result
-            .unwrap_err()
-            .to_string()
-            .contains("must target a state")
-    );
-}
-
-#[test]
-fn test_include_accepts_use_case() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_use_case("UseCase1");
-    let target = create_use_case("UseCase2");
-
-    let result = validator.validate_relationship(REL_INCLUDE, &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_include_rejects_non_use_case() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_use_case("UseCase1");
-    let target = create_action("Action1");
-
-    let result = validator.validate_relationship(REL_INCLUDE, &source, &target);
-    assert!(result.is_err());
-    assert!(
-        result
-            .unwrap_err()
-            .to_string()
-            .contains("must target a use case")
-    );
-}
-
-#[test]
-fn test_other_relationships_have_no_constraints() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_part("Target");
-
-    let result = validator.validate_relationship("specialization", &source, &target);
-    assert!(result.is_ok());
-
-    let result = validator.validate_relationship("typing", &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_validator_with_missing_semantic_role() {
-    let validator = sysml::validator::SysmlValidator::new();
-
-    let source = create_part("Source");
-    let target_no_role = Symbol::Definition {
-        name: "NoRole".to_string(),
-        qualified_name: "NoRole".to_string(),
-        scope_id: 0,
-        kind: "Part".to_string(),
-        semantic_role: None,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-
-    // Should return Ok when no semantic role (can't validate)
-    let result = validator.validate_relationship(REL_SATISFY, &source, &target_no_role);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_validator_with_usage_symbols() {
-    let validator = sysml::validator::SysmlValidator::new();
-
-    let source = Symbol::Usage {
-        name: "SourceUsage".to_string(),
-        qualified_name: "SourceUsage".to_string(),
-        scope_id: 0,
-        kind: "Part".to_string(),
-        semantic_role: Some(SemanticRole::Component),
-        usage_type: None,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-
-    let target = Symbol::Usage {
-        name: "RequirementUsage".to_string(),
-        qualified_name: "RequirementUsage".to_string(),
-        scope_id: 0,
-        kind: "Requirement".to_string(),
-        semantic_role: Some(SemanticRole::Requirement),
-        usage_type: None,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-
-    let result = validator.validate_relationship(REL_SATISFY, &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_validator_with_non_definition_non_usage_symbols() {
-    let validator = sysml::validator::SysmlValidator::new();
-
-    let source = Symbol::Package {
-        name: "Pkg".to_string(),
-        qualified_name: "Pkg".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-
-    let target = Symbol::Package {
-        name: "Pkg2".to_string(),
-        qualified_name: "Pkg2".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-
-    // Should return Ok for non-Definition/Usage symbols (no semantic role)
-    let result = validator.validate_relationship(REL_SATISFY, &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_default_impl() {
-    let validator1 = sysml::validator::SysmlValidator::new();
-    let validator2 = sysml::validator::SysmlValidator::new();
-
-    // Both constructors should work
-    let source = create_part("Source");
-    let target = create_requirement("Req1");
-
-    let result1 = validator1.validate_relationship(REL_SATISFY, &source, &target);
-    let result2 = validator2.validate_relationship(REL_SATISFY, &source, &target);
-
-    assert!(result1.is_ok());
-    assert!(result2.is_ok());
-}
-
-#[test]
-fn test_empty_relationship_type() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_part("Target");
-
-    // Empty relationship type should have no constraints
-    let result = validator.validate_relationship("", &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_case_sensitive_relationship_types() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let target = create_action("Action1");
-
-    // Relationship types are case-sensitive
-    let result_lower = validator.validate_relationship(REL_PERFORM, &source, &target);
-    let result_upper = validator.validate_relationship("Perform", &source, &target);
-
-    assert!(result_lower.is_ok());
-    assert!(result_upper.is_ok()); // Should have no constraints (not "perform")
-}
-
-#[test]
-fn test_multiple_validations_independent() {
-    let validator = sysml::validator::SysmlValidator::new();
-    let source = create_part("Source");
-    let req = create_requirement("Req1");
-    let action = create_action("Action1");
-
-    // Multiple validations should be independent
-    let result1 = validator.validate_relationship(REL_SATISFY, &source, &req);
-    let result2 = validator.validate_relationship(REL_SATISFY, &source, &action);
-    let result3 = validator.validate_relationship(REL_PERFORM, &source, &action);
-
-    assert!(result1.is_ok());
-    assert!(result2.is_err());
-    assert!(result3.is_ok());
 }
 
 // ============================================================================
@@ -542,7 +276,6 @@ fn test_populate_preserves_existing_symbols() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -731,7 +464,6 @@ fn test_kerml_adapter_new_symbol_table_accessible() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     let result = adapter
@@ -769,7 +501,6 @@ fn test_kerml_adapter_new_with_populated_table() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();

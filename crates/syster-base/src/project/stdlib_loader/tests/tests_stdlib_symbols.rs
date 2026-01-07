@@ -4,7 +4,6 @@ use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
 #[test]
-#[ignore = "Calculation depends on Items.sysml which has complex arrow expressions not yet supported"]
 fn test_stdlib_calculation_symbol_loads() {
     let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
 

@@ -53,7 +53,6 @@ fn test_collect_hints_package_traversal() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -104,7 +103,6 @@ fn test_collect_hints_nested_packages() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -161,7 +159,6 @@ fn test_collect_hints_definition_element() {
                 usage_type: Some("Wheel".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -218,7 +215,6 @@ fn test_collect_hints_definition_with_multiple_usages() {
                 usage_type: Some("Engine".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -235,7 +231,6 @@ fn test_collect_hints_definition_with_multiple_usages() {
                 usage_type: Some("Transmission".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -338,7 +333,6 @@ fn test_collect_hints_usage_element() {
                 usage_type: Some("Vehicle".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -452,7 +446,6 @@ fn test_collect_hints_mixed_element_types() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -526,7 +519,6 @@ fn test_collect_hints_deeply_nested_usages() {
                 usage_type: Some("Sensor".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -594,7 +586,6 @@ fn test_collect_hints_usage_with_comment_members() {
                 usage_type: Some("InnerType".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -658,7 +649,6 @@ fn test_collect_hints_package_definition_usage_hierarchy() {
                 usage_type: Some("Component".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -724,7 +714,6 @@ fn test_collect_hints_range_filter_excludes_before() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -777,7 +766,6 @@ fn test_collect_hints_range_filter_excludes_after() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -827,7 +815,6 @@ fn test_collect_hints_range_filter_includes_in_range() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -881,7 +868,6 @@ fn test_collect_hints_range_filter_nested_usages() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -898,7 +884,6 @@ fn test_collect_hints_range_filter_nested_usages() {
                 usage_type: Some("Type2".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -979,7 +964,6 @@ fn test_collect_hints_range_filter_boundary_start() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1033,7 +1017,6 @@ fn test_collect_hints_range_filter_boundary_end() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1092,7 +1075,6 @@ fn test_collect_hints_multiple_packages_with_same_usage_names() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1210,7 +1192,6 @@ fn test_collect_hints_usage_without_span() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1254,7 +1235,6 @@ fn test_collect_hints_multiple_element_types_in_package() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1334,7 +1314,6 @@ fn test_collect_hints_no_range_filter() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1351,7 +1330,6 @@ fn test_collect_hints_no_range_filter() {
                 usage_type: Some("Type2".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1453,7 +1431,6 @@ fn test_collect_usage_hints_nested_usage() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: vec![],
             },
         )
         .unwrap();
@@ -1515,7 +1492,6 @@ fn test_collect_usage_hints_with_range_filter() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: vec![],
             },
         )
         .unwrap();
@@ -1532,7 +1508,6 @@ fn test_collect_usage_hints_with_range_filter() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: vec![],
             },
         )
         .unwrap();

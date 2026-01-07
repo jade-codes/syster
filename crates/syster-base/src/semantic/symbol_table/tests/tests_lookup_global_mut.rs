@@ -10,7 +10,6 @@ fn test_lookup_global_mut_in_root_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "MyPackage".to_string(),
         qualified_name: "MyPackage".to_string(),
     };
@@ -43,7 +42,6 @@ fn test_lookup_global_mut_across_multiple_scopes() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "RootSymbol".to_string(),
                 qualified_name: "RootSymbol".to_string(),
             },
@@ -59,7 +57,6 @@ fn test_lookup_global_mut_across_multiple_scopes() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "NestedSymbol".to_string(),
                 qualified_name: "RootSymbol::NestedSymbol".to_string(),
                 kind: "Class".to_string(),
@@ -77,7 +74,6 @@ fn test_lookup_global_mut_across_multiple_scopes() {
                 scope_id: 2,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "DeepSymbol".to_string(),
                 qualified_name: "RootSymbol::NestedSymbol::DeepSymbol".to_string(),
                 feature_type: Some("String".to_string()),
@@ -112,7 +108,6 @@ fn test_lookup_global_mut_returns_first_match() {
                 scope_id: 0,
                 source_file: Some("file1.sysml".to_string()),
                 span: None,
-                references: Vec::new(),
                 name: "Duplicate".to_string(),
                 qualified_name: "Duplicate".to_string(),
             },
@@ -128,7 +123,6 @@ fn test_lookup_global_mut_returns_first_match() {
                 scope_id: 1,
                 source_file: Some("file2.sysml".to_string()),
                 span: None,
-                references: Vec::new(),
                 name: "Duplicate".to_string(),
                 qualified_name: "Scope1::Duplicate".to_string(),
                 kind: "Class".to_string(),
@@ -154,7 +148,6 @@ fn test_lookup_global_mut_mutability() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "MutableSymbol".to_string(),
                 qualified_name: "MutableSymbol".to_string(),
                 feature_type: None,
@@ -162,22 +155,10 @@ fn test_lookup_global_mut_mutability() {
         )
         .unwrap();
 
-    // Get mutable reference and add a reference to it
+    // Get mutable reference and verify it exists
     let symbol_ref = table.lookup_global_mut("MutableSymbol");
     assert!(symbol_ref.is_some());
-
-    let symbol = symbol_ref.unwrap();
-    assert_eq!(symbol.references().len(), 0);
-
-    symbol.add_reference(SymbolReference {
-        file: "test.sysml".to_string(),
-        span: Span::from_coords(1, 0, 1, 10),
-    });
-
-    // Verify the reference was added
-    let symbol_check = table.lookup_global_mut("MutableSymbol").unwrap();
-    assert_eq!(symbol_check.references().len(), 1);
-    assert_eq!(symbol_check.references()[0].file, "test.sysml");
+    assert_eq!(symbol_ref.unwrap().name(), "MutableSymbol");
 }
 
 #[test]
@@ -192,7 +173,6 @@ fn test_lookup_global_mut_different_symbol_types() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Package".to_string(),
                 qualified_name: "Package".to_string(),
             },
@@ -207,7 +187,6 @@ fn test_lookup_global_mut_different_symbol_types() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Classifier".to_string(),
                 qualified_name: "Package::Classifier".to_string(),
                 kind: "Class".to_string(),
@@ -224,7 +203,6 @@ fn test_lookup_global_mut_different_symbol_types() {
                 scope_id: 2,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Feature".to_string(),
                 qualified_name: "Package::Classifier::Feature".to_string(),
                 feature_type: Some("Integer".to_string()),
@@ -240,7 +218,6 @@ fn test_lookup_global_mut_different_symbol_types() {
                 scope_id: 3,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Definition".to_string(),
                 qualified_name: "Package::Classifier::Feature::Definition".to_string(),
                 kind: "Part".to_string(),
@@ -257,7 +234,6 @@ fn test_lookup_global_mut_different_symbol_types() {
                 scope_id: 4,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Usage".to_string(),
                 qualified_name: "Package::Classifier::Feature::Definition::Usage".to_string(),
                 kind: "Part".to_string(),
@@ -275,7 +251,6 @@ fn test_lookup_global_mut_different_symbol_types() {
                 scope_id: 5,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Alias".to_string(),
                 qualified_name: "Package::Classifier::Feature::Definition::Usage::Alias"
                     .to_string(),
@@ -306,7 +281,6 @@ fn test_lookup_global_mut_vs_lookup_mut_difference() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "RootOnly".to_string(),
                 qualified_name: "RootOnly".to_string(),
             },
@@ -322,7 +296,6 @@ fn test_lookup_global_mut_vs_lookup_mut_difference() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "NestedOnly".to_string(),
                 qualified_name: "RootOnly::NestedOnly".to_string(),
                 kind: "Class".to_string(),
@@ -355,7 +328,6 @@ fn test_lookup_global_mut_vs_lookup_mut_difference() {
                 scope_id: 3,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "OtherBranch".to_string(),
                 qualified_name: "RootOnly::OtherBranch".to_string(),
                 feature_type: Some("String".to_string()),
@@ -394,7 +366,6 @@ fn test_lookup_global_mut_after_scope_operations() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Symbol1".to_string(),
                 qualified_name: "Symbol1".to_string(),
             },
@@ -409,7 +380,6 @@ fn test_lookup_global_mut_after_scope_operations() {
                 scope_id: scope1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Symbol2".to_string(),
                 qualified_name: "Symbol1::Symbol2".to_string(),
                 kind: "Class".to_string(),
@@ -426,7 +396,6 @@ fn test_lookup_global_mut_after_scope_operations() {
                 scope_id: scope2,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Symbol3".to_string(),
                 qualified_name: "Symbol1::Symbol2::Symbol3".to_string(),
                 feature_type: None,
@@ -453,7 +422,6 @@ fn test_lookup_global_mut_after_scope_operations() {
                 scope_id: 3,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "Symbol4".to_string(),
                 qualified_name: "Symbol1::Symbol4".to_string(),
                 kind: "Part".to_string(),
@@ -467,57 +435,4 @@ fn test_lookup_global_mut_after_scope_operations() {
     assert!(table.lookup_global_mut("Symbol2").is_some());
     assert!(table.lookup_global_mut("Symbol3").is_some());
     assert!(table.lookup_global_mut("Symbol4").is_some());
-}
-
-#[test]
-fn test_lookup_global_mut_multiple_mutations() {
-    let mut table = SymbolTable::new();
-
-    table
-        .insert(
-            "TestSymbol".to_string(),
-            Symbol::Package {
-                scope_id: 0,
-                source_file: None,
-                span: None,
-                references: Vec::new(),
-                name: "TestSymbol".to_string(),
-                qualified_name: "TestSymbol".to_string(),
-            },
-        )
-        .unwrap();
-
-    // Add first reference
-    {
-        let symbol = table.lookup_global_mut("TestSymbol").unwrap();
-        symbol.add_reference(SymbolReference {
-            file: "file1.sysml".to_string(),
-            span: Span::from_coords(1, 0, 1, 5),
-        });
-    }
-
-    // Add second reference
-    {
-        let symbol = table.lookup_global_mut("TestSymbol").unwrap();
-        symbol.add_reference(SymbolReference {
-            file: "file2.sysml".to_string(),
-            span: Span::from_coords(10, 5, 10, 15),
-        });
-    }
-
-    // Add third reference
-    {
-        let symbol = table.lookup_global_mut("TestSymbol").unwrap();
-        symbol.add_reference(SymbolReference {
-            file: "file3.sysml".to_string(),
-            span: Span::from_coords(20, 10, 20, 20),
-        });
-    }
-
-    // Verify all references were added
-    let symbol = table.lookup_global_mut("TestSymbol").unwrap();
-    assert_eq!(symbol.references().len(), 3);
-    assert_eq!(symbol.references()[0].file, "file1.sysml");
-    assert_eq!(symbol.references()[1].file, "file2.sysml");
-    assert_eq!(symbol.references()[2].file, "file3.sysml");
 }

@@ -69,7 +69,6 @@ fn test_extract_inlay_hints_delegates_to_sysml_adapter() {
                 usage_type: Some("Vehicle".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -115,7 +114,6 @@ fn test_extract_inlay_hints_delegates_to_kerml_adapter() {
                 feature_type: Some("Real".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -159,7 +157,6 @@ fn test_extract_inlay_hints_respects_range_filter_sysml() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -208,7 +205,6 @@ fn test_extract_inlay_hints_respects_range_filter_kerml() {
                 feature_type: Some("String".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -279,7 +275,6 @@ fn test_sysml_usage_without_explicit_type_shows_hint() {
                 usage_type: Some("Engine".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -393,7 +388,6 @@ fn test_sysml_usage_without_span_no_hint() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -469,7 +463,6 @@ fn test_sysml_usage_symbol_without_type_no_hint() {
                 usage_type: None, // No type
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -515,7 +508,6 @@ fn test_sysml_non_usage_symbol_no_hint() {
                 semantic_role: None,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -561,7 +553,6 @@ fn test_sysml_nested_usages_in_definition() {
                 usage_type: Some("Wheel".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -619,7 +610,6 @@ fn test_sysml_deeply_nested_usages() {
                 usage_type: Some("Sensor".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -689,7 +679,6 @@ fn test_sysml_multiple_usages_multiple_hints() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -706,7 +695,6 @@ fn test_sysml_multiple_usages_multiple_hints() {
                 usage_type: Some("Type2".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -764,7 +752,6 @@ fn test_sysml_range_filter_excludes_usage_before_range() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -818,7 +805,6 @@ fn test_sysml_range_filter_excludes_usage_after_range() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -869,7 +855,6 @@ fn test_sysml_range_filter_includes_usage_in_range() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -924,7 +909,6 @@ fn test_sysml_package_traversal() {
                 usage_type: Some("Type1".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -977,7 +961,6 @@ fn test_sysml_hint_position_calculation() {
                 usage_type: Some("Engine".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1043,7 +1026,6 @@ fn test_kerml_feature_without_explicit_typing_shows_hint() {
                 feature_type: Some("Real".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1146,7 +1128,6 @@ fn test_kerml_feature_without_span_no_hint() {
                 feature_type: Some("String".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1214,7 +1195,6 @@ fn test_kerml_feature_symbol_without_type_no_hint() {
                 feature_type: None, // No type
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1257,7 +1237,6 @@ fn test_kerml_non_feature_symbol_no_hint() {
                 is_abstract: false,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1298,7 +1277,6 @@ fn test_kerml_multiple_features_multiple_hints() {
                 feature_type: Some("Real".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1313,7 +1291,6 @@ fn test_kerml_multiple_features_multiple_hints() {
                 feature_type: Some("Real".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1367,7 +1344,6 @@ fn test_kerml_range_filter_excludes_feature_before_range() {
                 feature_type: Some("Integer".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1416,7 +1392,6 @@ fn test_kerml_range_filter_excludes_feature_after_range() {
                 feature_type: Some("Integer".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1462,7 +1437,6 @@ fn test_kerml_range_filter_includes_feature_in_range() {
                 feature_type: Some("Integer".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1513,7 +1487,6 @@ fn test_kerml_package_traversal() {
                 feature_type: Some("Boolean".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -1561,7 +1534,6 @@ fn test_kerml_hint_position_calculation() {
                 feature_type: Some("Real".to_string()),
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();

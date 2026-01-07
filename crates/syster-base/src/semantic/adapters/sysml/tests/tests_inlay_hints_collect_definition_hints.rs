@@ -75,7 +75,6 @@ fn create_usage_symbol(name: &str, type_name: Option<&str>) -> Symbol {
         usage_type: type_name.map(String::from),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
 }
 

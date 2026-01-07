@@ -1338,8 +1338,14 @@ async fn test_did_open_valid_document() {
     // Verify document was opened and parsed
     assert_eq!(state.server.workspace().file_count(), 1);
 
-    let symbols = state.server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
+    assert!(
+        state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Vehicle")
+    );
 }
 
 #[tokio::test]
@@ -1371,9 +1377,9 @@ async fn test_did_open_multiple_documents() {
 
     assert_eq!(state.server.workspace().file_count(), 2);
 
-    let symbols = state.server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Truck"));
+    let st = state.server.workspace().symbol_table();
+    assert!(st.iter_symbols().any(|s| s.name() == "Car"));
+    assert!(st.iter_symbols().any(|s| s.name() == "Truck"));
 }
 
 // ============================================================================
@@ -1401,9 +1407,23 @@ async fn test_did_change_incremental_insert() {
     state.server.parse_document(&uri);
 
     // Verify both symbols exist
-    let symbols = state.server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Truck"));
+    let symbols = state.server.workspace().symbol_table().iter_symbols();
+    assert!(
+        state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Car")
+    );
+    assert!(
+        state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Truck")
+    );
 }
 
 #[tokio::test]
@@ -1427,9 +1447,23 @@ async fn test_did_change_incremental_delete() {
     state.server.parse_document(&uri);
 
     // Only Car should exist
-    let symbols = state.server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(!symbols.iter().any(|(_, s)| s.name() == "Truck"));
+    let symbols = state.server.workspace().symbol_table().iter_symbols();
+    assert!(
+        state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Car")
+    );
+    assert!(
+        !state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Truck")
+    );
 }
 
 #[tokio::test]
@@ -1452,9 +1486,23 @@ async fn test_did_change_incremental_replace() {
     state.server.apply_text_change_only(&uri, &change).unwrap();
     state.server.parse_document(&uri);
 
-    let symbols = state.server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
-    assert!(!symbols.iter().any(|(_, s)| s.name() == "Car"));
+    let symbols = state.server.workspace().symbol_table().iter_symbols();
+    assert!(
+        state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Vehicle")
+    );
+    assert!(
+        !state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Car")
+    );
 }
 
 #[tokio::test]
@@ -1474,9 +1522,23 @@ async fn test_did_change_full_sync() {
     state.server.apply_text_change_only(&uri, &change).unwrap();
     state.server.parse_document(&uri);
 
-    let symbols = state.server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "CompletelyNew"));
-    assert!(!symbols.iter().any(|(_, s)| s.name() == "Car"));
+    let symbols = state.server.workspace().symbol_table().iter_symbols();
+    assert!(
+        state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "CompletelyNew")
+    );
+    assert!(
+        !state
+            .server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Car")
+    );
 }
 
 // ============================================================================
@@ -1524,12 +1586,22 @@ async fn test_did_save_document() {
 
     // did_save is a no-op in current implementation
     // Just verify it doesn't break anything
-    let symbols_before = state.server.workspace().symbol_table().all_symbols().len();
+    let symbols_before = state
+        .server
+        .workspace()
+        .symbol_table()
+        .iter_symbols()
+        .count();
 
     // Simulate save (no-op)
     // In real ServerState, did_save returns ControlFlow::Continue(())
 
-    let symbols_after = state.server.workspace().symbol_table().all_symbols().len();
+    let symbols_after = state
+        .server
+        .workspace()
+        .symbol_table()
+        .iter_symbols()
+        .count();
     assert_eq!(
         symbols_before, symbols_after,
         "Save should not modify state"

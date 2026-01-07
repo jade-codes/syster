@@ -17,7 +17,6 @@ impl<'a> KermlAdapter<'a> {
             scope_id,
             source_file: self.symbol_table.current_file().map(String::from),
             span: namespace.span,
-            references: Vec::new(),
         };
         self.insert_symbol(namespace.name.clone(), symbol);
         self.enter_namespace(namespace.name.clone());
@@ -33,7 +32,6 @@ impl<'a> KermlAdapter<'a> {
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: package.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
             self.enter_namespace(name.clone());
@@ -100,7 +98,6 @@ impl<'a> KermlAdapter<'a> {
                     scope_id,
                     source_file: self.symbol_table.current_file().map(String::from),
                     span: classifier.span,
-                    references: Vec::new(),
                 }
             } else {
                 Symbol::Definition {
@@ -111,7 +108,6 @@ impl<'a> KermlAdapter<'a> {
                     scope_id,
                     source_file: self.symbol_table.current_file().map(String::from),
                     span: classifier.span,
-                    references: Vec::new(),
                 }
             };
 
@@ -170,7 +166,6 @@ impl<'a> KermlAdapter<'a> {
                 feature_type: None,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: feature.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
 
