@@ -7,7 +7,7 @@ use crate::semantic::types::SemanticError;
 impl SemanticAnalyzer {
     pub(super) fn validate_types(&self, context: &mut AnalysisContext) {
         let resolver = Resolver::new(&self.symbol_table);
-        for (_name, symbol) in self.symbol_table.all_symbols() {
+        for symbol in self.symbol_table.iter_symbols() {
             if let Some(type_ref) = symbol.type_reference() {
                 let scope_id = symbol.scope_id();
                 let resolved = resolver.resolve_in_scope(type_ref, scope_id);
@@ -39,7 +39,7 @@ impl SemanticAnalyzer {
 
         // Validate that all relationship targets exist and check domain constraints
         for relationship_type in self.relationship_graph.relationship_types() {
-            for (_name, symbol) in self.symbol_table.all_symbols() {
+            for symbol in self.symbol_table.iter_symbols() {
                 let qualified_name = symbol.qualified_name();
 
                 // Check one-to-many relationships
@@ -75,7 +75,7 @@ impl SemanticAnalyzer {
         }
 
         // Check for circular specialization dependencies
-        for (_name, symbol) in self.symbol_table.all_symbols() {
+        for symbol in self.symbol_table.iter_symbols() {
             let qualified_name = symbol.qualified_name();
 
             if let Some(targets) = self

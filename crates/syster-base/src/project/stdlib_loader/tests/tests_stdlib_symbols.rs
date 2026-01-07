@@ -15,9 +15,7 @@ fn test_stdlib_calculation_symbol_loads() {
 
     // Check if Calculation symbol exists
     let all_symbols = workspace.symbol_table().all_symbols();
-    let calculation = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.name() == "Calculation");
+    let calculation = all_symbols.iter().find(|sym| sym.name() == "Calculation");
 
     assert!(
         calculation.is_some(),
@@ -25,7 +23,7 @@ fn test_stdlib_calculation_symbol_loads() {
         workspace.symbol_table().all_symbols().len()
     );
 
-    let (_key, _sym) = calculation.unwrap();
+    let _sym = calculation.unwrap();
 }
 
 #[test]
@@ -39,7 +37,7 @@ fn test_stdlib_case_symbol_loads() {
 
     // Check if Case symbol exists
     let all_symbols = workspace.symbol_table().all_symbols();
-    let case = all_symbols.iter().find(|(_, sym)| sym.name() == "Case");
+    let case = all_symbols.iter().find(|sym| sym.name() == "Case");
 
     assert!(
         case.is_some(),
@@ -47,7 +45,7 @@ fn test_stdlib_case_symbol_loads() {
         workspace.symbol_table().all_symbols().len()
     );
 
-    let (_key, _sym) = case.unwrap();
+    let _sym = case.unwrap();
 }
 
 #[test]
@@ -68,7 +66,7 @@ fn test_stdlib_symbol_count() {
     );
 
     // Print first 20 symbols for debugging
-    for (i, (_key, _sym)) in workspace.symbol_table().all_symbols().iter().enumerate() {
+    for (i, _sym) in workspace.symbol_table().all_symbols().iter().enumerate() {
         if i >= 20 {
             break;
         }
@@ -95,9 +93,9 @@ fn test_stdlib_si_symbols() {
     let all_symbols = workspace.symbol_table().all_symbols();
     let si_symbols: Vec<_> = all_symbols
         .iter()
-        .filter(|(qname, _)| qname.starts_with("SI::"))
+        .filter(|sym| sym.qualified_name().starts_with("SI::"))
         .take(30)
-        .map(|(qn, _)| qn.as_str())
+        .map(|sym| sym.qualified_name())
         .collect();
 
     // Check for gram (without short name)
@@ -132,9 +130,9 @@ fn test_stdlib_isq_massvalue() {
     let all_symbols = workspace.symbol_table().all_symbols();
     let packages: Vec<_> = all_symbols
         .iter()
-        .filter(|(_, sym)| matches!(sym, crate::semantic::symbol_table::Symbol::Package { .. }))
-        .filter(|(qname, _)| !qname.contains("::"))
-        .map(|(qn, _)| qn.as_str())
+        .filter(|sym| matches!(sym, crate::semantic::symbol_table::Symbol::Package { .. }))
+        .filter(|sym| !sym.qualified_name().contains("::"))
+        .map(|sym| sym.qualified_name())
         .collect();
     println!("Top-level packages: {:?}", packages);
 
@@ -145,9 +143,12 @@ fn test_stdlib_isq_massvalue() {
     // Get all ISQ symbols
     let isq_symbols: Vec<_> = all_symbols
         .iter()
-        .filter(|(qname, _)| qname.starts_with("ISQ::") || qname.starts_with("ISQBase::"))
+        .filter(|sym| {
+            sym.qualified_name().starts_with("ISQ::")
+                || sym.qualified_name().starts_with("ISQBase::")
+        })
         .take(30)
-        .map(|(qn, _)| qn.as_str())
+        .map(|sym| sym.qualified_name())
         .collect();
     println!("ISQ/ISQBase symbols: {:?}", isq_symbols);
 

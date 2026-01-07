@@ -54,7 +54,7 @@ fn test_performances_kerml_no_duplicate_symbols() {
     let symbols = workspace.symbol_table().all_symbols();
     let this_perf_count = symbols
         .iter()
-        .filter(|(name, _)| *name == "thisPerformance")
+        .filter(|sym| sym.name() == "thisPerformance")
         .count();
 
     assert_eq!(

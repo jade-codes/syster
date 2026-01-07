@@ -81,10 +81,9 @@ impl<'a> WorkspacePopulator<'a> {
         // so we can also remove their relationships
         let symbols_to_remove: Vec<String> = self
             .symbol_table
-            .all_symbols()
-            .iter()
-            .filter(|(_, symbol)| symbol.source_file() == Some(&file_path_str))
-            .map(|(_, symbol)| symbol.qualified_name().to_string())
+            .get_symbols_for_file(&file_path_str)
+            .into_iter()
+            .map(|symbol| symbol.qualified_name().to_string())
             .collect();
 
         // Remove relationships for all symbols from this file

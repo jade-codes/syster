@@ -44,13 +44,13 @@ fn test_duplicate_symbols_in_different_scopes_allowed() {
 
     // Both symbols should exist with their qualified names
     let symbols = workspace.symbol_table().all_symbols();
-    for (_key, _sym) in symbols.iter().take(10) {}
+    for _sym in symbols.iter().take(10) {}
 
     // Check by qualified name in the symbol itself (not the key)
-    let outer_req = symbols.iter().find(|(_, sym)| {
+    let outer_req = symbols.iter().find(|sym| {
         sym.qualified_name().contains("OuterPart") && sym.name() == "requirementVerifications"
     });
-    let inner_req = symbols.iter().find(|(_, sym)| {
+    let inner_req = symbols.iter().find(|sym| {
         sym.qualified_name().contains("InnerPart") && sym.name() == "requirementVerifications"
     });
 

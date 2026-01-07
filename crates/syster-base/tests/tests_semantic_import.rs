@@ -616,7 +616,7 @@ fn test_public_import_reexport_cross_file() {
     // Debug: Print all symbols
     eprintln!("=== Symbols ===");
     for symbol in workspace.symbol_table().all_symbols() {
-        eprintln!("  {} -> {:?}", symbol.0, symbol.1.qualified_name());
+        eprintln!("  {} -> {:?}", symbol.name(), symbol.qualified_name());
     }
 
     // Debug: Print scopes and imports

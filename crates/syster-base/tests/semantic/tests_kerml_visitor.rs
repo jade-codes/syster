@@ -105,10 +105,10 @@ fn test_kerml_visitor_handles_nested_elements() {
     let all_symbols = symbol_table.all_symbols();
     let inner = all_symbols
         .iter()
-        .find(|(name, _)| *name == "InnerClassifier")
+        .find(|sym| sym.name() == "InnerClassifier")
         .expect("Should have 'InnerClassifier' symbol");
 
-    match inner.1 {
+    match inner {
         Symbol::Classifier { qualified_name, .. } => {
             assert_eq!(qualified_name, "OuterPackage::InnerClassifier");
         }
@@ -290,7 +290,7 @@ fn test_kerml_visitor_handles_multiple_packages() {
     let mut graph = RelationshipGraph::new();
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-    for (_name, _) in symbol_table.all_symbols() {}
+    for _sym in symbol_table.all_symbols() {}
 
     assert!(Resolver::new(&symbol_table).resolve("Package1").is_some());
     assert!(Resolver::new(&symbol_table).resolve("Package2").is_some());
@@ -344,7 +344,7 @@ fn test_kerml_identifier_in_feature_value_not_treated_as_definition() {
     let all_symbols = symbol_table.all_symbols();
     let this_perf_count = all_symbols
         .iter()
-        .filter(|(name, _)| *name == "thisPerformance")
+        .filter(|sym| sym.name() == "thisPerformance")
         .count();
 
     assert_eq!(

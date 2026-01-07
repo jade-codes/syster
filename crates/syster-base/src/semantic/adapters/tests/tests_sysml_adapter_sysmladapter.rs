@@ -199,7 +199,7 @@ fn test_visit_namespace_no_namespace_in_file() {
 
     // With no namespace, symbol table should remain empty (except for any default symbols)
     let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty() || !all_symbols.iter().any(|(name, _)| name.is_empty()));
+    assert!(all_symbols.is_empty() || !all_symbols.iter().any(|sym| sym.name().is_empty()));
 }
 
 #[test]
@@ -239,7 +239,7 @@ fn test_visit_namespace_affects_subsequent_elements() {
     let all_symbols = table.all_symbols();
     let has_qualified = all_symbols
         .iter()
-        .any(|(_, sym)| sym.qualified_name().contains("OuterNamespace::InnerPart"));
+        .any(|sym| sym.qualified_name().contains("OuterNamespace::InnerPart"));
     assert!(
         has_qualified,
         "Definition should be qualified with namespace"
@@ -506,7 +506,7 @@ fn test_visit_comment_does_not_change_current_namespace() {
     let all_symbols = table.all_symbols();
     let has_qualified = all_symbols
         .iter()
-        .any(|(_, sym)| sym.qualified_name().contains("TestNS::PartInNamespace"));
+        .any(|sym| sym.qualified_name().contains("TestNS::PartInNamespace"));
     assert!(has_qualified, "Comment should not affect namespace context");
 }
 

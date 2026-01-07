@@ -35,24 +35,29 @@ pub(super) fn normalize_path(path: &str) -> String {
     normalized.to_string_lossy().to_string()
 }
 
+use super::symbol::SymbolId;
+
 pub struct SymbolTable {
+    /// Arena storage for all symbols - single source of truth
+    pub(super) arena: Vec<Symbol>,
     pub(super) scopes: Vec<Scope>,
     pub(super) current_scope: usize,
     current_file: Option<String>,
     pub events: EventEmitter<SymbolTableEvent, SymbolTable>,
-    /// Index mapping file paths to qualified names of symbols defined in that file
-    pub(super) symbols_by_file: HashMap<String, Vec<String>>,
+    /// Index mapping file paths to SymbolIds of symbols defined in that file
+    pub(super) symbols_by_file: HashMap<String, Vec<SymbolId>>,
     /// Index mapping file paths to imports originating from that file
     pub(super) imports_by_file: HashMap<String, Vec<Import>>,
     /// Reverse index: target_qname -> [(file, span)] for O(1) import reference lookups
     import_references: HashMap<String, Vec<(String, Span)>>,
-    /// Index for O(1) qualified name lookups: qname -> (scope_id, simple_name)
-    pub(super) symbols_by_qname: HashMap<String, (usize, String)>,
+    /// Index for O(1) qualified name lookups: qname -> SymbolId
+    pub(super) symbols_by_qname: HashMap<String, SymbolId>,
 }
 
 impl SymbolTable {
     pub fn new() -> Self {
         Self {
+            arena: Vec::new(),
             scopes: vec![Scope::new(None)],
             current_scope: 0,
             current_file: None,
@@ -100,10 +105,9 @@ impl SymbolTable {
         {
             let qualified_name = symbol.qualified_name().to_string();
             let source_file = symbol.source_file().map(|s| normalize_path(s));
-            let symbol_id = self.scopes.iter().map(|s| s.symbols.len()).sum::<usize>();
-            let scope_id = self.current_scope;
 
-            let scope = &mut self.scopes[self.current_scope];
+            // Check for duplicate in scope
+            let scope = &self.scopes[self.current_scope];
             if scope.symbols.contains_key(&name) {
                 return OperationResult::failure(format!(
                     "Symbol '{name}' already defined in this scope"
@@ -111,23 +115,30 @@ impl SymbolTable {
                 .publish(self);
             }
 
-            scope.symbols.insert(name.clone(), symbol);
+            // Add symbol to arena and get its ID
+            let symbol_id = SymbolId::new(self.arena.len());
+            self.arena.push(symbol);
 
-            // Update the qname -> (scope_id, name) index for O(1) lookup
+            // Store SymbolId in scope
+            self.scopes[self.current_scope]
+                .symbols
+                .insert(name, symbol_id);
+
+            // Update the qname -> SymbolId index for O(1) lookup
             self.symbols_by_qname
-                .insert(qualified_name.clone(), (scope_id, name));
+                .insert(qualified_name.clone(), symbol_id);
 
-            // Update the file -> symbols index (using normalized path)
+            // Update the file -> SymbolIds index (using normalized path)
             if let Some(file_path) = source_file {
                 self.symbols_by_file
                     .entry(file_path)
                     .or_default()
-                    .push(qualified_name.clone());
+                    .push(symbol_id);
             }
 
             let event = SymbolTableEvent::SymbolInserted {
                 qualified_name,
-                symbol_id,
+                symbol_id: symbol_id.index(),
             };
             OperationResult::success((), Some(event))
         }
@@ -188,7 +199,13 @@ impl SymbolTable {
 
     /// Get a symbol directly from a specific scope (no chain walking).
     pub fn get_symbol_in_scope(&self, scope_id: usize, name: &str) -> Option<&Symbol> {
-        self.scopes.get(scope_id)?.symbols.get(name)
+        let id = self.scopes.get(scope_id)?.symbols.get(name)?;
+        self.get_symbol(*id)
+    }
+
+    /// Get a SymbolId from a specific scope
+    pub fn get_symbol_id_in_scope(&self, scope_id: usize, name: &str) -> Option<SymbolId> {
+        self.scopes.get(scope_id)?.symbols.get(name).copied()
     }
 
     /// Get the parent of a scope.
@@ -232,13 +249,10 @@ impl SymbolTable {
         qualified_name: &str,
         references: Vec<super::symbol::SymbolReference>,
     ) {
-        for scope in &mut self.scopes {
-            for symbol in scope.symbols.values_mut() {
-                if symbol.qualified_name() == qualified_name {
-                    for reference in references.clone() {
-                        symbol.add_reference(reference);
-                    }
-                    return;
+        if let Some(id) = self.find_id_by_qualified_name(qualified_name) {
+            if let Some(symbol) = self.arena.get_mut(id.index()) {
+                for reference in references {
+                    symbol.add_reference(reference);
                 }
             }
         }
@@ -301,28 +315,45 @@ impl SymbolTable {
             .get(&normalized)
             .into_iter()
             .flatten()
-            .filter_map(|qname| self.find_by_qualified_name(qname))
+            .filter_map(|id| self.get_symbol(*id))
             .collect()
+    }
+
+    /// Get a symbol by its SymbolId (O(1) arena lookup)
+    pub fn get_symbol(&self, id: SymbolId) -> Option<&Symbol> {
+        self.arena.get(id.index())
+    }
+
+    /// Get a mutable symbol by its SymbolId (O(1) arena lookup)
+    pub fn get_symbol_mut(&mut self, id: SymbolId) -> Option<&mut Symbol> {
+        self.arena.get_mut(id.index())
     }
 
     /// Find a symbol by its exact qualified name (data access, not resolution)
     /// Uses O(1) index lookup.
     pub fn find_by_qualified_name(&self, qualified_name: &str) -> Option<&Symbol> {
-        let (scope_id, name) = self.symbols_by_qname.get(qualified_name)?;
-        self.scopes.get(*scope_id)?.symbols.get(name)
+        let id = self.symbols_by_qname.get(qualified_name)?;
+        self.get_symbol(*id)
+    }
+
+    /// Find a SymbolId by qualified name (for callers that need the ID)
+    pub fn find_id_by_qualified_name(&self, qualified_name: &str) -> Option<SymbolId> {
+        self.symbols_by_qname.get(qualified_name).copied()
     }
 
     /// Get qualified names of all symbols defined in a specific file
     ///
-    /// Returns a cloned Vec of qualified names for the file.
+    /// Returns a Vec of qualified names for the file.
     /// Used by enable_auto_invalidation to know which symbols to remove.
     /// Paths are normalized.
     pub fn get_qualified_names_for_file(&self, file_path: &str) -> Vec<String> {
         let normalized = normalize_path(file_path);
         self.symbols_by_file
             .get(&normalized)
-            .cloned()
-            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .filter_map(|id| self.get_symbol(*id).map(|s| s.qualified_name().to_string()))
+            .collect()
     }
 }
 

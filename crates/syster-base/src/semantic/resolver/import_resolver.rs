@@ -35,9 +35,8 @@ impl<'a> Resolver<'a> {
         if import_path == "*" {
             return self
                 .symbol_table()
-                .all_symbols()
-                .into_iter()
-                .filter_map(|(_, symbol)| {
+                .iter_symbols()
+                .filter_map(|symbol| {
                     let qname = symbol.qualified_name();
                     if !qname.contains("::") {
                         Some(qname.to_string())
@@ -51,9 +50,8 @@ impl<'a> Resolver<'a> {
         let prefix = import_path.strip_suffix("::*").unwrap_or(import_path);
 
         self.symbol_table()
-            .all_symbols()
-            .into_iter()
-            .filter_map(|(_, symbol)| {
+            .iter_symbols()
+            .filter_map(|symbol| {
                 let qname = symbol.qualified_name();
                 if let Some(remainder) = qname.strip_prefix(prefix)
                     && let Some(remainder) = remainder.strip_prefix("::")
@@ -151,12 +149,10 @@ impl<'a> Resolver<'a> {
         let prefix = format!("{namespace}::");
         let suffix = format!("::{name}");
 
-        self.symbol_table().scopes().iter().find_map(|scope| {
-            scope
-                .symbols
-                .iter()
-                .find(|(qname, _)| qname.starts_with(&prefix) && qname.ends_with(&suffix))
-                .map(|(_, symbol)| symbol)
+        // Search through all symbols in the arena
+        self.symbol_table().iter_symbols().find(|symbol| {
+            let qname = symbol.qualified_name();
+            qname.starts_with(&prefix) && qname.ends_with(&suffix)
         })
     }
 }

@@ -943,7 +943,7 @@ fn test_stdlib_no_duplicate_relationships() {
     let all_symbols = symbol_table.all_symbols();
     let celsius_symbol = all_symbols
         .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
+        .find(|sym| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
 
     assert!(
         celsius_symbol.is_some(),
@@ -952,7 +952,7 @@ fn test_stdlib_no_duplicate_relationships() {
 
     // Check for duplicates in relationships for CelsiusTemperatureValue
     let graph = workspace.relationship_graph();
-    let (_, first_symbol) = celsius_symbol.unwrap();
+    let first_symbol = celsius_symbol.unwrap();
     let qualified_name = first_symbol.qualified_name();
     let rels = graph.get_one_to_many(REL_SPECIALIZATION, qualified_name);
 
@@ -1453,13 +1453,13 @@ fn test_nested_symbols_repopulation() {
     assert!(
         all_symbols
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner1"),
+            .any(|s| s.qualified_name() == "Container::inner1"),
         "inner1 should exist"
     );
     assert!(
         all_symbols
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner2"),
+            .any(|s| s.qualified_name() == "Container::inner2"),
         "inner2 should exist"
     );
 
@@ -1478,13 +1478,13 @@ fn test_nested_symbols_repopulation() {
     assert!(
         !all_symbols_after
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner1"),
+            .any(|s| s.qualified_name() == "Container::inner1"),
         "inner1 should be removed"
     );
     assert!(
         !all_symbols_after
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner2"),
+            .any(|s| s.qualified_name() == "Container::inner2"),
         "inner2 should be removed"
     );
 
@@ -1497,7 +1497,7 @@ fn test_nested_symbols_repopulation() {
     assert!(
         all_symbols_after
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::newInner"),
+            .any(|s| s.qualified_name() == "Container::newInner"),
         "newInner should exist"
     );
 }
@@ -1633,8 +1633,8 @@ fn test_cross_language_sysml_specializes_kerml() {
 
     // Debug: print all symbols
     println!("All symbols:");
-    for (name, symbol) in workspace.symbol_table().all_symbols() {
-        println!("  {} -> {}", name, symbol.qualified_name());
+    for symbol in workspace.symbol_table().all_symbols() {
+        println!("  {} -> {}", symbol.name(), symbol.qualified_name());
     }
 
     // lookup() is scope-aware, use resolve() for cross-scope lookups

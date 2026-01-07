@@ -39,9 +39,8 @@ impl<'a> ReferenceCollector<'a> {
         // Collect all references grouped by target
         let mut references_by_target: HashMap<String, Vec<SymbolReference>> = self
             .symbol_table
-            .all_symbols()
-            .into_iter()
-            .flat_map(|(_, symbol)| {
+            .iter_symbols()
+            .flat_map(|symbol| {
                 let qname = symbol.qualified_name().to_string();
                 let fallback_file = symbol.source_file()?.to_string();
                 let fallback_span = symbol.span();

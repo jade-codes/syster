@@ -1164,7 +1164,7 @@ fn test_semantic_tokens_shows_what_symbols_have_spans() {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Check what symbols were created
-    for (_name, symbol) in symbol_table.all_symbols() {
+    for symbol in symbol_table.all_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
         {}
@@ -1267,7 +1267,7 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
     // Check what symbols were created
     let mut symbol_count = 0;
     let mut _symbols_with_spans = 0;
-    for (_name, symbol) in symbol_table.all_symbols() {
+    for symbol in symbol_table.all_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file.contains("Views.sysml")
         {
@@ -1321,7 +1321,7 @@ package TestPkg {
     let mut relationship_graph = RelationshipGraph::new();
     symbol_table.set_current_file(Some("test.sysml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-    for (_name, symbol) in symbol_table.all_symbols() {
+    for symbol in symbol_table.all_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
         {}
@@ -1462,7 +1462,7 @@ fn test_allocation_definition_parsing() {
     symbol_table.set_current_file(Some(file_path.clone()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
     let all_symbols = symbol_table.all_symbols();
-    for (_name, _symbol) in &all_symbols {}
+    for _symbol in &all_symbols {}
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &file_path);
     for _token in tokens.iter() {}
@@ -1842,8 +1842,8 @@ classifier MyClass {
     let feature_qname = symbol_table
         .all_symbols()
         .iter()
-        .find(|(_, s)| s.name() == "myFeature")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .find(|s| s.name() == "myFeature")
+        .map(|s| s.qualified_name().to_string());
 
     assert!(feature_qname.is_some(), "Should find myFeature symbol");
     let qname = feature_qname.unwrap();
@@ -1887,8 +1887,8 @@ package Main {
     let mref_qname = symbol_table
         .all_symbols()
         .iter()
-        .find(|(_, s)| s.name() == "mRef")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .find(|s| s.name() == "mRef")
+        .map(|s| s.qualified_name().to_string());
 
     if let Some(qname) = mref_qname {
         let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
@@ -1966,8 +1966,8 @@ package Vehicles {
     let car_qname = symbol_table
         .all_symbols()
         .iter()
-        .find(|(_, s)| s.name() == "Car")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .find(|s| s.name() == "Car")
+        .map(|s| s.qualified_name().to_string());
 
     assert!(car_qname.is_some(), "Should find Car symbol");
     let qname = car_qname.unwrap();
@@ -2004,7 +2004,7 @@ package TestPkg {
     let all_symbols = symbol_table.all_symbols();
     let import_count = all_symbols
         .iter()
-        .filter(|(_, s)| matches!(s, Symbol::Import { .. }))
+        .filter(|s| matches!(s, Symbol::Import { .. }))
         .count();
 
     assert_eq!(import_count, 2, "Should have 2 import symbols");
@@ -2200,8 +2200,8 @@ package Quantities {
     let mref_qname = symbol_table
         .all_symbols()
         .iter()
-        .find(|(_, s)| s.name() == "mRef")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .find(|s| s.name() == "mRef")
+        .map(|s| s.qualified_name().to_string());
 
     assert!(mref_qname.is_some(), "Should find mRef symbol");
     let qname = mref_qname.unwrap();
@@ -2261,10 +2261,7 @@ package Values {
 
     // Find all symbols from this file
     let all_syms = symbol_table.all_symbols();
-    let ref_symbols: Vec<_> = all_syms
-        .iter()
-        .filter(|(_, s)| s.name() == "baseRef")
-        .collect();
+    let ref_symbols: Vec<_> = all_syms.iter().filter(|s| s.name() == "baseRef").collect();
 
     // Should have ref in both BaseValue and DerivedValue
     assert!(
@@ -2272,12 +2269,12 @@ package Values {
         "Should have at least one ref symbol, found: {:?}",
         ref_symbols
             .iter()
-            .map(|(_, s)| s.qualified_name())
+            .map(|s| s.qualified_name())
             .collect::<Vec<_>>()
     );
 
     // Check that relationships exist
-    for (_, sym) in &ref_symbols {
+    for sym in &ref_symbols {
         let qname = sym.qualified_name();
 
         // Check for typing
@@ -2376,7 +2373,7 @@ part def Child :> Parent {
 
     // First, verify the symbol was created
     let symbols = workspace.symbol_table().all_symbols();
-    let num_symbols: Vec<_> = symbols.iter().filter(|(name, _)| *name == "num").collect();
+    let num_symbols: Vec<_> = symbols.iter().filter(|sym| sym.name() == "num").collect();
 
     assert_eq!(
         num_symbols.len(),
@@ -2384,7 +2381,7 @@ part def Child :> Parent {
         "Should have 2 'num' symbols (Parent::num and Child::num), got: {:?}",
         num_symbols
             .iter()
-            .map(|(_, s)| s.qualified_name())
+            .map(|s| s.qualified_name())
             .collect::<Vec<_>>()
     );
 

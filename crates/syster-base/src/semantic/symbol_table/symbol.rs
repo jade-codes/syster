@@ -1,6 +1,23 @@
 use crate::core::Span;
 use crate::semantic::types::SemanticRole;
 
+/// Unique identifier for a symbol in the arena.
+/// Uses u32 for compact storage (supports ~4 billion symbols).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SymbolId(pub u32);
+
+impl SymbolId {
+    /// Create a new SymbolId from an index
+    pub fn new(index: usize) -> Self {
+        Self(index as u32)
+    }
+
+    /// Get the index into the arena
+    pub fn index(self) -> usize {
+        self.0 as usize
+    }
+}
+
 /// A reference to a symbol from another location in the code
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SymbolReference {

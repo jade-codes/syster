@@ -666,8 +666,8 @@ fn test_populate_nested_packages() {
     let all_symbols = table.all_symbols();
     let inner = all_symbols
         .iter()
-        .find(|(name, _)| *name == "Inner")
-        .map(|(_, symbol)| *symbol);
+        .find(|sym| sym.name() == "Inner")
+        .copied();
     assert!(inner.is_some());
 
     let Some(Symbol::Package { qualified_name, .. }) = inner else {

@@ -1009,7 +1009,7 @@ fn test_populate_affected_continues_on_error() {
 
     // The good file should have been processed
     let symbols = workspace.symbol_table().all_symbols();
-    let truck_exists = symbols.iter().any(|(name, _)| *name == "Truck");
+    let truck_exists = symbols.iter().any(|sym| sym.name() == "Truck");
     assert!(truck_exists, "Valid file should have been processed");
 }
 
