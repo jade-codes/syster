@@ -213,11 +213,7 @@ fn test_parse_multiline_block_comment() {
 #[rstest]
 #[case(Rule::file, "", "empty file")]
 #[case(Rule::file, "   \n\t  \r\n  ", "file with whitespace")]
-fn test_parse_file(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_file(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
@@ -232,38 +228,34 @@ fn test_parse_file(
 #[case(Rule::join_node, "join myJoin;", "join with name")]
 #[case(Rule::decision_node, "decide;", "decision node")]
 #[case(Rule::decision_node, "decide myDecision;", "decision with name")]
-fn test_parse_control_nodes(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_control_nodes(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 // State Subaction Membership Tests
 
 #[rstest]
-#[case(Rule::state_subaction_membership, "entry myEntryAction;", "entry action")]
+#[case(
+    Rule::state_subaction_membership,
+    "entry myEntryAction;",
+    "entry action"
+)]
 #[case(Rule::state_subaction_membership, "exit myExitAction;", "exit action")]
 #[case(Rule::state_subaction_membership, "do myDoAction;", "do action")]
-fn test_parse_state_subaction(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_state_subaction(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 // Transition Feature Membership Tests
 
 #[rstest]
-#[case(Rule::transition_feature_membership, "accept myAcceptFeature;", "accept feature")]
+#[case(
+    Rule::transition_feature_membership,
+    "accept myAcceptFeature;",
+    "accept feature"
+)]
 #[case(Rule::transition_feature_membership, "if myCondition;", "if feature")]
-fn test_parse_transition_feature(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_transition_feature(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
@@ -272,13 +264,17 @@ fn test_parse_transition_feature(
 #[rstest]
 #[case(Rule::subject_membership, "subject mySubject;", "subject membership")]
 #[case(Rule::actor_membership, "actor myActor;", "actor membership")]
-#[case(Rule::stakeholder_membership, "stakeholder myStakeholder;", "stakeholder membership")]
-#[case(Rule::objective_membership, "objective myObjective;", "objective membership")]
-fn test_parse_parameter_memberships(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+#[case(
+    Rule::stakeholder_membership,
+    "stakeholder myStakeholder;",
+    "stakeholder membership"
+)]
+#[case(
+    Rule::objective_membership,
+    "objective myObjective;",
+    "objective membership"
+)]
+fn test_parse_parameter_memberships(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
@@ -304,71 +300,83 @@ fn test_parse_succession_as_usage(#[case] input: &str, #[case] desc: &str) {
 
 #[rstest]
 #[case(Rule::succession_keyword, "succession", "succession keyword")]
-fn test_parse_succession_keyword(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_succession_keyword(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
 #[case(Rule::expose, "expose MyElement;", "expose")]
-#[case(Rule::membership_expose, "expose MyElement::member;", "membership expose")]
+#[case(
+    Rule::membership_expose,
+    "expose MyElement::member;",
+    "membership expose"
+)]
 #[case(Rule::namespace_expose, "expose MyNamespace::*;", "namespace expose")]
-fn test_parse_expose(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_expose(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 // Requirement Constraint Memberships
 
 #[rstest]
-#[case(Rule::requirement_constraint_membership, "require myConstraint;", "requirement constraint membership")]
-#[case(Rule::framed_concern_membership, "frame myConcern;", "framed concern membership")]
-#[case(Rule::requirement_verification_membership, "verify myVerification;", "requirement verification membership")]
-fn test_parse_requirement_memberships(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+#[case(
+    Rule::requirement_constraint_membership,
+    "require myConstraint;",
+    "requirement constraint membership"
+)]
+#[case(
+    Rule::framed_concern_membership,
+    "frame myConcern;",
+    "framed concern membership"
+)]
+#[case(
+    Rule::requirement_verification_membership,
+    "verify myVerification;",
+    "requirement verification membership"
+)]
+fn test_parse_requirement_memberships(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 // Port and Conjugation Tests
 
 #[rstest]
-#[case(Rule::owned_feature_typing, "~MyPort", "conjugated port type reference")]
+#[case(
+    Rule::owned_feature_typing,
+    "~MyPort",
+    "conjugated port type reference"
+)]
 #[case(Rule::variant_membership, "variant myVariant;", "variant membership")]
-fn test_parse_port_and_variant(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+fn test_parse_port_and_variant(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 // Terminate Action
 
 #[rstest]
-#[case(Rule::terminate_action_usage, "terminate myOccurrence;", "terminate action")]
-fn test_parse_terminate_action(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
+#[case(
+    Rule::terminate_action_usage,
+    "terminate myOccurrence;",
+    "terminate action"
+)]
+fn test_parse_terminate_action(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 // Port Definition and Conjugation Tests
 
 #[rstest]
-#[case(Rule::conjugated_port_definition, "port def ~MyConjugatedPort;", "conjugated port definition")]
+#[case(
+    Rule::conjugated_port_definition,
+    "port def ~MyConjugatedPort;",
+    "conjugated port definition"
+)]
 #[case(Rule::port_conjugation, "conjugate ~MyPort;", "port conjugation")]
-#[case(Rule::conjugated_port_typing, "port myPort : ~ConjugatedPortType;", "conjugated port typing")]
+#[case(
+    Rule::conjugated_port_typing,
+    "port myPort : ~ConjugatedPortType;",
+    "conjugated port typing"
+)]
 #[case(Rule::life_class, "life class MyLifeClass;", "life class")]
 fn test_parse_conjugated_port_definitions(
     #[case] rule: Rule,
@@ -489,120 +497,70 @@ fn test_parse_dependency(#[case] input: &str, #[case] description: &str) {
 
 // Annotation Tests
 
-#[test]
-fn test_parse_comment() {
-    let input = "comment MyComment about MyElement;";
-    let result = SysMLParser::parse(Rule::comment_annotation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse comment: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(
+    Rule::comment_annotation,
+    "comment MyComment about MyElement;",
+    "comment"
+)]
+#[case(Rule::documentation, "doc MyDoc;", "documentation")]
+#[case(
+    Rule::textual_representation,
+    r#"rep language "Python" /* code */"#,
+    "textual representation"
+)]
+#[case(Rule::metadata_usage_annotation, "#MyMetadata;", "metadata usage")]
+#[case(Rule::annotating_element, "comment MyComment;", "annotating element")]
+#[case(
+    Rule::relationship_body,
+    "{ comment MyComment; }",
+    "relationship body with annotation"
+)]
+fn test_parse_annotations(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case(r#"comment locale "en-US" /* comment text */"#)]
-#[case(r#"comment MyComment locale "fr-FR" /* texte */"#)]
-#[case(r#"comment about Foo;"#)]
-#[case(r#"comment about Foo, Bar;"#)]
-#[case(r#"comment MyComment about Foo, Bar /* about multiple */"#)]
-#[case(r#"comment locale "en-US" about Foo;"#)]
-fn test_parse_comment_variants(#[case] input: &str) {
-    let result = SysMLParser::parse(Rule::comment_annotation, input);
-    assert!(
-        result.is_ok(),
-        "Failed to parse comment '{}': {:?}",
-        input,
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_documentation() {
-    let input = "doc MyDoc;";
-    let result = SysMLParser::parse(Rule::documentation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse documentation: {:?}",
-        result.err()
-    );
+#[case(r#"comment locale "en-US" /* comment text */"#, "comment with locale")]
+#[case(
+    r#"comment MyComment locale "fr-FR" /* texte */"#,
+    "named comment with locale"
+)]
+#[case(r#"comment about Foo;"#, "comment about element")]
+#[case(r#"comment about Foo, Bar;"#, "comment about multiple elements")]
+#[case(
+    r#"comment MyComment about Foo, Bar /* about multiple */"#,
+    "named comment about multiple"
+)]
+#[case(
+    r#"comment locale "en-US" about Foo;"#,
+    "comment with locale and about"
+)]
+fn test_parse_comment_variants(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::comment_annotation, input, desc);
 }
 
 #[rstest]
-#[case(r#"doc locale "en-US" /* docs */"#)]
-#[case(r#"doc MyDoc locale "ja-JP" /* text */"#)]
-#[case(r#"doc /* inline doc */"#)]
-#[case(r#"doc;"#)]
-fn test_parse_documentation_variants(#[case] input: &str) {
-    let result = SysMLParser::parse(Rule::documentation, input);
-    assert!(
-        result.is_ok(),
-        "Failed to parse documentation '{}': {:?}",
-        input,
-        result.err()
-    );
+#[case(r#"doc locale "en-US" /* docs */"#, "doc with locale")]
+#[case(r#"doc MyDoc locale "ja-JP" /* text */"#, "named doc with locale")]
+#[case(r#"doc /* inline doc */"#, "inline doc")]
+#[case(r#"doc;"#, "minimal doc")]
+fn test_parse_documentation_variants(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::documentation, input, desc);
 }
 
-#[test]
-fn test_parse_textual_representation() {
-    let input = "rep language \"Python\" /* code */";
-    let result = SysMLParser::parse(Rule::textual_representation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse textual representation: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_metadata_usage() {
-    let input = "#MyMetadata;";
-    let result = SysMLParser::parse(Rule::metadata_usage_annotation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse metadata usage: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_annotating_element() {
-    let input = "comment MyComment;";
-    let result = SysMLParser::parse(Rule::annotating_element, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse annotating element: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_relationship_body_with_annotation() {
-    let input = "{ comment MyComment; }";
-    let result = SysMLParser::parse(Rule::relationship_body, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse relationship body with annotation: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_dependency_with_comment_in_body() {
-    let input = "dependency from A to B { comment MyComment; }";
-    let result = SysMLParser::parse(Rule::dependency, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse dependency with comment in body: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(
+    Rule::dependency,
+    "dependency from A to B { comment MyComment; }",
+    "dependency with comment in body"
+)]
+fn test_parse_dependency_with_comment_in_body(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Metadata Tests
