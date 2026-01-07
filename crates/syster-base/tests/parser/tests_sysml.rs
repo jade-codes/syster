@@ -4,6 +4,17 @@ use pest::Parser;
 use rstest::rstest;
 use syster::parser::{SysMLParser, sysml::Rule};
 
+/// Helper function to assert that parsing succeeds and the entire input is consumed.
+/// This ensures the parser doesn't just match a prefix of the input.
+fn assert_round_trip(rule: Rule, input: &str, desc: &str) {
+    let result = SysMLParser::parse(rule, input)
+        .unwrap_or_else(|e| panic!("Failed to parse {}: {}", desc, e));
+
+    let parsed: String = result.into_iter().map(|p| p.as_str()).collect();
+
+    assert_eq!(input, parsed, "Parsed output mismatch for {}", desc);
+}
+
 #[test]
 fn test_parse_simple_identifier() {
     let input = "myVar";
@@ -226,59 +237,20 @@ fn test_parse_file_with_whitespace() {
 // Control Node Tests
 
 #[rstest]
-#[case("fork;", "fork node")]
-#[case("fork myFork;", "fork with name")]
-fn test_parse_fork_node(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::fork_node, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("merge;", "merge node")]
-#[case("merge myMerge;", "merge with name")]
-fn test_parse_merge_node(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::merge_node, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("join;", "join node")]
-#[case("join myJoin;", "join with name")]
-fn test_parse_join_node(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::join_node, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
-}
-
-#[rstest]
-#[case("decide;", "decision node")]
-#[case("decide myDecision;", "decision with name")]
-fn test_parse_decision_node(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::decision_node, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
+#[case(Rule::fork_node, "fork;", "fork node")]
+#[case(Rule::fork_node, "fork myFork;", "fork with name")]
+#[case(Rule::merge_node, "merge;", "merge node")]
+#[case(Rule::merge_node, "merge myMerge;", "merge with name")]
+#[case(Rule::join_node, "join;", "join node")]
+#[case(Rule::join_node, "join myJoin;", "join with name")]
+#[case(Rule::decision_node, "decide;", "decision node")]
+#[case(Rule::decision_node, "decide myDecision;", "decision with name")]
+fn test_parse_control_nodes(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // State Subaction Membership Tests
@@ -416,16 +388,13 @@ fn test_parse_succession_as_usage(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("succession", "succession keyword")]
-fn test_parse_succession_keyword(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::succession_keyword, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
+#[case(Rule::succession_keyword, "succession", "succession keyword")]
+fn test_parse_succession_keyword(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[test]
