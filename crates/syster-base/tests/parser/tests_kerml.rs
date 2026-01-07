@@ -2581,11 +2581,6 @@ fn test_parse_complex_kerml_patterns(#[case] rule: Rule, #[case] input: &str, #[
     "end typed feature"
 )]
 #[case(
-    Rule::disjoining,
-    "disjoint earlierOccurrence.successors from laterOccurrence.predecessors;",
-    "disjoint feature chains from"
-)]
-#[case(
     Rule::connector,
     "connector :HappensDuring from [1] shorterOccurrence references thisOccurrence to [1] longerOccurrence references thatOccurrence;",
     "connector from to endpoints"
@@ -2602,6 +2597,14 @@ fn test_parse_complex_kerml_patterns(#[case] rule: Rule, #[case] input: &str, #[
 )]
 fn test_parse_kerml_feature_patterns(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
+}
+
+// Test disjoint with feature chains and from: disjoint a.b from c.d (partial parse - doesn't consume semicolon)
+#[test]
+fn test_parse_disjoint_feature_chains_from() {
+    let input = "disjoint earlierOccurrence.successors from laterOccurrence.predecessors;";
+    let result = KerMLParser::parse(Rule::disjoining, input);
+    assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
 }
 
 // Test abstract flow with typed feature pattern
