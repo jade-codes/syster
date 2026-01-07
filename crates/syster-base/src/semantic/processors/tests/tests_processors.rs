@@ -1,43 +1,10 @@
 use super::super::*;
-use crate::core::constants::{
-    REL_REDEFINITION, REL_REFERENCE_SUBSETTING, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
-};
+use crate::core::constants::{REL_REDEFINITION, REL_SPECIALIZATION, REL_TYPING};
 use crate::core::{Position, Span};
-use crate::semantic::graphs::RelationshipGraph;
-use crate::semantic::resolver::Resolver;
-use crate::semantic::symbol_table::{Symbol, SymbolTable};
-use crate::semantic::{NoOpValidator, RelationshipValidator};
+use crate::semantic::symbol_table::Symbol;
 use crate::syntax::sysml::ast::{
     Alias, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage, UsageKind,
 };
-
-#[test]
-fn test_noop_validator_accepts_all_relationships() {
-    let validator = NoOpValidator;
-    let source = Symbol::Package {
-        name: "Source".to_string(),
-        qualified_name: "Source".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-    };
-    let target = Symbol::Package {
-        name: "Target".to_string(),
-        qualified_name: "Target".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-    };
-
-    let result = validator.validate_relationship("any_type", &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_noop_validator_is_send_sync() {
-    fn assert_send_sync<T: Send + Sync>() {}
-    assert_send_sync::<NoOpValidator>();
-}
 
 #[test]
 fn test_collect_package_tokens() {
@@ -524,7 +491,7 @@ fn test_semantic_tokens_shows_what_symbols_have_spans() {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Check what symbols were created
-    for symbol in symbol_table.all_symbols() {
+    for symbol in symbol_table.iter_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
         {}
@@ -625,7 +592,7 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
     // Check what symbols were created
     let mut symbol_count = 0;
     let mut _symbols_with_spans = 0;
-    for symbol in symbol_table.all_symbols() {
+    for symbol in symbol_table.iter_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file.contains("Views.sysml")
         {
@@ -679,7 +646,7 @@ package TestPkg {
     let mut relationship_graph = RelationshipGraph::new();
     symbol_table.set_current_file(Some("test.sysml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-    for symbol in symbol_table.all_symbols() {
+    for symbol in symbol_table.iter_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
         {}
@@ -819,8 +786,7 @@ fn test_allocation_definition_parsing() {
     let file_path = path.to_string_lossy().to_string();
     symbol_table.set_current_file(Some(file_path.clone()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-    let all_symbols = symbol_table.all_symbols();
-    for _symbol in &all_symbols {}
+    for _symbol in symbol_table.iter_symbols() {}
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &file_path);
     for _token in tokens.iter() {}
@@ -1198,8 +1164,7 @@ classifier MyClass {
 
     // Find the feature's qualified name
     let feature_qname = symbol_table
-        .all_symbols()
-        .iter()
+        .iter_symbols()
         .find(|s| s.name() == "myFeature")
         .map(|s| s.qualified_name().to_string());
 
@@ -1243,8 +1208,7 @@ package Main {
 
     // Find the mRef attribute's qualified name
     let mref_qname = symbol_table
-        .all_symbols()
-        .iter()
+        .iter_symbols()
         .find(|s| s.name() == "mRef")
         .map(|s| s.qualified_name().to_string());
 
@@ -1322,8 +1286,7 @@ package Vehicles {
 
     // Find the Car definition
     let car_qname = symbol_table
-        .all_symbols()
-        .iter()
+        .iter_symbols()
         .find(|s| s.name() == "Car")
         .map(|s| s.qualified_name().to_string());
 
@@ -1359,9 +1322,8 @@ package TestPkg {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Check that import symbols were created
-    let all_symbols = symbol_table.all_symbols();
-    let import_count = all_symbols
-        .iter()
+    let import_count = symbol_table
+        .iter_symbols()
         .filter(|s| matches!(s, Symbol::Import { .. }))
         .count();
 
@@ -1468,7 +1430,7 @@ part def SpecialContainer :> Container {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Verify parsing succeeded
-    let symbols_count = symbol_table.all_symbols().len();
+    let symbols_count = symbol_table.iter_symbols().count();
     assert!(symbols_count >= 2, "Should have parsed some symbols");
 }
 
@@ -1556,8 +1518,7 @@ package Quantities {
 
     // Find the mRef symbol
     let mref_qname = symbol_table
-        .all_symbols()
-        .iter()
+        .iter_symbols()
         .find(|s| s.name() == "mRef")
         .map(|s| s.qualified_name().to_string());
 
@@ -1618,8 +1579,10 @@ package Values {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Find all symbols from this file
-    let all_syms = symbol_table.all_symbols();
-    let ref_symbols: Vec<_> = all_syms.iter().filter(|s| s.name() == "baseRef").collect();
+    let ref_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|s| s.name() == "baseRef")
+        .collect();
 
     // Should have ref in both BaseValue and DerivedValue
     assert!(
@@ -1730,8 +1693,11 @@ part def Child :> Parent {
     workspace.populate_all().ok();
 
     // First, verify the symbol was created
-    let symbols = workspace.symbol_table().all_symbols();
-    let num_symbols: Vec<_> = symbols.iter().filter(|sym| sym.name() == "num").collect();
+    let num_symbols: Vec<_> = workspace
+        .symbol_table()
+        .iter_symbols()
+        .filter(|sym| sym.name() == "num")
+        .collect();
 
     assert_eq!(
         num_symbols.len(),

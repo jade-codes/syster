@@ -101,7 +101,7 @@ impl SymbolTable {
     pub fn insert(&mut self, name: String, symbol: Symbol) -> Result<(), String> {
         {
             let qualified_name = symbol.qualified_name().to_string();
-            let source_file = symbol.source_file().map(|s| normalize_path(s));
+            let source_file = symbol.source_file().map(normalize_path);
 
             // Check for duplicate in scope
             let scope = &self.scopes[self.current_scope];

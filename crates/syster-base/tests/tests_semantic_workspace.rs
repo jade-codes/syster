@@ -956,8 +956,10 @@ fn test_populate_affected_continues_on_error() {
     );
 
     // The good file should have been processed
-    let symbols = workspace.symbol_table().all_symbols();
-    let truck_exists = symbols.iter().any(|sym| sym.name() == "Truck");
+    let truck_exists = workspace
+        .symbol_table()
+        .iter_symbols()
+        .any(|sym| sym.name() == "Truck");
     assert!(truck_exists, "Valid file should have been processed");
 }
 
@@ -994,7 +996,7 @@ fn test_workspace_new_initializes_all_fields() {
     let workspace = Workspace::<SyntaxFile>::new();
     // Verify all internal structures are initialized
     assert_eq!(workspace.file_count(), 0);
-    assert_eq!(workspace.symbol_table().all_symbols().len(), 0);
+    assert_eq!(workspace.symbol_table().iter_symbols().count(), 0);
     assert_eq!(workspace.dependency_graph().dependencies_count(), 0);
     assert!(!workspace.has_stdlib());
 }

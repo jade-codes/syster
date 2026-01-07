@@ -391,7 +391,7 @@ fn test_collect_hints_import_element_ignored() {
         path: "SomePackage::*".to_string(),
         path_span: None,
         is_recursive: false,
-                is_public: false,
+        is_public: false,
         span: Some(Span::from_coords(1, 0, 1, 20)),
     };
 
@@ -459,7 +459,7 @@ fn test_collect_hints_mixed_element_types() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
-                is_public: false,
+        is_public: false,
         span: Some(Span::from_coords(2, 0, 2, 15)),
     };
 
@@ -1248,7 +1248,7 @@ fn test_collect_hints_multiple_element_types_in_package() {
         path: "SomePackage::*".to_string(),
         path_span: None,
         is_recursive: false,
-                is_public: false,
+        is_public: false,
         span: None,
     };
 

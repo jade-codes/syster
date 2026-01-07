@@ -101,10 +101,9 @@ fn test_kerml_visitor_handles_nested_elements() {
             .is_some()
     );
 
-    // Nested elements must be looked up via all_symbols since they're in a nested scope
-    let all_symbols = symbol_table.all_symbols();
-    let inner = all_symbols
-        .iter()
+    // Nested elements must be looked up via iter_symbols since they're in a nested scope
+    let inner = symbol_table
+        .iter_symbols()
         .find(|sym| sym.name() == "InnerClassifier")
         .expect("Should have 'InnerClassifier' symbol");
 
@@ -290,7 +289,7 @@ fn test_kerml_visitor_handles_multiple_packages() {
     let mut graph = RelationshipGraph::new();
     let mut adapter = KermlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-    for _sym in symbol_table.all_symbols() {}
+    for _sym in symbol_table.iter_symbols() {}
 
     assert!(Resolver::new(&symbol_table).resolve("Package1").is_some());
     assert!(Resolver::new(&symbol_table).resolve("Package2").is_some());
@@ -341,9 +340,8 @@ fn test_kerml_identifier_in_feature_value_not_treated_as_definition() {
     );
 
     // Should have exactly one "thisPerformance" symbol (the actual definition, not the reference)
-    let all_symbols = symbol_table.all_symbols();
-    let this_perf_count = all_symbols
-        .iter()
+    let this_perf_count = symbol_table
+        .iter_symbols()
         .filter(|sym| sym.name() == "thisPerformance")
         .count();
 

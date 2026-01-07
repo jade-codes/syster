@@ -47,19 +47,20 @@ impl LspServer {
         let mut any_match: Option<(&Symbol, Range)> = None;
 
         for symbol in self.workspace.symbol_table().iter_symbols() {
-            if symbol.name() == word && symbol.source_file() == Some(&file_path_str) {
-                if let Some(span) = symbol.span() {
-                    // Check if cursor is within the symbol's span (exact match)
-                    if position.line == span.start.line as u32
-                        && position.character >= span.start.column as u32
-                        && position.character <= span.end.column as u32
-                    {
-                        exact_match = Some((symbol, span.clone()));
-                    }
-                    // Track any match in case no exact match found
-                    if any_match.is_none() {
-                        any_match = Some((symbol, span_to_lsp_range(&span)));
-                    }
+            if symbol.name() == word
+                && symbol.source_file() == Some(&file_path_str)
+                && let Some(span) = symbol.span()
+            {
+                // Check if cursor is within the symbol's span (exact match)
+                if position.line == span.start.line as u32
+                    && position.character >= span.start.column as u32
+                    && position.character <= span.end.column as u32
+                {
+                    exact_match = Some((symbol, span));
+                }
+                // Track any match in case no exact match found
+                if any_match.is_none() {
+                    any_match = Some((symbol, span_to_lsp_range(&span)));
                 }
             }
         }

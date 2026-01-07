@@ -24,7 +24,7 @@ fn test_extract_kerml_imports_single_import() {
             path: "Base::DataValue".to_string(),
             path_span: None,
             is_recursive: false,
-                is_public: false,
+            is_public: false,
             kind: ImportKind::Normal,
             span: None,
         })],

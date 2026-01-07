@@ -1407,7 +1407,6 @@ async fn test_did_change_incremental_insert() {
     state.server.parse_document(&uri);
 
     // Verify both symbols exist
-    let symbols = state.server.workspace().symbol_table().iter_symbols();
     assert!(
         state
             .server
@@ -1447,7 +1446,6 @@ async fn test_did_change_incremental_delete() {
     state.server.parse_document(&uri);
 
     // Only Car should exist
-    let symbols = state.server.workspace().symbol_table().iter_symbols();
     assert!(
         state
             .server
@@ -1486,7 +1484,6 @@ async fn test_did_change_incremental_replace() {
     state.server.apply_text_change_only(&uri, &change).unwrap();
     state.server.parse_document(&uri);
 
-    let symbols = state.server.workspace().symbol_table().iter_symbols();
     assert!(
         state
             .server
@@ -1522,7 +1519,6 @@ async fn test_did_change_full_sync() {
     state.server.apply_text_change_only(&uri, &change).unwrap();
     state.server.parse_document(&uri);
 
-    let symbols = state.server.workspace().symbol_table().iter_symbols();
     assert!(
         state
             .server

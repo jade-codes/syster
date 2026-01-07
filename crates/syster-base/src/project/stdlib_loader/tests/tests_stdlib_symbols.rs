@@ -13,13 +13,15 @@ fn test_stdlib_calculation_symbol_loads() {
     workspace.populate_all().expect("Failed to populate stdlib");
 
     // Check if Calculation symbol exists
-    let all_symbols = workspace.symbol_table().all_symbols();
-    let calculation = all_symbols.iter().find(|sym| sym.name() == "Calculation");
+    let calculation = workspace
+        .symbol_table()
+        .iter_symbols()
+        .find(|sym| sym.name() == "Calculation");
 
     assert!(
         calculation.is_some(),
         "Calculation symbol should be in symbol table. Found {} symbols total",
-        workspace.symbol_table().all_symbols().len()
+        workspace.symbol_table().iter_symbols().count()
     );
 
     let _sym = calculation.unwrap();
@@ -35,13 +37,15 @@ fn test_stdlib_case_symbol_loads() {
     workspace.populate_all().expect("Failed to populate stdlib");
 
     // Check if Case symbol exists
-    let all_symbols = workspace.symbol_table().all_symbols();
-    let case = all_symbols.iter().find(|sym| sym.name() == "Case");
+    let case = workspace
+        .symbol_table()
+        .iter_symbols()
+        .find(|sym| sym.name() == "Case");
 
     assert!(
         case.is_some(),
         "Case symbol should be in symbol table. Found {} symbols total",
-        workspace.symbol_table().all_symbols().len()
+        workspace.symbol_table().iter_symbols().count()
     );
 
     let _sym = case.unwrap();
@@ -56,7 +60,7 @@ fn test_stdlib_symbol_count() {
     loader.load(&mut workspace).expect("Failed to load stdlib");
     workspace.populate_all().expect("Failed to populate stdlib");
 
-    let symbol_count = workspace.symbol_table().all_symbols().len();
+    let symbol_count = workspace.symbol_table().iter_symbols().count();
 
     // We should have significantly more symbols now with Items, Cases, etc
     assert!(
@@ -65,7 +69,7 @@ fn test_stdlib_symbol_count() {
     );
 
     // Print first 20 symbols for debugging
-    for (i, _sym) in workspace.symbol_table().all_symbols().iter().enumerate() {
+    for (i, _sym) in workspace.symbol_table().iter_symbols().enumerate() {
         if i >= 20 {
             break;
         }
@@ -89,9 +93,9 @@ fn test_stdlib_si_symbols() {
     );
 
     // Get all SI symbols
-    let all_symbols = workspace.symbol_table().all_symbols();
-    let si_symbols: Vec<_> = all_symbols
-        .iter()
+    let si_symbols: Vec<_> = workspace
+        .symbol_table()
+        .iter_symbols()
         .filter(|sym| sym.qualified_name().starts_with("SI::"))
         .take(30)
         .map(|sym| sym.qualified_name())
@@ -126,9 +130,9 @@ fn test_stdlib_isq_massvalue() {
     workspace.populate_all().expect("Failed to populate stdlib");
 
     // Debug: list all top-level packages
-    let all_symbols = workspace.symbol_table().all_symbols();
-    let packages: Vec<_> = all_symbols
-        .iter()
+    let packages: Vec<_> = workspace
+        .symbol_table()
+        .iter_symbols()
         .filter(|sym| matches!(sym, crate::semantic::symbol_table::Symbol::Package { .. }))
         .filter(|sym| !sym.qualified_name().contains("::"))
         .map(|sym| sym.qualified_name())
@@ -140,8 +144,9 @@ fn test_stdlib_isq_massvalue() {
     println!("ISQ package: {:?}", isq_package.map(|s| s.name()));
 
     // Get all ISQ symbols
-    let isq_symbols: Vec<_> = all_symbols
-        .iter()
+    let isq_symbols: Vec<_> = workspace
+        .symbol_table()
+        .iter_symbols()
         .filter(|sym| {
             sym.qualified_name().starts_with("ISQ::")
                 || sym.qualified_name().starts_with("ISQBase::")

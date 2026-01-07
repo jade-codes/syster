@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
 use super::super::*;
-use crate::core::Span;
 
 #[test]
 fn test_lookup_global_mut_in_root_scope() {

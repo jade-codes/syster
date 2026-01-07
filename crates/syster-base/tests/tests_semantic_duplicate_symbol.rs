@@ -43,7 +43,7 @@ fn test_duplicate_symbols_in_different_scopes_allowed() {
     );
 
     // Both symbols should exist with their qualified names
-    let symbols = workspace.symbol_table().all_symbols();
+    let symbols: Vec<_> = workspace.symbol_table().iter_symbols().collect();
     for _sym in symbols.iter().take(10) {}
 
     // Check by qualified name in the symbol itself (not the key)

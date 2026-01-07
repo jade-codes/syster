@@ -940,9 +940,8 @@ fn test_stdlib_no_duplicate_relationships() {
 
     // Find CelsiusTemperatureValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let celsius_symbol = all_symbols
-        .iter()
+    let celsius_symbol = symbol_table
+        .iter_symbols()
         .find(|sym| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
 
     assert!(
@@ -1449,7 +1448,7 @@ fn test_nested_symbols_repopulation() {
             .resolve("Container")
             .is_some()
     );
-    let all_symbols = workspace.symbol_table().all_symbols();
+    let all_symbols: Vec<_> = workspace.symbol_table().iter_symbols().collect();
     assert!(
         all_symbols
             .iter()
@@ -1474,7 +1473,7 @@ fn test_nested_symbols_repopulation() {
     workspace.populate_affected().expect("Failed to repopulate");
 
     // Old nested symbols should be gone
-    let all_symbols_after = workspace.symbol_table().all_symbols();
+    let all_symbols_after: Vec<_> = workspace.symbol_table().iter_symbols().collect();
     assert!(
         !all_symbols_after
             .iter()
@@ -1633,7 +1632,7 @@ fn test_cross_language_sysml_specializes_kerml() {
 
     // Debug: print all symbols
     println!("All symbols:");
-    for symbol in workspace.symbol_table().all_symbols() {
+    for symbol in workspace.symbol_table().iter_symbols() {
         println!("  {} -> {}", symbol.name(), symbol.qualified_name());
     }
 

@@ -4,221 +4,16 @@
 //! Tests for semantic adapters module
 //!
 //! This file consolidates all tests for the adapters module, including:
-//! - Validator factory tests
-//! - SysML validator tests  
 //! - Syntax factory tests
 //! - SysML adapter tests
 //! - KerML adapter tests
 
 use super::super::*;
-use crate::core::constants::{REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_SATISFY};
 use crate::semantic::graphs::RelationshipGraph;
-use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
-use crate::semantic::types::{SemanticError, SemanticRole};
+use crate::semantic::{Resolver, SemanticError};
 use crate::syntax::SyntaxFile;
 use crate::syntax::sysml::ast::{Definition, DefinitionKind, Element, Package, SysMLFile};
-use std::sync::Arc;
-
-// ============================================================================
-// VALIDATOR FACTORY TESTS
-// ============================================================================
-
-#[test]
-fn test_create_sysml_validator() {
-    let validator = create_validator("sysml");
-    assert!(Arc::strong_count(&validator) == 1);
-}
-
-#[test]
-fn test_create_validator_from_kerml_extension() {
-    let validator = create_validator("kerml");
-    assert!(Arc::strong_count(&validator) == 1);
-}
-
-#[test]
-fn test_create_validator_unknown_extension() {
-    let validator = create_validator("unknown");
-    assert!(Arc::strong_count(&validator) == 1);
-}
-
-#[test]
-fn test_validator_is_thread_safe() {
-    let validator = create_validator("sysml");
-    let validator_clone = Arc::clone(&validator);
-
-    assert!(Arc::strong_count(&validator) == 2);
-    drop(validator_clone);
-    assert!(Arc::strong_count(&validator) == 1);
-}
-
-#[test]
-fn test_case_sensitive_extension() {
-    // Extensions should be case-sensitive
-    let validator_upper = create_validator("SYSML");
-    let validator_lower = create_validator("sysml");
-
-    // SYSML should return NoOp (unknown), sysml should return SysmlValidator
-    // Both should work without panicking
-    assert!(Arc::strong_count(&validator_upper) == 1);
-    assert!(Arc::strong_count(&validator_lower) == 1);
-}
-
-#[test]
-fn test_empty_extension() {
-    let validator = create_validator("");
-    assert!(Arc::strong_count(&validator) == 1);
-}
-
-#[test]
-fn test_extension_with_dot() {
-    // Extensions might be passed with leading dot
-    let validator = create_validator(".sysml");
-    // Should return NoOp since we expect "sysml" not ".sysml"
-    assert!(Arc::strong_count(&validator) == 1);
-}
-
-#[test]
-fn test_multiple_validators_independent() {
-    let validator1 = create_validator("sysml");
-    let validator2 = create_validator("sysml");
-
-    // Each call should create a new validator instance
-    assert!(Arc::strong_count(&validator1) == 1);
-    assert!(Arc::strong_count(&validator2) == 1);
-}
-
-#[test]
-fn test_sysml_validator_actually_validates() {
-    let validator = create_validator("sysml");
-
-    let source = Symbol::Definition {
-        name: "Source".to_string(),
-        qualified_name: "Source".to_string(),
-        scope_id: 0,
-        kind: "Part".to_string(),
-        semantic_role: Some(SemanticRole::Component),
-        source_file: None,
-        span: None,
-    };
-
-    let valid_target = Symbol::Definition {
-        name: "Req1".to_string(),
-        qualified_name: "Req1".to_string(),
-        scope_id: 0,
-        kind: "Requirement".to_string(),
-        semantic_role: Some(SemanticRole::Requirement),
-        source_file: None,
-        span: None,
-    };
-
-    let invalid_target = Symbol::Definition {
-        name: "Action1".to_string(),
-        qualified_name: "Action1".to_string(),
-        scope_id: 0,
-        kind: "Action".to_string(),
-        semantic_role: Some(SemanticRole::Action),
-        source_file: None,
-        span: None,
-    };
-
-    // Valid satisfy relationship
-    let result = validator.validate_relationship(REL_SATISFY, &source, &valid_target);
-    assert!(result.is_ok());
-
-    // Invalid satisfy relationship
-    let result = validator.validate_relationship(REL_SATISFY, &source, &invalid_target);
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_noop_validator_accepts_everything() {
-    let validator = create_validator("kerml");
-
-    let source = Symbol::Package {
-        name: "Source".to_string(),
-        qualified_name: "Source".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-    };
-
-    let target = Symbol::Package {
-        name: "Target".to_string(),
-        qualified_name: "Target".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-    };
-
-    // NoOpValidator should accept any relationship
-    let result = validator.validate_relationship("anything", &source, &target);
-    assert!(result.is_ok());
-}
-
-// ============================================================================
-// SYSML VALIDATOR TESTS
-// ============================================================================
-
-fn create_requirement(name: &str) -> Symbol {
-    Symbol::Definition {
-        name: name.to_string(),
-        qualified_name: name.to_string(),
-        scope_id: 0,
-        kind: "Requirement".to_string(),
-        semantic_role: Some(SemanticRole::Requirement),
-        source_file: None,
-        span: None,
-    }
-}
-
-fn create_action(name: &str) -> Symbol {
-    Symbol::Definition {
-        name: name.to_string(),
-        qualified_name: name.to_string(),
-        scope_id: 0,
-        kind: "Action".to_string(),
-        semantic_role: Some(SemanticRole::Action),
-        source_file: None,
-        span: None,
-    }
-}
-
-fn create_state(name: &str) -> Symbol {
-    Symbol::Definition {
-        name: name.to_string(),
-        qualified_name: name.to_string(),
-        scope_id: 0,
-        kind: "State".to_string(),
-        semantic_role: Some(SemanticRole::State),
-        source_file: None,
-        span: None,
-    }
-}
-
-fn create_use_case(name: &str) -> Symbol {
-    Symbol::Definition {
-        name: name.to_string(),
-        qualified_name: name.to_string(),
-        scope_id: 0,
-        kind: "UseCase".to_string(),
-        semantic_role: Some(SemanticRole::UseCase),
-        source_file: None,
-        span: None,
-    }
-}
-
-fn create_part(name: &str) -> Symbol {
-    Symbol::Definition {
-        name: name.to_string(),
-        qualified_name: name.to_string(),
-        scope_id: 0,
-        kind: "Part".to_string(),
-        semantic_role: Some(SemanticRole::Component),
-        source_file: None,
-        span: None,
-    }
-}
 
 // ============================================================================
 // SYNTAX FACTORY TESTS
@@ -396,11 +191,10 @@ fn test_populate_nested_packages() {
     assert!(outer.is_some());
 
     // Verify Inner package exists in the symbol table with correct qualified name
-    let all_symbols = table.all_symbols();
-    let inner = all_symbols
-        .iter()
+    let inner = table
+        .iter_symbols()
         .find(|sym| sym.name() == "Inner")
-        .copied();
+        .cloned();
     assert!(inner.is_some());
 
     let Some(Symbol::Package { qualified_name, .. }) = inner else {

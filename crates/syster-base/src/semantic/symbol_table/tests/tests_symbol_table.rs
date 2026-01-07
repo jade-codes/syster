@@ -106,8 +106,8 @@ fn test_all_symbols() {
     };
     table.insert("Class".to_string(), class).unwrap();
 
-    let all = table.all_symbols();
-    assert_eq!(all.len(), 2);
+    let all = table.iter_symbols().count();
+    assert_eq!(all, 2);
 }
 
 #[test]
@@ -251,8 +251,8 @@ fn test_different_symbol_types() {
     assert!(Resolver::new(&table).resolve("MyDef").is_some());
     assert!(Resolver::new(&table).resolve("MyUsage").is_some());
 
-    let all = table.all_symbols();
-    assert_eq!(all.len(), 5);
+    let all = table.iter_symbols().count();
+    assert_eq!(all, 5);
 }
 
 #[test]

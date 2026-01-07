@@ -63,7 +63,7 @@ fn test_new_with_empty_symbol_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify the adapter works with an empty symbol table
-    assert!(adapter.symbol_table.all_symbols().is_empty());
+    assert!(adapter.symbol_table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn test_new_with_populated_symbol_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify the adapter has access to all symbols
-    assert_eq!(adapter.symbol_table.all_symbols().len(), 5);
+    assert_eq!(adapter.symbol_table.iter_symbols().count(), 5);
 }
 
 #[test]

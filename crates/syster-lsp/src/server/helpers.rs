@@ -177,16 +177,15 @@ pub fn collect_reference_locations(
             }
 
             // Check if this import references our target
-            if import.path == qualified_name {
-                if let (Some(span), Some(file)) = (import.span, &import.file) {
-                    if let Ok(uri) = Url::from_file_path(file) {
-                        locations.push(Location {
-                            uri,
-                            range: span_to_lsp_range(&span),
-                        });
-                        import_count += 1;
-                    }
-                }
+            if import.path == qualified_name
+                && let (Some(span), Some(file)) = (import.span, &import.file)
+                && let Ok(uri) = Url::from_file_path(file)
+            {
+                locations.push(Location {
+                    uri,
+                    range: span_to_lsp_range(&span),
+                });
+                import_count += 1;
             }
         }
     }

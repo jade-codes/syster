@@ -513,7 +513,7 @@ fn test_public_import_reexport_cross_file() {
 
     // Debug: Print all symbols
     eprintln!("=== Symbols ===");
-    for symbol in workspace.symbol_table().all_symbols() {
+    for symbol in workspace.symbol_table().iter_symbols() {
         eprintln!("  {} -> {:?}", symbol.name(), symbol.qualified_name());
     }
 

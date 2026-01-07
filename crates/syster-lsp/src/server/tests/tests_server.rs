@@ -22,12 +22,12 @@ fn test_open_sysml_document() {
 
     assert_eq!(server.workspace().file_count(), 1);
     assert!(
-        !server
+        server
             .workspace()
             .symbol_table()
             .iter_symbols()
             .next()
-            .is_none()
+            .is_some()
     );
 }
 
@@ -2138,12 +2138,12 @@ fn test_stdlib_files_actually_load() {
     );
 
     assert!(
-        !server
+        server
             .workspace()
             .symbol_table()
             .iter_symbols()
             .next()
-            .is_none(),
+            .is_some(),
         "Stdlib symbols should be populated"
     );
 }
