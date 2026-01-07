@@ -598,42 +598,28 @@ fn test_parse_dependency_with_comment_in_body(
     "metadata usage with body"
 )]
 #[case(
-    "ref :>> MyReference;",
     Rule::metadata_body_usage,
+    "ref :>> MyReference;",
     "metadata body usage"
 )]
-fn test_parse_metadata(#[case] input: &str, #[case] rule: Rule, #[case] desc: &str) {
-    let result = SysMLParser::parse(rule, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
+fn test_parse_metadata(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Package Tests
 
 #[rstest]
-#[case("package MyPackage;", Rule::package, "simple package")]
-#[case("package MyPackage { }", Rule::package, "package with body")]
-#[case("package;", Rule::package, "package without name")]
-#[case("library package MyLibrary;", Rule::library_package, "library package")]
+#[case(Rule::package, "package MyPackage;", "simple package")]
+#[case(Rule::package, "package MyPackage { }", "package with body")]
+#[case(Rule::package, "package;", "package without name")]
+#[case(Rule::library_package, "library package MyLibrary;", "library package")]
 #[case(
-    "standard library package MyLibrary;",
     Rule::library_package,
+    "standard library package MyLibrary;",
     "standard library package"
 )]
-fn test_parse_package(#[case] input: &str, #[case] rule: Rule, #[case] desc: &str) {
-    let result = SysMLParser::parse(rule, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse {}: {:?}",
-        desc,
-        result.err()
-    );
+fn test_parse_package(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
