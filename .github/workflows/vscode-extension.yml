@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-action@stable
         with:
           targets: ${{ matrix.target }}
       
@@ -120,7 +120,7 @@ jobs:
       
       - name: Package extension
         working-directory: editors/vscode
-        run: npx vsce package --target ${{ matrix.vsce-target }} -o sysml-language-support-${{ matrix.platform }}.vsix
+        run: npx vsce package --no-gitignore --target ${{ matrix.vsce-target }} -o sysml-language-support-${{ matrix.platform }}.vsix
       
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
@@ -178,7 +178,7 @@ jobs:
       
       - name: Package universal extension
         working-directory: editors/vscode
-        run: npx vsce package -o sysml-language-support-universal.vsix
+        run: npx vsce package --no-gitignore -o sysml-language-support-universal.vsix
       
       - name: Upload universal VSIX
         uses: actions/upload-artifact@v4
