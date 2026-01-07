@@ -2016,7 +2016,6 @@ package SensorUsage {
 /// Test hover on ISQ::MassValue in a user file
 /// This directly tests the bug where hovering on MassValue in "import ISQ::MassValue" fails
 #[test]
-#[ignore = "Known issue: hover on stdlib symbols not yet working"]
 fn test_hover_isq_massvalue() {
     use async_lsp::lsp_types::{HoverContents, MarkedString, Position, Url};
 

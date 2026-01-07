@@ -18,8 +18,16 @@ impl LspServer {
 
         let line = source.lines().nth(position.line as usize)?;
 
-        let word =
-            syster::core::text_utils::extract_word_at_cursor(line, position.character as usize)?;
+        // First try to extract a qualified name (e.g., "ISQ::MassValue")
+        // This handles hovering on import statements like "import ISQ::MassValue"
+        let word = syster::core::text_utils::extract_qualified_name_at_cursor(
+            line,
+            position.character as usize,
+        )
+        .or_else(|| {
+            // Fall back to simple word extraction
+            syster::core::text_utils::extract_word_at_cursor(line, position.character as usize)
+        })?;
 
         // Calculate word range in source (for hover highlight)
         let word_start = line[..position.character as usize]
@@ -39,7 +47,22 @@ impl LspServer {
 
         let file_path_str = path.to_string_lossy().to_string();
 
-        // First, check if the word matches a symbol defined in THIS file.
+        // If the word is a qualified name (contains ::), try to resolve it directly first.
+        // This handles hovering on import statements like "import ISQ::MassValue"
+        // where we want to show info about MassValue, not the import statement.
+        if word.contains("::") {
+            let resolver = self.resolver();
+            if let Some(symbol) = resolver.resolve(&word) {
+                let qualified_name = symbol.qualified_name().to_string();
+                let range = symbol
+                    .span()
+                    .map(|s| span_to_lsp_range(&s))
+                    .unwrap_or(word_range);
+                return Some((qualified_name, range));
+            }
+        }
+
+        // Check if the word matches a symbol defined in THIS file.
         // This handles hovering on definitions like "part def Engine".
         // When there are multiple symbols with the same name, prefer the one whose
         // span contains the cursor position.
@@ -76,7 +99,7 @@ impl LspServer {
             return Some((symbol.qualified_name().to_string(), range));
         }
 
-        // Second, try to resolve using the file's scope for proper import resolution.
+        // Try to resolve using the file's scope for proper import resolution.
         // Use the Resolver with scope context for consistent resolution behavior.
         let resolver = self.resolver();
         if let Some(scope_id) = self
@@ -91,19 +114,6 @@ impl LspServer {
                 .map(|s| span_to_lsp_range(&s))
                 .unwrap_or(word_range);
             return Some((qualified_name, range));
-        }
-
-        // Fallback: try resolver for qualified names (e.g., "Package::Type")
-        if word.contains("::") {
-            let resolver = self.resolver();
-            if let Some(symbol) = resolver.resolve(&word) {
-                let qualified_name = symbol.qualified_name().to_string();
-                let range = symbol
-                    .span()
-                    .map(|s| span_to_lsp_range(&s))
-                    .unwrap_or(word_range);
-                return Some((qualified_name, range));
-            }
         }
 
         // If resolution fails, the symbol is not in scope (e.g., import was removed).
