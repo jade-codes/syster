@@ -1,5 +1,5 @@
 use super::symbol::Symbol;
-use super::table::SymbolTable;
+use super::table::{SymbolTable, normalize_path};
 
 impl SymbolTable {
     // ============================================================
@@ -55,7 +55,16 @@ impl SymbolTable {
     // ============================================================
 
     pub fn remove_symbols_from_file(&mut self, file_path: &str) -> usize {
-        self.symbols_by_file.remove(file_path);
+        let normalized = normalize_path(file_path);
+
+        // Remove from qname index first (using symbols_by_file to find which qnames to remove)
+        if let Some(qnames) = self.symbols_by_file.get(&normalized) {
+            for qname in qnames {
+                self.symbols_by_qname.remove(qname);
+            }
+        }
+
+        self.symbols_by_file.remove(&normalized);
 
         self.scopes
             .iter_mut()
@@ -70,7 +79,8 @@ impl SymbolTable {
     }
 
     pub fn remove_imports_from_file(&mut self, file_path: &str) {
-        self.imports_by_file.remove(file_path);
+        let normalized = normalize_path(file_path);
+        self.imports_by_file.remove(&normalized);
 
         for scope in &mut self.scopes {
             scope

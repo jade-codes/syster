@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use crate::core::Span;
 use crate::core::events::EventEmitter;
@@ -7,6 +8,32 @@ use crate::semantic::SymbolTableEvent;
 
 use super::scope::{Import, Scope};
 use super::symbol::Symbol;
+
+/// Normalize a file path for consistent storage and lookup.
+/// For stdlib files (containing "sysml.library/"), extracts the relative path.
+/// For other files, attempts canonicalization.
+pub(super) fn normalize_path(path: &str) -> String {
+    // Check if this is a stdlib file
+    if let Some(idx) = path.find("sysml.library/") {
+        return path[idx..].to_string();
+    }
+
+    // For non-stdlib files, try to canonicalize
+    if let Ok(canonical) = Path::new(path).canonicalize() {
+        return canonical.to_string_lossy().to_string();
+    }
+
+    // If canonicalization fails, do simple normalization
+    let path_buf = PathBuf::from(path);
+    let normalized = if path_buf.is_absolute() {
+        path_buf
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("/"))
+            .join(path_buf)
+    };
+    normalized.to_string_lossy().to_string()
+}
 
 pub struct SymbolTable {
     pub(super) scopes: Vec<Scope>,
@@ -19,6 +46,8 @@ pub struct SymbolTable {
     pub(super) imports_by_file: HashMap<String, Vec<Import>>,
     /// Reverse index: target_qname -> [(file, span)] for O(1) import reference lookups
     import_references: HashMap<String, Vec<(String, Span)>>,
+    /// Index for O(1) qualified name lookups: qname -> (scope_id, simple_name)
+    pub(super) symbols_by_qname: HashMap<String, (usize, String)>,
 }
 
 impl SymbolTable {
@@ -31,6 +60,7 @@ impl SymbolTable {
             symbols_by_file: HashMap::new(),
             imports_by_file: HashMap::new(),
             import_references: HashMap::new(),
+            symbols_by_qname: HashMap::new(),
         }
     }
 
@@ -69,8 +99,9 @@ impl SymbolTable {
     pub fn insert(&mut self, name: String, symbol: Symbol) -> Result<(), String> {
         {
             let qualified_name = symbol.qualified_name().to_string();
-            let source_file = symbol.source_file().map(|s| s.to_string());
+            let source_file = symbol.source_file().map(|s| normalize_path(s));
             let symbol_id = self.scopes.iter().map(|s| s.symbols.len()).sum::<usize>();
+            let scope_id = self.current_scope;
 
             let scope = &mut self.scopes[self.current_scope];
             if scope.symbols.contains_key(&name) {
@@ -80,9 +111,13 @@ impl SymbolTable {
                 .publish(self);
             }
 
-            scope.symbols.insert(name, symbol);
+            scope.symbols.insert(name.clone(), symbol);
 
-            // Update the file -> symbols index
+            // Update the qname -> (scope_id, name) index for O(1) lookup
+            self.symbols_by_qname
+                .insert(qualified_name.clone(), (scope_id, name));
+
+            // Update the file -> symbols index (using normalized path)
             if let Some(file_path) = source_file {
                 self.symbols_by_file
                     .entry(file_path)
@@ -119,10 +154,11 @@ impl SymbolTable {
             };
             self.scopes[self.current_scope].imports.push(import.clone());
 
-            // Update the file -> imports index
+            // Update the file -> imports index (using normalized path)
             if let Some(file_path) = file {
+                let normalized = normalize_path(&file_path);
                 self.imports_by_file
-                    .entry(file_path)
+                    .entry(normalized)
                     .or_default()
                     .push(import);
             }
@@ -179,7 +215,7 @@ impl SymbolTable {
 
         // Fall back to the scope of the first symbol defined in the file
         self.get_symbols_for_file(file_path)
-            .next()
+            .first()
             .map(|symbol| symbol.scope_id())
     }
 
@@ -243,10 +279,11 @@ impl SymbolTable {
     /// Get all imports from a specific file
     ///
     /// Returns a vector of (import_path, span) tuples for all imports in the given file.
-    /// Uses an internal index for O(1) file lookup.
+    /// Uses an internal index for O(1) file lookup. Paths are normalized.
     pub fn get_file_imports(&self, file_path: &str) -> Vec<(String, Span)> {
+        let normalized = normalize_path(file_path);
         self.imports_by_file
-            .get(file_path)
+            .get(&normalized)
             .into_iter()
             .flatten()
             .filter_map(|import| import.span.map(|span| (import.path.clone(), span)))
@@ -255,33 +292,35 @@ impl SymbolTable {
 
     /// Get all symbols defined in a specific file
     ///
-    /// Returns an iterator of symbols whose source_file matches the given path.
+    /// Returns a Vec of symbols whose source_file matches the given path.
     /// Uses an internal index for O(1) file lookup instead of iterating all symbols.
-    pub fn get_symbols_for_file(&self, file_path: &str) -> impl Iterator<Item = &Symbol> {
+    /// Paths are normalized before lookup (handles stdlib path variations).
+    pub fn get_symbols_for_file(&self, file_path: &str) -> Vec<&Symbol> {
+        let normalized = normalize_path(file_path);
         self.symbols_by_file
-            .get(file_path)
+            .get(&normalized)
             .into_iter()
             .flatten()
             .filter_map(|qname| self.find_by_qualified_name(qname))
+            .collect()
     }
 
     /// Find a symbol by its exact qualified name (data access, not resolution)
+    /// Uses O(1) index lookup.
     pub fn find_by_qualified_name(&self, qualified_name: &str) -> Option<&Symbol> {
-        self.scopes.iter().find_map(|scope| {
-            scope
-                .symbols
-                .values()
-                .find(|symbol| symbol.qualified_name() == qualified_name)
-        })
+        let (scope_id, name) = self.symbols_by_qname.get(qualified_name)?;
+        self.scopes.get(*scope_id)?.symbols.get(name)
     }
 
     /// Get qualified names of all symbols defined in a specific file
     ///
     /// Returns a cloned Vec of qualified names for the file.
     /// Used by enable_auto_invalidation to know which symbols to remove.
+    /// Paths are normalized.
     pub fn get_qualified_names_for_file(&self, file_path: &str) -> Vec<String> {
+        let normalized = normalize_path(file_path);
         self.symbols_by_file
-            .get(file_path)
+            .get(&normalized)
             .cloned()
             .unwrap_or_default()
     }
