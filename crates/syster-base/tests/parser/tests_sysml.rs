@@ -210,28 +210,15 @@ fn test_parse_multiline_block_comment() {
     assert_eq!(comment.as_str(), "/* line 1\nline 2\nline 3 */");
 }
 
-#[test]
-fn test_parse_empty_file() {
-    let input = "";
-    let result = SysMLParser::parse(Rule::file, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse empty file: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_file_with_whitespace() {
-    let input = "   \n\t  \r\n  ";
-    let result = SysMLParser::parse(Rule::file, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse file with whitespace: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::file, "", "empty file")]
+#[case(Rule::file, "   \n\t  \r\n  ", "file with whitespace")]
+fn test_parse_file(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Control Node Tests
@@ -255,116 +242,44 @@ fn test_parse_control_nodes(
 
 // State Subaction Membership Tests
 
-#[test]
-fn test_parse_entry_action() {
-    let input = "entry myEntryAction;";
-    let result = SysMLParser::parse(Rule::state_subaction_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse entry action: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_exit_action() {
-    let input = "exit myExitAction;";
-    let result = SysMLParser::parse(Rule::state_subaction_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse exit action: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_do_action() {
-    let input = "do myDoAction;";
-    let result = SysMLParser::parse(Rule::state_subaction_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse do action: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::state_subaction_membership, "entry myEntryAction;", "entry action")]
+#[case(Rule::state_subaction_membership, "exit myExitAction;", "exit action")]
+#[case(Rule::state_subaction_membership, "do myDoAction;", "do action")]
+fn test_parse_state_subaction(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Transition Feature Membership Tests
 
-#[test]
-fn test_parse_accept_feature() {
-    let input = "accept myAcceptFeature;";
-    let result = SysMLParser::parse(Rule::transition_feature_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse accept feature: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_if_feature() {
-    let input = "if myCondition;";
-    let result = SysMLParser::parse(Rule::transition_feature_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse if feature: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::transition_feature_membership, "accept myAcceptFeature;", "accept feature")]
+#[case(Rule::transition_feature_membership, "if myCondition;", "if feature")]
+fn test_parse_transition_feature(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Parameter Membership Tests
 
-#[test]
-fn test_parse_subject_membership() {
-    let input = "subject mySubject;";
-    let result = SysMLParser::parse(Rule::subject_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse subject membership: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_actor_membership() {
-    let input = "actor myActor;";
-    let result = SysMLParser::parse(Rule::actor_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse actor membership: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_stakeholder_membership() {
-    let input = "stakeholder myStakeholder;";
-    let result = SysMLParser::parse(Rule::stakeholder_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse stakeholder membership: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_objective_membership() {
-    let input = "objective myObjective;";
-    let result = SysMLParser::parse(Rule::objective_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse objective membership: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::subject_membership, "subject mySubject;", "subject membership")]
+#[case(Rule::actor_membership, "actor myActor;", "actor membership")]
+#[case(Rule::stakeholder_membership, "stakeholder myStakeholder;", "stakeholder membership")]
+#[case(Rule::objective_membership, "objective myObjective;", "objective membership")]
+fn test_parse_parameter_memberships(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Succession and Expose Tests
@@ -397,164 +312,70 @@ fn test_parse_succession_keyword(
     assert_round_trip(rule, input, desc);
 }
 
-#[test]
-fn test_parse_expose() {
-    let input = "expose MyElement;";
-    let result = SysMLParser::parse(Rule::expose, input);
-
-    assert!(result.is_ok(), "Failed to parse expose: {:?}", result.err());
-}
-
-#[test]
-fn test_parse_membership_expose() {
-    let input = "expose MyElement::member;";
-    let result = SysMLParser::parse(Rule::membership_expose, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse membership expose: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_namespace_expose() {
-    let input = "expose MyNamespace::*;";
-    let result = SysMLParser::parse(Rule::namespace_expose, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse namespace expose: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::expose, "expose MyElement;", "expose")]
+#[case(Rule::membership_expose, "expose MyElement::member;", "membership expose")]
+#[case(Rule::namespace_expose, "expose MyNamespace::*;", "namespace expose")]
+fn test_parse_expose(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Requirement Constraint Memberships
 
-#[test]
-fn test_parse_requirement_constraint_membership() {
-    let input = "require myConstraint;";
-    let result = SysMLParser::parse(Rule::requirement_constraint_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse requirement constraint membership: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_framed_concern_membership() {
-    let input = "frame myConcern;";
-    let result = SysMLParser::parse(Rule::framed_concern_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse framed concern membership: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_requirement_verification_membership() {
-    let input = "verify myVerification;";
-    let result = SysMLParser::parse(Rule::requirement_verification_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse requirement verification membership: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::requirement_constraint_membership, "require myConstraint;", "requirement constraint membership")]
+#[case(Rule::framed_concern_membership, "frame myConcern;", "framed concern membership")]
+#[case(Rule::requirement_verification_membership, "verify myVerification;", "requirement verification membership")]
+fn test_parse_requirement_memberships(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Port and Conjugation Tests
 
-#[test]
-fn test_parse_conjugated_port_type_reference() {
-    let input = "~MyPort";
-    let result = SysMLParser::parse(Rule::owned_feature_typing, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse conjugated port typing: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_variant_membership() {
-    let input = "variant myVariant;";
-    let result = SysMLParser::parse(Rule::variant_membership, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse variant membership: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::owned_feature_typing, "~MyPort", "conjugated port type reference")]
+#[case(Rule::variant_membership, "variant myVariant;", "variant membership")]
+fn test_parse_port_and_variant(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Terminate Action
 
-#[test]
-fn test_parse_terminate_action() {
-    let input = "terminate myOccurrence;";
-    let result = SysMLParser::parse(Rule::terminate_action_usage, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse terminate action: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::terminate_action_usage, "terminate myOccurrence;", "terminate action")]
+fn test_parse_terminate_action(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Port Definition and Conjugation Tests
 
-#[test]
-fn test_parse_conjugated_port_definition() {
-    let input = "port def ~MyConjugatedPort;";
-    let result = SysMLParser::parse(Rule::conjugated_port_definition, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse conjugated port definition: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_port_conjugation() {
-    let input = "conjugate ~MyPort;";
-    let result = SysMLParser::parse(Rule::port_conjugation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse port conjugation: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_conjugated_port_typing() {
-    let input = "port myPort : ~ConjugatedPortType;";
-    let result = SysMLParser::parse(Rule::conjugated_port_typing, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse conjugated port typing: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_life_class() {
-    let input = "life class MyLifeClass;";
-    let result = SysMLParser::parse(Rule::life_class, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse life class: {:?}",
-        result.err()
-    );
+#[rstest]
+#[case(Rule::conjugated_port_definition, "port def ~MyConjugatedPort;", "conjugated port definition")]
+#[case(Rule::port_conjugation, "conjugate ~MyPort;", "port conjugation")]
+#[case(Rule::conjugated_port_typing, "port myPort : ~ConjugatedPortType;", "conjugated port typing")]
+#[case(Rule::life_class, "life class MyLifeClass;", "life class")]
+fn test_parse_conjugated_port_definitions(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Token Tests
