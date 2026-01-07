@@ -73,9 +73,47 @@ impl<'a> Resolver<'a> {
     /// Resolve a simple name via imports registered in a scope.
     /// Checks each import to see if it brings `name` into scope.
     pub(super) fn resolve_via_imports(&self, name: &str, scope_id: usize) -> Option<&Symbol> {
+        self.resolve_via_imports_filtered(name, scope_id, false)
+    }
+
+    /// Resolve a simple name via public imports only (for re-export resolution).
+    /// Uses direct symbol table lookup to avoid recursion.
+    pub(super) fn resolve_via_public_imports(
+        &self,
+        name: &str,
+        scope_id: usize,
+    ) -> Option<&Symbol> {
         self.symbol_table()
             .get_scope_imports(scope_id)
             .iter()
+            .filter(|import| import.is_public)
+            .find_map(|import| {
+                if import.is_namespace {
+                    // For wildcard imports, try direct lookup only (no recursion)
+                    let namespace = import.path.trim_end_matches("::*").trim_end_matches("::**");
+                    let qualified = format!("{namespace}::{name}");
+                    self.symbol_table().find_by_qualified_name(&qualified)
+                } else {
+                    // For direct imports, check if it imports this name
+                    let imports_this_name =
+                        import.path.ends_with(&format!("::{name}")) || import.path == name;
+                    imports_this_name
+                        .then(|| self.symbol_table().find_by_qualified_name(&import.path))?
+                }
+            })
+    }
+
+    /// Resolve a simple name via imports, optionally filtering to public imports only.
+    fn resolve_via_imports_filtered(
+        &self,
+        name: &str,
+        scope_id: usize,
+        public_only: bool,
+    ) -> Option<&Symbol> {
+        self.symbol_table()
+            .get_scope_imports(scope_id)
+            .iter()
+            .filter(|import| !public_only || import.is_public)
             .find_map(|import| {
                 if import.is_namespace {
                     self.try_wildcard_import(name, &import.path, import.is_recursive)

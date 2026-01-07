@@ -15,6 +15,7 @@ fn test_import_creation() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -37,6 +38,7 @@ fn test_import_with_span() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: Some(span),
     };
 
@@ -51,6 +53,7 @@ fn test_import_recursive() {
         path: "Package::*::**".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -64,6 +67,7 @@ fn test_import_non_recursive() {
         path: "Package::Member".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -77,6 +81,7 @@ fn test_import_simple_path() {
         path: "SimplePackage".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -90,6 +95,7 @@ fn test_import_wildcard_path() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -103,6 +109,7 @@ fn test_import_recursive_wildcard_path() {
         path: "Package::*::**".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -116,6 +123,7 @@ fn test_import_empty_path() {
         path: String::new(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -129,6 +137,7 @@ fn test_import_clone() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -145,6 +154,7 @@ fn test_import_partial_eq() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -152,6 +162,7 @@ fn test_import_partial_eq() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -164,6 +175,7 @@ fn test_import_not_eq_different_path() {
         path: "Package1::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -171,6 +183,7 @@ fn test_import_not_eq_different_path() {
         path: "Package2::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -183,6 +196,7 @@ fn test_import_not_eq_different_recursive() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -190,6 +204,7 @@ fn test_import_not_eq_different_recursive() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -218,6 +233,7 @@ fn test_import_not_eq_different_span() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: Some(span1),
     };
 
@@ -225,6 +241,7 @@ fn test_import_not_eq_different_span() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: Some(span2),
     };
 
@@ -237,6 +254,7 @@ fn test_import_debug_trait() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -255,6 +273,7 @@ fn test_import_as_element() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -276,6 +295,7 @@ fn test_import_element_pattern_matching() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -313,6 +333,7 @@ fn test_import_visitable_accept_generic() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -343,6 +364,7 @@ fn test_import_visitable_with_multiple_visitors() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -384,6 +406,7 @@ fn test_import_visitable_with_span() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: Some(span),
     };
 
@@ -405,6 +428,7 @@ fn test_import_visitable_recursive() {
         path: "Package::*::**".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -427,6 +451,7 @@ fn test_import_visitable_non_recursive() {
         path: "Package::Member".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -472,6 +497,7 @@ fn test_import_visitable_accept_counting_visitor() {
         path: "Package::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -495,18 +521,21 @@ fn test_import_visitable_counting_multiple_imports() {
         path: "Package1::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
     let import2 = Import {
         path: "Package2::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
     let import3 = Import {
         path: "Package3::*::**".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: None,
     };
 
@@ -529,6 +558,7 @@ fn test_import_element_with_counting_visitor() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
     let element = Element::Import(import);
@@ -568,12 +598,14 @@ fn test_import_in_file_with_counting_visitor() {
         path: "Package1::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
     let import2 = Import {
         path: "Package2::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -608,6 +640,7 @@ fn test_import_very_long_path() {
         path: long_path.clone(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -621,6 +654,7 @@ fn test_import_complex_qualified_path() {
         path: "RootPackage::SubPackage::NestedPackage::Element".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -637,6 +671,7 @@ fn test_import_with_special_characters() {
         path: "Package_123::Element_456".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -653,6 +688,7 @@ fn test_import_unicode_path() {
         path: unicode_path.clone(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -665,6 +701,7 @@ fn test_import_wildcard_only() {
         path: "*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 
@@ -685,6 +722,7 @@ fn test_import_both_flags_and_span() {
         path: "Package::*::**".to_string(),
         path_span: None,
         is_recursive: true,
+                is_public: false,
         span: Some(span),
     };
 
@@ -699,6 +737,7 @@ fn test_import_in_package_with_counting_visitor() {
         path: "Package::*".to_string(),
         path_span: None,
         is_recursive: false,
+                is_public: false,
         span: None,
     };
 

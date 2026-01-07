@@ -932,6 +932,7 @@ fn test_extract_single_import() {
             path: "Base::Vehicle".to_string(),
             path_span: None,
             is_recursive: false,
+            is_public: false,
             span: None,
         })],
     };
@@ -952,18 +953,21 @@ fn test_extract_multiple_imports() {
                 path: "Base::Vehicle".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Utils::*".to_string(),
                 path_span: None,
                 is_recursive: true,
+                is_public: false,
                 span: None,
             }),
         ],
@@ -986,6 +990,7 @@ fn test_extract_recursive_imports() {
             path: "SysML::*".to_string(),
             path_span: None,
             is_recursive: true,
+            is_public: false,
             span: None,
         })],
     };
@@ -1011,6 +1016,7 @@ fn test_extract_imports_mixed_elements() {
                 path: "Base::Vehicle".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Comment(syster::syntax::sysml::ast::Comment {
@@ -1021,6 +1027,7 @@ fn test_extract_imports_mixed_elements() {
                 path: "Systems::Engine".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
         ],
@@ -1151,7 +1158,7 @@ fn test_resolve_in_scope_with_import() {
     // Create a new scope with an import
     table.enter_scope();
     let scope_with_import = table.current_scope_id();
-    table.add_import("Base::*".to_string(), false, None, None);
+    table.add_import("Base::*".to_string(), false, false, None, None);
     table.exit_scope();
 
     // Create another scope WITHOUT the import

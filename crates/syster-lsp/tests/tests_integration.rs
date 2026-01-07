@@ -2038,3 +2038,173 @@ package SensorUsage {
         // The key test is test_hover_import_references_cleared_when_import_removed above
     }
 }
+
+/// Test hover on ISQ::MassValue in a user file
+/// This directly tests the bug where hovering on MassValue in "import ISQ::MassValue" fails
+#[test]
+fn test_hover_isq_massvalue() {
+    use async_lsp::lsp_types::{HoverContents, MarkedString, Position, Url};
+
+    // Create server with explicit stdlib path for testing
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let mut server = LspServer::with_config(true, Some(stdlib_path));
+
+    // Load stdlib first
+    server
+        .ensure_workspace_loaded()
+        .expect("Should load stdlib");
+
+    // Debug: Check ISQ symbols
+    let resolver = server.resolver();
+    let isq_package = resolver.resolve_qualified("ISQ");
+    println!("ISQ package found: {:?}", isq_package.map(|s| s.name()));
+
+    let isqbase_massvalue = resolver.resolve_qualified("ISQBase::MassValue");
+    println!(
+        "ISQBase::MassValue found: {:?}",
+        isqbase_massvalue.map(|s| s.qualified_name())
+    );
+
+    let isq_massvalue = resolver.resolve_qualified("ISQ::MassValue");
+    println!(
+        "ISQ::MassValue resolved: {:?}",
+        isq_massvalue.map(|s| s.qualified_name())
+    );
+
+    // Create a test file with import
+    let user_source = r#"package MyTest {
+    private import ISQ::MassValue;
+    
+    part def MyPart {
+        attribute mass: MassValue;
+    }
+}"#;
+
+    let user_uri = Url::parse("file:///test/mytest.sysml").unwrap();
+    server
+        .open_document(&user_uri, user_source)
+        .expect("Should open user document");
+
+    // Debug: Check what word is extracted
+    let line = "    private import ISQ::MassValue;";
+    let extracted = syster::core::text_utils::extract_qualified_name_at_cursor(line, 23);
+    println!("Extracted at pos 23: {:?}", extracted);
+
+    // Test hover on "MassValue" in the import statement (line 1, position ~23)
+    // Line 1 is "    private import ISQ::MassValue;"
+    // Position of 'M' in MassValue is at column 23
+    let position = Position {
+        line: 1,
+        character: 23,
+    };
+
+    let hover_result = server.get_hover(&user_uri, position);
+
+    println!("Hover result: {:?}", hover_result.is_some());
+
+    if let Some(hover) = &hover_result {
+        if let HoverContents::Scalar(MarkedString::String(content)) = &hover.contents {
+            println!("=== HOVER CONTENT ===");
+            println!("{}", content);
+        }
+    }
+
+    assert!(
+        hover_result.is_some(),
+        "Hover on ISQ::MassValue should return something"
+    );
+
+    let hover = hover_result.unwrap();
+    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+        assert!(
+            content.contains("MassValue"),
+            "Hover should mention MassValue, got: {}",
+            content
+        );
+    } else {
+        panic!("Unexpected hover contents format");
+    }
+}
+
+/// Test hover on ISQ::MassValue using the extension's stdlib path
+/// This simulates exactly what happens when VS Code loads
+#[test]
+fn test_hover_isq_massvalue_extension_stdlib() {
+    use async_lsp::lsp_types::{HoverContents, MarkedString, Position, Url};
+
+    // Use the SAME stdlib path the extension uses
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("editors")
+        .join("vscode")
+        .join("sysml.library");
+
+    println!("Using stdlib path: {:?}", stdlib_path);
+    assert!(stdlib_path.exists(), "Extension stdlib path should exist");
+
+    let mut server = LspServer::with_config(true, Some(stdlib_path));
+
+    // Load stdlib first - this is what happens on VS Code startup
+    server
+        .ensure_workspace_loaded()
+        .expect("Should load stdlib");
+
+    // Debug: Check ISQ symbols
+    let resolver = server.resolver();
+    let isq_package = resolver.resolve_qualified("ISQ");
+    println!("ISQ package found: {:?}", isq_package.map(|s| s.name()));
+
+    let isqbase_massvalue = resolver.resolve_qualified("ISQBase::MassValue");
+    println!(
+        "ISQBase::MassValue found: {:?}",
+        isqbase_massvalue.map(|s| s.qualified_name())
+    );
+
+    let isq_massvalue = resolver.resolve_qualified("ISQ::MassValue");
+    println!(
+        "ISQ::MassValue resolved: {:?}",
+        isq_massvalue.map(|s| s.qualified_name())
+    );
+
+    // Check ISQ's public imports
+    let isq_symbol = resolver.resolve_qualified("ISQ");
+    if let Some(isq) = isq_symbol {
+        let scope_id = isq.scope_id();
+        println!("ISQ scope_id: {}", scope_id);
+
+        // Check child scopes for imports
+        if let Some(scope) = server.workspace().symbol_table().scopes().get(scope_id) {
+            println!("ISQ scope has {} children", scope.children.len());
+            for &child_id in &scope.children {
+                let imports = server
+                    .workspace()
+                    .symbol_table()
+                    .get_scope_imports(child_id);
+                let public_imports: Vec<_> = imports.iter().filter(|i| i.is_public).collect();
+                if !public_imports.is_empty() {
+                    println!(
+                        "Child scope {} has {} public imports",
+                        child_id,
+                        public_imports.len()
+                    );
+                    for imp in &public_imports {
+                        println!("  - {} (is_namespace: {})", imp.path, imp.is_namespace);
+                    }
+                }
+            }
+        }
+    }
+
+    // Now assert the key thing works
+    assert!(
+        isq_massvalue.is_some(),
+        "ISQ::MassValue should resolve via public import re-export"
+    );
+}

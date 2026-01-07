@@ -390,6 +390,7 @@ fn test_extract_inlay_hints_package_with_mixed_elements() {
                     path: "SomePackage".to_string(),
                     path_span: None,
                     is_recursive: false,
+                    is_public: false,
                     kind: crate::syntax::kerml::ast::ImportKind::Normal,
                     span: None,
                 }),

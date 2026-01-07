@@ -935,6 +935,7 @@ fn test_extract_single_import() {
             path: "Base::Vehicle".to_string(),
             path_span: None,
             is_recursive: false,
+            is_public: false,
             span: None,
         })],
     };
@@ -955,18 +956,21 @@ fn test_extract_multiple_imports() {
                 path: "Base::Vehicle".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Systems::Engine".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Utils::*".to_string(),
                 path_span: None,
                 is_recursive: true,
+                is_public: false,
                 span: None,
             }),
         ],
@@ -989,6 +993,7 @@ fn test_extract_recursive_imports() {
             path: "SysML::*".to_string(),
             path_span: None,
             is_recursive: true,
+            is_public: false,
             span: None,
         })],
     };
@@ -1014,6 +1019,7 @@ fn test_extract_imports_mixed_elements() {
                 path: "Base::Vehicle".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Comment(crate::syntax::sysml::ast::Comment {
@@ -1024,6 +1030,7 @@ fn test_extract_imports_mixed_elements() {
                 path: "Systems::Engine".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
         ],

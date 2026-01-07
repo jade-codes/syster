@@ -316,6 +316,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         self.symbol_table.add_import(
             import.path.clone(),
             import.is_recursive,
+            import.is_public,
             import.span,
             current_file.clone(),
         );

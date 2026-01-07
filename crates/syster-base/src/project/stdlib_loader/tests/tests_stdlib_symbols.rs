@@ -118,3 +118,170 @@ fn test_stdlib_si_symbols() {
         si_symbols
     );
 }
+
+#[test]
+fn test_stdlib_isq_massvalue() {
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    let loader = StdLibLoader::with_path(stdlib_path);
+    loader.load(&mut workspace).expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate stdlib");
+
+    // Debug: list all top-level packages
+    let all_symbols = workspace.symbol_table().all_symbols();
+    let packages: Vec<_> = all_symbols
+        .iter()
+        .filter(|(_, sym)| matches!(sym, crate::semantic::symbol_table::Symbol::Package { .. }))
+        .filter(|(qname, _)| !qname.contains("::"))
+        .map(|(qn, _)| qn.as_str())
+        .collect();
+    println!("Top-level packages: {:?}", packages);
+
+    // Check if ISQ package exists
+    let isq_package = workspace.symbol_table().find_by_qualified_name("ISQ");
+    println!("ISQ package: {:?}", isq_package.map(|s| s.name()));
+
+    // Get all ISQ symbols
+    let isq_symbols: Vec<_> = all_symbols
+        .iter()
+        .filter(|(qname, _)| qname.starts_with("ISQ::") || qname.starts_with("ISQBase::"))
+        .take(30)
+        .map(|(qn, _)| qn.as_str())
+        .collect();
+    println!("ISQ/ISQBase symbols: {:?}", isq_symbols);
+
+    // Check ISQBase::MassValue directly
+    let isqbase_mass_value = workspace
+        .symbol_table()
+        .find_by_qualified_name("ISQBase::MassValue");
+    assert!(
+        isqbase_mass_value.is_some(),
+        "ISQBase::MassValue should exist. Symbols: {:?}",
+        isq_symbols
+    );
+
+    // Test that ISQ::MassValue resolves via public re-export
+    let resolver = crate::semantic::resolver::Resolver::new(workspace.symbol_table());
+    let isq_mass_value = resolver.resolve_qualified("ISQ::MassValue");
+    assert!(
+        isq_mass_value.is_some(),
+        "ISQ::MassValue should resolve via public import re-export from ISQBase"
+    );
+}
+
+/// Test that simulates what the LSP hover does when cursor is on "MassValue" in "ISQ::MassValue"
+#[test]
+fn test_stdlib_hover_simulation() {
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    let loader = StdLibLoader::with_path(stdlib_path);
+    loader.load(&mut workspace).expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate stdlib");
+
+    let resolver = crate::semantic::resolver::Resolver::new(workspace.symbol_table());
+
+    // Simulate: user hovers on "MassValue" in "import ISQ::MassValue"
+    // The extract_qualified_name_at_cursor should return "ISQ::MassValue"
+    let line = "    private import ISQ::MassValue;";
+
+    // Position 23 is on "MassValue"
+    let extracted = crate::core::text_utils::extract_qualified_name_at_cursor(line, 23);
+    println!("Extracted from line: {:?}", extracted);
+    assert_eq!(extracted, Some("ISQ::MassValue".to_string()));
+
+    // Now resolve it - this is what hover does
+    let symbol = resolver.resolve_qualified("ISQ::MassValue");
+    println!(
+        "Resolved ISQ::MassValue: {:?}",
+        symbol.map(|s| s.qualified_name())
+    );
+    assert!(
+        symbol.is_some(),
+        "Hover on ISQ::MassValue should resolve the symbol"
+    );
+
+    // Also test resolver.resolve() which is what hover actually calls
+    let symbol2 = resolver.resolve("ISQ::MassValue");
+    println!(
+        "resolver.resolve(ISQ::MassValue): {:?}",
+        symbol2.map(|s| s.qualified_name())
+    );
+    assert!(
+        symbol2.is_some(),
+        "resolver.resolve(ISQ::MassValue) should work"
+    );
+}
+
+/// Test that simulates what the LSP does when a user creates a new file
+/// and imports ISQ::MassValue, then hovers on it
+#[test]
+fn test_stdlib_hover_with_user_file() {
+    use crate::parser::{SysMLParser, sysml::Rule};
+    use crate::syntax::sysml::ast::SysMLFile;
+    use from_pest::FromPest;
+    use pest::Parser;
+
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
+
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    let loader = StdLibLoader::with_path(stdlib_path);
+    loader.load(&mut workspace).expect("Failed to load stdlib");
+    workspace.populate_all().expect("Failed to populate stdlib");
+
+    // Now simulate adding a user file (like the LSP does when you open a new file)
+    let user_source = r#"package MyTest {
+    private import ISQ::MassValue;
+    
+    part def MyPart {
+        attribute mass: MassValue;
+    }
+}"#;
+
+    // Parse and add user file
+    let mut pairs = SysMLParser::parse(Rule::model, user_source).expect("parse user source");
+    let sysml_file = SysMLFile::from_pest(&mut pairs).expect("from_pest");
+    let user_path = PathBuf::from("/test/mytest.sysml");
+    workspace.add_file(user_path.clone(), SyntaxFile::SysML(sysml_file));
+    workspace
+        .populate_file(&user_path)
+        .expect("populate user file");
+
+    // Now test hover on "ISQ::MassValue" in line 2
+    let line = "    private import ISQ::MassValue;";
+    let extracted = crate::core::text_utils::extract_qualified_name_at_cursor(line, 23);
+    println!("Extracted from user file: {:?}", extracted);
+    assert_eq!(extracted, Some("ISQ::MassValue".to_string()));
+
+    // Resolve using the resolver (this is what hover does)
+    let resolver = crate::semantic::resolver::Resolver::new(workspace.symbol_table());
+    let symbol = resolver.resolve_qualified("ISQ::MassValue");
+    println!(
+        "After adding user file - ISQ::MassValue: {:?}",
+        symbol.map(|s| s.qualified_name())
+    );
+    assert!(
+        symbol.is_some(),
+        "ISQ::MassValue should still resolve after adding user file"
+    );
+
+    // Also check that MassValue can be resolved in the user file's scope
+    let user_scope = workspace
+        .symbol_table()
+        .get_scope_for_file(&user_path.to_string_lossy());
+    println!("User file scope: {:?}", user_scope);
+
+    if let Some(scope_id) = user_scope {
+        let mass_value = resolver.resolve_in_scope("MassValue", scope_id);
+        println!(
+            "MassValue in user scope: {:?}",
+            mass_value.map(|s| s.qualified_name())
+        );
+        // This should work because we imported ISQ::MassValue
+        assert!(
+            mass_value.is_some(),
+            "MassValue should be resolvable in user file scope after import"
+        );
+    }
+}

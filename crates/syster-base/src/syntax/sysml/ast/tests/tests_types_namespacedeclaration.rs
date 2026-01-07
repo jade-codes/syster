@@ -546,6 +546,7 @@ fn test_namespacedeclaration_in_file_with_mixed_elements() {
                 path: "External::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Package(Package {

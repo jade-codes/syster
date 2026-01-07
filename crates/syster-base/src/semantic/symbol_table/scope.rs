@@ -8,6 +8,7 @@ pub struct Import {
     pub path: String,
     pub is_recursive: bool,
     pub is_namespace: bool,
+    pub is_public: bool,
     pub span: Option<Span>,
     pub file: Option<String>,
 }

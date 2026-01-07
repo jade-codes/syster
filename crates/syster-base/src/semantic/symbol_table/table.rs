@@ -103,6 +103,7 @@ impl SymbolTable {
         &mut self,
         path: String,
         is_recursive: bool,
+        is_public: bool,
         span: Option<crate::core::Span>,
         file: Option<String>,
     ) {
@@ -112,6 +113,7 @@ impl SymbolTable {
                 path: path.clone(),
                 is_recursive,
                 is_namespace,
+                is_public,
                 span,
                 file: file.clone(),
             };

@@ -194,6 +194,7 @@ fn test_visit_import_single() {
             path: "SomePackage::*".to_string(),
             path_span: None,
             is_recursive: false,
+                is_public: false,
             span: None,
         })],
     };
@@ -220,18 +221,21 @@ fn test_visit_import_multiple() {
                 path: "Package1::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Package2::Element".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Package3::*::**".to_string(),
                 path_span: None,
                 is_recursive: true,
+                is_public: false,
                 span: None,
             }),
         ],
@@ -252,6 +256,7 @@ fn test_visit_import_recursive() {
             path: "Package::*::**".to_string(),
             path_span: None,
             is_recursive: true,
+                is_public: false,
             span: None,
         })],
     };
@@ -274,12 +279,14 @@ fn test_visit_import_in_package() {
                     path: "External::Type".to_string(),
                     path_span: None,
                     is_recursive: false,
+                is_public: false,
                     span: None,
                 }),
                 Element::Import(Import {
                     path: "Another::Package::*".to_string(),
                     path_span: None,
                     is_recursive: false,
+                is_public: false,
                     span: None,
                 }),
             ],
@@ -580,6 +587,7 @@ fn test_visit_all_element_types() {
                 path: "External::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Comment(Comment {
@@ -648,6 +656,7 @@ fn test_visit_nested_elements_in_package() {
                     path: "External::Type".to_string(),
                     path_span: None,
                     is_recursive: false,
+                is_public: false,
                     span: None,
                 }),
                 Element::Definition(Definition {
@@ -811,12 +820,14 @@ fn test_visit_multiple_of_each_type() {
                 path: "Import1::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Import2::Element".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Alias(Alias {
@@ -902,6 +913,7 @@ fn test_visit_large_file() {
             path: format!("Package{}::*", i),
             path_span: None,
             is_recursive: false,
+                is_public: false,
             span: None,
         }));
     }

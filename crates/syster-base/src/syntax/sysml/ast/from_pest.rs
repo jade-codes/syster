@@ -84,21 +84,33 @@ impl_from_pest!(Comment, |pest: &mut Pairs<Rule>| {
 
 impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
     let mut is_recursive = false;
+    let mut is_public = false;
     let mut path = String::new();
     let mut path_span = None;
     let mut span = None;
 
     for pair in pest {
-        if pair.as_rule() == Rule::imported_reference {
-            path = pair.as_str().to_string();
-            // Capture the span of the imported path, not the whole import statement
-            span = Some(to_span(pair.as_span()));
-            // Also capture the path_span for semantic tokens
-            path_span = Some(to_span(pair.as_span()));
-            is_recursive = pair
-                .clone()
-                .into_inner()
-                .any(|p| p.as_rule() == Rule::recursive_marker);
+        match pair.as_rule() {
+            Rule::import_prefix => {
+                // import_prefix contains: visibility? ~ import_token ~ import_all?
+                for child in pair.into_inner() {
+                    if child.as_rule() == Rule::visibility {
+                        is_public = child.as_str().trim() == "public";
+                    }
+                }
+            }
+            Rule::imported_reference => {
+                path = pair.as_str().to_string();
+                // Capture the span of the imported path, not the whole import statement
+                span = Some(to_span(pair.as_span()));
+                // Also capture the path_span for semantic tokens
+                path_span = Some(to_span(pair.as_span()));
+                is_recursive = pair
+                    .clone()
+                    .into_inner()
+                    .any(|p| p.as_rule() == Rule::recursive_marker);
+            }
+            _ => {}
         }
     }
 
@@ -106,6 +118,7 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
         path,
         path_span,
         is_recursive,
+        is_public,
         span,
     })
 });
@@ -143,6 +156,7 @@ impl_from_pest!(Alias, |pest: &mut Pairs<Rule>| {
 impl_from_pest!(Element, |pest: &mut Pairs<Rule>| {
     let mut pair = pest.next().ok_or(ConversionError::NoMatch)?;
 
+    // Check for visibility prefix (public/private/protected)
     if pair.as_rule() == Rule::visibility {
         pair = pest.next().ok_or(ConversionError::NoMatch)?;
     }
