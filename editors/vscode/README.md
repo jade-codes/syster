@@ -15,34 +15,27 @@ Rich language support for SysML v2 (Systems Modeling Language) and KerML (Kernel
 - **Rename Symbol** - Rename symbols across files
 - **Semantic Tokens** - Advanced syntax coloring based on semantic analysis
 
-## Requirements
+## Installation
 
-This extension requires the `syster-lsp` language server binary. The extension will automatically search for it in the following locations:
+The extension includes the `syster-lsp` language server binary and the SysML v2 standard library - no additional setup required!
+
+Simply install the extension and open any `.sysml` or `.kerml` file to get started.
+
+### Custom Language Server Path (Optional)
+
+If you prefer to use a different language server binary, you can specify a custom path:
 
 1. Path specified in settings: `syster.lsp.path`
 2. Environment variable: `SYSTER_LSP_PATH`
-3. Workspace build directory: `./target/release/syster-lsp`
-4. Workspace debug directory: `./target/debug/syster-lsp`
-5. System PATH
-
-### Building the Language Server
-
-If you're working from the source repository:
-
-```bash
-# From the repository root
-cargo build --release --manifest-path crates/syster-lsp/Cargo.toml
-
-# The binary will be at: target/release/syster-lsp
-```
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-- `syster.lsp.path`: Path to the syster-lsp binary (leave empty for auto-detection)
+- `syster.lsp.path`: Path to the syster-lsp binary (leave empty to use bundled version)
 - `syster.lsp.trace.server`: Trace LSP communication for debugging (`off`, `messages`, `verbose`)
 - `syster.stdlib.enabled`: Load SysML standard library (default: `true`)
+- `syster.stdlib.path`: Custom path to SysML standard library directory (leave empty to use bundled version)
 
 ## Commands
 
@@ -56,14 +49,6 @@ This extension contributes the following settings:
 
 ## Troubleshooting
 
-### Language server not found
-
-If you see an error about the language server not being found:
-
-1. Check that `syster-lsp` is built: `cargo build --release`
-2. Verify the binary exists: `ls target/release/syster-lsp`
-3. Or specify the path in settings: `"syster.lsp.path": "/path/to/syster-lsp"`
-
 ### Language server crashes
 
 Use the restart command: `SysML: Restart Language Server`
@@ -72,6 +57,13 @@ Use the restart command: `SysML: Restart Language Server`
 
 Set `"syster.lsp.trace.server": "verbose"` in your settings, then check:
 - View → Output → "SysML Language Server"
+
+### Using a custom language server
+
+If you need to use a custom-built language server (e.g., for development):
+
+1. Build from source: `cargo build --release -p syster-lsp`
+2. Set the path in settings: `"syster.lsp.path": "/path/to/syster-lsp"`
 
 ## Development
 
