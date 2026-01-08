@@ -6,11 +6,28 @@ use syster::parser::{SysMLParser, sysml::Rule};
 
 /// Helper function to assert that parsing succeeds and the entire input is consumed.
 /// This ensures the parser doesn't just match a prefix of the input.
+/// 
+/// The function verifies that:
+/// 1. Parsing succeeds
+/// 2. Exactly one top-level pair is produced (in most cases)
+/// 3. The parsed output matches the original input exactly
 fn assert_round_trip(rule: Rule, input: &str, desc: &str) {
     let result = SysMLParser::parse(rule, input)
         .unwrap_or_else(|e| panic!("Failed to parse {}: {}", desc, e));
 
-    let parsed: String = result.into_iter().map(|p| p.as_str()).collect();
+    let pairs: Vec<_> = result.into_iter().collect();
+    
+    // Most parser rules should produce exactly one top-level pair
+    // (the EOI rule is an exception that produces multiple pairs)
+    if pairs.len() != 1 && rule != Rule::EOI {
+        panic!(
+            "Expected exactly one top-level pair for {}, but found {}",
+            desc,
+            pairs.len()
+        );
+    }
+
+    let parsed: String = pairs.into_iter().map(|p| p.as_str()).collect();
 
     assert_eq!(input, parsed, "Parsed output mismatch for {}", desc);
 }
