@@ -45,7 +45,6 @@ fn test_new_adapter_can_access_symbol_table() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
             },
         )
         .unwrap();
@@ -64,7 +63,7 @@ fn test_new_with_empty_symbol_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify the adapter works with an empty symbol table
-    assert!(adapter.symbol_table.all_symbols().is_empty());
+    assert!(adapter.symbol_table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -75,14 +74,13 @@ fn test_new_with_populated_symbol_table() {
     for i in 0..5 {
         table
             .insert(
-                format!("Symbol{}", i),
+                format!("Symbol{i}"),
                 Symbol::Package {
-                    name: format!("Symbol{}", i),
-                    qualified_name: format!("Symbol{}", i),
+                    name: format!("Symbol{i}"),
+                    qualified_name: format!("Symbol{i}"),
                     scope_id: 0,
                     source_file: None,
                     span: None,
-                    references: Vec::new(),
                 },
             )
             .unwrap();
@@ -91,7 +89,7 @@ fn test_new_with_populated_symbol_table() {
     let adapter = KermlAdapter::new(&mut table);
 
     // Verify the adapter has access to all symbols
-    assert_eq!(adapter.symbol_table.all_symbols().len(), 5);
+    assert_eq!(adapter.symbol_table.iter_symbols().count(), 5);
 }
 
 #[test]
@@ -193,7 +191,6 @@ fn test_adapter_can_be_created_in_nested_scope() {
                     scope_id: 0,
                     source_file: None,
                     span: None,
-                    references: Vec::new(),
                 },
             )
             .unwrap();

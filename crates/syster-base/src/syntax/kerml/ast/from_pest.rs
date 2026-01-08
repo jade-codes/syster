@@ -129,6 +129,7 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
         path,
         path_span,
         is_recursive,
+        is_public: false, // Will be overridden by Element parser if public
         kind: ImportKind::Normal,
         span,
     })
@@ -136,9 +137,11 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
 
 impl_from_pest!(Element, |pest: &mut Pairs<Rule>| {
     let mut pair = pest.next().ok_or(ConversionError::NoMatch)?;
+    let mut is_public = false;
 
-    // Skip visibility prefix
+    // Capture visibility prefix
     if pair.as_rule() == Rule::visibility_kind {
+        is_public = pair.as_str().trim() == "public";
         pair = pest.next().ok_or(ConversionError::NoMatch)?;
     }
 
@@ -167,7 +170,11 @@ impl_from_pest!(Element, |pest: &mut Pairs<Rule>| {
             reference: pair.as_str().to_string(),
             span: Some(to_span(pair.as_span())),
         }),
-        Rule::import => Element::Import(Import::from_pest(&mut pair.into_inner())?),
+        Rule::import => {
+            let mut import = Import::from_pest(&mut pair.into_inner())?;
+            import.is_public = is_public;
+            Element::Import(import)
+        }
 
         _ => return Err(ConversionError::NoMatch),
     })

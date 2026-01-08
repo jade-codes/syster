@@ -13,7 +13,6 @@ fn test_lookup_from_scope_in_current_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "RootSymbol".to_string(),
         qualified_name: "RootSymbol".to_string(),
     };
@@ -37,7 +36,6 @@ fn test_lookup_from_scope_in_parent_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "ParentSymbol".to_string(),
         qualified_name: "ParentSymbol".to_string(),
     };
@@ -66,7 +64,6 @@ fn test_lookup_from_scope_in_grandparent_scope() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "GrandparentSymbol".to_string(),
         qualified_name: "GrandparentSymbol".to_string(),
     };
@@ -98,7 +95,6 @@ fn test_lookup_from_scope_not_found() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "ExistingSymbol".to_string(),
         qualified_name: "ExistingSymbol".to_string(),
     };
@@ -121,7 +117,6 @@ fn test_lookup_from_scope_symbol_shadowing() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Symbol".to_string(),
         qualified_name: "Parent::Symbol".to_string(),
     };
@@ -136,7 +131,6 @@ fn test_lookup_from_scope_symbol_shadowing() {
         scope_id: 1,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Symbol".to_string(),
         qualified_name: "Parent::Child::Symbol".to_string(),
         kind: "Class".to_string(),
@@ -164,7 +158,6 @@ fn test_lookup_from_scope_from_root() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "RootSymbol".to_string(),
         qualified_name: "RootSymbol".to_string(),
     };
@@ -191,7 +184,6 @@ fn test_lookup_from_scope_no_sibling_access() {
         scope_id: 1,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Sibling1".to_string(),
         qualified_name: "Sibling1".to_string(),
     };
@@ -225,7 +217,6 @@ fn test_lookup_from_scope_different_symbol_types() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "RootPkg".to_string(),
                 qualified_name: "RootPkg".to_string(),
             },
@@ -241,7 +232,6 @@ fn test_lookup_from_scope_different_symbol_types() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "MyClass".to_string(),
                 qualified_name: "RootPkg::MyClass".to_string(),
                 kind: "Class".to_string(),
@@ -259,7 +249,6 @@ fn test_lookup_from_scope_different_symbol_types() {
                 scope_id: 2,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "MyFeature".to_string(),
                 qualified_name: "RootPkg::MyClass::MyFeature".to_string(),
                 feature_type: Some("String".to_string()),
@@ -294,7 +283,6 @@ fn test_lookup_from_scope_deeply_nested() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Level0".to_string(),
         qualified_name: "Level0".to_string(),
     };
@@ -310,11 +298,10 @@ fn test_lookup_from_scope_deeply_nested() {
             scope_id: i,
             source_file: None,
             span: None,
-            references: Vec::new(),
-            name: format!("Level{}", i),
-            qualified_name: format!("Level0::Level{}", i),
+            name: format!("Level{i}"),
+            qualified_name: format!("Level0::Level{i}"),
         };
-        table.insert(format!("Level{}", i), symbol).unwrap();
+        table.insert(format!("Level{i}"), symbol).unwrap();
     }
 
     // From the deepest scope (level 4), we should be able to find all symbols
@@ -384,7 +371,6 @@ fn test_lookup_from_scope_no_child_access() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Root".to_string(),
         qualified_name: "Root".to_string(),
     };
@@ -397,7 +383,6 @@ fn test_lookup_from_scope_no_child_access() {
         scope_id: 1,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Child".to_string(),
         qualified_name: "Child".to_string(),
     };
@@ -424,7 +409,6 @@ fn test_lookup_from_scope_with_alias() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "RealSymbol".to_string(),
                 qualified_name: "RealSymbol".to_string(),
             },
@@ -440,7 +424,6 @@ fn test_lookup_from_scope_with_alias() {
                 scope_id: 1,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "AliasSymbol".to_string(),
                 qualified_name: "AliasSymbol".to_string(),
                 target: "RealSymbol".to_string(),
@@ -475,7 +458,6 @@ fn test_lookup_from_scope_definition_and_usage() {
                 scope_id: 0,
                 source_file: None,
                 span: None,
-                references: Vec::new(),
                 name: "MyDef".to_string(),
                 qualified_name: "MyDef".to_string(),
                 kind: "Part".to_string(),
@@ -495,7 +477,6 @@ fn test_lookup_from_scope_definition_and_usage() {
                 span: None,
                 usage_type: None,
                 semantic_role: None,
-                references: Vec::new(),
                 name: "MyUsage".to_string(),
                 qualified_name: "MyUsage".to_string(),
                 kind: "Part".to_string(),
@@ -531,7 +512,6 @@ fn test_lookup_from_scope_idempotent() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
         name: "Symbol".to_string(),
         qualified_name: "Symbol".to_string(),
     };

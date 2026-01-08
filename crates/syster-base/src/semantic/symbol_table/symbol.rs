@@ -1,11 +1,21 @@
 use crate::core::Span;
 use crate::semantic::types::SemanticRole;
 
-/// A reference to a symbol from another location in the code
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymbolReference {
-    pub file: String,
-    pub span: Span,
+/// Unique identifier for a symbol in the arena.
+/// Uses u32 for compact storage (supports ~4 billion symbols).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SymbolId(pub u32);
+
+impl SymbolId {
+    /// Create a new SymbolId from an index
+    pub fn new(index: usize) -> Self {
+        Self(index as u32)
+    }
+
+    /// Get the index into the arena
+    pub fn index(self) -> usize {
+        self.0 as usize
+    }
 }
 
 /// Represents a named element in a SysML/KerML model
@@ -17,7 +27,6 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
-        references: Vec<SymbolReference>,
     },
     Classifier {
         name: String,
@@ -27,7 +36,6 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
-        references: Vec<SymbolReference>,
     },
     Feature {
         name: String,
@@ -36,7 +44,6 @@ pub enum Symbol {
         feature_type: Option<String>,
         source_file: Option<String>,
         span: Option<Span>,
-        references: Vec<SymbolReference>,
     },
     Definition {
         name: String,
@@ -46,7 +53,6 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
-        references: Vec<SymbolReference>,
     },
     Usage {
         name: String,
@@ -57,7 +63,6 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
-        references: Vec<SymbolReference>,
     },
     Alias {
         name: String,
@@ -67,7 +72,6 @@ pub enum Symbol {
         scope_id: usize,
         source_file: Option<String>,
         span: Option<Span>,
-        references: Vec<SymbolReference>,
     },
     /// An import statement (e.g., `import ScalarValues::*`)
     Import {
@@ -160,32 +164,6 @@ impl Symbol {
         match self {
             Symbol::Feature { feature_type, .. } => feature_type.as_deref(),
             _ => None,
-        }
-    }
-
-    /// Returns all reference locations for this symbol
-    pub fn references(&self) -> &[SymbolReference] {
-        match self {
-            Symbol::Package { references, .. }
-            | Symbol::Classifier { references, .. }
-            | Symbol::Feature { references, .. }
-            | Symbol::Definition { references, .. }
-            | Symbol::Usage { references, .. }
-            | Symbol::Alias { references, .. } => references,
-            Symbol::Import { .. } => &[],
-        }
-    }
-
-    /// Adds a reference location to this symbol (mutable access required)
-    pub fn add_reference(&mut self, reference: SymbolReference) {
-        match self {
-            Symbol::Package { references, .. }
-            | Symbol::Classifier { references, .. }
-            | Symbol::Feature { references, .. }
-            | Symbol::Definition { references, .. }
-            | Symbol::Usage { references, .. }
-            | Symbol::Alias { references, .. } => references.push(reference),
-            Symbol::Import { .. } => {} // Imports don't track references
         }
     }
 }

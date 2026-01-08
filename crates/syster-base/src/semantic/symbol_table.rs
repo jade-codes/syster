@@ -5,7 +5,7 @@ mod symbol;
 mod table;
 
 pub use scope::{Import, Scope};
-pub use symbol::{Symbol, SymbolReference};
+pub use symbol::{Symbol, SymbolId};
 pub use table::SymbolTable;
 
 #[cfg(test)]

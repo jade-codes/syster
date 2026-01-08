@@ -73,8 +73,7 @@ fn test_load_and_parse_invalid_extension() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Unsupported file extension"),
-        "Error should mention unsupported extension: {}",
-        error_msg
+        "Error should mention unsupported extension: {error_msg}"
     );
 }
 
@@ -89,8 +88,7 @@ fn test_load_and_parse_nonexistent_file() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Failed to read"),
-        "Error should mention failed read: {}",
-        error_msg
+        "Error should mention failed read: {error_msg}"
     );
 }
 
@@ -110,8 +108,7 @@ fn test_load_and_parse_invalid_syntax() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Parse error"),
-        "Error should mention parse error: {}",
-        error_msg
+        "Error should mention parse error: {error_msg}"
     );
 }
 

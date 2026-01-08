@@ -1,6 +1,8 @@
 use super::LspServer;
 use async_lsp::lsp_types::{Position, Range};
 use std::path::PathBuf;
+use syster::core::Span;
+use syster::semantic::symbol_table::Symbol;
 
 impl LspServer {
     /// Find the symbol and range at the given position by querying the AST
@@ -11,13 +13,55 @@ impl LspServer {
     ) -> Option<(String, Range)> {
         use super::helpers::span_to_lsp_range;
 
-        // Get document text to extract word at cursor
+        let file_path_str = path.to_string_lossy().to_string();
+
+        // First, check the ReferenceIndex for a pre-computed binding at this position.
+        // This handles references like `Inner::Vehicle` that were resolved during semantic analysis.
+        if let Some(qualified_name) = self.workspace.get_binding_at(
+            &file_path_str,
+            position.line as usize,
+            position.character as usize,
+        ) {
+            // Look up the symbol to get its span for the hover range
+            if let Some(symbol) = self
+                .workspace
+                .symbol_table()
+                .find_by_qualified_name(qualified_name)
+            {
+                let range = symbol
+                    .span()
+                    .map(|s| span_to_lsp_range(&s))
+                    .unwrap_or(Range {
+                        start: position,
+                        end: position,
+                    });
+                return Some((qualified_name.to_string(), range));
+            }
+            // Even if symbol lookup fails, return the qualified name from the index
+            return Some((
+                qualified_name.to_string(),
+                Range {
+                    start: position,
+                    end: position,
+                },
+            ));
+        }
+
+        // Fallback: Get document text to extract word at cursor
         let source = self.document_texts.get(path)?;
 
         let line = source.lines().nth(position.line as usize)?;
 
-        let word =
-            syster::core::text_utils::extract_word_at_cursor(line, position.character as usize)?;
+        // First try to extract a qualified name (e.g., "ISQ::MassValue")
+        // This handles hovering on import statements like "import ISQ::MassValue"
+        let word = syster::core::text_utils::extract_qualified_name_at_cursor(
+            line,
+            position.character as usize,
+        )
+        .or_else(|| {
+            // Fall back to simple word extraction
+            syster::core::text_utils::extract_word_at_cursor(line, position.character as usize)
+        })?;
 
         // Calculate word range in source (for hover highlight)
         let word_start = line[..position.character as usize]
@@ -35,12 +79,11 @@ impl LspServer {
             },
         };
 
-        let file_path_str = path.to_string_lossy().to_string();
-
-        // First, check if the word matches a symbol defined in THIS file.
-        // This handles hovering on definitions like "part def Engine".
-        for (_key, symbol) in self.workspace.symbol_table().all_symbols() {
-            if symbol.name() == word && symbol.source_file() == Some(&file_path_str) {
+        // If the word is a qualified name (contains ::), try to resolve it directly.
+        // This handles imports like "import ISQ::MassValue" where MassValue is fully qualified.
+        if word.contains("::") {
+            let resolver = self.resolver();
+            if let Some(symbol) = resolver.resolve_qualified(&word) {
                 let qualified_name = symbol.qualified_name().to_string();
                 let range = symbol
                     .span()
@@ -50,7 +93,44 @@ impl LspServer {
             }
         }
 
-        // Second, try to resolve using the file's scope for proper import resolution.
+        // Check if the word matches a symbol defined in THIS file.
+        // This handles hovering on definitions like "part def Engine".
+        // When there are multiple symbols with the same name, prefer the one whose
+        // span contains the cursor position.
+        let mut exact_match: Option<(&Symbol, Span)> = None;
+        let mut any_match: Option<(&Symbol, Range)> = None;
+
+        for symbol in self.workspace.symbol_table().iter_symbols() {
+            if symbol.name() == word
+                && symbol.source_file() == Some(&file_path_str)
+                && let Some(span) = symbol.span()
+            {
+                // Check if cursor is within the symbol's span (exact match)
+                if position.line == span.start.line as u32
+                    && position.character >= span.start.column as u32
+                    && position.character <= span.end.column as u32
+                {
+                    exact_match = Some((symbol, span));
+                }
+                // Track any match in case no exact match found
+                if any_match.is_none() {
+                    any_match = Some((symbol, span_to_lsp_range(&span)));
+                }
+            }
+        }
+
+        // Prefer exact match (cursor on definition) over any match
+        if let Some((symbol, span)) = exact_match {
+            return Some((
+                symbol.qualified_name().to_string(),
+                span_to_lsp_range(&span),
+            ));
+        }
+        if let Some((symbol, range)) = any_match {
+            return Some((symbol.qualified_name().to_string(), range));
+        }
+
+        // Try to resolve using the file's scope for proper import resolution.
         // Use the Resolver with scope context for consistent resolution behavior.
         let resolver = self.resolver();
         if let Some(scope_id) = self
@@ -65,19 +145,6 @@ impl LspServer {
                 .map(|s| span_to_lsp_range(&s))
                 .unwrap_or(word_range);
             return Some((qualified_name, range));
-        }
-
-        // Fallback: try resolver for qualified names (e.g., "Package::Type")
-        if word.contains("::") {
-            let resolver = self.resolver();
-            if let Some(symbol) = resolver.resolve(&word) {
-                let qualified_name = symbol.qualified_name().to_string();
-                let range = symbol
-                    .span()
-                    .map(|s| span_to_lsp_range(&s))
-                    .unwrap_or(word_range);
-                return Some((qualified_name, range));
-            }
         }
 
         // If resolution fails, the symbol is not in scope (e.g., import was removed).

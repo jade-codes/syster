@@ -1648,7 +1648,7 @@ fn test_rapid_document_changes() {
                     },
                 }),
                 range_length: None,
-                text: format!("\npart def Part{};", i),
+                text: format!("\npart def Part{i};"),
             }],
         };
 

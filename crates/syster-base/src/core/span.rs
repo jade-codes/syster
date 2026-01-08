@@ -9,13 +9,6 @@ pub struct Span {
     pub end: Position,
 }
 
-/// A reference to a symbol, including file and span information
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymbolReference {
-    pub file: String,
-    pub span: Span,
-}
-
 /// A position in source code (0-indexed)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {

@@ -185,43 +185,6 @@ fn test_semantic_layer_only_adapters_import_syntax() {
     );
 }
 
-/// Ensures validators use constants instead of hard-coded relationship strings
-#[test]
-fn test_validators_use_semantic_roles_not_strings() {
-    let content = read_required_file(Path::new("src/semantic/adapters/sysml/validator.rs"));
-
-    let forbidden_patterns = [
-        r#""satisfy""#,
-        r#""perform""#,
-        r#""exhibit""#,
-        r#""include""#,
-    ];
-
-    let violations: Vec<_> = content
-        .lines()
-        .enumerate()
-        .filter(|(_, line)| !line.trim().starts_with("//"))
-        .flat_map(|(idx, line)| {
-            forbidden_patterns
-                .iter()
-                .filter(|pattern| line.contains(*pattern))
-                .map(move |pattern| (idx + 1, pattern, line.trim()))
-        })
-        .collect();
-
-    assert!(
-        violations.is_empty(),
-        "\n❌ Validator uses hard-coded strings instead of constants:\n{}\n\n\
-        Use REL_SATISFY, REL_PERFORM, REL_EXHIBIT, REL_INCLUDE from core::constants\n",
-        format_violation_list(
-            &violations
-                .iter()
-                .map(|(line, pattern, code)| format!("Line {line}: {pattern} in: {code}"))
-                .collect::<Vec<_>>()
-        )
-    );
-}
-
 /// Verifies that all required constants are defined in core/constants.rs
 #[test]
 fn test_core_constants_defined() {

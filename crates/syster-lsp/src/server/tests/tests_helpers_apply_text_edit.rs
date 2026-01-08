@@ -361,7 +361,7 @@ fn test_apply_text_edit_large_replacement() {
 #[test]
 fn test_apply_text_edit_many_lines() {
     let text = (0..100)
-        .map(|i| format!("line{}", i))
+        .map(|i| format!("line{i}"))
         .collect::<Vec<_>>()
         .join("\n");
     let range = Range::new(Position::new(50, 0), Position::new(50, 6));

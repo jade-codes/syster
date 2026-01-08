@@ -50,6 +50,7 @@ pub struct Import {
     pub path: String,
     pub path_span: Option<Span>,
     pub is_recursive: bool,
+    pub is_public: bool,
     pub kind: ImportKind,
     pub span: Option<Span>,
 }

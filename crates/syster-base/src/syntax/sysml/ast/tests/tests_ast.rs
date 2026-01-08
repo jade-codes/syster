@@ -349,6 +349,7 @@ fn test_definition_traits() {
         is_abstract: false,
         is_variation: false,
         span: None,
+        short_name: None,
     };
 
     assert_eq!(def.node_type(), "Definition");
@@ -428,6 +429,7 @@ fn test_visitor_pattern() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -750,6 +752,7 @@ fn test_element_is_definition() {
         is_abstract: false,
         is_variation: false,
         span: None,
+        short_name: None,
     });
 
     match element {
@@ -771,6 +774,7 @@ fn test_element_is_usage() {
         is_derived: false,
         is_readonly: false,
         span: None,
+        short_name: None,
     });
 
     match element {
@@ -820,6 +824,7 @@ fn test_named_trait_for_definition() {
         is_abstract: false,
         is_variation: false,
         span: None,
+        short_name: None,
     };
 
     assert_eq!(definition.name(), Some("TestDef"));
@@ -835,6 +840,7 @@ fn test_named_trait_for_usage() {
         is_derived: false,
         is_readonly: false,
         span: None,
+        short_name: None,
     };
 
     assert_eq!(usage.name.as_deref(), Some("testUsage"));
@@ -861,6 +867,7 @@ fn test_named_trait_none() {
         is_abstract: false,
         is_variation: false,
         span: None,
+        short_name: None,
     };
 
     assert_eq!(definition.name(), None);

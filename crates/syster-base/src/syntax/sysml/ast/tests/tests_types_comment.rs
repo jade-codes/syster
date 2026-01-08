@@ -155,7 +155,7 @@ fn test_comment_debug_trait() {
         span: None,
     };
 
-    let debug_str = format!("{:?}", comment);
+    let debug_str = format!("{comment:?}");
     assert!(debug_str.contains("Comment"));
     assert!(debug_str.contains("Debug test"));
 }

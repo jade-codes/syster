@@ -37,6 +37,7 @@ fn create_sysml_import(path: &str) -> SysMLElement {
         path: path.to_string(),
         path_span: None,
         is_recursive: false,
+        is_public: false,
         span: None,
     })
 }
@@ -47,6 +48,7 @@ fn create_kerml_import(path: &str, kind: ImportKind) -> KerMLElement {
         path: path.to_string(),
         path_span: None,
         is_recursive: false,
+        is_public: false,
         kind,
         span: None,
     })
@@ -290,6 +292,7 @@ fn test_extract_imports_with_recursive_import_sysml() {
         path: "Base::Package".to_string(),
         path_span: None,
         is_recursive: true,
+        is_public: false,
         span: None,
     };
     let sysml_file = create_sysml_file(vec![SysMLElement::Import(import_element)]);
@@ -307,6 +310,7 @@ fn test_extract_imports_with_recursive_import_kerml() {
         path: "Base::Package".to_string(),
         path_span: None,
         is_recursive: true,
+        is_public: false,
         kind: ImportKind::Normal,
         span: None,
     };
