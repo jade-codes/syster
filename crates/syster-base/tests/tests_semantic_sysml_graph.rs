@@ -972,13 +972,13 @@ fn test_stdlib_no_duplicate_relationships() {
         targets
     );
 
-    // Should specialize exactly ScalarQuantityValue
+    // Should specialize exactly ScalarQuantityValue (with fully qualified name after resolution)
     assert_eq!(
         targets.len(),
         1,
         "Should have exactly 1 specialization target"
     );
-    assert_eq!(targets[0], "ScalarQuantityValue");
+    assert_eq!(targets[0], "Quantities::ScalarQuantityValue");
 }
 
 /// Test that repopulating a file doesn't create duplicate relationships.
