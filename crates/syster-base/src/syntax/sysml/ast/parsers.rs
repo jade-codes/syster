@@ -71,9 +71,9 @@ pub fn parse_definition(pair: Pair<Rule>) -> Result<Definition, ConversionError<
         .map(|p| parse_def_body(&p))
         .unwrap_or_default();
 
-    // Find the identifier, span, and short_name
+    // Find the identifier, span, short_name, and short_name_span
     let pairs: Vec<_> = pair.clone().into_inner().collect();
-    let (name, span, short_name) = find_names_with_short(pairs.iter().cloned());
+    let (name, span, short_name, short_name_span) = find_names_with_short(pairs.iter().cloned());
     let name = name.or_else(|| find_name(pairs.iter().cloned()));
 
     // Extract definition flags (abstract, variation)
@@ -83,6 +83,7 @@ pub fn parse_definition(pair: Pair<Rule>) -> Result<Definition, ConversionError<
         kind,
         name,
         short_name,
+        short_name_span,
         relationships: extract_relationships(&pair),
         body,
         span,
@@ -116,14 +117,15 @@ pub fn parse_usage(pair: Pair<Rule>) -> Usage {
 
     let (is_derived, is_readonly) = extract_flags(&pairs);
 
-    // Find the identifier, span, and short_name
-    let (name, span, short_name) = find_names_with_short(pairs.iter().cloned());
+    // Find the identifier, span, short_name, and short_name_span
+    let (name, span, short_name, short_name_span) = find_names_with_short(pairs.iter().cloned());
     let name = name.or_else(|| find_name(pairs.iter().cloned()));
 
     Usage {
         kind,
         name,
         short_name,
+        short_name_span,
         relationships: extract_relationships(&pair),
         body,
         span,

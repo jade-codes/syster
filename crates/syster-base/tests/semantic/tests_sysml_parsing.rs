@@ -286,3 +286,60 @@ fn test_parse_model_with_include_relationship() {
         pairs.err()
     );
 }
+
+#[test]
+fn test_parse_attribute_with_quoted_name_redefines() {
+    // Test that quoted names in redefines are parsed correctly without quotes
+    let source = r#"attribute 'packet primary header' redefines 'packet header';"#;
+
+    let pairs = SysMLParser::parse(Rule::attribute_usage, source);
+    assert!(pairs.is_ok(), "Failed to parse: {:?}", pairs.err());
+
+    let usage = Usage::from_pest(&mut pairs.unwrap());
+    assert!(usage.is_ok(), "Failed to convert to AST: {:?}", usage.err());
+
+    let usage = usage.unwrap();
+    // Name should NOT have quotes
+    assert_eq!(
+        usage.name,
+        Some("packet primary header".to_string()),
+        "Name should not have quotes"
+    );
+    // Redefines target should NOT have quotes
+    assert_eq!(
+        usage.relationships.redefines.len(),
+        1,
+        "Expected 1 redefinition"
+    );
+    assert_eq!(
+        usage.relationships.redefines[0].target, "packet header",
+        "Redefines target should not have quotes"
+    );
+}
+
+#[test]
+fn test_parse_part_def_with_quoted_names() {
+    // Test the full scenario from the bug report
+    let source = r#"part def 'Data Packet' {
+        attribute 'packet primary header' redefines 'packet header' {
+            attribute 'packet version number': Integer;
+            attribute 'packet identification': String;
+            attribute 'packet data length': Integer;
+        }
+        attribute redefines 'packet data field';
+    }"#;
+
+    let pairs = SysMLParser::parse(Rule::part_definition, source);
+    assert!(pairs.is_ok(), "Failed to parse: {:?}", pairs.err());
+
+    let def = Definition::from_pest(&mut pairs.unwrap());
+    assert!(def.is_ok(), "Failed to convert to AST: {:?}", def.err());
+
+    let def = def.unwrap();
+    // Part def name should NOT have quotes
+    assert_eq!(
+        def.name,
+        Some("Data Packet".to_string()),
+        "Definition name should not have quotes"
+    );
+}

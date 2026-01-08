@@ -56,12 +56,24 @@ impl WorkspaceLoader {
         workspace: &mut Workspace<SyntaxFile>,
     ) -> Result<(), String> {
         let paths = file_loader::collect_file_paths(dir)?;
+        let mut errors = Vec::new();
 
         for path in paths {
-            self.load_file_internal(&path, workspace)?;
+            if let Err(e) = self.load_file_internal(&path, workspace) {
+                // Continue loading other files, collect errors
+                errors.push(format!("{}: {}", path.display(), e));
+            }
         }
 
-        Ok(())
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(format!(
+                "Failed to load {} file(s):\n  {}",
+                errors.len(),
+                errors.join("\n  ")
+            ))
+        }
     }
 
     fn load_file_internal(

@@ -19,6 +19,7 @@ fn test_usage_creation() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -68,6 +69,7 @@ fn test_usage_with_span() {
         body: vec![],
         span: Some(span),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -91,6 +93,7 @@ fn test_usage_derived_flag() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: true,
         is_readonly: false,
     };
@@ -108,6 +111,7 @@ fn test_usage_readonly_flag() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: true,
     };
@@ -125,6 +129,7 @@ fn test_usage_derived_and_readonly() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: true,
         is_readonly: true,
     };
@@ -574,6 +579,7 @@ fn test_usage_visitable_with_span() {
         body: vec![],
         span: Some(span),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -642,6 +648,7 @@ fn test_usage_visitable_derived_readonly() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: true,
         is_readonly: true,
     };
@@ -847,6 +854,7 @@ fn test_usage_counting_mixed_elements() {
                 is_variation: false,
                 span: None,
                 short_name: None,
+                short_name_span: None,
             }),
             Element::Usage(Usage::new(
                 UsageKind::Action,
@@ -1045,6 +1053,7 @@ fn test_usage_multiple_spans() {
         body: vec![],
         span: Some(name_span),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1062,6 +1071,7 @@ fn test_usage_comparison_with_different_flags() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: true,
         is_readonly: false,
     };
@@ -1073,6 +1083,7 @@ fn test_usage_comparison_with_different_flags() {
         body: vec![],
         span: None,
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: true,
     };

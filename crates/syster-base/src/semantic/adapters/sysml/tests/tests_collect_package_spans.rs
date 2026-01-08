@@ -96,6 +96,7 @@ fn test_collect_package_spans_with_definition() {
         body: vec![],
         span: Some(make_span(2, 2, 3, 3)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -129,6 +130,7 @@ fn test_collect_package_spans_multiple_children() {
         body: vec![],
         span: Some(make_span(1, 2, 2, 3)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -140,6 +142,7 @@ fn test_collect_package_spans_multiple_children() {
         body: vec![],
         span: Some(make_span(3, 2, 4, 3)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };

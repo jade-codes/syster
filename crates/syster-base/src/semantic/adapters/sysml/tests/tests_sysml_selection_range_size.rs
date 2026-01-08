@@ -29,6 +29,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>, body: Vec<UsageMe
         kind,
         name: Some(name.to_string()),
         short_name: None,
+        short_name_span: None,
         relationships: Default::default(),
         body,
         span,

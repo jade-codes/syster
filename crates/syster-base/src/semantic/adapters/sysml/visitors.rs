@@ -72,7 +72,8 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                     target_span: definition.span,
                     scope_id,
                     source_file: self.symbol_table.current_file().map(String::from),
-                    span: definition.span,
+                    // Use the short name's own span, not the definition's span
+                    span: definition.short_name_span,
                 };
                 self.insert_symbol(short_name.clone(), alias_symbol);
             }
@@ -227,7 +228,8 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 target_span: usage.span,
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
-                span: usage.span,
+                // Use the short name's own span, not the usage's span
+                span: usage.short_name_span,
             };
             self.insert_symbol(short_name.clone(), alias_symbol);
         }

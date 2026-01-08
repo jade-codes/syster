@@ -492,6 +492,7 @@ fn test_namespacedeclaration_in_sysmlfile_with_elements() {
                 is_variation: false,
                 span: None,
                 short_name: None,
+                short_name_span: None,
             }),
         ],
     };
