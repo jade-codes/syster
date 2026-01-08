@@ -551,7 +551,8 @@ extent_expression = {
 primary_expression = {
     base_expression
     ~ (
-        "." ~ feature_chain_member ~ argument_list?  // feature chain with optional method call
+        "@" ~ "[" ~ qualified_name ~ "]"             // measurement reference (unit)
+        | "." ~ feature_chain_member ~ argument_list?  // feature chain with optional method call
         | "#" ~ "(" ~ sequence_expression ~ ")"  // indexing with #
         | "[" ~ sequence_expression ~ "]"      // indexing with []
         | "->" ~ reference_typing ~ (
@@ -707,6 +708,26 @@ definition_suffix = {
 
 definition_declaration = {
     identification? ~ (subclassification_part | redefinition_part)?
+}
+
+// Function-like definition declaration (for calc def, action def, etc.)
+// Supports parameter lists and return type
+// Note: return_type only makes sense when parameters are present; otherwise `:>` is specialization
+function_definition_declaration = {
+    identification? ~ function_parameter_list ~ return_type? ~ (subclassification_part | redefinition_part)?
+    | identification? ~ (subclassification_part | redefinition_part)?
+}
+
+function_parameter_list = {
+    "(" ~ (function_parameter ~ ("," ~ function_parameter)*)? ~ ")"
+}
+
+function_parameter = {
+    (in_token | out_token | inout_token)? ~ (identifier | quoted_name) ~ feature_specialization_part?
+}
+
+return_type = {
+    subsets_operator ~ feature_reference
 }
 
 definition_body = {
@@ -965,8 +986,9 @@ interface_end_member = {
 // Interface end per spec: optional multiplicity, optional local name with references,
 // and the target feature. The (identifier references_operator) pattern must be guarded
 // to avoid consuming an identifier that's part of a feature chain.
+// Also supports crosses_operator (=>) for boundary crossing connections.
 interface_end = {
-    owned_cross_multiplicity_member? ~ (identifier ~ references_operator ~ owned_reference_subsetting | owned_reference_subsetting)
+    owned_cross_multiplicity_member? ~ (identifier ~ (references_operator | crosses_operator) ~ owned_reference_subsetting | owned_reference_subsetting)
 }
 
 allocation_definition = {
@@ -1077,7 +1099,7 @@ target_transition_usage_member = {
 }
 
 action_definition = {
-    occurrence_definition_prefix ~ action_def_keyword ~ definition_declaration ~ action_body
+    occurrence_definition_prefix ~ action_def_keyword ~ function_definition_declaration ~ action_body
 }
 
 action_body = {
@@ -1376,7 +1398,7 @@ calculation_def_keyword = { calc_token ~ def_token }
 
 // Calculation Definition
 calculation_definition = {
-    occurrence_definition_prefix ~ calculation_def_keyword ~ definition_declaration ~ calculation_body
+    occurrence_definition_prefix ~ calculation_def_keyword ~ function_definition_declaration ~ calculation_body
 }
 
 calculation_body = {
@@ -2097,7 +2119,7 @@ action_usage = {
 }
 
 action_usage_declaration = {
-    usage_declaration? ~ value_part?
+    usage_declaration? ~ function_parameter_list? ~ value_part?
 }
 
 perform_action_usage = {
@@ -2197,7 +2219,7 @@ satisfaction_feature_value = {
 }
 
 satisfaction_reference_expression = {
-    owned_feature_chain | feature_chain_member
+    owned_feature_chain | qualified_name | feature_chain_member
 }
 
 // Case Usage Keywords

@@ -64,6 +64,7 @@ fn test_collect_hints_package_traversal() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 9)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -114,6 +115,7 @@ fn test_collect_hints_nested_packages() {
         body: vec![],
         span: Some(Span::from_coords(5, 8, 5, 13)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -170,6 +172,7 @@ fn test_collect_hints_definition_element() {
         body: vec![],
         span: Some(Span::from_coords(3, 8, 3, 13)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -181,6 +184,7 @@ fn test_collect_hints_definition_element() {
         body: vec![DefinitionMember::Usage(Box::new(nested_usage))],
         span: Some(Span::from_coords(1, 0, 4, 1)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -242,6 +246,7 @@ fn test_collect_hints_definition_with_multiple_usages() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 10)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -253,6 +258,7 @@ fn test_collect_hints_definition_with_multiple_usages() {
         body: vec![],
         span: Some(Span::from_coords(4, 4, 4, 16)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -267,6 +273,7 @@ fn test_collect_hints_definition_with_multiple_usages() {
         ],
         span: Some(Span::from_coords(1, 0, 5, 1)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -301,6 +308,7 @@ fn test_collect_hints_definition_with_comments_only() {
         body: vec![DefinitionMember::Comment(Box::new(comment))],
         span: Some(Span::from_coords(1, 0, 3, 1)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -344,6 +352,7 @@ fn test_collect_hints_usage_element() {
         body: vec![],
         span: Some(Span::from_coords(1, 0, 1, 6)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -470,6 +479,7 @@ fn test_collect_hints_mixed_element_types() {
         body: vec![],
         span: Some(Span::from_coords(3, 0, 3, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -531,6 +541,7 @@ fn test_collect_hints_deeply_nested_usages() {
         body: vec![],
         span: Some(Span::from_coords(5, 12, 5, 18)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -542,6 +553,7 @@ fn test_collect_hints_deeply_nested_usages() {
         body: vec![UsageMember::Usage(Box::new(deep_usage))],
         span: Some(Span::from_coords(3, 8, 6, 9)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -553,6 +565,7 @@ fn test_collect_hints_deeply_nested_usages() {
         body: vec![UsageMember::Usage(Box::new(mid_usage))],
         span: Some(Span::from_coords(1, 4, 7, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -602,6 +615,7 @@ fn test_collect_hints_usage_with_comment_members() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 13)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -616,6 +630,7 @@ fn test_collect_hints_usage_with_comment_members() {
         ],
         span: Some(Span::from_coords(1, 0, 4, 1)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -660,6 +675,7 @@ fn test_collect_hints_package_definition_usage_hierarchy() {
         body: vec![],
         span: Some(Span::from_coords(4, 8, 4, 17)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -671,6 +687,7 @@ fn test_collect_hints_package_definition_usage_hierarchy() {
         body: vec![DefinitionMember::Usage(Box::new(usage))],
         span: Some(Span::from_coords(2, 4, 5, 5)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -726,6 +743,7 @@ fn test_collect_hints_range_filter_excludes_before() {
         body: vec![],
         span: Some(Span::from_coords(2, 0, 2, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -778,6 +796,7 @@ fn test_collect_hints_range_filter_excludes_after() {
         body: vec![],
         span: Some(Span::from_coords(10, 0, 10, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -827,6 +846,7 @@ fn test_collect_hints_range_filter_includes_in_range() {
         body: vec![],
         span: Some(Span::from_coords(5, 0, 5, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -896,6 +916,7 @@ fn test_collect_hints_range_filter_nested_usages() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 10)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -908,6 +929,7 @@ fn test_collect_hints_range_filter_nested_usages() {
         body: vec![],
         span: Some(Span::from_coords(15, 4, 15, 10)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -923,6 +945,7 @@ fn test_collect_hints_range_filter_nested_usages() {
         ],
         span: Some(Span::from_coords(1, 0, 20, 0)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -976,6 +999,7 @@ fn test_collect_hints_range_filter_boundary_start() {
         body: vec![],
         span: Some(Span::from_coords(5, 0, 5, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1029,6 +1053,7 @@ fn test_collect_hints_range_filter_boundary_end() {
         body: vec![],
         span: Some(Span::from_coords(10, 0, 10, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1086,6 +1111,7 @@ fn test_collect_hints_multiple_packages_with_same_usage_names() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 8)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1097,6 +1123,7 @@ fn test_collect_hints_multiple_packages_with_same_usage_names() {
         body: vec![],
         span: Some(Span::from_coords(7, 4, 7, 8)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1160,6 +1187,7 @@ fn test_collect_hints_empty_definition() {
         body: vec![],
         span: Some(Span::from_coords(1, 0, 2, 1)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -1203,6 +1231,7 @@ fn test_collect_hints_usage_without_span() {
         body: vec![],
         span: None, // No span
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1259,6 +1288,7 @@ fn test_collect_hints_multiple_element_types_in_package() {
         body: vec![],
         span: Some(Span::from_coords(5, 4, 5, 9)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1270,6 +1300,7 @@ fn test_collect_hints_multiple_element_types_in_package() {
         body: vec![],
         span: Some(Span::from_coords(7, 4, 8, 5)),
         short_name: None,
+        short_name_span: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -1341,6 +1372,7 @@ fn test_collect_hints_no_range_filter() {
         body: vec![],
         span: Some(Span::from_coords(1, 0, 1, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1352,6 +1384,7 @@ fn test_collect_hints_no_range_filter() {
         body: vec![],
         span: Some(Span::from_coords(100, 0, 100, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1396,6 +1429,7 @@ fn test_collect_usage_hints_with_explicit_type() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 9)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1442,6 +1476,7 @@ fn test_collect_usage_hints_nested_usage() {
         body: vec![],
         span: Some(Span::from_coords(4, 8, 4, 14)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1453,6 +1488,7 @@ fn test_collect_usage_hints_nested_usage() {
         body: vec![UsageMember::Usage(Box::new(nested_usage))],
         span: Some(Span::from_coords(3, 4, 5, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1519,6 +1555,7 @@ fn test_collect_usage_hints_with_range_filter() {
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 8)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1530,6 +1567,7 @@ fn test_collect_usage_hints_with_range_filter() {
         body: vec![],
         span: Some(Span::from_coords(5, 4, 5, 8)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1591,6 +1629,7 @@ fn test_collect_usage_hints_usage_without_name() {
         body: vec![],
         span: Some(Span::from_coords(3, 8, 3, 15)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1623,6 +1662,7 @@ fn test_collect_usage_hints_deeply_nested() {
         body: vec![],
         span: Some(Span::from_coords(7, 16, 7, 22)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1634,6 +1674,7 @@ fn test_collect_usage_hints_deeply_nested() {
         body: vec![UsageMember::Usage(Box::new(level4))],
         span: Some(Span::from_coords(6, 12, 8, 13)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1645,6 +1686,7 @@ fn test_collect_usage_hints_deeply_nested() {
         body: vec![UsageMember::Usage(Box::new(level3))],
         span: Some(Span::from_coords(5, 8, 9, 9)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -1656,6 +1698,7 @@ fn test_collect_usage_hints_deeply_nested() {
         body: vec![UsageMember::Usage(Box::new(level2))],
         span: Some(Span::from_coords(3, 4, 10, 5)),
         short_name: None,
+        short_name_span: None,
         is_derived: false,
         is_readonly: false,
     };

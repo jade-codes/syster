@@ -1720,3 +1720,61 @@ part def Child :> Parent {
         "Should have Property semantic token for 'num' from redefinition (:>> num). Property tokens: {property_tokens:?}"
     );
 }
+
+#[test]
+fn test_semantic_tokens_quoted_short_name() {
+    // Test that quoted short names like <'1'> get semantic tokens
+    // This tests the fix for issue where quotes weren't stripped properly
+    use crate::parser::SysMLParser;
+    use crate::parser::sysml::Rule;
+    use crate::semantic::Workspace;
+    use crate::syntax::SyntaxFile;
+    use crate::syntax::sysml::ast::SysMLFile;
+    use from_pest::FromPest;
+    use pest::Parser;
+    use std::path::PathBuf;
+
+    let source = r#"requirement <'1'> vehicleMassRequirement : MassRequirement;"#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    let path = PathBuf::from("test.sysml");
+    workspace.add_file(path.clone(), SyntaxFile::SysML(file));
+    workspace.populate_file(&path).expect("Failed to populate");
+
+    // Debug: print all symbols and their spans
+    eprintln!("=== Symbols ===");
+    for sym in workspace.symbol_table().iter_symbols() {
+        eprintln!(
+            "{}: source_file={:?}, span={:?}",
+            sym.qualified_name(),
+            sym.source_file(),
+            sym.span()
+        );
+    }
+
+    // Collect semantic tokens
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Print tokens for debugging
+    eprintln!("\n=== Semantic Tokens ===");
+    for tok in &tokens {
+        eprintln!(
+            "line={}, col={}, len={}, type={:?}",
+            tok.line, tok.column, tok.length, tok.token_type
+        );
+    }
+
+    // The requirement should have at least one semantic token
+    // vehicleMassRequirement is the main name (starting around column 18)
+    assert!(!tokens.is_empty(), "Should have semantic tokens");
+
+    // Check we have a token for vehicleMassRequirement (22 chars)
+    let has_main_token = tokens.iter().any(|t| t.length == 22);
+    assert!(
+        has_main_token,
+        "Should have token for 'vehicleMassRequirement' (22 chars)"
+    );
+}

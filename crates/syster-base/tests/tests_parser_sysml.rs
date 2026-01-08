@@ -8421,3 +8421,178 @@ part cal : Calculator;
     };
     assert_eq!(usage.name, Some("cal".to_string()));
 }
+
+// Satisfy Statement with `by` Clause
+#[rstest]
+#[case(
+    "satisfy Requirements::REQ1 by RoboticVacuumCleaner::battery;",
+    "qualified name by clause"
+)]
+#[case("satisfy req by system.component.feature;", "feature chain by clause")]
+#[case("assert satisfy r by q;", "assert satisfy")]
+#[case("not satisfy r1 by p;", "not satisfy")]
+#[case("assert not satisfy r1 by q;", "assert not satisfy")]
+fn test_parse_satisfy_by_clause(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::satisfy_requirement_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Short Names using angle bracket syntax
+#[rstest]
+#[case("<'1'>", "angle bracket short name with quoted")]
+#[case("<myId>", "angle bracket with identifier")]
+fn test_parse_short_name_variants(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::short_name, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse short_name {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(
+    "requirement def <'REQ-1'> SafetyReq { }",
+    "requirement def with short name"
+)]
+fn test_parse_definition_with_short_name(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::requirement_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Measurement References `@[unit]`
+#[rstest]
+#[case("5@[SI::kg]", "integer with unit")]
+#[case("120.5@[SI::min]", "decimal with unit")]
+#[case("0@[ISQ::Length::meter]", "nested qualified unit")]
+#[case("3.14159@[SI::rad]", "pi with radians")]
+fn test_parse_measurement_reference(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::primary_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse measurement {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case("mass <= 5@[SI::kg]", "comparison with unit")]
+#[case("speed >= 100@[SI::m] / 1@[SI::s]", "expression with units")]
+fn test_parse_measurement_in_expression(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::conditional_expression, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Interface End with Crosses Operator `=>`
+#[rstest]
+#[case("supplierPort => Source::output", "crosses with qualified name")]
+fn test_parse_interface_end_crosses(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::interface_end, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface end {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(
+    "interface connect supplierPort => Source::FEnergy to consumerPort => Consumer::FEnergy;",
+    "connect with crosses"
+)]
+fn test_parse_interface_with_crosses(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::interface_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse interface {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Function Definition with Parameters and Return Types
+#[rstest]
+#[case("(in a, out b, inout c)", "direction prefixes")]
+#[case("(current:>SI::A, voltage:>ISQ::voltage)", "subsetting parameters")]
+#[case("(x, y, z)", "simple identifiers")]
+#[case("(in 'input data', out 'output data')", "quoted parameter names")]
+fn test_parse_function_parameter_list(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::function_parameter_list, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse parameter list {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case(
+    "calc def Torque (current:>SI::A, voltage:>ISQ::voltage):> ISQ::torque { }",
+    "params with return type"
+)]
+#[case("calc def Compute (in x, in y, out result) { }", "in/out params")]
+#[case("calc def Simple :> BaseCalc;", "specialization no params")]
+#[case("calc def Mixed (in x) :> BaseCalc { }", "params and specialization")]
+fn test_parse_calc_definition_variants(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::calculation_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse calc def {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+#[rstest]
+#[case("action def Process (in data, out result) { }", "with params")]
+#[case("action def Drive :> Action;", "specialization no params")]
+#[case(
+    "action def Combined (in x) :> BaseAction { }",
+    "params and specialization"
+)]
+fn test_parse_action_definition_variants(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::action_definition, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse action def {}: {:?}",
+        desc,
+        result.err()
+    );
+}
+
+// Action Usage with Parameters
+#[rstest]
+#[case(
+    "action convertEnergy:ConvertEnergy (in current, in voltage, out energy);",
+    "typed with params"
+)]
+#[case("action doSomething;", "simple no params")]
+#[case("action compute (in x, out y);", "with params no type")]
+fn test_parse_action_usage_variants(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::action_usage, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse action usage {}: {:?}",
+        desc,
+        result.err()
+    );
+}

@@ -2,6 +2,22 @@
 
 All notable changes to the "SysML v2 Language Support" extension will be documented in this file.
 
+## [0.1.4-alpha] - 2026-01-08
+
+### Added
+- Grammar support for `satisfy X by Y` requirement satisfaction syntax
+- Grammar support for measurement references `value@[unit]` (e.g., `5@[SI::kg]`)
+- Grammar support for interface end crosses operator `=>` (e.g., `port => Target::input`)
+- Grammar support for function/calculation definitions with parameters and return types
+- Grammar support for action usages with parameter lists
+
+### Fixed
+- Workspace loader now continues processing files when one fails to parse
+- Hover information now works correctly on quoted names (e.g., `'Data Packet'`)
+
+### Improved
+- Better error resilience when loading workspaces with syntax errors
+
 ## [0.1.3-alpha] - 2026-01-08
 
 ### Added
