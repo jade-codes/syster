@@ -2,6 +2,11 @@
 
 All notable changes to the "SysML v2 Language Support" extension will be documented in this file.
 
+## [0.1.3-alpha] - 2026-01-08
+
+### Added
+- Extension icon for marketplace and sidebar display
+
 ## [0.1.2-alpha] - 2026-01-08
 
 ### Fixed
