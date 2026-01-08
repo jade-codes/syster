@@ -21,10 +21,7 @@ fn assert_round_trip(rule: Rule, input: &str, desc: &str) {
 
 #[test]
 fn test_parse_kerml_identifier() {
-    let input = "myVar";
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::identifier, input).unwrap();
-    let identifier = pairs.into_iter().next().unwrap();
-    assert_eq!(identifier.as_str(), "myVar");
+    assert_round_trip(Rule::identifier, "myVar", "simple identifier");
 }
 
 #[rstest]
@@ -126,9 +123,7 @@ fn test_parse_kerml_identifier() {
 #[case("unions")]
 #[case("xor")]
 fn test_parse_kerml_keywords(#[case] keyword: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::keyword, keyword).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), keyword);
+    assert_round_trip(Rule::keyword, keyword, keyword);
 }
 
 #[rstest]
@@ -760,77 +755,70 @@ fn test_parse_additional_fragments(#[case] rule: Rule, #[case] input: &str, #[ca
 // Reference Tests
 
 #[rstest]
-#[case("Foo")]
-#[case("Foo::Bar")]
-#[case("Foo::Bar::Baz")]
-fn test_parse_qualified_reference_chain(#[case] input: &str) {
-    let pairs = KerMLParser::parse(
-        syster::parser::kerml::Rule::qualified_reference_chain,
-        input,
-    )
-    .unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::qualified_reference_chain, "Foo", "simple reference")]
+#[case(Rule::qualified_reference_chain, "Foo::Bar", "two-level reference")]
+#[case(
+    Rule::qualified_reference_chain,
+    "Foo::Bar::Baz",
+    "three-level reference"
+)]
+fn test_parse_qualified_reference_chain(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("true")]
-#[case(r#""test""#)]
-#[case("42")]
-#[case("null")]
-fn test_parse_inline_expression(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::inline_expression, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::inline_expression, "true", "boolean true")]
+#[case(Rule::inline_expression, r#""test""#, "string literal")]
+#[case(Rule::inline_expression, "42", "number")]
+#[case(Rule::inline_expression, "null", "null literal")]
+fn test_parse_inline_expression(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Additional Token Tests
 #[rstest]
-#[case(":>", ":>")]
-#[case("subsets", "subsets")]
-fn test_parse_subsets_token(#[case] input: &str, #[case] expected: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::subsets_token, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), expected);
+#[case(Rule::subsets_token, ":>", "symbol form")]
+#[case(Rule::subsets_token, "subsets", "keyword form")]
+fn test_parse_subsets_token(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("::>", "::>")]
-#[case("references", "references")]
-fn test_parse_references_token(#[case] input: &str, #[case] expected: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::references_token, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), expected);
+#[case(Rule::references_token, "::>", "symbol form")]
+#[case(Rule::references_token, "references", "keyword form")]
+fn test_parse_references_token(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("=>", "=>")]
-#[case("crosses", "crosses")]
-fn test_parse_crosses_token(#[case] input: &str, #[case] expected: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::crosses_token, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), expected);
+#[case(Rule::crosses_token, "=>", "symbol form")]
+#[case(Rule::crosses_token, "crosses", "keyword form")]
+fn test_parse_crosses_token(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("myFeature")]
-#[case("a.b")]
-#[case("a.b.c")]
-fn test_parse_feature_chain_expression(#[case] input: &str) {
-    let pairs =
-        KerMLParser::parse(syster::parser::kerml::Rule::feature_chain_expression, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::feature_chain_expression, "myFeature", "simple feature")]
+#[case(Rule::feature_chain_expression, "a.b", "two-level chain")]
+#[case(Rule::feature_chain_expression, "a.b.c", "three-level chain")]
+fn test_parse_feature_chain_expression(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("myArray")]
-#[case("arr[0]")]
-#[case("matrix[1][2]")]
-fn test_parse_index_expression(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::index_expression, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::index_expression, "myArray", "simple array")]
+#[case(Rule::index_expression, "arr[0]", "indexed array")]
+#[case(Rule::index_expression, "matrix[1][2]", "multi-indexed array")]
+fn test_parse_index_expression(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Additional Expression and Metadata Tests
@@ -839,45 +827,36 @@ fn test_parse_index_expression(#[case] input: &str) {
 
 #[test]
 fn test_parse_block_comment() {
-    let input = "/* textual body */";
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::block_comment, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), "/* textual body */");
+    assert_round_trip(Rule::block_comment, "/* textual body */", "block comment");
 }
 
 #[rstest]
-#[case(";")]
-#[case("{}")]
-fn test_parse_relationship_body(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::relationship_body, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::relationship_body, ";", "semicolon form")]
+#[case(Rule::relationship_body, "{}", "empty braces form")]
+fn test_parse_relationship_body(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Import and Filter Tests
 
 #[rstest]
-#[case("import")]
-#[case("public import")]
-#[case("private import")]
-#[case("protected import")]
-#[case("import all")]
-#[case("private import all")]
-fn test_parse_import_prefix(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::import_prefix, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::import_prefix, "import", "simple import")]
+#[case(Rule::import_prefix, "public import", "public import")]
+#[case(Rule::import_prefix, "private import", "private import")]
+#[case(Rule::import_prefix, "protected import", "protected import")]
+#[case(Rule::import_prefix, "import all", "import all")]
+#[case(Rule::import_prefix, "private import all", "private import all")]
+fn test_parse_import_prefix(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("MyImport")]
-#[case("MyImport::*")]
-#[case("MyImport::**")]
-#[case("MyImport::*::**")]
-fn test_parse_imported_reference(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::imported_reference, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::imported_reference, "MyImport", "simple import")]
+#[case(Rule::imported_reference, "MyImport::*", "wildcard import")]
+#[case(Rule::imported_reference, "MyImport::**", "recursive import")]
+#[case(Rule::imported_reference, "MyImport::*::**", "all recursive import")]
+fn test_parse_imported_reference(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 // Relationship Declaration Tests
@@ -1692,64 +1671,67 @@ fn test_annotation_span_captured() {
 }
 
 #[rstest]
-#[case("namespace MyNamespace;")]
-#[case("namespace MyNamespace {}")]
-fn test_parse_namespace_body(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::namespace, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    // Verify namespace rule was matched and input was fully consumed
-    assert_eq!(parsed.as_rule(), syster::parser::kerml::Rule::namespace);
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::namespace, "namespace MyNamespace;", "semicolon body")]
+#[case(Rule::namespace, "namespace MyNamespace {}", "braces body")]
+fn test_parse_namespace_body(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 // High-priority missing rules
 
 #[rstest]
-#[case("type MyType;")]
-#[case("abstract type MyType {}")]
-#[case("type MyType all {}")]
-#[case("type MyType ordered {}")]
-#[case("type MyType unions BaseType {}")]
-#[case("type MyType differs BaseType {}")]
-fn test_parse_type_def(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::type_def, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::type_def, "type MyType;", "simple type")]
+#[case(Rule::type_def, "abstract type MyType {}", "abstract type")]
+#[case(Rule::type_def, "type MyType all {}", "type with all")]
+#[case(Rule::type_def, "type MyType ordered {}", "ordered type")]
+#[case(Rule::type_def, "type MyType unions BaseType {}", "type with unions")]
+#[case(Rule::type_def, "type MyType differs BaseType {}", "type with differs")]
+fn test_parse_type_def(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("classifier MyClassifier;")]
-#[case("abstract classifier MyClassifier {}")]
-#[case("classifier MyClassifier all {}")]
-#[case("classifier MyClassifier unions BaseClassifier {}")]
-fn test_parse_classifier(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::classifier, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::classifier, "classifier MyClassifier;", "simple classifier")]
+#[case(
+    Rule::classifier,
+    "abstract classifier MyClassifier {}",
+    "abstract classifier"
+)]
+#[case(
+    Rule::classifier,
+    "classifier MyClassifier all {}",
+    "classifier with all"
+)]
+#[case(
+    Rule::classifier,
+    "classifier MyClassifier unions BaseClassifier {}",
+    "classifier with unions"
+)]
+fn test_parse_classifier(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("null")]
-#[case("true")]
-#[case("myFeature")]
-fn test_parse_operator_expression(#[case] input: &str) {
-    let pairs =
-        KerMLParser::parse(syster::parser::kerml::Rule::operator_expression, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::operator_expression, "null", "null expression")]
+#[case(Rule::operator_expression, "true", "boolean expression")]
+#[case(Rule::operator_expression, "myFeature", "feature expression")]
+fn test_parse_operator_expression(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case("obj.metadata")]
-#[case("Base::Feature.metadata")]
-fn test_parse_metadata_access_expression(#[case] input: &str) {
-    let pairs = KerMLParser::parse(
-        syster::parser::kerml::Rule::metadata_access_expression,
-        input,
-    )
-    .unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-    assert_eq!(parsed.as_str(), input);
+#[case(Rule::metadata_access_expression, "obj.metadata", "simple access")]
+#[case(
+    Rule::metadata_access_expression,
+    "Base::Feature.metadata",
+    "qualified access"
+)]
+fn test_parse_metadata_access_expression(
+    #[case] rule: Rule,
+    #[case] input: &str,
+    #[case] desc: &str,
+) {
+    assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
@@ -2379,12 +2361,14 @@ fn test_parse_kerml_feature_patterns(#[case] rule: Rule, #[case] input: &str, #[
     assert_round_trip(rule, input, desc);
 }
 
-// Test disjoint with feature chains and from: disjoint a.b from c.d (partial parse - doesn't consume semicolon)
+// Test disjoint with feature chains
 #[test]
 fn test_parse_disjoint_feature_chains_from() {
-    let input = "disjoint earlierOccurrence.successors from laterOccurrence.predecessors;";
-    let result = KerMLParser::parse(Rule::disjoining, input);
-    assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
+    assert_round_trip(
+        Rule::disjoining,
+        "disjoint earlierOccurrence.successors from laterOccurrence.predecessors;",
+        "disjoint feature chains",
+    );
 }
 
 // Test abstract flow with typed feature pattern
