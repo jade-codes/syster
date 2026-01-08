@@ -16,8 +16,8 @@ use syster::syntax::kerml::types::*;
 /// 2. Exactly one top-level pair is produced (in most cases)
 /// 3. The parsed output matches the original input exactly
 fn assert_round_trip(rule: Rule, input: &str, desc: &str) {
-    let result = KerMLParser::parse(rule, input)
-        .unwrap_or_else(|e| panic!("Failed to parse {}: {}", desc, e));
+    let result =
+        KerMLParser::parse(rule, input).unwrap_or_else(|e| panic!("Failed to parse {desc}: {e}"));
 
     let pairs: Vec<_> = result.into_iter().collect();
 
@@ -33,7 +33,7 @@ fn assert_round_trip(rule: Rule, input: &str, desc: &str) {
 
     let parsed: String = pairs.into_iter().map(|p| p.as_str()).collect();
 
-    assert_eq!(input, parsed, "Parsed output mismatch for {}", desc);
+    assert_eq!(input, parsed, "Parsed output mismatch for {desc}");
 }
 
 #[test]
