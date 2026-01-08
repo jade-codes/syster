@@ -700,15 +700,6 @@ fn test_parse_null_expression(#[case] rule: Rule, #[case] input: &str, #[case] d
 }
 
 #[rstest]
-#[case("public")]
-#[case("private")]
-#[case("protected")]
-fn test_parse_visibility_kind(#[case] input: &str) {
-    let pairs = KerMLParser::parse(syster::parser::kerml::Rule::visibility_kind, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
-}
-
-#[rstest]
 #[case(Rule::visibility_kind, "public", "public visibility")]
 #[case(Rule::visibility_kind, "private", "private visibility")]
 #[case(Rule::visibility_kind, "protected", "protected visibility")]
