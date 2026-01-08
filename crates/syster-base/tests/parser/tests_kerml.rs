@@ -3,8 +3,8 @@
 
 use pest::Parser;
 use rstest::rstest;
-use syster::parser::KerMLParser;
 use syster::parser::kerml::Rule;
+use syster::parser::KerMLParser;
 use syster::syntax::kerml::enums::*;
 use syster::syntax::kerml::types::*;
 

@@ -2,7 +2,7 @@
 
 use pest::Parser;
 use rstest::rstest;
-use syster::parser::{SysMLParser, sysml::Rule};
+use syster::parser::{sysml::Rule, SysMLParser};
 
 /// Helper function to assert that parsing succeeds and the entire input is consumed.
 /// This ensures the parser doesn't just match a prefix of the input.
