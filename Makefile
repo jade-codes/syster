@@ -1,20 +1,20 @@
-.PHONY: help build run test clean fmt lint check run-guidelines watch install lint-test-naming run-frontend-guidelines
+.PHONY: help build run test clean fmt lint check run-guidelines watch install lint-test-naming run-ui-guidelines
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  build          - Build the project"
-	@echo "  run            - Run the project"
-	@echo "  test           - Run tests"
-	@echo "  clean          - Clean build artifacts"
-	@echo "  fmt            - Format code with rustfmt"
-	@echo "  lint           - Run clippy linter"
-	@echo "  lint-test-naming - Check test file naming convention"
-	@echo "  check          - Run fmt + lint + test"
-	@echo "  run-guidelines - Run complete validation (fmt + lint + build + test)"
-	@echo "  run-frontend-guidelines - Run frontend validation (typecheck + lint + test + build)"
-	@echo "  watch          - Watch and rebuild on changes"
-	@echo "  install        - Install the binary"
+	@echo "  build             - Build the project"
+	@echo "  run               - Run the project"
+	@echo "  test              - Run tests"
+	@echo "  clean             - Clean build artifacts"
+	@echo "  fmt               - Format code with rustfmt"
+	@echo "  lint              - Run clippy linter"
+	@echo "  lint-test-naming  - Check test file naming convention"
+	@echo "  check             - Run fmt + lint + test"
+	@echo "  run-guidelines    - Run complete validation (fmt + lint + build + test)"
+	@echo "  run-ui-guidelines - Run ui validation (typecheck + lint + test + build)"
+	@echo "  watch             - Watch and rebuild on changes"
+	@echo "  install           - Install the binary"
 
 # Build the project
 build:
@@ -131,7 +131,7 @@ lint-test-naming:
 	@echo "✓ All test files follow naming convention"
 
 # Run frontend validation pipeline (matches ci-frontend.yml)
-run-frontend-guidelines:
+run-ui-guidelines:
 	@echo "=== Running Frontend Validation Pipeline ==="
 	@echo ""
 	@echo "Step 1/4: Type checking packages..."
