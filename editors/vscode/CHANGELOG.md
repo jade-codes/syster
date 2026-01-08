@@ -2,6 +2,11 @@
 
 All notable changes to the "SysML v2 Language Support" extension will be documented in this file.
 
+## [0.1.5-alpha] - 2026-01-08
+
+### Fixed
+- Code formatting and import ordering consistency across codebase
+
 ## [0.1.4-alpha] - 2026-01-08
 
 ### Added
