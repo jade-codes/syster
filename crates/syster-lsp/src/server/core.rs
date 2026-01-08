@@ -158,6 +158,9 @@ impl LspServer {
 
     /// Ensure workspace is fully initialized (stdlib loaded, symbols populated, texts synced).
     /// Only runs once on first call, subsequent calls are no-ops.
+    ///
+    /// Parse errors in individual files are logged but don't block workspace loading.
+    /// Valid files are still loaded and functional even when some files have parse errors.
     pub fn ensure_workspace_loaded(&mut self) -> Result<(), String> {
         if self.workspace_initialized {
             return Ok(());
@@ -169,13 +172,15 @@ impl LspServer {
         }
 
         // Load all SysML/KerML files from workspace folders
+        // Parse errors are collected but don't block loading of valid files
         let loader = WorkspaceLoader::new();
         for folder in self.workspace_folders.clone() {
             if let Err(err) = loader.load_directory(&folder, &mut self.workspace) {
-                return Err(format!(
-                    "Failed to load workspace folder '{}': {err}",
+                // Log parse errors but continue - valid files are already loaded
+                tracing::warn!(
+                    "Some files in '{}' failed to parse:\n{err}",
                     folder.display()
-                ));
+                );
             }
         }
 
