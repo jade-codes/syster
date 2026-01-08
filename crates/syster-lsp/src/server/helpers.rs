@@ -1,5 +1,5 @@
 use async_lsp::lsp_types::{Location, Position, Range, Url};
-use percent_encoding;
+use percent_encoding::percent_decode_str;
 use std::path::PathBuf;
 use syster::semantic::resolver::Resolver;
 use syster::semantic::symbol_table::Symbol;
@@ -20,7 +20,7 @@ pub fn uri_to_path(uri: &Url) -> Option<PathBuf> {
 /// Used to display file names to users with proper formatting instead of URL encoding.
 /// Handles invalid encoding gracefully by returning the original string.
 pub fn decode_uri_component(s: &str) -> String {
-    percent_encoding::percent_decode_str(s)
+    percent_decode_str(s)
         .decode_utf8()
         .map(|cow| cow.into_owned())
         .unwrap_or_else(|_| s.to_string())
