@@ -51,7 +51,7 @@ pub fn run_analysis(
     // Populate workspace
     workspace.populate_all()?;
 
-    let symbol_count = workspace.symbol_table().all_symbols().len();
+    let symbol_count = workspace.symbol_table().iter_symbols().count();
     let file_count = workspace.file_count();
 
     Ok(AnalysisResult {

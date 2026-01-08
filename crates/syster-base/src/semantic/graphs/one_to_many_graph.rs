@@ -234,4 +234,55 @@ impl OneToManyGraph {
 
         false
     }
+
+    /// Iterate all entries: (source, target, optional location)
+    pub fn all_entries(&self) -> impl Iterator<Item = (&IStr, &IStr, Option<&RefLocation>)> {
+        self.relationships.iter().flat_map(|(source, targets)| {
+            targets
+                .iter()
+                .map(move |(target, loc)| (source, target, loc.as_ref()))
+        })
+    }
+
+    /// Update all targets using a resolver function.
+    /// The resolver takes (source, old_target) and returns Some(new_target) if it should be updated.
+    pub fn resolve_targets<F>(&mut self, mut resolver: F)
+    where
+        F: FnMut(&str, &str) -> Option<IStr>,
+    {
+        // Collect all updates first to avoid borrowing issues
+        let mut updates: Vec<(IStr, IStr, IStr, Option<RefLocation>)> = Vec::new();
+
+        for (source, targets) in &self.relationships {
+            for (old_target, loc) in targets {
+                if let Some(new_target) = resolver(source.as_ref(), old_target.as_ref()) {
+                    updates.push((source.clone(), old_target.clone(), new_target, loc.clone()));
+                }
+            }
+        }
+
+        // Apply updates
+        for (source, old_target, new_target, location) in updates {
+            // Update forward index
+            if let Some(targets) = self.relationships.get_mut(&source) {
+                for (target, _loc) in targets.iter_mut() {
+                    if target == &old_target {
+                        *target = new_target.clone();
+                    }
+                }
+            }
+
+            // Update reverse index: remove from old, add to new
+            if let Some(sources) = self.reverse_index.get_mut(&old_target) {
+                sources.retain(|(s, _)| s != &source);
+                if sources.is_empty() {
+                    self.reverse_index.remove(&old_target);
+                }
+            }
+            self.reverse_index
+                .entry(new_target)
+                .or_default()
+                .push((source, location));
+        }
+    }
 }

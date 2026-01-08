@@ -19,7 +19,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             scope_id,
             source_file: current_file,
             span: namespace.span,
-            references: Vec::new(),
         };
         self.insert_symbol(namespace.name.clone(), symbol);
 
@@ -39,7 +38,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 scope_id,
                 source_file,
                 span: package.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
             self.enter_namespace(name.clone());
@@ -61,9 +59,23 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 source_file: self.symbol_table.current_file().map(String::from),
                 // Use name_span if available, fallback to full span
                 span: definition.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
+
+            // If there's a short name (e.g., <mV> MassValue), create an alias for it
+            if let Some(ref short_name) = definition.short_name {
+                let short_qualified_name = self.qualified_name(short_name);
+                let alias_symbol = Symbol::Alias {
+                    name: short_name.clone(),
+                    qualified_name: short_qualified_name,
+                    target: qualified_name.clone(),
+                    target_span: definition.span,
+                    scope_id,
+                    source_file: self.symbol_table.current_file().map(String::from),
+                    span: definition.span,
+                };
+                self.insert_symbol(short_name.clone(), alias_symbol);
+            }
 
             if let Some(ref mut graph) = self.relationship_graph {
                 let file = self.symbol_table.current_file();
@@ -202,9 +214,23 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             scope_id,
             source_file: self.symbol_table.current_file().map(String::from),
             span: usage.span,
-            references: Vec::new(),
         };
         self.insert_symbol(name.clone(), symbol);
+
+        // If there's a short name (e.g., <kg> kilogram), create an alias for it
+        if let Some(ref short_name) = usage.short_name {
+            let short_qualified_name = self.qualified_name(short_name);
+            let alias_symbol = Symbol::Alias {
+                name: short_name.clone(),
+                qualified_name: short_qualified_name,
+                target: qualified_name.clone(),
+                target_span: usage.span,
+                scope_id,
+                source_file: self.symbol_table.current_file().map(String::from),
+                span: usage.span,
+            };
+            self.insert_symbol(short_name.clone(), alias_symbol);
+        }
 
         // Store relationships for both named and anonymous usages
         if let Some(ref mut graph) = self.relationship_graph {
@@ -284,6 +310,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         self.symbol_table.add_import(
             import.path.clone(),
             import.is_recursive,
+            import.is_public,
             import.span,
             current_file.clone(),
         );
@@ -327,7 +354,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
                 span: alias.span,
-                references: Vec::new(),
             };
             self.insert_symbol(name.clone(), symbol);
         }

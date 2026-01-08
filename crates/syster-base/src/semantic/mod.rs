@@ -4,7 +4,6 @@
 //! parsed ASTs into a queryable semantic model with cross-file symbol resolution.
 
 pub mod adapters;
-pub mod analyzer;
 pub mod graphs;
 pub mod processors;
 pub mod resolver;
@@ -13,12 +12,10 @@ pub mod types;
 pub mod workspace;
 
 pub use adapters::{
-    SysmlAdapter, SysmlValidator, create_validator, extract_folding_ranges, extract_inlay_hints,
-    find_selection_spans, populate_syntax_file,
+    SysmlAdapter, extract_folding_ranges, extract_inlay_hints, find_selection_spans,
+    populate_syntax_file,
 };
-pub use analyzer::{AnalysisContext, NoOpValidator, RelationshipValidator, SemanticAnalyzer};
 pub use graphs::{DependencyGraph, RelationshipGraph};
-pub use processors::ReferenceCollector;
 pub use resolver::{
     Resolver, extract_imports, extract_kerml_imports, is_wildcard_import, parse_import_path,
 };

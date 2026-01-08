@@ -132,7 +132,7 @@ fn test_namespacedeclaration_debug_trait() {
         span: None,
     };
 
-    let debug_str = format!("{:?}", ns);
+    let debug_str = format!("{ns:?}");
     assert!(debug_str.contains("NamespaceDeclaration"));
     assert!(debug_str.contains("DebugTest"));
 }
@@ -491,6 +491,7 @@ fn test_namespacedeclaration_in_sysmlfile_with_elements() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -545,6 +546,7 @@ fn test_namespacedeclaration_in_file_with_mixed_elements() {
                 path: "External::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Package(Package {
@@ -686,7 +688,7 @@ fn test_namespacedeclaration_many_instances() {
 
     for i in 0..100 {
         let ns = NamespaceDeclaration {
-            name: format!("Namespace{}", i),
+            name: format!("Namespace{i}"),
             span: None,
         };
         ns.accept(&mut visitor);

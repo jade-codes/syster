@@ -369,19 +369,23 @@ fn test_stdlib_usage_pattern() {
     assert!(workspace.has_stdlib());
 }
 
-// =============================================================================
-// Tests for get_import_references - Find All References includes imports
-// =============================================================================
+// Tests for import references removed - they are now computed on demand in LSP layer
 
 #[test]
-fn test_get_import_references_finds_direct_import() {
+fn test_public_import_reexport_resolution() {
+    // Test that public imports make members available under the re-exporting namespace
+    // e.g., when ISQ has "public import ISQBase::*", then "ISQ::MassValue" should resolve
     let source = r#"
-        package Types {
-            part def Vehicle;
+        package ISQBase {
+            attribute def MassValue;
+            attribute def LengthValue;
         }
-        package Usage {
-            import Types::Vehicle;
-            part car : Vehicle;
+        package ISQ {
+            public import ISQBase::*;
+        }
+        package Consumer {
+            private import ISQ::MassValue;
+            attribute mass : MassValue;
         }
     "#;
 
@@ -393,65 +397,43 @@ fn test_get_import_references_finds_direct_import() {
     workspace.add_file(path.clone(), SyntaxFile::SysML(file));
     workspace.populate_all().unwrap();
 
-    // Get import references for Vehicle
-    let import_refs = workspace
-        .symbol_table()
-        .get_import_references("Types::Vehicle");
+    let resolver = Resolver::new(workspace.symbol_table());
 
-    // Should find the import statement
-    assert_eq!(
-        import_refs.len(),
-        1,
-        "Should find 1 import reference to Vehicle"
+    // ISQBase::MassValue should resolve directly
+    let direct = resolver.resolve_qualified("ISQBase::MassValue");
+    assert!(
+        direct.is_some(),
+        "ISQBase::MassValue should resolve directly"
     );
 
-    let (file, span) = &import_refs[0];
-    assert!(file.contains("test.sysml"), "Import should be in test file");
-    // Span should point to the import line
-    assert!(span.start.line > 0, "Span should have valid line number");
-}
-
-#[test]
-fn test_get_import_references_ignores_wildcard_imports() {
-    let source = r#"
-        package Types {
-            part def Vehicle;
-        }
-        package Usage {
-            import Types::*;
-            part car : Vehicle;
-        }
-    "#;
-
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
-
-    let path = PathBuf::from("test.sysml");
-    let mut workspace = Workspace::<SyntaxFile>::new();
-    workspace.add_file(path.clone(), SyntaxFile::SysML(file));
-    workspace.populate_all().unwrap();
-
-    // Wildcard imports shouldn't be returned as direct references
-    let import_refs = workspace
-        .symbol_table()
-        .get_import_references("Types::Vehicle");
-
-    // Wildcard import doesn't directly reference Vehicle
+    // ISQ::MassValue should also resolve via public re-export
+    let via_reexport = resolver.resolve_qualified("ISQ::MassValue");
     assert!(
-        import_refs.is_empty(),
-        "Wildcard imports should not be returned as direct references"
+        via_reexport.is_some(),
+        "ISQ::MassValue should resolve via public import re-export. \
+         ISQ has 'public import ISQBase::*' so MassValue should be accessible as ISQ::MassValue"
+    );
+
+    // LengthValue should also be re-exported
+    let length_via_reexport = resolver.resolve_qualified("ISQ::LengthValue");
+    assert!(
+        length_via_reexport.is_some(),
+        "ISQ::LengthValue should also resolve via public import re-export"
     );
 }
 
 #[test]
-fn test_get_import_references_empty_for_unreferenced() {
+fn test_private_import_not_reexported() {
+    // Test that private imports do NOT make members available under the importing namespace
     let source = r#"
-        package Types {
-            part def Vehicle;
-            part def Unused;
+        package ISQBase {
+            attribute def MassValue;
         }
-        package Usage {
-            import Types::Vehicle;
+        package ISQ {
+            private import ISQBase::*;
+        }
+        package Consumer {
+            private import ISQ::MassValue;
         }
     "#;
 
@@ -463,12 +445,109 @@ fn test_get_import_references_empty_for_unreferenced() {
     workspace.add_file(path.clone(), SyntaxFile::SysML(file));
     workspace.populate_all().unwrap();
 
-    // Unused is never imported
-    let import_refs = workspace
-        .symbol_table()
-        .get_import_references("Types::Unused");
+    let resolver = Resolver::new(workspace.symbol_table());
+
+    // ISQBase::MassValue should resolve directly
+    let direct = resolver.resolve_qualified("ISQBase::MassValue");
     assert!(
-        import_refs.is_empty(),
-        "Unreferenced symbol should have no import refs"
+        direct.is_some(),
+        "ISQBase::MassValue should resolve directly"
+    );
+
+    // ISQ::MassValue should NOT resolve because the import is private
+    let via_private = resolver.resolve_qualified("ISQ::MassValue");
+    assert!(
+        via_private.is_none(),
+        "ISQ::MassValue should NOT resolve because the import in ISQ is private"
+    );
+}
+
+#[test]
+fn test_public_import_reexport_cross_file() {
+    // Test public import re-export resolution across multiple files
+    // This mimics the real stdlib scenario where ISQ.sysml imports from ISQBase.sysml
+    let isqbase_source = r#"
+        standard library package ISQBase {
+            attribute def MassValue;
+            attribute def LengthValue;
+        }
+    "#;
+
+    let isq_source = r#"
+        standard library package ISQ {
+            public import ISQBase::*;
+        }
+    "#;
+
+    let consumer_source = r#"
+        package Consumer {
+            private import ISQ::MassValue;
+            attribute mass : MassValue;
+        }
+    "#;
+
+    // Parse each file
+    let mut pairs = SysMLParser::parse(Rule::model, isqbase_source).unwrap();
+    let isqbase_file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut pairs = SysMLParser::parse(Rule::model, isq_source).unwrap();
+    let isq_file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    let mut pairs = SysMLParser::parse(Rule::model, consumer_source).unwrap();
+    let consumer_file = SysMLFile::from_pest(&mut pairs).unwrap();
+
+    // Add all files to workspace
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    workspace.add_file(
+        PathBuf::from("ISQBase.sysml"),
+        SyntaxFile::SysML(isqbase_file),
+    );
+    workspace.add_file(PathBuf::from("ISQ.sysml"), SyntaxFile::SysML(isq_file));
+    workspace.add_file(
+        PathBuf::from("Consumer.sysml"),
+        SyntaxFile::SysML(consumer_file),
+    );
+    workspace.populate_all().unwrap();
+
+    let resolver = Resolver::new(workspace.symbol_table());
+
+    // Debug: Print all symbols
+    eprintln!("=== Symbols ===");
+    for symbol in workspace.symbol_table().iter_symbols() {
+        eprintln!("  {} -> {:?}", symbol.name(), symbol.qualified_name());
+    }
+
+    // Debug: Print scopes and imports
+    eprintln!("=== Scopes ===");
+    for (idx, scope) in workspace.symbol_table().scopes().iter().enumerate() {
+        eprintln!(
+            "  Scope {}: parent={:?}, symbols={:?}",
+            idx,
+            scope.parent,
+            scope.symbols.keys().collect::<Vec<_>>()
+        );
+        if !scope.imports.is_empty() {
+            for import in &scope.imports {
+                eprintln!(
+                    "    Import: path={}, is_namespace={}, is_public={}",
+                    import.path, import.is_namespace, import.is_public
+                );
+            }
+        }
+    }
+
+    // ISQBase::MassValue should resolve directly
+    let direct = resolver.resolve_qualified("ISQBase::MassValue");
+    assert!(
+        direct.is_some(),
+        "ISQBase::MassValue should resolve directly"
+    );
+
+    // ISQ::MassValue should resolve via public re-export
+    let via_reexport = resolver.resolve_qualified("ISQ::MassValue");
+    assert!(
+        via_reexport.is_some(),
+        "ISQ::MassValue should resolve via public import re-export across files. \
+         ISQ has 'public import ISQBase::*' so MassValue should be accessible as ISQ::MassValue"
     );
 }

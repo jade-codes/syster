@@ -298,7 +298,7 @@ fn test_circular_dependency_message_format() {
     let cycle = vec!["X".to_string(), "Y".to_string(), "Z".to_string()];
     let error = SemanticError::circular_dependency(cycle);
 
-    let expected = format!("{}: X -> Y -> Z", SEMANTIC_CIRCULAR_DEPENDENCY_MSG);
+    let expected = format!("{SEMANTIC_CIRCULAR_DEPENDENCY_MSG}: X -> Y -> Z");
     assert_eq!(error.message, expected);
 }
 
@@ -405,7 +405,7 @@ fn test_undefined_reference_no_location_by_default() {
 #[test]
 fn test_display_with_error_code_only() {
     let error = SemanticError::undefined_reference("Symbol".to_string());
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.starts_with("E002: "));
 }
@@ -413,7 +413,7 @@ fn test_display_with_error_code_only() {
 #[test]
 fn test_display_without_location() {
     let error = SemanticError::invalid_type("Type".to_string());
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.starts_with("E004: "));
     assert!(display.contains(SEMANTIC_INVALID_TYPE_MSG));
@@ -429,7 +429,7 @@ fn test_display_with_file_only() {
         column: None,
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.contains("E002: "));
     assert!(display.contains("test.sysml:"));
@@ -443,7 +443,7 @@ fn test_display_with_file_and_line() {
         column: None,
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.contains("test.sysml:42:"));
 }
@@ -456,7 +456,7 @@ fn test_display_with_all_location_fields() {
         column: Some(25),
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.contains("E002: "));
     assert!(display.contains("file.sysml:10:25:"));
@@ -471,7 +471,7 @@ fn test_display_with_line_only() {
         column: None,
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.contains("15:"));
 }
@@ -484,7 +484,7 @@ fn test_display_with_line_and_column_no_file() {
         column: Some(30),
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.contains("20:30:"));
     assert!(!display.contains(".sysml"));
@@ -498,7 +498,7 @@ fn test_display_format_includes_message() {
         "assignment".to_string(),
     );
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.contains(error.message.as_str()));
 }
@@ -511,7 +511,7 @@ fn test_display_format_order() {
         column: Some(10),
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     // Should be: ERROR_CODE: file:line:column: message
     let parts: Vec<&str> = display.split(':').collect();
@@ -524,7 +524,7 @@ fn test_display_circular_dependency_with_cycle() {
     let error =
         SemanticError::circular_dependency(vec!["A".to_string(), "B".to_string(), "A".to_string()]);
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.starts_with("E005: "));
     assert!(display.contains("A -> B -> A"));
@@ -538,7 +538,7 @@ fn test_display_type_mismatch_full_message() {
         "comparison".to_string(),
     );
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
 
     assert!(display.starts_with("E003: "));
     assert!(display.contains("expected 'Int'"));
@@ -555,7 +555,7 @@ fn test_display_consistency_across_error_types() {
     ];
 
     for error in errors {
-        let display = format!("{}", error);
+        let display = format!("{error}");
         // All should start with error code followed by colon
         assert!(display.contains(": "));
         let parts: Vec<&str> = display.split(':').collect();

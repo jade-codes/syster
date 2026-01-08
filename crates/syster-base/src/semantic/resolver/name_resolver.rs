@@ -53,8 +53,41 @@ impl<'a> Resolver<'a> {
     }
 
     /// Resolve a fully qualified name (e.g., "Package::Type").
+    ///
+    /// This first tries a direct lookup. If that fails and the name contains `::`,
+    /// it also checks public re-exports from the target namespace.
     pub fn resolve_qualified(&self, qualified_name: &str) -> Option<&Symbol> {
-        self.symbol_table.find_by_qualified_name(qualified_name)
+        // First, try direct lookup
+        if let Some(symbol) = self.symbol_table.find_by_qualified_name(qualified_name) {
+            return Some(symbol);
+        }
+
+        // If not found and contains "::", try resolving via public re-exports
+        // e.g., "ISQ::MassValue" where ISQ has "public import ISQBase::*"
+        if let Some(colon_pos) = qualified_name.rfind("::") {
+            let namespace = &qualified_name[..colon_pos];
+            let member_name = &qualified_name[colon_pos + 2..];
+
+            // Look up the namespace symbol (e.g., ISQ)
+            if let Some(ns_symbol) = self.symbol_table.find_by_qualified_name(namespace) {
+                // The namespace symbol's scope_id is where it's *defined* (parent scope)
+                // We need to check the *body* scope which is a child of the definition scope
+                let definition_scope_id = ns_symbol.scope_id();
+
+                // Check child scopes for public imports using the import resolver
+                if let Some(scope) = self.symbol_table.scopes().get(definition_scope_id) {
+                    for &child_scope_id in &scope.children {
+                        if let Some(symbol) =
+                            self.resolve_via_public_imports(member_name, child_scope_id)
+                        {
+                            return Some(symbol);
+                        }
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     // ============================================================

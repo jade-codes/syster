@@ -154,13 +154,11 @@ fn test_parse_content_invalid_syntax_error_message() {
     let error = result.unwrap_err();
     assert!(
         error.contains("Parse error in"),
-        "Error should contain 'Parse error in', got: {}",
-        error
+        "Error should contain 'Parse error in', got: {error}"
     );
     assert!(
         error.contains("invalid.sysml"),
-        "Error should contain file path, got: {}",
-        error
+        "Error should contain file path, got: {error}"
     );
 }
 
@@ -224,8 +222,7 @@ fn test_parse_content_error_with_nested_path() {
     );
     assert!(
         error.contains("deeply/nested/directory/structure/file.sysml"),
-        "Error should include full path, got: {}",
-        error
+        "Error should include full path, got: {error}"
     );
 }
 
@@ -286,7 +283,7 @@ fn test_parse_content_very_long_content() {
     // Test with a larger content block
     let mut content = String::from("package LargePackage {\n");
     for i in 0..100 {
-        content.push_str(&format!("    part def Part{};\n", i));
+        content.push_str(&format!("    part def Part{i};\n"));
     }
     content.push_str("}\n");
 
@@ -416,13 +413,12 @@ fn test_parse_content_path_display_consistency() {
 
     for path in paths {
         let result = parse_content(content, path);
-        assert!(result.is_err(), "Should fail for path: {:?}", path);
+        assert!(result.is_err(), "Should fail for path: {path:?}");
 
         let error = result.unwrap_err();
         assert!(
             error.contains("Parse error in"),
-            "Error should have correct format for path: {:?}",
-            path
+            "Error should have correct format for path: {path:?}"
         );
     }
 }

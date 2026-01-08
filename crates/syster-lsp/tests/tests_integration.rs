@@ -34,7 +34,7 @@ fn test_server_initialization() {
     );
 
     // Verify symbols are populated
-    let symbol_count = server.workspace().symbol_table().all_symbols().len();
+    let symbol_count = server.workspace().symbol_table().iter_symbols().count();
     assert!(
         symbol_count > 0,
         "Symbol table should be populated with stdlib symbols"
@@ -180,12 +180,15 @@ fn test_hover_on_cross_file_symbol() {
         let _scalar_value_symbols: Vec<_> = server
             .workspace()
             .symbol_table()
-            .all_symbols()
-            .iter()
-            .filter(|(_, s)| {
-                s.name() == "ScalarValue" || s.qualified_name().contains("ScalarValue")
+            .iter_symbols()
+            .filter(|s| s.name() == "ScalarValue" || s.qualified_name().contains("ScalarValue"))
+            .map(|s| {
+                (
+                    s.name().to_string(),
+                    s.qualified_name().to_string(),
+                    s.span().is_some(),
+                )
             })
-            .map(|(_, s)| (s.name(), s.qualified_name(), s.span().is_some()))
             .collect();
 
         panic!("Hover should work for cross-file symbol ScalarValue");
@@ -215,31 +218,30 @@ fn test_stdlib_symbols_present() {
         .expect("Failed to populate symbols");
 
     let symbol_table = server.workspace().symbol_table();
-    let all_symbols = symbol_table.all_symbols();
 
     // Show what packages are actually loaded
-    let packages: Vec<_> = all_symbols
-        .iter()
-        .filter(|(_, s)| s.qualified_name() == s.name() && !s.name().contains("::"))
+    let packages: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|s| s.qualified_name() == s.name() && !s.name().contains("::"))
         .take(20)
         .collect();
 
-    for (_key, _symbol) in packages {}
+    for _symbol in packages {}
 
     // Show symbols containing "Case" to debug why Case isn't found
-    let case_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(_, s)| s.name().contains("Case") || s.qualified_name().contains("Case"))
+    let case_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|s| s.name().contains("Case") || s.qualified_name().contains("Case"))
         .take(10)
         .collect();
 
-    for (_key, _symbol) in case_symbols {}
+    for _symbol in case_symbols {}
 
     // Try finding some basic symbols that should be in SysML stdlib
     let test_symbols = vec!["Part", "Attribute", "Item"];
 
     for simple_name in test_symbols {
-        let _found = all_symbols.iter().any(|(_, s)| s.name() == simple_name);
+        let _found = symbol_table.iter_symbols().any(|s| s.name() == simple_name);
     }
 }
 
@@ -290,17 +292,17 @@ fn test_symbol_resolution_after_population() {
         .expect("Failed to populate symbols");
 
     // Get some actual symbols from the table to verify resolution works
-    let all_symbols = server.workspace().symbol_table().all_symbols();
+    let symbol_table = server.workspace().symbol_table();
 
-    if all_symbols.is_empty() {
+    if symbol_table.iter_symbols().next().is_none() {
         panic!("Symbol table is empty - stdlib population may have failed");
     }
 
     // Test resolving the first few symbols by their simple names
     let resolver = server.resolver();
-    let test_count = all_symbols.len().min(10);
+    let symbols_vec: Vec<_> = symbol_table.iter_symbols().take(10).collect();
 
-    for (_qualified_name, symbol) in all_symbols.iter().take(test_count) {
+    for symbol in &symbols_vec {
         let simple_name = symbol.name();
         let _resolved = resolver.resolve(simple_name);
     }
@@ -334,12 +336,13 @@ package AnotherPackage {
     assert!(server.open_document(&file2_uri, file2_content).is_ok());
 
     // Debug: Show what's actually in the symbol table FIRST
-    let all_symbols = server.workspace().symbol_table().all_symbols();
-    let our_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(key, _)| key.contains("My"))
+    let our_symbols: Vec<_> = server
+        .workspace()
+        .symbol_table()
+        .iter_symbols()
+        .filter(|s| s.qualified_name().contains("My"))
         .collect();
-    for (_key, _symbol) in our_symbols {}
+    for _symbol in our_symbols {}
 
     // Now try to resolve symbols
     let resolver = server.resolver();
@@ -581,7 +584,7 @@ fn test_rapid_changes_then_format() {
 
     // Get the current document text
     let text = server.get_document_text(&test_uri).unwrap();
-    println!("Document after changes:\n{}", text);
+    println!("Document after changes:\n{text}");
 
     // Now format
     let format_start = Instant::now();
@@ -639,7 +642,7 @@ fn test_interleaved_changes_and_format() {
     // Apply formatted result as a change
     if let Some(edits) = format_result {
         let formatted_text = &edits[0].new_text;
-        println!("Formatted:\n{}", formatted_text);
+        println!("Formatted:\n{formatted_text}");
 
         // Simulate user making a change after format
         let change = TextDocumentContentChangeEvent {
@@ -748,7 +751,7 @@ fn test_parse_timing_breakdown() {
     println!("\n--- 20 rapid changes simulation ---");
     let start = Instant::now();
     for i in 0..20 {
-        let modified = format!("package Test {{ part def V{}; }}", i);
+        let modified = format!("package Test {{ part def V{i}; }}");
         server.open_document(&test_uri, &modified).unwrap();
     }
     let total = start.elapsed();
@@ -762,9 +765,9 @@ fn test_parse_timing_breakdown() {
     println!("\n--- Large file with many symbols ---");
     let mut large_source = String::from("package LargePackage {\n");
     for i in 0..50 {
-        large_source.push_str(&format!("    part def Part{};\n", i));
-        large_source.push_str(&format!("    port def Port{};\n", i));
-        large_source.push_str(&format!("    action def Action{};\n", i));
+        large_source.push_str(&format!("    part def Part{i};\n"));
+        large_source.push_str(&format!("    port def Port{i};\n"));
+        large_source.push_str(&format!("    action def Action{i};\n"));
     }
     large_source.push_str("}\n");
     println!("Large file: {} bytes, ~150 symbols", large_source.len());
@@ -784,7 +787,7 @@ fn test_parse_timing_breakdown() {
     let start = Instant::now();
     for i in 0..iterations {
         let mut modified = large_source.clone();
-        modified.push_str(&format!("// edit {}\n", i));
+        modified.push_str(&format!("// edit {i}\n"));
         server.open_document(&large_uri, &modified).unwrap();
     }
     let total = start.elapsed();
@@ -828,7 +831,7 @@ fn test_timing_with_stdlib_loaded() {
     println!("Workspace files: {}", server.workspace().files().len());
     println!(
         "Symbols: {}",
-        server.workspace().symbol_table().all_symbols().len()
+        server.workspace().symbol_table().iter_symbols().count()
     );
 
     // Find AnalysisTooling.sysml
@@ -858,7 +861,7 @@ fn test_timing_with_stdlib_loaded() {
         let start = Instant::now();
         for i in 0..iterations {
             let mut modified = text.clone();
-            modified.push_str(&format!("\n// edit {}", i));
+            modified.push_str(&format!("\n// edit {i}"));
             server.open_document(&uri, &modified).unwrap();
         }
         let total = start.elapsed();
@@ -912,25 +915,21 @@ fn test_hover_temperature_difference_value_no_duplicate_specialization() {
 
     // Find ISQ::TemperatureDifferenceValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let temp_diff_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
+    let temp_diff_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
 
     assert!(
         temp_diff_symbol.is_some(),
         "Should find TemperatureDifferenceValue"
     );
-    let (_, symbol) = temp_diff_symbol.unwrap();
+    let symbol = temp_diff_symbol.unwrap();
 
     // Get relationships the same way hover does
     let graph = workspace.relationship_graph();
     let grouped_rels = graph.get_relationships_grouped(symbol.qualified_name());
 
-    println!(
-        "Grouped relationships for TemperatureDifferenceValue: {:?}",
-        grouped_rels
-    );
+    println!("Grouped relationships for TemperatureDifferenceValue: {grouped_rels:?}");
 
     // Find the "Specializes" group
     let specializes_group = grouped_rels
@@ -942,7 +941,7 @@ fn test_hover_temperature_difference_value_no_duplicate_specialization() {
     );
 
     let (_, targets) = specializes_group.unwrap();
-    println!("Specializes targets: {:?}", targets);
+    println!("Specializes targets: {targets:?}");
 
     // Check for duplicates
     let mut unique_targets: Vec<_> = targets.clone();
@@ -962,8 +961,7 @@ fn test_hover_temperature_difference_value_no_duplicate_specialization() {
     assert_eq!(
         targets.len(),
         1,
-        "Should have exactly 1 specialization target in hover, got: {:?}",
-        targets
+        "Should have exactly 1 specialization target in hover, got: {targets:?}"
     );
 }
 
@@ -992,30 +990,28 @@ fn test_hover_output_temperature_difference_value() {
 
     // Find ISQ::TemperatureDifferenceValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let temp_diff_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
+    let temp_diff_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQ::TemperatureDifferenceValue");
 
     assert!(
         temp_diff_symbol.is_some(),
         "Should find TemperatureDifferenceValue"
     );
-    let (_, symbol) = temp_diff_symbol.unwrap();
+    let symbol = temp_diff_symbol.unwrap();
 
     // Generate the actual hover output
     let hover_output = format_rich_hover(symbol, &workspace);
 
     println!("=== HOVER OUTPUT ===");
-    println!("{}", hover_output);
+    println!("{hover_output}");
     println!("=== END HOVER OUTPUT ===");
 
     // Check that ScalarQuantityValue only appears once
     let scalar_count = hover_output.matches("ScalarQuantityValue").count();
     assert_eq!(
         scalar_count, 1,
-        "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
-        scalar_count, hover_output
+        "ScalarQuantityValue should appear exactly once in hover, found {scalar_count} times:\n{hover_output}"
     );
 }
 
@@ -1043,30 +1039,28 @@ fn test_hover_output_celsius_temperature_value() {
 
     // Find ISQThermodynamics::CelsiusTemperatureValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let celsius_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
+    let celsius_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
 
     assert!(
         celsius_symbol.is_some(),
         "Should find CelsiusTemperatureValue"
     );
-    let (_, symbol) = celsius_symbol.unwrap();
+    let symbol = celsius_symbol.unwrap();
 
     // Generate the actual hover output
     let hover_output = format_rich_hover(symbol, &workspace);
 
     println!("=== HOVER OUTPUT (CelsiusTemperatureValue) ===");
-    println!("{}", hover_output);
+    println!("{hover_output}");
     println!("=== END HOVER OUTPUT ===");
 
     // Check that ScalarQuantityValue only appears once
     let scalar_count = hover_output.matches("ScalarQuantityValue").count();
     assert_eq!(
         scalar_count, 1,
-        "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
-        scalar_count, hover_output
+        "ScalarQuantityValue should appear exactly once in hover, found {scalar_count} times:\n{hover_output}"
     );
 }
 
@@ -1094,20 +1088,19 @@ fn test_hover_at_position_temperature_difference_value() {
 
     // Check: are there multiple symbols with name "TemperatureDifferenceValue"?
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let matching_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(_, sym)| sym.name() == "TemperatureDifferenceValue")
+    let matching_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "TemperatureDifferenceValue")
         .collect();
 
     println!("=== Symbols named 'TemperatureDifferenceValue' ===");
-    for (key, sym) in &matching_symbols {
-        println!("  Key: {}, QName: {}", key, sym.qualified_name());
+    for sym in &matching_symbols {
+        println!("  QName: {}", sym.qualified_name());
     }
     println!("Total: {}", matching_symbols.len());
 
     // Now generate hover for each and check
-    for (_, sym) in &matching_symbols {
+    for sym in &matching_symbols {
         let hover = format_rich_hover(sym, &workspace);
         let count = hover.matches("ScalarQuantityValue").count();
         println!("\n--- Hover for {} ---\n{}", sym.qualified_name(), hover);
@@ -1176,10 +1169,7 @@ fn test_lsp_hover_isq_temperature_difference_value() {
         })
         .expect("Should find TemperatureDifferenceValue definition");
 
-    println!(
-        "Found TemperatureDifferenceValue at line {}, col {}",
-        line_index, col_index
-    );
+    println!("Found TemperatureDifferenceValue at line {line_index}, col {col_index}");
     println!("Line content: {}", lines[line_index]);
 
     // Hover at the position
@@ -1195,15 +1185,14 @@ fn test_lsp_hover_isq_temperature_difference_value() {
 
     if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
         println!("=== LSP HOVER OUTPUT ===");
-        println!("{}", content);
+        println!("{content}");
         println!("=== END LSP HOVER OUTPUT ===");
 
         // Check that ScalarQuantityValue only appears once
         let scalar_count = content.matches("ScalarQuantityValue").count();
         assert_eq!(
             scalar_count, 1,
-            "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
-            scalar_count, content
+            "ScalarQuantityValue should appear exactly once in hover, found {scalar_count} times:\n{content}"
         );
     } else {
         panic!("Hover content should be a string");
@@ -1240,7 +1229,7 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
         return;
     }
 
-    println!("Using stdlib from: {:?}", stdlib_path);
+    println!("Using stdlib from: {stdlib_path:?}");
 
     // Create LSP server and set up stdlib explicitly at production path
     let mut server = LspServer::new();
@@ -1262,7 +1251,7 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
         .expect("Should have ISQ.sysml in stdlib")
         .clone();
 
-    println!("ISQ.sysml path from workspace: {:?}", isq_path);
+    println!("ISQ.sysml path from workspace: {isq_path:?}");
 
     // THE BUG: User opens ISQ.sysml from crates/syster-base/sysml.library
     // but stdlib was loaded from target/release/sysml.library
@@ -1276,7 +1265,7 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
         .join("Quantities and Units")
         .join("ISQ.sysml");
 
-    println!("User opens file from: {:?}", user_opened_path);
+    println!("User opens file from: {user_opened_path:?}");
 
     let abs_path = std::fs::canonicalize(&user_opened_path).expect("Should canonicalize path");
     let uri = Url::from_file_path(&abs_path).expect("Should convert to URL");
@@ -1300,10 +1289,7 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
         })
         .expect("Should find TemperatureDifferenceValue definition");
 
-    println!(
-        "Found TemperatureDifferenceValue at line {}, col {}",
-        line_index, col_index
-    );
+    println!("Found TemperatureDifferenceValue at line {line_index}, col {col_index}");
 
     // Hover at the position
     let position = Position {
@@ -1318,15 +1304,14 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
 
     if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
         println!("=== LSP HOVER OUTPUT (auto-discovered stdlib) ===");
-        println!("{}", content);
+        println!("{content}");
         println!("=== END LSP HOVER OUTPUT ===");
 
         // Check that ScalarQuantityValue only appears once
         let scalar_count = content.matches("ScalarQuantityValue").count();
         assert_eq!(
             scalar_count, 1,
-            "ScalarQuantityValue should appear exactly once in hover, found {} times:\n{}",
-            scalar_count, content
+            "ScalarQuantityValue should appear exactly once in hover, found {scalar_count} times:\n{content}"
         );
     } else {
         panic!("Hover content should be a string");
@@ -1376,23 +1361,20 @@ fn test_hover_no_duplicates_after_file_update() {
         let hover_result = server.get_hover(&uri, position);
         assert!(
             hover_result.is_some(),
-            "Iteration {}: Should get hover result",
-            iteration
+            "Iteration {iteration}: Should get hover result"
         );
 
         let hover = hover_result.unwrap();
         if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
-            println!("=== HOVER OUTPUT (iteration {}) ===", iteration);
-            println!("{}", content);
+            println!("=== HOVER OUTPUT (iteration {iteration}) ===");
+            println!("{content}");
             println!("=== END ===\n");
 
             // Count how many times "Referenced by" section appears
             let referenced_by_count = content.matches("Referenced by").count();
             assert!(
                 referenced_by_count <= 1,
-                "Iteration {}: 'Referenced by' should appear at most once, found {} times",
-                iteration,
-                referenced_by_count
+                "Iteration {iteration}: 'Referenced by' should appear at most once, found {referenced_by_count} times"
             );
 
             // Count individual reference entries - each should appear once
@@ -1404,15 +1386,11 @@ fn test_hover_no_duplicates_after_file_update() {
             // myCar appears once in references
             assert!(
                 car_refs <= 2,
-                "Iteration {}: 'Car' should appear at most 2 times (def + ref), found {}",
-                iteration,
-                car_refs
+                "Iteration {iteration}: 'Car' should appear at most 2 times (def + ref), found {car_refs}"
             );
             assert!(
                 mycar_refs <= 1,
-                "Iteration {}: 'myCar' should appear at most once, found {}",
-                iteration,
-                mycar_refs
+                "Iteration {iteration}: 'myCar' should appear at most once, found {mycar_refs}"
             );
 
             content
@@ -1445,8 +1423,7 @@ fn test_hover_no_duplicates_after_file_update() {
         // Content should be identical to initial (no accumulating duplicates)
         assert_eq!(
             initial_content, new_content,
-            "Iteration {}: Hover content should be identical after update",
-            i
+            "Iteration {i}: Hover content should be identical after update"
         );
     }
 }
@@ -1506,7 +1483,7 @@ fn test_hover_referenced_by_count_stable_after_updates() {
     };
 
     let initial_count = get_reference_count(&server);
-    println!("Initial reference count: {:?}", initial_count);
+    println!("Initial reference count: {initial_count:?}");
 
     // The exact count depends on what relationships are tracked
     // The important thing is that it stays STABLE after updates
@@ -1528,12 +1505,11 @@ fn test_hover_referenced_by_count_stable_after_updates() {
         server.parse_document(&uri);
 
         let count = get_reference_count(&server);
-        println!("Reference count after update {}: {:?}", i, count);
+        println!("Reference count after update {i}: {count:?}");
 
         assert_eq!(
             count, initial_count,
-            "Reference count should stay at 5 after update {}, got {:?}",
-            i, count
+            "Reference count should stay at 5 after update {i}, got {count:?}"
         );
     }
 }
@@ -1594,14 +1570,14 @@ part cal : Calculator;
     };
 
     let initial_content = get_hover_content(&server);
-    println!("=== INITIAL HOVER ===\n{:?}\n", initial_content);
+    println!("=== INITIAL HOVER ===\n{initial_content:?}\n");
     assert!(initial_content.is_some(), "Should get initial hover");
 
     // Count references in initial content
     let count_refs = |content: &str| -> usize { content.matches("Referenced by").count() };
 
     let initial_ref_sections = initial_content.as_ref().map(|c| count_refs(c)).unwrap_or(0);
-    println!("Initial 'Referenced by' sections: {}", initial_ref_sections);
+    println!("Initial 'Referenced by' sections: {initial_ref_sections}");
 
     // Update the file 5 times
     for i in 1..=5 {
@@ -1617,12 +1593,11 @@ part cal : Calculator;
 
         let content = get_hover_content(&server);
         let ref_sections = content.as_ref().map(|c| count_refs(c)).unwrap_or(0);
-        println!("Update {}: 'Referenced by' sections = {}", i, ref_sections);
+        println!("Update {i}: 'Referenced by' sections = {ref_sections}");
 
         assert_eq!(
             ref_sections, initial_ref_sections,
-            "Iteration {}: 'Referenced by' count should stay at {}, got {}",
-            i, initial_ref_sections, ref_sections
+            "Iteration {i}: 'Referenced by' count should stay at {initial_ref_sections}, got {ref_sections}"
         );
     }
 }
@@ -1703,7 +1678,7 @@ package Usage {
         .as_ref()
         .map(|c| count_usage_refs(c))
         .unwrap_or(0);
-    println!("Initial references to usage.sysml: {}", initial_usage_refs);
+    println!("Initial references to usage.sysml: {initial_usage_refs}");
 
     // We expect the import to create a reference
     // (depending on implementation, this might be in "Referenced by" or similar section)
@@ -1730,14 +1705,13 @@ package Usage {
         .as_ref()
         .map(|c| count_usage_refs(c))
         .unwrap_or(0);
-    println!("Updated references to usage.sysml: {}", updated_usage_refs);
+    println!("Updated references to usage.sysml: {updated_usage_refs}");
 
     // The key assertion: after removing the import, there should be NO references to usage.sysml
     assert_eq!(
         updated_usage_refs, 0,
         "After removing import, hover should not reference usage.sysml anymore. \
-         Found {} references. This indicates stale import references are not being cleared.",
-        updated_usage_refs
+         Found {updated_usage_refs} references. This indicates stale import references are not being cleared."
     );
 
     // Additional check: if we initially had references, they should be gone
@@ -1745,9 +1719,7 @@ package Usage {
         assert!(
             updated_usage_refs < initial_usage_refs,
             "Reference count should decrease after removing import. \
-             Initial: {}, Updated: {}",
-            initial_usage_refs,
-            updated_usage_refs
+             Initial: {initial_usage_refs}, Updated: {updated_usage_refs}"
         );
     }
 }
@@ -1800,7 +1772,7 @@ package Refs {
         Some(SemanticTokensResult::Tokens(tokens)) => tokens.data.len(),
         _ => 0,
     };
-    println!("Initial token count for file B: {}", initial_token_count);
+    println!("Initial token count for file B: {initial_token_count}");
 
     // Now remove the import
     let _ = server.apply_text_change_only(
@@ -1819,48 +1791,20 @@ package Refs {
         Some(SemanticTokensResult::Tokens(tokens)) => tokens.data.len(),
         _ => 0,
     };
-    println!("Updated token count for file B: {}", updated_token_count);
+    println!("Updated token count for file B: {updated_token_count}");
 
     // The tokens should be different after removing the import
     // (the "Engine" type reference should no longer be marked as a Type token)
     // Note: The exact assertion depends on implementation details,
     // but at minimum the token set should reflect the new state
-    println!(
-        "Token count changed: {} -> {}",
-        initial_token_count, updated_token_count
-    );
+    println!("Token count changed: {initial_token_count} -> {updated_token_count}");
 
     // If we have a way to check for specific type references in the tokens,
     // we would verify that the "Engine" reference is no longer present
     // For now, we just verify the tokens are regenerated (not stale)
 }
 
-/// Test that hover on a usage site shows stale import info after import is removed.
-///
-/// This test is currently EXPECTED TO FAIL - it demonstrates a known bug.
-///
-/// This replicates the user-reported bug:
-/// 1. File A defines `Engine`
-/// 2. File B imports `Engine` and uses it: `part myEngine : Engine`
-/// 3. Hover on `Engine` in file B shows info about the imported type
-/// 4. User removes the import from file B (now `Engine` is unresolved)
-/// 5. BUG: Hover on the same position still shows old import information
-///
-/// ROOT CAUSE (in `server/position.rs::find_symbol_at_position`):
-/// The fallback logic at lines 52-60 searches ALL symbols by simple name,
-/// completely ignoring scope and imports. When `resolver.resolve(&word)` fails
-/// (correctly, because the import was removed), the fallback finds `Engine`
-/// by matching the simple name against all symbols in the workspace.
-///
-/// FIX OPTIONS:
-/// 1. Remove the fallback entirely - only resolve symbols that are in scope
-/// 2. Make the fallback scope-aware by passing the file path and using
-///    `lookup_from_scope` with the file's scope ID
-/// 3. Return None when resolver fails, indicating unresolved reference
-///
-/// The hover should either show nothing or indicate the type is unresolved.
 #[test]
-#[ignore = "Known bug: stale import references shown after import removal"]
 fn test_hover_on_usage_site_cleared_when_import_removed() {
     use async_lsp::lsp_types::{
         HoverContents, MarkedString, Position, TextDocumentContentChangeEvent, Url,
@@ -1917,16 +1861,13 @@ package Car {
         },
         None => "No hover".to_string(),
     };
-    println!("{}", initial_content);
+    println!("{initial_content}");
 
     // Check that initial hover mentions the definition file
     let initial_has_engine_def = initial_content.contains("EngineDefs")
         || initial_content.contains("engine_def.sysml")
         || initial_content.contains("Part def Engine");
-    println!(
-        "Initial hover references EngineDefs: {}",
-        initial_has_engine_def
-    );
+    println!("Initial hover references EngineDefs: {initial_has_engine_def}");
 
     // Now remove the import from file B
     let _ = server.apply_text_change_only(
@@ -1955,16 +1896,13 @@ package Car {
         },
         None => "No hover".to_string(),
     };
-    println!("{}", updated_content);
+    println!("{updated_content}");
 
     // After removing import, hover should NOT show EngineDefs info
     // because Engine is now unresolved in this scope
     let updated_has_engine_def =
         updated_content.contains("EngineDefs") || updated_content.contains("engine_def.sysml");
-    println!(
-        "Updated hover references EngineDefs: {}",
-        updated_has_engine_def
-    );
+    println!("Updated hover references EngineDefs: {updated_has_engine_def}");
 
     // The key assertion: after removing import, Engine reference should not
     // show stale information about the import that no longer exists
@@ -1972,8 +1910,7 @@ package Car {
         !updated_has_engine_def,
         "After removing import, hover on 'Engine' should NOT reference EngineDefs anymore. \
          This indicates stale semantic information is being shown. \
-         Content: {}",
-        updated_content
+         Content: {updated_content}"
     );
 }
 
@@ -2023,18 +1960,179 @@ package SensorUsage {
     let hover = hover_result.unwrap();
     if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
         println!("=== SENSOR HOVER ===");
-        println!("{}", content);
+        println!("{content}");
 
         // The hover should include information about usages
         // Check for presence of typing relationships (tempSensor, pressureSensor typed as Sensor)
         let has_usage_info = content.contains("tempSensor") || content.contains("pressureSensor");
 
-        println!(
-            "Hover mentions usages (tempSensor/pressureSensor): {}",
-            has_usage_info
-        );
+        println!("Hover mentions usages (tempSensor/pressureSensor): {has_usage_info}");
 
         // Note: This might not show in hover depending on implementation
         // The key test is test_hover_import_references_cleared_when_import_removed above
     }
+}
+
+/// Test hover on ISQ::MassValue in a user file
+/// This directly tests the bug where hovering on MassValue in "import ISQ::MassValue" fails
+#[test]
+fn test_hover_isq_massvalue() {
+    use async_lsp::lsp_types::{HoverContents, MarkedString, Position, Url};
+
+    // Create server with explicit stdlib path for testing
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+    let mut server = LspServer::with_config(true, Some(stdlib_path));
+
+    // Load stdlib first
+    server
+        .ensure_workspace_loaded()
+        .expect("Should load stdlib");
+
+    // Debug: Check ISQ symbols
+    let resolver = server.resolver();
+    let isq_package = resolver.resolve_qualified("ISQ");
+    println!("ISQ package found: {:?}", isq_package.map(|s| s.name()));
+
+    let isqbase_massvalue = resolver.resolve_qualified("ISQBase::MassValue");
+    println!(
+        "ISQBase::MassValue found: {:?}",
+        isqbase_massvalue.map(|s| s.qualified_name())
+    );
+
+    let isq_massvalue = resolver.resolve_qualified("ISQ::MassValue");
+    println!(
+        "ISQ::MassValue resolved: {:?}",
+        isq_massvalue.map(|s| s.qualified_name())
+    );
+
+    // Create a test file with import
+    let user_source = r#"package MyTest {
+    private import ISQ::MassValue;
+    
+    part def MyPart {
+        attribute mass: MassValue;
+    }
+}"#;
+
+    let user_uri = Url::parse("file:///test/mytest.sysml").unwrap();
+    server
+        .open_document(&user_uri, user_source)
+        .expect("Should open user document");
+
+    // Debug: Check what word is extracted
+    let line = "    private import ISQ::MassValue;";
+    let extracted = syster::core::text_utils::extract_qualified_name_at_cursor(line, 23);
+    println!("Extracted at pos 23: {extracted:?}");
+
+    // Test hover on "MassValue" in the import statement (line 1, position ~23)
+    // Line 1 is "    private import ISQ::MassValue;"
+    // Position of 'M' in MassValue is at column 23
+    let position = Position {
+        line: 1,
+        character: 23,
+    };
+
+    let hover_result = server.get_hover(&user_uri, position);
+
+    println!("Hover result: {:?}", hover_result.is_some());
+
+    if let Some(hover) = &hover_result
+        && let HoverContents::Scalar(MarkedString::String(content)) = &hover.contents
+    {
+        println!("=== HOVER CONTENT ===");
+        println!("{content}");
+    }
+
+    assert!(
+        hover_result.is_some(),
+        "Hover on ISQ::MassValue should return something"
+    );
+
+    let hover = hover_result.unwrap();
+    if let HoverContents::Scalar(MarkedString::String(content)) = hover.contents {
+        assert!(
+            content.contains("MassValue"),
+            "Hover should mention MassValue, got: {content}"
+        );
+    } else {
+        panic!("Unexpected hover contents format");
+    }
+}
+
+/// Test hover on ISQ::MassValue using the extension's stdlib path
+/// This simulates exactly what happens when VS Code loads
+#[test]
+fn test_hover_isq_massvalue_extension_stdlib() {
+    // Use the stdlib path from syster-base
+    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("syster-base")
+        .join("sysml.library");
+
+    println!("Using stdlib path: {stdlib_path:?}");
+    assert!(stdlib_path.exists(), "Extension stdlib path should exist");
+
+    let mut server = LspServer::with_config(true, Some(stdlib_path));
+
+    // Load stdlib first - this is what happens on VS Code startup
+    server
+        .ensure_workspace_loaded()
+        .expect("Should load stdlib");
+
+    // Debug: Check ISQ symbols
+    let resolver = server.resolver();
+    let isq_package = resolver.resolve_qualified("ISQ");
+    println!("ISQ package found: {:?}", isq_package.map(|s| s.name()));
+
+    let isqbase_massvalue = resolver.resolve_qualified("ISQBase::MassValue");
+    println!(
+        "ISQBase::MassValue found: {:?}",
+        isqbase_massvalue.map(|s| s.qualified_name())
+    );
+
+    let isq_massvalue = resolver.resolve_qualified("ISQ::MassValue");
+    println!(
+        "ISQ::MassValue resolved: {:?}",
+        isq_massvalue.map(|s| s.qualified_name())
+    );
+
+    // Check ISQ's public imports
+    let isq_symbol = resolver.resolve_qualified("ISQ");
+    if let Some(isq) = isq_symbol {
+        let scope_id = isq.scope_id();
+        println!("ISQ scope_id: {scope_id}");
+
+        // Check child scopes for imports
+        if let Some(scope) = server.workspace().symbol_table().scopes().get(scope_id) {
+            println!("ISQ scope has {} children", scope.children.len());
+            for &child_id in &scope.children {
+                let imports = server
+                    .workspace()
+                    .symbol_table()
+                    .get_scope_imports(child_id);
+                let public_imports: Vec<_> = imports.iter().filter(|i| i.is_public).collect();
+                if !public_imports.is_empty() {
+                    println!(
+                        "Child scope {} has {} public imports",
+                        child_id,
+                        public_imports.len()
+                    );
+                    for imp in &public_imports {
+                        println!("  - {} (is_namespace: {})", imp.path, imp.is_namespace);
+                    }
+                }
+            }
+        }
+    }
+
+    // Now assert the key thing works
+    assert!(
+        isq_massvalue.is_some(),
+        "ISQ::MassValue should resolve via public import re-export"
+    );
 }

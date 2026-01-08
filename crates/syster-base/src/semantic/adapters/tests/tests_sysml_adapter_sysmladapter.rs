@@ -198,8 +198,9 @@ fn test_visit_namespace_no_namespace_in_file() {
     assert!(result.is_ok());
 
     // With no namespace, symbol table should remain empty (except for any default symbols)
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty() || !all_symbols.iter().any(|(name, _)| name.is_empty()));
+    let is_empty = table.iter_symbols().next().is_none();
+    let has_empty_name = table.iter_symbols().any(|sym| sym.name().is_empty());
+    assert!(is_empty || !has_empty_name);
 }
 
 #[test]
@@ -223,6 +224,7 @@ fn test_visit_namespace_affects_subsequent_elements() {
             is_abstract: false,
             is_variation: false,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -235,10 +237,9 @@ fn test_visit_namespace_affects_subsequent_elements() {
     assert!(ns_symbol.is_some());
 
     // The inner part should be qualified with the namespace
-    let all_symbols = table.all_symbols();
-    let has_qualified = all_symbols
-        .iter()
-        .any(|(_, sym)| sym.qualified_name().contains("OuterNamespace::InnerPart"));
+    let has_qualified = table
+        .iter_symbols()
+        .any(|sym| sym.qualified_name().contains("OuterNamespace::InnerPart"));
     assert!(
         has_qualified,
         "Definition should be qualified with namespace"
@@ -293,8 +294,7 @@ fn test_visit_comment_does_not_affect_symbol_table() {
     assert!(result.is_ok());
 
     // Symbol table should remain empty - comments don't create symbols
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -314,8 +314,7 @@ fn test_visit_comment_empty_content() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -335,8 +334,7 @@ fn test_visit_comment_multiline_content() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -356,8 +354,7 @@ fn test_visit_comment_with_special_characters() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -387,8 +384,7 @@ fn test_visit_comment_multiple_comments() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -410,6 +406,7 @@ fn test_visit_comment_between_definitions() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Comment(Comment {
                 content: "Comment between definitions".to_string(),
@@ -423,6 +420,7 @@ fn test_visit_comment_between_definitions() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -431,8 +429,7 @@ fn test_visit_comment_between_definitions() {
     assert!(result.is_ok());
 
     // Should have exactly 2 symbols (the definitions), not the comment
-    let all_symbols = table.all_symbols();
-    assert_eq!(all_symbols.len(), 2);
+    assert_eq!(table.iter_symbols().count(), 2);
     assert!(Resolver::new(&table).resolve("FirstPart").is_some());
     assert!(Resolver::new(&table).resolve("SecondPart").is_some());
 }
@@ -460,8 +457,7 @@ fn test_visit_comment_with_span() {
     assert!(result.is_ok());
 
     // Comment with span should still not affect symbol table
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -490,6 +486,7 @@ fn test_visit_comment_does_not_change_current_namespace() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -499,10 +496,9 @@ fn test_visit_comment_does_not_change_current_namespace() {
 
     // The definition should still be qualified with the namespace,
     // proving that the comment didn't change the namespace context
-    let all_symbols = table.all_symbols();
-    let has_qualified = all_symbols
-        .iter()
-        .any(|(_, sym)| sym.qualified_name().contains("TestNS::PartInNamespace"));
+    let has_qualified = table
+        .iter_symbols()
+        .any(|sym| sym.qualified_name().contains("TestNS::PartInNamespace"));
     assert!(has_qualified, "Comment should not affect namespace context");
 }
 
@@ -525,8 +521,7 @@ fn test_visit_comment_long_content() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 #[test]
@@ -546,8 +541,7 @@ fn test_visit_comment_unicode_content() {
     let result = adapter.populate(&file);
     assert!(result.is_ok());
 
-    let all_symbols = table.all_symbols();
-    assert!(all_symbols.is_empty());
+    assert!(table.iter_symbols().next().is_none());
 }
 
 // ============================================================================
@@ -575,8 +569,7 @@ fn test_namespace_with_comments() {
     assert!(result.is_ok());
 
     // Should have only the namespace symbol, not the comment
-    let all_symbols = table.all_symbols();
-    assert_eq!(all_symbols.len(), 1);
+    assert_eq!(table.iter_symbols().count(), 1);
     assert!(
         Resolver::new(&table)
             .resolve("DocumentedNamespace")
@@ -612,6 +605,5 @@ fn test_comment_before_namespace_not_typical_but_handled() {
     assert!(symbol.is_some());
 
     // The comment should not create a symbol
-    let all_symbols = table.all_symbols();
-    assert_eq!(all_symbols.len(), 1);
+    assert_eq!(table.iter_symbols().count(), 1);
 }

@@ -47,7 +47,6 @@ fn create_package_symbol(
         scope_id: 0,
         source_file: source_file.map(|s| s.to_string()),
         span,
-        references: Vec::new(),
     }
 }
 
@@ -66,7 +65,6 @@ fn create_classifier_symbol(
         scope_id: 0,
         source_file: source_file.map(|s| s.to_string()),
         span,
-        references: Vec::new(),
     }
 }
 
@@ -85,7 +83,6 @@ fn create_definition_symbol(
         scope_id: 0,
         source_file: source_file.map(|s| s.to_string()),
         span,
-        references: Vec::new(),
     }
 }
 

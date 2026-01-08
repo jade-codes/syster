@@ -1,4 +1,4 @@
-use super::symbol::Symbol;
+use super::symbol::SymbolId;
 use crate::core::Span;
 use std::collections::HashMap;
 
@@ -8,6 +8,7 @@ pub struct Import {
     pub path: String,
     pub is_recursive: bool,
     pub is_namespace: bool,
+    pub is_public: bool,
     pub span: Option<Span>,
     pub file: Option<String>,
 }
@@ -16,7 +17,8 @@ pub struct Import {
 #[derive(Debug)]
 pub struct Scope {
     pub parent: Option<usize>,
-    pub symbols: HashMap<String, Symbol>,
+    /// Maps symbol name to SymbolId (symbols are stored in arena)
+    pub symbols: HashMap<String, SymbolId>,
     pub children: Vec<usize>,
     pub imports: Vec<Import>,
 }

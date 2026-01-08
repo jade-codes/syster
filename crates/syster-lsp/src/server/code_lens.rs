@@ -17,7 +17,7 @@ impl LspServer {
         let mut lenses = Vec::new();
 
         // Collect all symbols from this file
-        for (_, symbol) in self.workspace.symbol_table().all_symbols() {
+        for symbol in self.workspace.symbol_table().iter_symbols() {
             // Only include symbols defined in this file
             let Some(symbol_path) = symbol.source_file() else {
                 continue;

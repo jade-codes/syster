@@ -30,7 +30,7 @@ impl LspServer {
                 links.push(DocumentLink {
                     range: span_to_lsp_range(&span),
                     target: Some(target_uri),
-                    tooltip: Some(format!("Go to {}", import_path)),
+                    tooltip: Some(format!("Go to {import_path}")),
                     data: None,
                 });
             }

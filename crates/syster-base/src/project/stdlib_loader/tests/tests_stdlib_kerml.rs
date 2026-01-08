@@ -51,10 +51,10 @@ fn test_performances_kerml_no_duplicate_symbols() {
     );
 
     // Verify thisPerformance exists exactly once
-    let symbols = workspace.symbol_table().all_symbols();
-    let this_perf_count = symbols
-        .iter()
-        .filter(|(name, _)| *name == "thisPerformance")
+    let this_perf_count = workspace
+        .symbol_table()
+        .iter_symbols()
+        .filter(|sym| sym.name() == "thisPerformance")
         .count();
 
     assert_eq!(

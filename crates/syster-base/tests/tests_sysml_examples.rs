@@ -42,10 +42,7 @@ fn test_sysml_examples_parsing() {
     let examples_dir = get_examples_dir();
 
     if !examples_dir.exists() {
-        eprintln!(
-            "⏭️  Skipping: sysml-examples directory not found at {:?}",
-            examples_dir
-        );
+        eprintln!("⏭️  Skipping: sysml-examples directory not found at {examples_dir:?}");
         eprintln!("   To run these tests, execute:");
         eprintln!(
             "   git clone --depth 1 https://github.com/Systems-Modeling/SysML-v2-Release.git /tmp/sysml"
@@ -59,7 +56,7 @@ fn test_sysml_examples_parsing() {
     files.sort();
 
     if files.is_empty() {
-        eprintln!("⚠️  No .sysml files found in {:?}", examples_dir);
+        eprintln!("⚠️  No .sysml files found in {examples_dir:?}");
         return;
     }
 
@@ -77,7 +74,7 @@ fn test_sysml_examples_parsing() {
             Ok(c) => c,
             Err(e) => {
                 failed
-                    .entry(format!("IO Error: {}", e))
+                    .entry(format!("IO Error: {e}"))
                     .or_default()
                     .push(relative);
                 continue;
@@ -119,13 +116,9 @@ fn test_sysml_examples_parsing() {
     eprintln!("\n╔════════════════════════════════════════════════════════════════╗");
     eprintln!("║           SysML v2 Examples Parsing Summary                    ║");
     eprintln!("╠════════════════════════════════════════════════════════════════╣");
+    eprintln!("║ Total files: {total:>4}                                              ║");
     eprintln!(
-        "║ Total files: {:>4}                                              ║",
-        total
-    );
-    eprintln!(
-        "║ Passed:      {:>4} ({:>5.1}%)                                    ║",
-        pass_count, pass_rate
+        "║ Passed:      {pass_count:>4} ({pass_rate:>5.1}%)                                    ║"
     );
     eprintln!(
         "║ Failed:      {:>4} ({:>5.1}%)                                    ║",
@@ -144,7 +137,7 @@ fn test_sysml_examples_parsing() {
         for (error, files) in error_counts {
             eprintln!("\n  ❌ {} ({} files)", error, files.len());
             for f in files.iter().take(3) {
-                eprintln!("     - {}", f);
+                eprintln!("     - {f}");
             }
             if files.len() > 3 {
                 eprintln!("     ... and {} more", files.len() - 3);
@@ -155,7 +148,7 @@ fn test_sysml_examples_parsing() {
     if !passed.is_empty() {
         eprintln!("\n✅ Passing files ({}):", passed.len());
         for f in &passed {
-            eprintln!("   - {}", f);
+            eprintln!("   - {f}");
         }
     }
 
@@ -217,7 +210,7 @@ fn test_no_regressions() {
                 .first()
                 .map(|e| e.message.clone())
                 .unwrap_or_else(|| "Unknown error".to_string());
-            regressions.push(format!("{}: {}", relative_path, error));
+            regressions.push(format!("{relative_path}: {error}"));
         }
     }
 
@@ -229,11 +222,6 @@ fn test_no_regressions() {
         );
     }
 }
-
-// ============================================================================
-// Individual tests for each failing example file
-// These tests are marked #[ignore] and will fail until the grammar supports them
-// ============================================================================
 
 macro_rules! example_test {
     ($name:ident, $path:expr) => {

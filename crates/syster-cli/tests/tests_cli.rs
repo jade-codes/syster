@@ -88,46 +88,6 @@ fn test_without_stdlib() {
 }
 
 #[test]
-#[ignore = "KerML is now supported - test is outdated"]
-fn test_kerml_file() {
-    // KerML is not yet supported - should return error
-    let temp_dir = TempDir::new().unwrap();
-    let file_path = temp_dir.path().join("test.kerml");
-
-    let mut file = fs::File::create(&file_path).unwrap();
-    writeln!(file, "classifier Vehicle;").unwrap();
-
-    let result = run_analysis(&file_path, false, false, None);
-
-    // Should fail with unsupported language error
-    assert!(result.is_err());
-    let err = result.unwrap_err();
-    assert!(err.contains("KerML") || err.contains("not yet supported"));
-}
-
-#[test]
-#[ignore = "KerML is now supported - test is outdated"]
-fn test_mixed_directory() {
-    // KerML is not yet supported - directory with mixed files should fail
-    let temp_dir = TempDir::new().unwrap();
-
-    let sysml_file = temp_dir.path().join("file1.sysml");
-    let mut f1 = fs::File::create(&sysml_file).unwrap();
-    writeln!(f1, "part def Car;").unwrap();
-
-    let kerml_file = temp_dir.path().join("file2.kerml");
-    let mut f2 = fs::File::create(&kerml_file).unwrap();
-    writeln!(f2, "classifier Vehicle;").unwrap();
-
-    let result = run_analysis(&temp_dir.path().to_path_buf(), false, false, None);
-
-    // Should fail when trying to process KerML file
-    assert!(result.is_err());
-    let err = result.unwrap_err();
-    assert!(err.contains("KerML") || err.contains("not yet supported"));
-}
-
-#[test]
 fn test_verbose_mode() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.sysml");
@@ -178,34 +138,6 @@ fn test_nested_directory_structure() {
     // Should load all 3 files recursively
     assert_eq!(result.file_count, 3);
     assert!(result.symbol_count >= 3);
-}
-
-#[test]
-#[ignore = "KerML is now supported - test is outdated"]
-fn test_workspace_with_mixed_extensions() {
-    // KerML is not yet supported - mixed workspace should fail
-    let temp_dir = TempDir::new().unwrap();
-
-    // Create files with different extensions
-    let sysml = temp_dir.path().join("file.sysml");
-    let mut f1 = fs::File::create(&sysml).unwrap();
-    writeln!(f1, "part def Vehicle;").unwrap();
-
-    let kerml = temp_dir.path().join("base.kerml");
-    let mut f2 = fs::File::create(&kerml).unwrap();
-    writeln!(f2, "classifier Base;").unwrap();
-
-    // Add a non-model file that should be ignored
-    let txt = temp_dir.path().join("readme.txt");
-    let mut f3 = fs::File::create(&txt).unwrap();
-    writeln!(f3, "This is not a model file").unwrap();
-
-    let result = run_analysis(&temp_dir.path().to_path_buf(), false, false, None);
-
-    // Should fail when trying to process KerML file
-    assert!(result.is_err());
-    let err = result.unwrap_err();
-    assert!(err.contains("KerML") || err.contains("not yet supported"));
 }
 
 #[test]

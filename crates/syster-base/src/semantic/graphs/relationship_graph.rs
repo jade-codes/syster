@@ -236,6 +236,83 @@ impl RelationshipGraph {
         refs
     }
 
+    /// Iterate all one-to-many entries with their locations.
+    /// Returns (relationship_type, source, target, file, span) for each entry with a location.
+    pub fn all_one_to_many_entries_with_locations(
+        &self,
+    ) -> impl Iterator<Item = (&str, &str, &str, &str, &Span)> {
+        self.one_to_many.iter().flat_map(|(rel_type, graph)| {
+            graph
+                .all_entries()
+                .filter_map(move |(source, target, loc)| {
+                    loc.map(|l| {
+                        (
+                            rel_type.as_str(),
+                            source.as_ref(),
+                            target.as_ref(),
+                            l.file.as_ref(),
+                            &l.span,
+                        )
+                    })
+                })
+        })
+    }
+
+    /// Iterate all one-to-one entries with their locations.
+    /// Returns (relationship_type, source, target, file, span) for each entry with a location.
+    pub fn all_one_to_one_entries_with_locations(
+        &self,
+    ) -> impl Iterator<Item = (&str, &str, &str, &str, &Span)> {
+        self.one_to_one.iter().flat_map(|(rel_type, graph)| {
+            graph
+                .all_entries_with_locations()
+                .filter_map(move |(source, target, loc)| {
+                    loc.map(|l| {
+                        (
+                            rel_type.as_str(),
+                            source.as_ref(),
+                            target.as_ref(),
+                            l.file.as_ref(),
+                            &l.span,
+                        )
+                    })
+                })
+        })
+    }
+
+    /// Find what symbol is referenced at a given position in a file.
+    /// Returns the resolved qualified name if a reference exists at that position.
+    pub fn get_binding_at_position(&self, file: &str, line: usize, column: usize) -> Option<&str> {
+        use crate::core::Position;
+        let pos = Position::new(line, column);
+
+        // Check one-to-one relationships (e.g., typing)
+        for graph in self.one_to_one.values() {
+            for (_source, target, loc) in graph.all_entries_with_locations() {
+                if let Some(location) = loc
+                    && location.file.as_ref() == file
+                    && location.span.contains(pos)
+                {
+                    return Some(target.as_ref());
+                }
+            }
+        }
+
+        // Check one-to-many relationships (e.g., specialization)
+        for graph in self.one_to_many.values() {
+            for (_source, target, loc) in graph.all_entries() {
+                if let Some(location) = loc
+                    && location.file.as_ref() == file
+                    && location.span.contains(pos)
+                {
+                    return Some(target.as_ref());
+                }
+            }
+        }
+
+        None
+    }
+
     /// Resolve all targets in a one-to-one relationship using the provided resolver function.
     /// The resolver takes (source_qualified_name, unresolved_target) and returns the resolved qualified name if found.
     pub fn resolve_targets<F>(&mut self, relationship_type: &str, resolver: F)
@@ -270,6 +347,20 @@ impl RelationshipGraph {
             for (source, new_target_interned) in interned_updates {
                 graph.update_target(&source, new_target_interned);
             }
+        }
+    }
+
+    /// Resolve all targets in a one-to-many relationship using the provided resolver function.
+    /// The resolver takes (source_qualified_name, unresolved_target) and returns the resolved qualified name if found.
+    pub fn resolve_one_to_many_targets<F>(&mut self, relationship_type: &str, resolver: F)
+    where
+        F: Fn(&str, &str) -> Option<String>,
+    {
+        let interner = &mut self.interner;
+        if let Some(graph) = self.one_to_many.get_mut(relationship_type) {
+            graph.resolve_targets(|source, target| {
+                resolver(source, target).map(|resolved| interner.intern(&resolved))
+            });
         }
     }
 }

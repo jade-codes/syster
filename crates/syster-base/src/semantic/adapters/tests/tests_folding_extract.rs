@@ -231,6 +231,7 @@ fn test_kerml_import_and_annotation_ignored() {
                 path: "Some::Path".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 kind: crate::syntax::kerml::ast::ImportKind::Normal,
                 span: Some(make_span(1, 1)),
             }),
@@ -624,6 +625,7 @@ fn test_sysml_import_and_alias_ignored() {
                 path: "Some::Path".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: Some(make_span(1, 1)),
             }),
             SysMLElement::Alias(crate::syntax::sysml::ast::Alias {

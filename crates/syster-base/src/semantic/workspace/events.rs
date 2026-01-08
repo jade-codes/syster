@@ -30,11 +30,6 @@ impl<T: ParsedFile> Workspace<T> {
                     .relationship_graph
                     .remove_relationships_for_file(&file_path_str);
 
-                // Clear import references for this file
-                workspace
-                    .symbol_table
-                    .clear_import_references_for_file(&file_path_str);
-
                 // Remove imports from the file
                 workspace
                     .symbol_table

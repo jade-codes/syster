@@ -6,40 +6,6 @@ use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::workspace::Workspace;
 use crate::syntax::SyntaxFile;
-use std::path::{Path, PathBuf};
-
-/// Normalize a file path by:
-/// 1. For stdlib files (containing "sysml.library/"), extract the relative path within sysml.library
-/// 2. For other files, use canonical path comparison
-///
-/// This handles the case where stdlib files exist in multiple locations:
-/// - Source: /workspaces/syster/crates/syster-base/sysml.library/...
-/// - Build: /workspaces/syster/target/release/sysml.library/...
-fn normalize_path(path: &str) -> String {
-    // Check if this is a stdlib file
-    if let Some(idx) = path.find("sysml.library/") {
-        // Extract the path relative to sysml.library/
-        let relative_path = &path[idx..];
-        return relative_path.to_string();
-    }
-
-    // For non-stdlib files, try to canonicalize (resolves symlinks and makes absolute)
-    if let Ok(canonical) = Path::new(path).canonicalize() {
-        return canonical.to_string_lossy().to_string();
-    }
-
-    // If canonicalization fails (file doesn't exist yet), do simple normalization
-    let path_buf = PathBuf::from(path);
-    let normalized = if path_buf.is_absolute() {
-        path_buf
-    } else {
-        std::env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("/"))
-            .join(path_buf)
-    };
-
-    normalized.to_string_lossy().to_string()
-}
 
 /// Represents a semantic token with its position and type
 #[derive(Debug, Clone, PartialEq)]
@@ -94,21 +60,8 @@ impl SemanticTokenCollector {
     pub fn collect_from_symbols(symbol_table: &SymbolTable, file_path: &str) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
 
-        // Normalize the requested file path for comparison
-        let normalized_path = normalize_path(file_path);
-
-        // Iterate through all symbols in the table
-        for (_name, symbol) in symbol_table.all_symbols() {
-            // Only include symbols from this file
-            if let Some(source_file) = symbol.source_file() {
-                let normalized_source = normalize_path(source_file);
-                if normalized_source != normalized_path {
-                    continue;
-                }
-            } else {
-                continue;
-            }
-
+        // Use indexed lookup instead of iterating all symbols
+        for symbol in symbol_table.get_symbols_for_file(file_path) {
             // Only add tokens for symbols with spans
             if let Some(span) = symbol.span() {
                 let token_type = Self::map_symbol_to_token_type(symbol);
@@ -149,19 +102,9 @@ impl SemanticTokenCollector {
         file_path: &str,
     ) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
-        let normalized_path = normalize_path(file_path);
 
-        // For each symbol in this file, check if it has relationships with spans
-        for (_name, symbol) in symbol_table.all_symbols() {
-            // Only check symbols from this file
-            if let Some(source_file) = symbol.source_file() {
-                if normalize_path(source_file) != normalized_path {
-                    continue;
-                }
-            } else {
-                continue;
-            }
-
+        // Use indexed lookup instead of iterating all symbols
+        for symbol in symbol_table.get_symbols_for_file(file_path) {
             let qname = symbol.qualified_name();
 
             // Typing (one-to-one relationship) → Type token
