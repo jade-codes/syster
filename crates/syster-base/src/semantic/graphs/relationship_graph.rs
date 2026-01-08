@@ -289,10 +289,11 @@ impl RelationshipGraph {
         // Check one-to-one relationships (e.g., typing)
         for graph in self.one_to_one.values() {
             for (_source, target, loc) in graph.all_entries_with_locations() {
-                if let Some(location) = loc {
-                    if location.file.as_ref() == file && location.span.contains(pos) {
-                        return Some(target.as_ref());
-                    }
+                if let Some(location) = loc
+                    && location.file.as_ref() == file
+                    && location.span.contains(pos)
+                {
+                    return Some(target.as_ref());
                 }
             }
         }
@@ -300,10 +301,11 @@ impl RelationshipGraph {
         // Check one-to-many relationships (e.g., specialization)
         for graph in self.one_to_many.values() {
             for (_source, target, loc) in graph.all_entries() {
-                if let Some(location) = loc {
-                    if location.file.as_ref() == file && location.span.contains(pos) {
-                        return Some(target.as_ref());
-                    }
+                if let Some(location) = loc
+                    && location.file.as_ref() == file
+                    && location.span.contains(pos)
+                {
+                    return Some(target.as_ref());
                 }
             }
         }
