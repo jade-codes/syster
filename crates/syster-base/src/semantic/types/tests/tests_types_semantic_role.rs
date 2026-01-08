@@ -594,7 +594,7 @@ fn test_display_unknown_with_whitespace() {
 #[test]
 fn test_display_consistency_with_format_macro() {
     let role = SemanticRole::Action;
-    assert_eq!(format!("{}", role), "action");
+    assert_eq!(format!("{role}"), "action");
     assert_eq!(role.to_string(), "action");
 }
 

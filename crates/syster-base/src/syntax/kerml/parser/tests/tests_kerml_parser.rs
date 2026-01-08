@@ -80,8 +80,7 @@ fn test_load_and_parse_invalid_extension() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Unsupported file extension"),
-        "Error message should mention unsupported extension: {}",
-        error_msg
+        "Error message should mention unsupported extension: {error_msg}"
     );
 }
 
@@ -95,8 +94,7 @@ fn test_load_and_parse_nonexistent_file() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Failed to read"),
-        "Error message should mention failed read: {}",
-        error_msg
+        "Error message should mention failed read: {error_msg}"
     );
 }
 
@@ -119,8 +117,7 @@ fn test_load_and_parse_invalid_syntax() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Parse error"),
-        "Error message should mention parse error: {}",
-        error_msg
+        "Error message should mention parse error: {error_msg}"
     );
 }
 
@@ -199,8 +196,7 @@ fn test_parse_content_syntax_error() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Parse error"),
-        "Error message should mention parse error: {}",
-        error_msg
+        "Error message should mention parse error: {error_msg}"
     );
 }
 
@@ -215,8 +211,7 @@ fn test_parse_content_error_includes_path() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("path.kerml"),
-        "Error message should include the file path: {}",
-        error_msg
+        "Error message should include the file path: {error_msg}"
     );
 }
 
@@ -297,8 +292,7 @@ fn test_parse_content_pest_error_handling() {
     let error_msg = result.unwrap_err();
     assert!(
         error_msg.contains("Parse error in test.kerml"),
-        "Expected formatted parse error message: {}",
-        error_msg
+        "Expected formatted parse error message: {error_msg}"
     );
 }
 

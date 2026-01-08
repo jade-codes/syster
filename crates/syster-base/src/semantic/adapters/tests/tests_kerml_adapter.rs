@@ -74,10 +74,10 @@ fn test_new_with_populated_symbol_table() {
     for i in 0..5 {
         table
             .insert(
-                format!("Symbol{}", i),
+                format!("Symbol{i}"),
                 Symbol::Package {
-                    name: format!("Symbol{}", i),
-                    qualified_name: format!("Symbol{}", i),
+                    name: format!("Symbol{i}"),
+                    qualified_name: format!("Symbol{i}"),
                     scope_id: 0,
                     source_file: None,
                     span: None,

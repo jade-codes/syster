@@ -105,8 +105,7 @@ fn test_stdlib_si_symbols() {
     let gram = workspace.symbol_table().find_by_qualified_name("SI::gram");
     assert!(
         gram.is_some(),
-        "SI::gram should exist. Found SI symbols: {:?}",
-        si_symbols
+        "SI::gram should exist. Found SI symbols: {si_symbols:?}"
     );
 
     // Check for kilogram (without short name)
@@ -115,8 +114,7 @@ fn test_stdlib_si_symbols() {
         .find_by_qualified_name("SI::kilogram");
     assert!(
         kilogram.is_some(),
-        "SI::kilogram should exist. Found SI symbols: {:?}",
-        si_symbols
+        "SI::kilogram should exist. Found SI symbols: {si_symbols:?}"
     );
 }
 
@@ -137,7 +135,7 @@ fn test_stdlib_isq_massvalue() {
         .filter(|sym| !sym.qualified_name().contains("::"))
         .map(|sym| sym.qualified_name())
         .collect();
-    println!("Top-level packages: {:?}", packages);
+    println!("Top-level packages: {packages:?}");
 
     // Check if ISQ package exists
     let isq_package = workspace.symbol_table().find_by_qualified_name("ISQ");
@@ -154,7 +152,7 @@ fn test_stdlib_isq_massvalue() {
         .take(30)
         .map(|sym| sym.qualified_name())
         .collect();
-    println!("ISQ/ISQBase symbols: {:?}", isq_symbols);
+    println!("ISQ/ISQBase symbols: {isq_symbols:?}");
 
     // Check ISQBase::MassValue directly
     let isqbase_mass_value = workspace
@@ -162,8 +160,7 @@ fn test_stdlib_isq_massvalue() {
         .find_by_qualified_name("ISQBase::MassValue");
     assert!(
         isqbase_mass_value.is_some(),
-        "ISQBase::MassValue should exist. Symbols: {:?}",
-        isq_symbols
+        "ISQBase::MassValue should exist. Symbols: {isq_symbols:?}"
     );
 
     // Test that ISQ::MassValue resolves via public re-export
@@ -193,7 +190,7 @@ fn test_stdlib_hover_simulation() {
 
     // Position 23 is on "MassValue"
     let extracted = crate::core::text_utils::extract_qualified_name_at_cursor(line, 23);
-    println!("Extracted from line: {:?}", extracted);
+    println!("Extracted from line: {extracted:?}");
     assert_eq!(extracted, Some("ISQ::MassValue".to_string()));
 
     // Now resolve it - this is what hover does
@@ -256,7 +253,7 @@ fn test_stdlib_hover_with_user_file() {
     // Now test hover on "ISQ::MassValue" in line 2
     let line = "    private import ISQ::MassValue;";
     let extracted = crate::core::text_utils::extract_qualified_name_at_cursor(line, 23);
-    println!("Extracted from user file: {:?}", extracted);
+    println!("Extracted from user file: {extracted:?}");
     assert_eq!(extracted, Some("ISQ::MassValue".to_string()));
 
     // Resolve using the resolver (this is what hover does)
@@ -275,7 +272,7 @@ fn test_stdlib_hover_with_user_file() {
     let user_scope = workspace
         .symbol_table()
         .get_scope_for_file(&user_path.to_string_lossy());
-    println!("User file scope: {:?}", user_scope);
+    println!("User file scope: {user_scope:?}");
 
     if let Some(scope_id) = user_scope {
         let mass_value = resolver.resolve_in_scope("MassValue", scope_id);

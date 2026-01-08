@@ -188,10 +188,10 @@ fn test_deeply_nested_scopes() {
             scope_id: i,
             source_file: None,
             span: None,
-            name: format!("Level{}", i),
-            qualified_name: format!("Level0::Level{}", i),
+            name: format!("Level{i}"),
+            qualified_name: format!("Level0::Level{i}"),
         };
-        table.insert(format!("Level{}", i), symbol).unwrap();
+        table.insert(format!("Level{i}"), symbol).unwrap();
     }
 
     // From the deepest scope (level 4), we should be able to find all symbols
@@ -463,7 +463,7 @@ fn test_special_characters_in_name() {
     // Verify all special names can be found
     for name in special_names {
         let found = table.lookup_mut(name);
-        assert!(found.is_some(), "Should find symbol with name: {}", name);
+        assert!(found.is_some(), "Should find symbol with name: {name}");
         assert_eq!(found.unwrap().name(), name);
     }
 }

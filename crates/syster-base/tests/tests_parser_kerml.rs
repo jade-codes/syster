@@ -3204,8 +3204,7 @@ fn test_feature_direction_kind_standalone(#[case] input: &str) {
     let result = KerMLParser::parse(syster::parser::kerml::Rule::feature_direction_kind, input);
     assert!(
         result.is_ok(),
-        "Should parse '{}' as feature_direction_kind",
-        input
+        "Should parse '{input}' as feature_direction_kind"
     );
     assert_eq!(result.unwrap().as_str(), input);
 }
@@ -3227,8 +3226,7 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
         let parsed = pairs.as_str();
         assert_ne!(
             parsed, input,
-            "'{}' should not fully match as feature_direction_kind",
-            input
+            "'{input}' should not fully match as feature_direction_kind"
         );
     }
 }

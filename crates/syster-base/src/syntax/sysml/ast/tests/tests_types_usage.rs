@@ -239,7 +239,7 @@ fn test_usage_debug_trait() {
         vec![],
     );
 
-    let debug_str = format!("{:?}", usage);
+    let debug_str = format!("{usage:?}");
     assert!(debug_str.contains("Usage"));
     assert!(debug_str.contains("testPart"));
 }
@@ -627,8 +627,7 @@ fn test_usage_visitable_all_kinds() {
 
         assert!(
             visitor.usage_visited,
-            "Usage of kind {:?} should be visited",
-            kind
+            "Usage of kind {kind:?} should be visited"
         );
         assert_eq!(visitor.usage_kind, Some(kind.clone()));
     }

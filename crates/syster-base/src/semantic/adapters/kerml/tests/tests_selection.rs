@@ -786,7 +786,7 @@ fn test_collect_classifier_spans_with_different_classifier_kinds() {
         let spans = find_kerml_selection_spans(&file, pos);
 
         // All kinds should work the same
-        assert_eq!(spans.len(), 1, "Failed for kind {:?}", kind);
+        assert_eq!(spans.len(), 1, "Failed for kind {kind:?}");
     }
 }
 

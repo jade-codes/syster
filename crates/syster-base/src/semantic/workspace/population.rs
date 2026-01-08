@@ -63,21 +63,42 @@ impl Workspace<SyntaxFile> {
     /// Resolves unqualified targets in relationships to their fully qualified names.
     /// This runs after population when all symbols are available.
     fn resolve_relationship_targets(&mut self) {
+        use crate::core::constants::{
+            REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_REDEFINITION, REL_SATISFY,
+            REL_SPECIALIZATION, REL_SUBSETTING,
+        };
+
         let resolver = Resolver::new(&self.symbol_table);
 
-        self.relationship_graph
-            .resolve_targets(REL_TYPING, |source, target| {
-                // Get the scope of the source symbol to resolve in the correct context
-                let scope_id = self
-                    .symbol_table
-                    .find_by_qualified_name(source)
-                    .map(|sym| sym.scope_id())
-                    .unwrap_or(0);
+        // Helper closure to resolve a target in the context of its source symbol
+        let resolve_in_context = |source: &str, target: &str| -> Option<String> {
+            let scope_id = self
+                .symbol_table
+                .find_by_qualified_name(source)
+                .map(|sym| sym.scope_id())
+                .unwrap_or(0);
 
-                // Resolve the target name in that scope (handles imports, scope chain)
-                resolver
-                    .resolve_in_scope(target, scope_id)
-                    .map(|sym| sym.qualified_name().to_string())
-            });
+            resolver
+                .resolve_in_scope(target, scope_id)
+                .map(|sym| sym.qualified_name().to_string())
+        };
+
+        // Resolve one-to-one relationship targets (e.g., typing)
+        self.relationship_graph
+            .resolve_targets(REL_TYPING, resolve_in_context);
+
+        // Resolve one-to-many relationship targets
+        for rel_type in [
+            REL_SPECIALIZATION,
+            REL_REDEFINITION,
+            REL_SUBSETTING,
+            REL_SATISFY,
+            REL_PERFORM,
+            REL_EXHIBIT,
+            REL_INCLUDE,
+        ] {
+            self.relationship_graph
+                .resolve_one_to_many_targets(rel_type, resolve_in_context);
+        }
     }
 }

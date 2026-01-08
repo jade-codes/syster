@@ -725,13 +725,11 @@ fn test_format_all_symbol_variants_produce_output() {
         let result = format_rich_hover(&symbol, &workspace);
         assert!(
             !result.is_empty(),
-            "Hover for symbol {:?} should not be empty",
-            symbol
+            "Hover for symbol {symbol:?} should not be empty"
         );
         assert!(
             result.len() > 10,
-            "Hover for symbol {:?} should have substantial content, got: {result}",
-            symbol
+            "Hover for symbol {symbol:?} should have substantial content, got: {result}"
         );
     }
 }

@@ -260,7 +260,7 @@ fn test_collect_definition_hints_with_different_definition_kinds() {
         };
         let hints = extract_sysml_inlay_hints(&file, &symbol_table, None);
 
-        assert_eq!(hints.len(), 1, "Failed for kind {:?}", kind);
+        assert_eq!(hints.len(), 1, "Failed for kind {kind:?}");
     }
 }
 

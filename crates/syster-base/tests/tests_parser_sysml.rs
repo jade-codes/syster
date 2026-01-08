@@ -1736,8 +1736,7 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
         let parsed = pairs.as_str();
         assert_ne!(
             parsed, input,
-            "'{}' should not fully match as feature_direction_kind",
-            input
+            "'{input}' should not fully match as feature_direction_kind"
         );
     }
 }
@@ -1776,8 +1775,7 @@ fn test_ref_prefix_rejects_concatenated_keywords(#[case] input: &str, #[case] de
         let parsed = pairs.as_str();
         assert_ne!(
             parsed, input,
-            "{}: '{}' should not fully match as ref_prefix",
-            desc, input
+            "{desc}: '{input}' should not fully match as ref_prefix"
         );
     }
 }
@@ -5364,8 +5362,7 @@ fn test_case_body_item_does_not_match_expression() {
     }
     assert!(
         result.is_err(),
-        "case_body_item should NOT match v.m, but got: {:?}",
-        result
+        "case_body_item should NOT match v.m, but got: {result:?}"
     );
 }
 
@@ -6622,8 +6619,7 @@ fn test_flow_end_feature_chains(#[case] input: &str, #[case] desc: &str) {
     let consumed: String = pairs.map(|p| p.as_str()).collect();
     assert_eq!(
         consumed, input,
-        "flow_end '{}' ({}) only consumed '{}', expected full input",
-        input, desc, consumed
+        "flow_end '{input}' ({desc}) only consumed '{consumed}', expected full input"
     );
 }
 
@@ -6666,8 +6662,7 @@ fn test_imported_reference_recursive(#[case] input: &str, #[case] desc: &str) {
     let consumed: String = pairs.map(|p| p.as_str()).collect();
     assert_eq!(
         consumed, input,
-        "imported_reference only consumed '{}', expected '{}'",
-        consumed, input
+        "imported_reference only consumed '{consumed}', expected '{input}'"
     );
 }
 
@@ -8386,9 +8381,9 @@ part cal : Calculator;
             Element::Package(p) => println!("element[{}] = Package({:?})", i, p.name),
             Element::Definition(d) => println!("element[{}] = Definition({:?})", i, d.name),
             Element::Usage(u) => println!("element[{}] = Usage({:?})", i, u.name),
-            Element::Comment(_) => println!("element[{}] = Comment", i),
-            Element::Import(_) => println!("element[{}] = Import", i),
-            Element::Alias(_) => println!("element[{}] = Alias", i),
+            Element::Comment(_) => println!("element[{i}] = Comment"),
+            Element::Import(_) => println!("element[{i}] = Import"),
+            Element::Alias(_) => println!("element[{i}] = Alias"),
         }
     }
 

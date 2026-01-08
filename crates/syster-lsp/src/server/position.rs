@@ -13,7 +13,41 @@ impl LspServer {
     ) -> Option<(String, Range)> {
         use super::helpers::span_to_lsp_range;
 
-        // Get document text to extract word at cursor
+        let file_path_str = path.to_string_lossy().to_string();
+
+        // First, check the ReferenceIndex for a pre-computed binding at this position.
+        // This handles references like `Inner::Vehicle` that were resolved during semantic analysis.
+        if let Some(qualified_name) = self.workspace.get_binding_at(
+            &file_path_str,
+            position.line as usize,
+            position.character as usize,
+        ) {
+            // Look up the symbol to get its span for the hover range
+            if let Some(symbol) = self
+                .workspace
+                .symbol_table()
+                .find_by_qualified_name(qualified_name)
+            {
+                let range = symbol
+                    .span()
+                    .map(|s| span_to_lsp_range(&s))
+                    .unwrap_or(Range {
+                        start: position,
+                        end: position,
+                    });
+                return Some((qualified_name.to_string(), range));
+            }
+            // Even if symbol lookup fails, return the qualified name from the index
+            return Some((
+                qualified_name.to_string(),
+                Range {
+                    start: position,
+                    end: position,
+                },
+            ));
+        }
+
+        // Fallback: Get document text to extract word at cursor
         let source = self.document_texts.get(path)?;
 
         let line = source.lines().nth(position.line as usize)?;
@@ -45,14 +79,11 @@ impl LspServer {
             },
         };
 
-        let file_path_str = path.to_string_lossy().to_string();
-
-        // If the word is a qualified name (contains ::), try to resolve it directly first.
-        // This handles hovering on import statements like "import ISQ::MassValue"
-        // where we want to show info about MassValue, not the import statement.
+        // If the word is a qualified name (contains ::), try to resolve it directly.
+        // This handles imports like "import ISQ::MassValue" where MassValue is fully qualified.
         if word.contains("::") {
             let resolver = self.resolver();
-            if let Some(symbol) = resolver.resolve(&word) {
+            if let Some(symbol) = resolver.resolve_qualified(&word) {
                 let qualified_name = symbol.qualified_name().to_string();
                 let range = symbol
                     .span()

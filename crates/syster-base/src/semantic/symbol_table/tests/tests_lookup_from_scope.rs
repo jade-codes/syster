@@ -298,10 +298,10 @@ fn test_lookup_from_scope_deeply_nested() {
             scope_id: i,
             source_file: None,
             span: None,
-            name: format!("Level{}", i),
-            qualified_name: format!("Level0::Level{}", i),
+            name: format!("Level{i}"),
+            qualified_name: format!("Level0::Level{i}"),
         };
-        table.insert(format!("Level{}", i), symbol).unwrap();
+        table.insert(format!("Level{i}"), symbol).unwrap();
     }
 
     // From the deepest scope (level 4), we should be able to find all symbols

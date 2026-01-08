@@ -905,8 +905,7 @@ part def Car :> Vehicle, Motorized;
     for (target, span) in &specs {
         assert!(
             span.is_some(),
-            "Specialization to {} should have a span",
-            target
+            "Specialization to {target} should have a span"
         );
     }
 }
@@ -952,8 +951,7 @@ part def Car :> Vehicle {
 
     assert!(
         subsetting_token.is_some(),
-        "Should have Property semantic token for 'components' from subsetting relationship. Got Property tokens: {:?}",
-        property_tokens
+        "Should have Property semantic token for 'components' from subsetting relationship. Got Property tokens: {property_tokens:?}"
     );
 }
 
@@ -998,8 +996,7 @@ part def ElectricVehicle :> Vehicle {
 
     assert!(
         redef_token.is_some(),
-        "Should have Property semantic token for 'engine' from redefinition relationship. Got Property tokens: {:?}",
-        property_tokens
+        "Should have Property semantic token for 'engine' from redefinition relationship. Got Property tokens: {property_tokens:?}"
     );
 }
 
@@ -1058,8 +1055,7 @@ package Tensors {
     // Line 8 should have token for the qualified type reference
     assert!(
         !line8_tokens.is_empty(),
-        "Should have semantic token for typing relationship on line 8. Type tokens: {:?}",
-        type_tokens
+        "Should have semantic token for typing relationship on line 8. Type tokens: {type_tokens:?}"
     );
 }
 
@@ -1175,8 +1171,7 @@ classifier MyClass {
     let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
     assert!(
         typing.is_some(),
-        "Should have typing relationship for feature using qualified name: {}",
-        qname
+        "Should have typing relationship for feature using qualified name: {qname}"
     );
 }
 
@@ -1294,7 +1289,7 @@ package Vehicles {
     let qname = car_qname.unwrap();
 
     let specs = relationship_graph.get_one_to_many_with_locations(REL_SPECIALIZATION, &qname);
-    assert!(specs.is_some(), "Should have specialization for {}", qname);
+    assert!(specs.is_some(), "Should have specialization for {qname}");
 }
 
 /// Test that import statements generate semantic tokens
@@ -1529,15 +1524,13 @@ package Quantities {
     let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
     assert!(
         typing.is_some(),
-        "Should have typing relationship for mRef (got: {:?})",
-        typing
+        "Should have typing relationship for mRef (got: {typing:?})"
     );
 
     let (target, loc) = typing.unwrap();
     assert!(
         target.contains("VectorMeasurementReference"),
-        "Target should contain VectorMeasurementReference, got: {}",
-        target
+        "Target should contain VectorMeasurementReference, got: {target}"
     );
     assert!(
         loc.is_some(),
@@ -1604,9 +1597,7 @@ package Values {
         {
             assert!(
                 loc.is_some(),
-                "Typing for {} -> {} should have location",
-                qname,
-                target
+                "Typing for {qname} -> {target} should have location"
             );
         }
 
@@ -1617,9 +1608,7 @@ package Values {
             for (target, loc) in redefs {
                 assert!(
                     loc.is_some(),
-                    "Redefinition {} -> {} should have location",
-                    qname,
-                    target
+                    "Redefinition {qname} -> {target} should have location"
                 );
             }
         }
@@ -1662,8 +1651,7 @@ package Pkg {
     // - Derived (typing target from instance)
     assert!(
         type_tokens.len() >= 2,
-        "Should have at least 2 Type tokens from relationships, got: {:?}",
-        type_tokens
+        "Should have at least 2 Type tokens from relationships, got: {type_tokens:?}"
     );
 }
 
@@ -1729,7 +1717,6 @@ part def Child :> Parent {
 
     assert!(
         redef_token.is_some(),
-        "Should have Property semantic token for 'num' from redefinition (:>> num). Property tokens: {:?}",
-        property_tokens
+        "Should have Property semantic token for 'num' from redefinition (:>> num). Property tokens: {property_tokens:?}"
     );
 }

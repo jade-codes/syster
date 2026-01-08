@@ -132,7 +132,7 @@ fn test_namespacedeclaration_debug_trait() {
         span: None,
     };
 
-    let debug_str = format!("{:?}", ns);
+    let debug_str = format!("{ns:?}");
     assert!(debug_str.contains("NamespaceDeclaration"));
     assert!(debug_str.contains("DebugTest"));
 }
@@ -688,7 +688,7 @@ fn test_namespacedeclaration_many_instances() {
 
     for i in 0..100 {
         let ns = NamespaceDeclaration {
-            name: format!("Namespace{}", i),
+            name: format!("Namespace{i}"),
             span: None,
         };
         ns.accept(&mut visitor);

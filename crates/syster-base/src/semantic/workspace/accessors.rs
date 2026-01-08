@@ -54,4 +54,13 @@ impl<T: ParsedFile> Workspace<T> {
     pub fn get_file_dependents(&self, path: &PathBuf) -> Vec<PathBuf> {
         self.dependency_graph.get_dependents(path)
     }
+
+    /// Lookup what qualified name is referenced at a given position in a file.
+    ///
+    /// Returns `Some(qualified_name)` if there's a reference at this position,
+    /// or `None` if the position doesn't correspond to a reference.
+    pub fn get_binding_at(&self, file: &str, line: usize, column: usize) -> Option<&str> {
+        self.relationship_graph
+            .get_binding_at_position(file, line, column)
+    }
 }

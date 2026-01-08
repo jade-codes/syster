@@ -994,8 +994,7 @@ package Test {
     // MUST include outer Vehicle definition
     assert!(
         lines.contains(&2),
-        "Must include outer Vehicle definition at line 2, got lines {:?}",
-        lines
+        "Must include outer Vehicle definition at line 2, got lines {lines:?}"
     );
 
     // MUST include usage of outer Vehicle (line 7: truck)

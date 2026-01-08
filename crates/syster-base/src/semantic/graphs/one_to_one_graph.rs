@@ -134,6 +134,15 @@ impl OneToOneGraph {
             .map(|(source, (target, _))| (source, target))
     }
 
+    /// Iterate all entries with their locations: (source, target, optional location)
+    pub fn all_entries_with_locations(
+        &self,
+    ) -> impl Iterator<Item = (&IStr, &IStr, Option<&RefLocation>)> {
+        self.relationships
+            .iter()
+            .map(|(source, (target, loc))| (source, target, loc.as_ref()))
+    }
+
     /// Update a target to a new resolved value, fixing the reverse index
     pub fn update_target(&mut self, source: &IStr, new_target: IStr) {
         if let Some((old_target, location)) = self.relationships.get(source).cloned() {

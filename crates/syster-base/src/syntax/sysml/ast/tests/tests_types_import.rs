@@ -258,7 +258,7 @@ fn test_import_debug_trait() {
         span: None,
     };
 
-    let debug_str = format!("{:?}", import);
+    let debug_str = format!("{import:?}");
     assert!(debug_str.contains("Import"));
     assert!(debug_str.contains("Package::Element"));
 }

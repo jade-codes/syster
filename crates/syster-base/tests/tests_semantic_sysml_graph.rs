@@ -1032,8 +1032,7 @@ fn test_repopulation_no_duplicate_relationships() {
     assert_eq!(
         targets.len(),
         1,
-        "Should still have 1 target after repopulation (fix works!). Got: {:?}",
-        targets
+        "Should still have 1 target after repopulation (fix works!). Got: {targets:?}"
     );
 }
 
@@ -1656,16 +1655,13 @@ fn test_cross_language_sysml_specializes_kerml() {
     let rels_qname = workspace
         .relationship_graph()
         .get_all_relationships("VectorValues::NumericalVectorValue");
-    println!(
-        "VectorValues::NumericalVectorValue relationships: {:?}",
-        rels_qname
-    );
+    println!("VectorValues::NumericalVectorValue relationships: {rels_qname:?}");
 
     // Check what VectorQuantityValue specializes
     let vqv_rels = workspace
         .relationship_graph()
         .get_one_to_many(REL_SPECIALIZATION, "Quantities::VectorQuantityValue");
-    println!("VectorQuantityValue specializes: {:?}", vqv_rels);
+    println!("VectorQuantityValue specializes: {vqv_rels:?}");
 
     // The SysML type should specialize the KerML type
     assert!(
@@ -1675,8 +1671,7 @@ fn test_cross_language_sysml_specializes_kerml() {
     let targets = vqv_rels.unwrap();
     assert!(
         targets.iter().any(|t| t.contains("NumericalVectorValue")),
-        "VectorQuantityValue should specialize NumericalVectorValue, got: {:?}",
-        targets
+        "VectorQuantityValue should specialize NumericalVectorValue, got: {targets:?}"
     );
 }
 
@@ -1711,7 +1706,7 @@ fn test_temperature_difference_value_no_duplicate_specialization() {
     );
     let targets = rels.unwrap();
 
-    println!("TemperatureDifferenceValue specializes: {:?}", targets);
+    println!("TemperatureDifferenceValue specializes: {targets:?}");
 
     // Check for duplicates
     let mut unique_targets: Vec<_> = targets.to_vec();
@@ -1731,7 +1726,6 @@ fn test_temperature_difference_value_no_duplicate_specialization() {
     assert_eq!(
         targets.len(),
         1,
-        "Should have exactly 1 specialization target, got: {:?}",
-        targets
+        "Should have exactly 1 specialization target, got: {targets:?}"
     );
 }

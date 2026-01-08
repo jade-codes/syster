@@ -865,7 +865,7 @@ fn test_visit_large_file() {
     // Add 10 packages
     for i in 0..10 {
         elements.push(Element::Package(Package {
-            name: Some(format!("Pkg{}", i)),
+            name: Some(format!("Pkg{i}")),
             elements: vec![],
             span: None,
         }));
@@ -875,7 +875,7 @@ fn test_visit_large_file() {
     for i in 0..15 {
         elements.push(Element::Definition(Definition {
             kind: DefinitionKind::Part,
-            name: Some(format!("Def{}", i)),
+            name: Some(format!("Def{i}")),
             body: vec![],
             relationships: Relationships::none(),
             is_abstract: false,
@@ -889,7 +889,7 @@ fn test_visit_large_file() {
     for i in 0..20 {
         elements.push(Element::Usage(Usage {
             kind: UsageKind::Part,
-            name: Some(format!("usage{}", i)),
+            name: Some(format!("usage{i}")),
             body: vec![],
             relationships: Relationships::none(),
             is_derived: false,
@@ -902,7 +902,7 @@ fn test_visit_large_file() {
     // Add 5 comments
     for i in 0..5 {
         elements.push(Element::Comment(Comment {
-            content: format!("Comment {}", i),
+            content: format!("Comment {i}"),
             span: None,
         }));
     }
@@ -910,7 +910,7 @@ fn test_visit_large_file() {
     // Add 8 imports
     for i in 0..8 {
         elements.push(Element::Import(Import {
-            path: format!("Package{}::*", i),
+            path: format!("Package{i}::*"),
             path_span: None,
             is_recursive: false,
             is_public: false,
@@ -921,8 +921,8 @@ fn test_visit_large_file() {
     // Add 3 aliases
     for i in 0..3 {
         elements.push(Element::Alias(Alias {
-            name: Some(format!("Alias{}", i)),
-            target: format!("Target{}", i),
+            name: Some(format!("Alias{i}")),
+            target: format!("Target{i}"),
             target_span: None,
             span: None,
         }));
