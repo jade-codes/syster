@@ -42,9 +42,7 @@ fn test_sysml_examples_parsing() {
     let examples_dir = get_examples_dir();
 
     if !examples_dir.exists() {
-        eprintln!(
-            "⏭️  Skipping: sysml-examples directory not found at {examples_dir:?}"
-        );
+        eprintln!("⏭️  Skipping: sysml-examples directory not found at {examples_dir:?}");
         eprintln!("   To run these tests, execute:");
         eprintln!(
             "   git clone --depth 1 https://github.com/Systems-Modeling/SysML-v2-Release.git /tmp/sysml"
@@ -118,9 +116,7 @@ fn test_sysml_examples_parsing() {
     eprintln!("\n╔════════════════════════════════════════════════════════════════╗");
     eprintln!("║           SysML v2 Examples Parsing Summary                    ║");
     eprintln!("╠════════════════════════════════════════════════════════════════╣");
-    eprintln!(
-        "║ Total files: {total:>4}                                              ║"
-    );
+    eprintln!("║ Total files: {total:>4}                                              ║");
     eprintln!(
         "║ Passed:      {pass_count:>4} ({pass_rate:>5.1}%)                                    ║"
     );

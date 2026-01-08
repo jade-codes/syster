@@ -929,9 +929,7 @@ fn test_hover_temperature_difference_value_no_duplicate_specialization() {
     let graph = workspace.relationship_graph();
     let grouped_rels = graph.get_relationships_grouped(symbol.qualified_name());
 
-    println!(
-        "Grouped relationships for TemperatureDifferenceValue: {grouped_rels:?}"
-    );
+    println!("Grouped relationships for TemperatureDifferenceValue: {grouped_rels:?}");
 
     // Find the "Specializes" group
     let specializes_group = grouped_rels
@@ -1171,9 +1169,7 @@ fn test_lsp_hover_isq_temperature_difference_value() {
         })
         .expect("Should find TemperatureDifferenceValue definition");
 
-    println!(
-        "Found TemperatureDifferenceValue at line {line_index}, col {col_index}"
-    );
+    println!("Found TemperatureDifferenceValue at line {line_index}, col {col_index}");
     println!("Line content: {}", lines[line_index]);
 
     // Hover at the position
@@ -1293,9 +1289,7 @@ fn test_lsp_hover_with_auto_discovered_stdlib() {
         })
         .expect("Should find TemperatureDifferenceValue definition");
 
-    println!(
-        "Found TemperatureDifferenceValue at line {line_index}, col {col_index}"
-    );
+    println!("Found TemperatureDifferenceValue at line {line_index}, col {col_index}");
 
     // Hover at the position
     let position = Position {
@@ -1803,9 +1797,7 @@ package Refs {
     // (the "Engine" type reference should no longer be marked as a Type token)
     // Note: The exact assertion depends on implementation details,
     // but at minimum the token set should reflect the new state
-    println!(
-        "Token count changed: {initial_token_count} -> {updated_token_count}"
-    );
+    println!("Token count changed: {initial_token_count} -> {updated_token_count}");
 
     // If we have a way to check for specific type references in the tokens,
     // we would verify that the "Engine" reference is no longer present
@@ -1875,9 +1867,7 @@ package Car {
     let initial_has_engine_def = initial_content.contains("EngineDefs")
         || initial_content.contains("engine_def.sysml")
         || initial_content.contains("Part def Engine");
-    println!(
-        "Initial hover references EngineDefs: {initial_has_engine_def}"
-    );
+    println!("Initial hover references EngineDefs: {initial_has_engine_def}");
 
     // Now remove the import from file B
     let _ = server.apply_text_change_only(
@@ -1912,9 +1902,7 @@ package Car {
     // because Engine is now unresolved in this scope
     let updated_has_engine_def =
         updated_content.contains("EngineDefs") || updated_content.contains("engine_def.sysml");
-    println!(
-        "Updated hover references EngineDefs: {updated_has_engine_def}"
-    );
+    println!("Updated hover references EngineDefs: {updated_has_engine_def}");
 
     // The key assertion: after removing import, Engine reference should not
     // show stale information about the import that no longer exists
@@ -1978,9 +1966,7 @@ package SensorUsage {
         // Check for presence of typing relationships (tempSensor, pressureSensor typed as Sensor)
         let has_usage_info = content.contains("tempSensor") || content.contains("pressureSensor");
 
-        println!(
-            "Hover mentions usages (tempSensor/pressureSensor): {has_usage_info}"
-        );
+        println!("Hover mentions usages (tempSensor/pressureSensor): {has_usage_info}");
 
         // Note: This might not show in hover depending on implementation
         // The key test is test_hover_import_references_cleared_when_import_removed above
