@@ -2378,12 +2378,12 @@ fn test_parse_kerml_feature_patterns(#[case] rule: Rule, #[case] input: &str, #[
     assert_round_trip(rule, input, desc);
 }
 
-// Test disjoint with feature chains and from: disjoint a.b from c.d (partial parse - doesn't consume semicolon)
+// Test disjoint with feature chains (disjoining rule doesn't include semicolon)
 #[test]
 fn test_parse_disjoint_feature_chains_from() {
     assert_round_trip(
         Rule::disjoining,
-        "disjoint earlierOccurrence.successors from laterOccurrence.predecessors;",
+        "disjoint earlierOccurrence.successors from laterOccurrence.predecessors",
         "disjoint feature chains",
     );
 }
