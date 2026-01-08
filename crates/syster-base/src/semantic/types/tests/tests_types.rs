@@ -57,7 +57,7 @@ fn test_circular_dependency_has_code() {
 #[test]
 fn test_error_display_includes_code() {
     let error = SemanticError::undefined_reference("MySymbol".to_string());
-    let display = format!("{}", error);
+    let display = format!("{error}");
     assert!(display.starts_with("E002:"));
 }
 
@@ -70,7 +70,7 @@ fn test_error_display_with_location() {
             column: Some(5),
         });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
     assert!(display.contains("test.sysml"));
     assert!(display.contains("10"));
     assert!(display.contains("MySymbol"));
@@ -79,7 +79,7 @@ fn test_error_display_with_location() {
 #[test]
 fn test_error_display_without_location() {
     let error = SemanticError::undefined_reference("MySymbol".to_string());
-    let display = format!("{}", error);
+    let display = format!("{error}");
     assert!(display.contains("MySymbol"));
     assert!(!display.contains(".sysml"));
 }
@@ -148,7 +148,7 @@ fn test_location_with_file_only() {
         column: None,
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
     assert!(display.contains("file.sysml"));
 }
 
@@ -160,7 +160,7 @@ fn test_location_with_line_only() {
         column: None,
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
     assert!(display.contains("42"));
 }
 
@@ -172,7 +172,7 @@ fn test_location_with_all_fields() {
         column: Some(20),
     });
 
-    let display = format!("{}", error);
+    let display = format!("{error}");
     assert!(display.contains("test.sysml"));
     assert!(display.contains("15"));
     assert!(display.contains("20"));
@@ -571,7 +571,7 @@ fn test_diagnostic_display() {
     let location = DiagLocation::new("test.sysml", Range::single(0, 5));
     let diag = Diagnostic::error("Test error", location);
 
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     assert!(display.contains("test.sysml:1:6")); // 1-indexed display
     assert!(display.contains("Error"));

@@ -283,7 +283,7 @@ fn test_diagnostic_display_multiline_location() {
         Range::new(Position::new(10, 5), Position::new(12, 3)),
     );
     let diag = Diagnostic::error("Multi-line error", location);
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     // Display shows start position
     assert!(display.contains("module.kerml"));
@@ -295,7 +295,7 @@ fn test_diagnostic_display_multiline_location() {
 fn test_diagnostic_display_warning() {
     let location = Location::new("file.sysml", Range::single(5, 10));
     let diag = Diagnostic::warning("Unused variable", location);
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     assert!(display.contains("Warning"));
     assert!(display.contains("Unused variable"));
@@ -305,7 +305,7 @@ fn test_diagnostic_display_warning() {
 fn test_diagnostic_display_with_code() {
     let location = Location::new("test.sysml", Range::single(0, 0));
     let diag = Diagnostic::error("Error with code", location).with_code("E042");
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     // Note: The Display impl doesn't include the code, just the message
     // This test verifies the current behavior
@@ -317,7 +317,7 @@ fn test_diagnostic_display_with_code() {
 fn test_diagnostic_display_zero_indexed_to_one_indexed() {
     let location = Location::new("file.sysml", Range::single(0, 0));
     let diag = Diagnostic::error("At origin", location);
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     // Position (0, 0) should display as (1, 1)
     assert!(display.contains("1:1"));
@@ -327,7 +327,7 @@ fn test_diagnostic_display_zero_indexed_to_one_indexed() {
 fn test_diagnostic_display_format_components() {
     let location = Location::new("src/test.sysml", Range::single(99, 49));
     let diag = Diagnostic::error("Message here", location);
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     // Verify format: file:line:column: severity: message
     assert!(display.starts_with("src/test.sysml:"));
@@ -340,7 +340,7 @@ fn test_diagnostic_display_format_components() {
 fn test_diagnostic_display_empty_message() {
     let location = Location::new("test.sysml", Range::single(5, 10));
     let diag = Diagnostic::error("", location);
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     // Should still have file:line:column: severity: format
     assert!(display.contains("test.sysml:6:11"));
@@ -351,7 +351,7 @@ fn test_diagnostic_display_empty_message() {
 fn test_diagnostic_display_empty_filename() {
     let location = Location::new("", Range::single(0, 0));
     let diag = Diagnostic::error("Error in unnamed file", location);
-    let display = format!("{}", diag);
+    let display = format!("{diag}");
 
     assert!(display.contains(":1:1"));
     assert!(display.contains("Error in unnamed file"));

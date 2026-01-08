@@ -31,6 +31,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>, _body: Vec<()>) -
     Usage {
         kind,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body: vec![],
         span,
@@ -50,6 +51,7 @@ fn make_definition(
         is_abstract: false,
         is_variation: false,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body,
         span,
@@ -73,7 +75,6 @@ fn create_usage_symbol(name: &str, type_name: Option<&str>) -> Symbol {
         usage_type: type_name.map(String::from),
         source_file: None,
         span: None,
-        references: Vec::new(),
     }
 }
 
@@ -259,7 +260,7 @@ fn test_collect_definition_hints_with_different_definition_kinds() {
         };
         let hints = extract_sysml_inlay_hints(&file, &symbol_table, None);
 
-        assert_eq!(hints.len(), 1, "Failed for kind {:?}", kind);
+        assert_eq!(hints.len(), 1, "Failed for kind {kind:?}");
     }
 }
 
@@ -314,6 +315,7 @@ fn test_collect_definition_hints_usage_with_explicit_typing() {
         relationships,
         body: vec![],
         span: Some(make_span(2, 4, 2, 9)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };

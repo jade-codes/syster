@@ -68,6 +68,7 @@ fn test_visit_namespace_with_elements() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -193,6 +194,7 @@ fn test_visit_import_single() {
             path: "SomePackage::*".to_string(),
             path_span: None,
             is_recursive: false,
+            is_public: false,
             span: None,
         })],
     };
@@ -219,18 +221,21 @@ fn test_visit_import_multiple() {
                 path: "Package1::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Package2::Element".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Package3::*::**".to_string(),
                 path_span: None,
                 is_recursive: true,
+                is_public: false,
                 span: None,
             }),
         ],
@@ -251,6 +256,7 @@ fn test_visit_import_recursive() {
             path: "Package::*::**".to_string(),
             path_span: None,
             is_recursive: true,
+            is_public: false,
             span: None,
         })],
     };
@@ -273,12 +279,14 @@ fn test_visit_import_in_package() {
                     path: "External::Type".to_string(),
                     path_span: None,
                     is_recursive: false,
+                    is_public: false,
                     span: None,
                 }),
                 Element::Import(Import {
                     path: "Another::Package::*".to_string(),
                     path_span: None,
                     is_recursive: false,
+                    is_public: false,
                     span: None,
                 }),
             ],
@@ -310,6 +318,7 @@ fn test_visit_usage_single() {
             is_derived: false,
             is_readonly: false,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -339,6 +348,7 @@ fn test_visit_usage_multiple_kinds() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Action,
@@ -348,6 +358,7 @@ fn test_visit_usage_multiple_kinds() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Port,
@@ -357,6 +368,7 @@ fn test_visit_usage_multiple_kinds() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -380,6 +392,7 @@ fn test_visit_usage_anonymous() {
             is_derived: false,
             is_readonly: false,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -397,6 +410,7 @@ fn test_visit_usage_with_relationships() {
         elements: vec![Element::Usage(Usage {
             kind: UsageKind::Part,
             name: Some("myPart".to_string()),
+            short_name: None,
             body: vec![],
             relationships: Relationships {
                 typed_by: Some("PartType".to_string()),
@@ -432,6 +446,7 @@ fn test_visit_usage_derived_readonly() {
             is_derived: true,
             is_readonly: true,
             span: None,
+            short_name: None,
         })],
     };
 
@@ -572,6 +587,7 @@ fn test_visit_all_element_types() {
                 path: "External::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Comment(Comment {
@@ -597,6 +613,7 @@ fn test_visit_all_element_types() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Part,
@@ -606,6 +623,7 @@ fn test_visit_all_element_types() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
         ],
     };
@@ -638,6 +656,7 @@ fn test_visit_nested_elements_in_package() {
                     path: "External::Type".to_string(),
                     path_span: None,
                     is_recursive: false,
+                    is_public: false,
                     span: None,
                 }),
                 Element::Definition(Definition {
@@ -648,6 +667,7 @@ fn test_visit_nested_elements_in_package() {
                     is_abstract: false,
                     is_variation: false,
                     span: None,
+                    short_name: None,
                 }),
                 Element::Usage(Usage {
                     kind: UsageKind::Part,
@@ -657,6 +677,7 @@ fn test_visit_nested_elements_in_package() {
                     is_derived: false,
                     is_readonly: false,
                     span: None,
+                    short_name: None,
                 }),
                 Element::Alias(Alias {
                     name: Some("InnerAlias".to_string()),
@@ -700,6 +721,7 @@ fn test_visit_deeply_nested_packages() {
                             is_abstract: false,
                             is_variation: false,
                             span: None,
+                            short_name: None,
                         })],
                         span: None,
                     })],
@@ -713,6 +735,7 @@ fn test_visit_deeply_nested_packages() {
                     is_abstract: false,
                     is_variation: false,
                     span: None,
+                    short_name: None,
                 }),
             ],
             span: None,
@@ -753,6 +776,7 @@ fn test_visit_multiple_of_each_type() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Definition(Definition {
                 kind: DefinitionKind::Action,
@@ -762,6 +786,7 @@ fn test_visit_multiple_of_each_type() {
                 is_abstract: false,
                 is_variation: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Part,
@@ -771,6 +796,7 @@ fn test_visit_multiple_of_each_type() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Usage(Usage {
                 kind: UsageKind::Action,
@@ -780,6 +806,7 @@ fn test_visit_multiple_of_each_type() {
                 is_derived: false,
                 is_readonly: false,
                 span: None,
+                short_name: None,
             }),
             Element::Comment(Comment {
                 content: "Comment 1".to_string(),
@@ -793,12 +820,14 @@ fn test_visit_multiple_of_each_type() {
                 path: "Import1::*".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Import(Import {
                 path: "Import2::Element".to_string(),
                 path_span: None,
                 is_recursive: false,
+                is_public: false,
                 span: None,
             }),
             Element::Alias(Alias {
@@ -836,7 +865,7 @@ fn test_visit_large_file() {
     // Add 10 packages
     for i in 0..10 {
         elements.push(Element::Package(Package {
-            name: Some(format!("Pkg{}", i)),
+            name: Some(format!("Pkg{i}")),
             elements: vec![],
             span: None,
         }));
@@ -846,12 +875,13 @@ fn test_visit_large_file() {
     for i in 0..15 {
         elements.push(Element::Definition(Definition {
             kind: DefinitionKind::Part,
-            name: Some(format!("Def{}", i)),
+            name: Some(format!("Def{i}")),
             body: vec![],
             relationships: Relationships::none(),
             is_abstract: false,
             is_variation: false,
             span: None,
+            short_name: None,
         }));
     }
 
@@ -859,19 +889,20 @@ fn test_visit_large_file() {
     for i in 0..20 {
         elements.push(Element::Usage(Usage {
             kind: UsageKind::Part,
-            name: Some(format!("usage{}", i)),
+            name: Some(format!("usage{i}")),
             body: vec![],
             relationships: Relationships::none(),
             is_derived: false,
             is_readonly: false,
             span: None,
+            short_name: None,
         }));
     }
 
     // Add 5 comments
     for i in 0..5 {
         elements.push(Element::Comment(Comment {
-            content: format!("Comment {}", i),
+            content: format!("Comment {i}"),
             span: None,
         }));
     }
@@ -879,9 +910,10 @@ fn test_visit_large_file() {
     // Add 8 imports
     for i in 0..8 {
         elements.push(Element::Import(Import {
-            path: format!("Package{}::*", i),
+            path: format!("Package{i}::*"),
             path_span: None,
             is_recursive: false,
+            is_public: false,
             span: None,
         }));
     }
@@ -889,8 +921,8 @@ fn test_visit_large_file() {
     // Add 3 aliases
     for i in 0..3 {
         elements.push(Element::Alias(Alias {
-            name: Some(format!("Alias{}", i)),
-            target: format!("Target{}", i),
+            name: Some(format!("Alias{i}")),
+            target: format!("Target{i}"),
             target_span: None,
             span: None,
         }));

@@ -43,6 +43,7 @@ fn test_collect_containing_spans_definition_element() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(0, 0, 3, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -68,6 +69,7 @@ fn test_collect_containing_spans_usage_element() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(0, 0, 2, 1)),
+        short_name: None,
         is_derived: false,
         is_readonly: false,
     };
@@ -119,6 +121,7 @@ fn test_collect_containing_spans_multiple_element_types() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(3, 0, 5, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -170,6 +173,7 @@ fn test_collect_containing_spans_no_matching_position() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(0, 0, 3, 1)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };

@@ -1,682 +1,10 @@
 use super::super::*;
-use crate::core::constants::{
-    REL_REDEFINITION, REL_REFERENCE_SUBSETTING, REL_SPECIALIZATION, REL_SUBSETTING, REL_TYPING,
-};
+use crate::core::constants::{REL_REDEFINITION, REL_SPECIALIZATION, REL_TYPING};
 use crate::core::{Position, Span};
-use crate::semantic::graphs::RelationshipGraph;
-use crate::semantic::resolver::Resolver;
-use crate::semantic::symbol_table::{Symbol, SymbolTable};
-use crate::semantic::{NoOpValidator, RelationshipValidator};
+use crate::semantic::symbol_table::Symbol;
 use crate::syntax::sysml::ast::{
     Alias, Definition, DefinitionKind, Element, Package, Relationships, SysMLFile, Usage, UsageKind,
 };
-
-#[test]
-fn test_noop_validator_accepts_all_relationships() {
-    let validator = NoOpValidator;
-    let source = Symbol::Package {
-        name: "Source".to_string(),
-        qualified_name: "Source".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-    let target = Symbol::Package {
-        name: "Target".to_string(),
-        qualified_name: "Target".to_string(),
-        scope_id: 0,
-        source_file: None,
-        span: None,
-        references: Vec::new(),
-    };
-
-    let result = validator.validate_relationship("any_type", &source, &target);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_noop_validator_is_send_sync() {
-    fn assert_send_sync<T: Send + Sync>() {}
-    assert_send_sync::<NoOpValidator>();
-}
-
-#[test]
-fn test_typing_relationship_reference() {
-    let mut table = SymbolTable::new();
-
-    // Create a classifier
-    table
-        .insert(
-            "Vehicle".to_string(),
-            Symbol::Classifier {
-                name: "Vehicle".to_string(),
-                qualified_name: "Vehicle".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 1, column: 0 },
-                    end: Position {
-                        line: 1,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create a usage that types by Vehicle
-    table
-        .insert(
-            "myCar".to_string(),
-            Symbol::Usage {
-                name: "myCar".to_string(),
-                qualified_name: "myCar".to_string(),
-                kind: "part".to_string(),
-                semantic_role: None,
-                usage_type: None,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 5, column: 0 },
-                    end: Position {
-                        line: 5,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create relationship graph with typing relationship
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "myCar", "Vehicle", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify Vehicle has a reference from myCar
-    let resolver = Resolver::new(&table);
-    let vehicle = resolver.resolve("Vehicle").unwrap();
-    assert_eq!(vehicle.references().len(), 1);
-    assert_eq!(vehicle.references()[0].span.start.line, 5);
-    assert_eq!(vehicle.references()[0].span.start.column, 0);
-}
-
-#[test]
-fn test_specialization_relationship_reference() {
-    let mut table = SymbolTable::new();
-
-    // Create base classifier
-    table
-        .insert(
-            "Vehicle".to_string(),
-            Symbol::Classifier {
-                name: "Vehicle".to_string(),
-                qualified_name: "Vehicle".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 1, column: 0 },
-                    end: Position {
-                        line: 1,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create specialized classifier
-    table
-        .insert(
-            "Car".to_string(),
-            Symbol::Classifier {
-                name: "Car".to_string(),
-                qualified_name: "Car".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 3, column: 0 },
-                    end: Position {
-                        line: 3,
-                        column: 30,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create specialization relationship
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(REL_SPECIALIZATION, "Car", "Vehicle", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify Vehicle has a reference from Car
-    let resolver = Resolver::new(&table);
-    let vehicle = resolver.resolve("Vehicle").unwrap();
-    assert_eq!(vehicle.references().len(), 1);
-    assert_eq!(vehicle.references()[0].span.start.line, 3);
-}
-
-#[test]
-fn test_multiple_references_to_same_symbol() {
-    let mut table = SymbolTable::new();
-
-    // Create base type
-    table
-        .insert(
-            "Integer".to_string(),
-            Symbol::Classifier {
-                name: "Integer".to_string(),
-                qualified_name: "Integer".to_string(),
-                kind: "datatype".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 1, column: 0 },
-                    end: Position {
-                        line: 1,
-                        column: 15,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create multiple usages that reference Integer
-    table
-        .insert(
-            "speed".to_string(),
-            Symbol::Feature {
-                name: "speed".to_string(),
-                qualified_name: "speed".to_string(),
-                feature_type: Some("Integer".to_string()),
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 5, column: 4 },
-                    end: Position {
-                        line: 5,
-                        column: 25,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    table
-        .insert(
-            "count".to_string(),
-            Symbol::Feature {
-                name: "count".to_string(),
-                qualified_name: "count".to_string(),
-                feature_type: Some("Integer".to_string()),
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 6, column: 4 },
-                    end: Position {
-                        line: 6,
-                        column: 25,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    table
-        .insert(
-            "index".to_string(),
-            Symbol::Feature {
-                name: "index".to_string(),
-                qualified_name: "index".to_string(),
-                feature_type: Some("Integer".to_string()),
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 7, column: 4 },
-                    end: Position {
-                        line: 7,
-                        column: 25,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create typing relationships
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "speed", "Integer", None, None);
-    graph.add_one_to_one(REL_TYPING, "count", "Integer", None, None);
-    graph.add_one_to_one(REL_TYPING, "index", "Integer", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify Integer has references from all three features
-    let resolver = Resolver::new(&table);
-    let integer = resolver.resolve("Integer").unwrap();
-    assert_eq!(integer.references().len(), 3);
-
-    let lines: Vec<_> = integer
-        .references()
-        .iter()
-        .map(|r| r.span.start.line)
-        .collect();
-    assert!(lines.contains(&5));
-    assert!(lines.contains(&6));
-    assert!(lines.contains(&7));
-}
-
-#[test]
-fn test_redefinition_reference() {
-    let mut table = SymbolTable::new();
-
-    // Create base feature
-    table
-        .insert(
-            "Vehicle::mass".to_string(),
-            Symbol::Feature {
-                name: "mass".to_string(),
-                qualified_name: "Vehicle::mass".to_string(),
-                feature_type: Some("Real".to_string()),
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 2, column: 4 },
-                    end: Position {
-                        line: 2,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create redefining feature
-    table
-        .insert(
-            "Car::mass".to_string(),
-            Symbol::Feature {
-                name: "mass".to_string(),
-                qualified_name: "Car::mass".to_string(),
-                feature_type: Some("Real".to_string()),
-                scope_id: 1,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 6, column: 4 },
-                    end: Position {
-                        line: 6,
-                        column: 35,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create redefinition relationship
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(REL_REDEFINITION, "Car::mass", "Vehicle::mass", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify Vehicle::mass has a reference from Car::mass
-    let resolver = Resolver::new(&table);
-    let base_mass = resolver.resolve("Vehicle::mass").unwrap();
-    assert_eq!(base_mass.references().len(), 1);
-    assert_eq!(base_mass.references()[0].span.start.line, 6);
-}
-
-#[test]
-fn test_subsetting_reference() {
-    let mut table = SymbolTable::new();
-
-    // Create general feature
-    table
-        .insert(
-            "parts".to_string(),
-            Symbol::Feature {
-                name: "parts".to_string(),
-                qualified_name: "parts".to_string(),
-                feature_type: Some("Part".to_string()),
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 2, column: 0 },
-                    end: Position {
-                        line: 2,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create subsetting feature
-    table
-        .insert(
-            "engineParts".to_string(),
-            Symbol::Feature {
-                name: "engineParts".to_string(),
-                qualified_name: "engineParts".to_string(),
-                feature_type: Some("EnginePart".to_string()),
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 4, column: 0 },
-                    end: Position {
-                        line: 4,
-                        column: 30,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create subsetting relationship
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(REL_SUBSETTING, "engineParts", "parts", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify parts has a reference from engineParts
-    let resolver = Resolver::new(&table);
-    let parts = resolver.resolve("parts").unwrap();
-    assert_eq!(parts.references().len(), 1);
-    assert_eq!(parts.references()[0].span.start.line, 4);
-}
-
-#[test]
-fn test_reference_subsetting() {
-    let mut table = SymbolTable::new();
-
-    // Create base reference
-    table
-        .insert(
-            "vehicle".to_string(),
-            Symbol::Usage {
-                name: "vehicle".to_string(),
-                qualified_name: "vehicle".to_string(),
-                kind: "ref".to_string(),
-                semantic_role: None,
-                usage_type: None,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 2, column: 0 },
-                    end: Position {
-                        line: 2,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create subsetting reference
-    table
-        .insert(
-            "car".to_string(),
-            Symbol::Usage {
-                name: "car".to_string(),
-                qualified_name: "car".to_string(),
-                kind: "ref".to_string(),
-                semantic_role: None,
-                usage_type: None,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 4, column: 0 },
-                    end: Position {
-                        line: 4,
-                        column: 25,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create reference subsetting relationship
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(REL_REFERENCE_SUBSETTING, "car", "vehicle", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify vehicle has a reference from car
-    let resolver = Resolver::new(&table);
-    let vehicle = resolver.resolve("vehicle").unwrap();
-    assert_eq!(vehicle.references().len(), 1);
-    assert_eq!(vehicle.references()[0].span.start.line, 4);
-}
-
-#[test]
-fn test_no_references() {
-    let mut table = SymbolTable::new();
-
-    // Create a standalone symbol with no relationships
-    table
-        .insert(
-            "StandaloneClass".to_string(),
-            Symbol::Classifier {
-                name: "StandaloneClass".to_string(),
-                qualified_name: "StandaloneClass".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 1, column: 0 },
-                    end: Position {
-                        line: 1,
-                        column: 30,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Empty relationship graph
-    let graph = RelationshipGraph::new();
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify no references collected
-    let resolver = Resolver::new(&table);
-    let standalone = resolver.resolve("StandaloneClass").unwrap();
-    assert_eq!(standalone.references().len(), 0);
-}
-
-#[test]
-fn test_symbol_without_span() {
-    let mut table = SymbolTable::new();
-
-    // Create target symbol
-    table
-        .insert(
-            "Target".to_string(),
-            Symbol::Classifier {
-                name: "Target".to_string(),
-                qualified_name: "Target".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 1, column: 0 },
-                    end: Position {
-                        line: 1,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create source symbol without span
-    table
-        .insert(
-            "Source".to_string(),
-            Symbol::Usage {
-                name: "Source".to_string(),
-                qualified_name: "Source".to_string(),
-                kind: "part".to_string(),
-                semantic_role: None,
-                usage_type: None,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: None, // No span
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create relationship
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_one(REL_TYPING, "Source", "Target", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify no reference collected (source has no span)
-    let resolver = Resolver::new(&table);
-    let target = resolver.resolve("Target").unwrap();
-    assert_eq!(target.references().len(), 0);
-}
-
-#[test]
-fn test_mixed_relationships() {
-    let mut table = SymbolTable::new();
-
-    // Create base type
-    table
-        .insert(
-            "Base".to_string(),
-            Symbol::Classifier {
-                name: "Base".to_string(),
-                qualified_name: "Base".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 1, column: 0 },
-                    end: Position {
-                        line: 1,
-                        column: 15,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create derived type (specialization)
-    table
-        .insert(
-            "Derived".to_string(),
-            Symbol::Classifier {
-                name: "Derived".to_string(),
-                qualified_name: "Derived".to_string(),
-                kind: "class".to_string(),
-                is_abstract: false,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 3, column: 0 },
-                    end: Position {
-                        line: 3,
-                        column: 25,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create usage (typing)
-    table
-        .insert(
-            "instance".to_string(),
-            Symbol::Usage {
-                name: "instance".to_string(),
-                qualified_name: "instance".to_string(),
-                kind: "part".to_string(),
-                semantic_role: None,
-                usage_type: None,
-                scope_id: 0,
-                source_file: Some("model.sysml".to_string()),
-                span: Some(Span {
-                    start: Position { line: 5, column: 0 },
-                    end: Position {
-                        line: 5,
-                        column: 20,
-                    },
-                }),
-                references: Vec::new(),
-            },
-        )
-        .ok();
-
-    // Create multiple relationship types
-    let mut graph = RelationshipGraph::new();
-    graph.add_one_to_many(REL_SPECIALIZATION, "Derived", "Base", None, None);
-    graph.add_one_to_one(REL_TYPING, "instance", "Base", None, None);
-
-    // Collect references
-    let mut collector = ReferenceCollector::new(&mut table, &graph);
-    collector.collect();
-
-    // Verify Base has references from both relationships
-    let resolver = Resolver::new(&table);
-    let base = resolver.resolve("Base").unwrap();
-    assert_eq!(base.references().len(), 2);
-
-    let lines: Vec<_> = base
-        .references()
-        .iter()
-        .map(|r| r.span.start.line)
-        .collect();
-    assert!(lines.contains(&3)); // from Derived
-    assert!(lines.contains(&5)); // from instance
-}
 
 #[test]
 fn test_collect_package_tokens() {
@@ -993,7 +321,6 @@ fn test_semantic_tokens_no_source_file() {
             scope_id: 0,
             source_file: None, // No source file
             span: Some(Span::new(Position::new(0, 0), Position::new(0, 14))),
-            references: vec![],
         },
     );
 
@@ -1164,7 +491,7 @@ fn test_semantic_tokens_shows_what_symbols_have_spans() {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Check what symbols were created
-    for (_name, symbol) in symbol_table.all_symbols() {
+    for symbol in symbol_table.iter_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
         {}
@@ -1208,7 +535,6 @@ fn test_semantic_tokens_symbols_without_spans_are_skipped() {
             scope_id: 0,
             source_file: Some("test.sysml".to_string()),
             span: Some(Span::new(Position::new(1, 0), Position::new(1, 8))),
-            references: vec![],
         },
     );
 
@@ -1222,7 +548,6 @@ fn test_semantic_tokens_symbols_without_spans_are_skipped() {
             scope_id: 0,
             source_file: Some("test.sysml".to_string()),
             span: None, // No span!
-            references: vec![],
         },
     );
 
@@ -1267,7 +592,7 @@ fn test_semantic_tokens_parse_real_stdlib_file() {
     // Check what symbols were created
     let mut symbol_count = 0;
     let mut _symbols_with_spans = 0;
-    for (_name, symbol) in symbol_table.all_symbols() {
+    for symbol in symbol_table.iter_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file.contains("Views.sysml")
         {
@@ -1321,7 +646,7 @@ package TestPkg {
     let mut relationship_graph = RelationshipGraph::new();
     symbol_table.set_current_file(Some("test.sysml".to_string()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-    for (_name, symbol) in symbol_table.all_symbols() {
+    for symbol in symbol_table.iter_symbols() {
         if let Some(source_file) = symbol.source_file()
             && source_file == "test.sysml"
         {}
@@ -1461,8 +786,7 @@ fn test_allocation_definition_parsing() {
     let file_path = path.to_string_lossy().to_string();
     symbol_table.set_current_file(Some(file_path.clone()));
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
-    let all_symbols = symbol_table.all_symbols();
-    for (_name, _symbol) in &all_symbols {}
+    for _symbol in symbol_table.iter_symbols() {}
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, &file_path);
     for _token in tokens.iter() {}
@@ -1581,8 +905,7 @@ part def Car :> Vehicle, Motorized;
     for (target, span) in &specs {
         assert!(
             span.is_some(),
-            "Specialization to {} should have a span",
-            target
+            "Specialization to {target} should have a span"
         );
     }
 }
@@ -1628,8 +951,7 @@ part def Car :> Vehicle {
 
     assert!(
         subsetting_token.is_some(),
-        "Should have Property semantic token for 'components' from subsetting relationship. Got Property tokens: {:?}",
-        property_tokens
+        "Should have Property semantic token for 'components' from subsetting relationship. Got Property tokens: {property_tokens:?}"
     );
 }
 
@@ -1674,8 +996,7 @@ part def ElectricVehicle :> Vehicle {
 
     assert!(
         redef_token.is_some(),
-        "Should have Property semantic token for 'engine' from redefinition relationship. Got Property tokens: {:?}",
-        property_tokens
+        "Should have Property semantic token for 'engine' from redefinition relationship. Got Property tokens: {property_tokens:?}"
     );
 }
 
@@ -1734,8 +1055,7 @@ package Tensors {
     // Line 8 should have token for the qualified type reference
     assert!(
         !line8_tokens.is_empty(),
-        "Should have semantic token for typing relationship on line 8. Type tokens: {:?}",
-        type_tokens
+        "Should have semantic token for typing relationship on line 8. Type tokens: {type_tokens:?}"
     );
 }
 
@@ -1840,10 +1160,9 @@ classifier MyClass {
 
     // Find the feature's qualified name
     let feature_qname = symbol_table
-        .all_symbols()
-        .iter()
-        .find(|(_, s)| s.name() == "myFeature")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .iter_symbols()
+        .find(|s| s.name() == "myFeature")
+        .map(|s| s.qualified_name().to_string());
 
     assert!(feature_qname.is_some(), "Should find myFeature symbol");
     let qname = feature_qname.unwrap();
@@ -1852,8 +1171,7 @@ classifier MyClass {
     let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
     assert!(
         typing.is_some(),
-        "Should have typing relationship for feature using qualified name: {}",
-        qname
+        "Should have typing relationship for feature using qualified name: {qname}"
     );
 }
 
@@ -1885,10 +1203,9 @@ package Main {
 
     // Find the mRef attribute's qualified name
     let mref_qname = symbol_table
-        .all_symbols()
-        .iter()
-        .find(|(_, s)| s.name() == "mRef")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .iter_symbols()
+        .find(|s| s.name() == "mRef")
+        .map(|s| s.qualified_name().to_string());
 
     if let Some(qname) = mref_qname {
         let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
@@ -1964,16 +1281,15 @@ package Vehicles {
 
     // Find the Car definition
     let car_qname = symbol_table
-        .all_symbols()
-        .iter()
-        .find(|(_, s)| s.name() == "Car")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .iter_symbols()
+        .find(|s| s.name() == "Car")
+        .map(|s| s.qualified_name().to_string());
 
     assert!(car_qname.is_some(), "Should find Car symbol");
     let qname = car_qname.unwrap();
 
     let specs = relationship_graph.get_one_to_many_with_locations(REL_SPECIALIZATION, &qname);
-    assert!(specs.is_some(), "Should have specialization for {}", qname);
+    assert!(specs.is_some(), "Should have specialization for {qname}");
 }
 
 /// Test that import statements generate semantic tokens
@@ -2001,10 +1317,9 @@ package TestPkg {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Check that import symbols were created
-    let all_symbols = symbol_table.all_symbols();
-    let import_count = all_symbols
-        .iter()
-        .filter(|(_, s)| matches!(s, Symbol::Import { .. }))
+    let import_count = symbol_table
+        .iter_symbols()
+        .filter(|s| matches!(s, Symbol::Import { .. }))
         .count();
 
     assert_eq!(import_count, 2, "Should have 2 import symbols");
@@ -2110,7 +1425,7 @@ part def SpecialContainer :> Container {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Verify parsing succeeded
-    let symbols_count = symbol_table.all_symbols().len();
+    let symbols_count = symbol_table.iter_symbols().count();
     assert!(symbols_count >= 2, "Should have parsed some symbols");
 }
 
@@ -2198,10 +1513,9 @@ package Quantities {
 
     // Find the mRef symbol
     let mref_qname = symbol_table
-        .all_symbols()
-        .iter()
-        .find(|(_, s)| s.name() == "mRef")
-        .map(|(_, s)| s.qualified_name().to_string());
+        .iter_symbols()
+        .find(|s| s.name() == "mRef")
+        .map(|s| s.qualified_name().to_string());
 
     assert!(mref_qname.is_some(), "Should find mRef symbol");
     let qname = mref_qname.unwrap();
@@ -2210,15 +1524,13 @@ package Quantities {
     let typing = relationship_graph.get_one_to_one_with_location(REL_TYPING, &qname);
     assert!(
         typing.is_some(),
-        "Should have typing relationship for mRef (got: {:?})",
-        typing
+        "Should have typing relationship for mRef (got: {typing:?})"
     );
 
     let (target, loc) = typing.unwrap();
     assert!(
         target.contains("VectorMeasurementReference"),
-        "Target should contain VectorMeasurementReference, got: {}",
-        target
+        "Target should contain VectorMeasurementReference, got: {target}"
     );
     assert!(
         loc.is_some(),
@@ -2260,10 +1572,9 @@ package Values {
     populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph).ok();
 
     // Find all symbols from this file
-    let all_syms = symbol_table.all_symbols();
-    let ref_symbols: Vec<_> = all_syms
-        .iter()
-        .filter(|(_, s)| s.name() == "baseRef")
+    let ref_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|s| s.name() == "baseRef")
         .collect();
 
     // Should have ref in both BaseValue and DerivedValue
@@ -2272,12 +1583,12 @@ package Values {
         "Should have at least one ref symbol, found: {:?}",
         ref_symbols
             .iter()
-            .map(|(_, s)| s.qualified_name())
+            .map(|s| s.qualified_name())
             .collect::<Vec<_>>()
     );
 
     // Check that relationships exist
-    for (_, sym) in &ref_symbols {
+    for sym in &ref_symbols {
         let qname = sym.qualified_name();
 
         // Check for typing
@@ -2286,9 +1597,7 @@ package Values {
         {
             assert!(
                 loc.is_some(),
-                "Typing for {} -> {} should have location",
-                qname,
-                target
+                "Typing for {qname} -> {target} should have location"
             );
         }
 
@@ -2299,9 +1608,7 @@ package Values {
             for (target, loc) in redefs {
                 assert!(
                     loc.is_some(),
-                    "Redefinition {} -> {} should have location",
-                    qname,
-                    target
+                    "Redefinition {qname} -> {target} should have location"
                 );
             }
         }
@@ -2344,8 +1651,7 @@ package Pkg {
     // - Derived (typing target from instance)
     assert!(
         type_tokens.len() >= 2,
-        "Should have at least 2 Type tokens from relationships, got: {:?}",
-        type_tokens
+        "Should have at least 2 Type tokens from relationships, got: {type_tokens:?}"
     );
 }
 
@@ -2375,8 +1681,11 @@ part def Child :> Parent {
     workspace.populate_all().ok();
 
     // First, verify the symbol was created
-    let symbols = workspace.symbol_table().all_symbols();
-    let num_symbols: Vec<_> = symbols.iter().filter(|(name, _)| *name == "num").collect();
+    let num_symbols: Vec<_> = workspace
+        .symbol_table()
+        .iter_symbols()
+        .filter(|sym| sym.name() == "num")
+        .collect();
 
     assert_eq!(
         num_symbols.len(),
@@ -2384,7 +1693,7 @@ part def Child :> Parent {
         "Should have 2 'num' symbols (Parent::num and Child::num), got: {:?}",
         num_symbols
             .iter()
-            .map(|(_, s)| s.qualified_name())
+            .map(|s| s.qualified_name())
             .collect::<Vec<_>>()
     );
 
@@ -2408,7 +1717,6 @@ part def Child :> Parent {
 
     assert!(
         redef_token.is_some(),
-        "Should have Property semantic token for 'num' from redefinition (:>> num). Property tokens: {:?}",
-        property_tokens
+        "Should have Property semantic token for 'num' from redefinition (:>> num). Property tokens: {property_tokens:?}"
     );
 }

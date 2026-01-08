@@ -1733,11 +1733,11 @@ fn test_element_accept_dispatches_correctly_for_each_variant() {
         let mut visitor = CountingVisitor::new();
         file.accept(&mut visitor);
 
-        assert_eq!(visitor.package_visits, pkg, "Failed for: {}", source);
-        assert_eq!(visitor.definition_visits, def, "Failed for: {}", source);
-        assert_eq!(visitor.usage_visits, usage, "Failed for: {}", source);
-        assert_eq!(visitor.import_visits, import, "Failed for: {}", source);
-        assert_eq!(visitor.alias_visits, alias, "Failed for: {}", source);
+        assert_eq!(visitor.package_visits, pkg, "Failed for: {source}");
+        assert_eq!(visitor.definition_visits, def, "Failed for: {source}");
+        assert_eq!(visitor.usage_visits, usage, "Failed for: {source}");
+        assert_eq!(visitor.import_visits, import, "Failed for: {source}");
+        assert_eq!(visitor.alias_visits, alias, "Failed for: {source}");
     }
 }
 

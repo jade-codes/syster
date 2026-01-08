@@ -761,8 +761,7 @@ fn test_kerml_import_generates_namespace_token() {
 
     assert!(
         !namespace_tokens.is_empty(),
-        "Should have Namespace token for import path 'Base::DataValue'. All tokens: {:?}",
-        tokens
+        "Should have Namespace token for import path 'Base::DataValue'. All tokens: {tokens:?}"
     );
 
     // The import is on line 1 (0-indexed), "Base::DataValue" is 15 chars
@@ -772,8 +771,7 @@ fn test_kerml_import_generates_namespace_token() {
 
     assert!(
         import_token.is_some(),
-        "Should have Namespace token for 'Base::DataValue' on line 1 with length 15. Namespace tokens: {:?}",
-        namespace_tokens
+        "Should have Namespace token for 'Base::DataValue' on line 1 with length 15. Namespace tokens: {namespace_tokens:?}"
     );
 }
 
@@ -798,8 +796,7 @@ fn test_kerml_multiple_imports_generate_tokens() {
     // Should have 3 namespace tokens for the 3 imports
     assert!(
         namespace_tokens.len() >= 3,
-        "Should have at least 3 Namespace tokens for 3 imports. Got: {:?}",
-        namespace_tokens
+        "Should have at least 3 Namespace tokens for 3 imports. Got: {namespace_tokens:?}"
     );
 }
 
@@ -821,8 +818,7 @@ fn test_kerml_wildcard_import_generates_token() {
 
     assert!(
         !namespace_tokens.is_empty(),
-        "Should have Namespace token for wildcard import. All tokens: {:?}",
-        tokens
+        "Should have Namespace token for wildcard import. All tokens: {tokens:?}"
     );
 }
 
@@ -849,8 +845,7 @@ fn test_kerml_import_in_classifier_body_generates_token() {
 
     assert!(
         inner_import_token.is_some(),
-        "Should have Namespace token for import inside classifier body on line 2. Namespace tokens: {:?}",
-        namespace_tokens
+        "Should have Namespace token for import inside classifier body on line 2. Namespace tokens: {namespace_tokens:?}"
     );
 }
 
@@ -872,7 +867,6 @@ fn test_sysml_import_generates_namespace_token() {
 
     assert!(
         !namespace_tokens.is_empty(),
-        "Should have Namespace token for SysML import path. All tokens: {:?}",
-        tokens
+        "Should have Namespace token for SysML import path. All tokens: {tokens:?}"
     );
 }

@@ -165,8 +165,44 @@ pub fn find_name<'pest>(pairs: impl Iterator<Item = Pair<'pest, Rule>>) -> Optio
     None
 }
 
+/// Recursively find identifier and return (name, span, short_name)
+/// Skips relationship parts to avoid extracting identifiers from redefinitions, subsettings, etc.
+///
+/// For identification rules with short names (e.g., `<kg> kilogram`), extracts both names.
+pub fn find_names_with_short<'a>(
+    pairs: impl Iterator<Item = Pair<'a, Rule>>,
+) -> (Option<String>, Option<crate::core::Span>, Option<String>) {
+    for pair in pairs {
+        // Skip relationship parts - don't extract identifiers from within these
+        if is_relationship_part(&pair) {
+            continue;
+        }
+
+        if pair.as_rule() == Rule::identifier {
+            return (
+                Some(pair.as_str().to_string()),
+                Some(to_span(pair.as_span())),
+                None,
+            );
+        }
+
+        // Handle identification specially - extract both regular_name and short_name
+        if pair.as_rule() == Rule::identification {
+            return extract_names_from_identification(pair);
+        }
+
+        if let (Some(name), Some(span), short_name) = find_names_with_short(pair.into_inner()) {
+            return (Some(name), Some(span), short_name);
+        }
+    }
+    (None, None, None)
+}
+
 /// Recursively find identifier and return (name, span)
 /// Skips relationship parts to avoid extracting identifiers from redefinitions, subsettings, etc.
+///
+/// For identification rules with short names (e.g., `<kg> kilogram`), extracts the regular name
+/// if present, or the short name content if only a short name is provided.
 pub fn find_identifier_span<'a>(
     pairs: impl Iterator<Item = Pair<'a, Rule>>,
 ) -> (Option<String>, Option<crate::core::Span>) {
@@ -176,16 +212,176 @@ pub fn find_identifier_span<'a>(
             continue;
         }
 
-        if matches!(pair.as_rule(), Rule::identifier | Rule::identification) {
+        if pair.as_rule() == Rule::identifier {
             return (
                 Some(pair.as_str().to_string()),
                 Some(to_span(pair.as_span())),
             );
         }
+
+        // Handle identification specially - extract regular_name if present,
+        // otherwise extract identifier from short_name
+        if pair.as_rule() == Rule::identification {
+            return extract_name_from_identification(pair);
+        }
+
         if let (Some(name), Some(span)) = find_identifier_span(pair.into_inner()) {
             return (Some(name), Some(span));
         }
     }
+    (None, None)
+}
+
+/// Extract both the regular name and short name from an identification rule.
+/// identification = { (short_name ~ regular_name?) | regular_name }
+///
+/// Returns (regular_name, regular_name_span, short_name).
+/// For example:
+/// - `<kg> kilogram` → returns (Some("kilogram"), span, Some("kg"))
+/// - `<kg>` → returns (Some("kg"), span, Some("kg")) - short name used as primary
+/// - `myName` → returns (Some("myName"), span, None)
+pub fn extract_names_from_identification(
+    pair: Pair<Rule>,
+) -> (Option<String>, Option<crate::core::Span>, Option<String>) {
+    let inner: Vec<_> = pair.into_inner().collect();
+
+    let mut regular_name: Option<(String, crate::core::Span)> = None;
+    let mut short_name: Option<String> = None;
+
+    // Extract short_name if present
+    for p in &inner {
+        if p.as_rule() == Rule::short_name {
+            for inner_p in p.clone().into_inner() {
+                if inner_p.as_rule() == Rule::identifier {
+                    short_name = Some(inner_p.as_str().to_string());
+                    break;
+                } else if inner_p.as_rule() == Rule::quoted_name {
+                    short_name = Some(
+                        inner_p
+                            .as_str()
+                            .trim_start_matches('\'')
+                            .trim_end_matches('\'')
+                            .to_string(),
+                    );
+                    break;
+                }
+            }
+        }
+    }
+
+    // Extract regular_name if present
+    for p in &inner {
+        if p.as_rule() == Rule::regular_name
+            && let Some(id) = p.clone().into_inner().next()
+        {
+            let name = if id.as_rule() == Rule::quoted_name {
+                id.as_str()
+                    .trim_start_matches('\'')
+                    .trim_end_matches('\'')
+                    .to_string()
+            } else {
+                id.as_str().to_string()
+            };
+            regular_name = Some((name, to_span(id.as_span())));
+        }
+    }
+
+    // If we have a regular name, return it with the short name
+    if let Some((name, span)) = regular_name {
+        return (Some(name), Some(span), short_name);
+    }
+
+    // No regular_name, use short_name as the primary name
+    if let Some(ref sn) = short_name {
+        // Find the span of the short name identifier
+        for p in &inner {
+            if p.as_rule() == Rule::short_name {
+                for inner_p in p.clone().into_inner() {
+                    if inner_p.as_rule() == Rule::identifier
+                        || inner_p.as_rule() == Rule::quoted_name
+                    {
+                        return (Some(sn.clone()), Some(to_span(inner_p.as_span())), None);
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: direct identifier
+    for p in &inner {
+        if p.as_rule() == Rule::identifier {
+            return (
+                Some(p.as_str().to_string()),
+                Some(to_span(p.as_span())),
+                None,
+            );
+        }
+    }
+
+    (None, None, None)
+}
+
+/// Extract the name from an identification rule.
+/// identification = { (short_name ~ regular_name?) | regular_name }
+///
+/// Returns the regular_name if present, otherwise extracts the identifier from short_name.
+/// For example:
+/// - `<kg> kilogram` → returns ("kilogram", span of kilogram)
+/// - `<kg>` → returns ("kg", span of kg identifier)
+/// - `myName` → returns ("myName", span of myName)
+pub fn extract_name_from_identification(
+    pair: Pair<Rule>,
+) -> (Option<String>, Option<crate::core::Span>) {
+    let inner: Vec<_> = pair.into_inner().collect();
+
+    // Look for regular_name first (preferred)
+    for p in &inner {
+        if p.as_rule() == Rule::regular_name {
+            // regular_name contains identifier or quoted_name
+            if let Some(id) = p.clone().into_inner().next() {
+                let name = if id.as_rule() == Rule::quoted_name {
+                    // Remove surrounding quotes
+                    id.as_str()
+                        .trim_start_matches('\'')
+                        .trim_end_matches('\'')
+                        .to_string()
+                } else {
+                    id.as_str().to_string()
+                };
+                return (Some(name), Some(to_span(id.as_span())));
+            }
+        }
+    }
+
+    // No regular_name found, look for short_name and extract identifier from within
+    for p in &inner {
+        if p.as_rule() == Rule::short_name {
+            // short_name = { "<" ~ (identifier | quoted_name) ~ ">" }
+            for inner_p in p.clone().into_inner() {
+                if inner_p.as_rule() == Rule::identifier {
+                    return (
+                        Some(inner_p.as_str().to_string()),
+                        Some(to_span(inner_p.as_span())),
+                    );
+                } else if inner_p.as_rule() == Rule::quoted_name {
+                    let name = inner_p
+                        .as_str()
+                        .trim_start_matches('\'')
+                        .trim_end_matches('\'')
+                        .to_string();
+                    return (Some(name), Some(to_span(inner_p.as_span())));
+                }
+            }
+        }
+    }
+
+    // Fallback: if there's a direct identifier (for regular_name without nested structure)
+    for p in &inner {
+        if p.as_rule() == Rule::identifier {
+            return (Some(p.as_str().to_string()), Some(to_span(p.as_span())));
+        }
+    }
+
     (None, None)
 }
 

@@ -447,10 +447,7 @@ fn test_monotonic_increase() {
         let utf16 = char_offset_to_utf16(line, char_offset);
         assert!(
             utf16 >= prev_utf16,
-            "UTF-16 offset should increase monotonically: offset {}, utf16 {} < prev {}",
-            char_offset,
-            utf16,
-            prev_utf16
+            "UTF-16 offset should increase monotonically: offset {char_offset}, utf16 {utf16} < prev {prev_utf16}"
         );
         prev_utf16 = utf16;
     }
@@ -574,8 +571,7 @@ fn test_partial_string_utf16_encoding() {
         let rust_result = partial.encode_utf16().count();
         assert_eq!(
             our_result as usize, rust_result,
-            "Mismatch at offset {} for line: {}",
-            char_offset, line
+            "Mismatch at offset {char_offset} for line: {line}"
         );
     }
 }

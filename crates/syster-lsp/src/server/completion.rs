@@ -105,17 +105,18 @@ impl LspServer {
     fn add_type_completions(&self, items: &mut Vec<CompletionItem>) {
         let symbol_table = self.workspace.symbol_table();
 
-        for (qualified_name, symbol) in symbol_table.all_symbols() {
+        for symbol in symbol_table.iter_symbols() {
             // Only suggest classifiers/definitions, not usages
             if matches!(
                 symbol,
                 syster::semantic::symbol_table::Symbol::Classifier { .. }
                     | syster::semantic::symbol_table::Symbol::Definition { .. }
             ) {
+                let qualified_name = symbol.qualified_name();
                 items.push(CompletionItem {
                     label: symbol.name().to_string(),
                     kind: Some(CompletionItemKind::CLASS),
-                    detail: Some(qualified_name.clone()),
+                    detail: Some(qualified_name.to_string()),
                     documentation: Some(Documentation::String(format!("Type: {qualified_name}"))),
                     ..Default::default()
                 });
@@ -127,7 +128,7 @@ impl LspServer {
     fn add_symbol_completions(&self, items: &mut Vec<CompletionItem>) {
         let symbol_table = self.workspace.symbol_table();
 
-        for (qualified_name, symbol) in symbol_table.all_symbols() {
+        for symbol in symbol_table.iter_symbols() {
             let (kind, icon) = match symbol {
                 syster::semantic::symbol_table::Symbol::Package { .. } => {
                     (CompletionItemKind::MODULE, "📦")
@@ -148,6 +149,7 @@ impl LspServer {
                 syster::semantic::symbol_table::Symbol::Import { .. } => continue, // Skip imports in completions
             };
 
+            let qualified_name = symbol.qualified_name();
             items.push(CompletionItem {
                 label: symbol.name().to_string(),
                 kind: Some(kind),

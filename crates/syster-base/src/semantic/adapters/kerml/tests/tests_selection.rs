@@ -83,6 +83,7 @@ fn make_import(path: &str, span: Option<Span>) -> Import {
         path: path.to_string(),
         path_span: None,
         is_recursive: false,
+        is_public: false,
         kind: ImportKind::Normal,
         span,
     }
@@ -785,7 +786,7 @@ fn test_collect_classifier_spans_with_different_classifier_kinds() {
         let spans = find_kerml_selection_spans(&file, pos);
 
         // All kinds should work the same
-        assert_eq!(spans.len(), 1, "Failed for kind {:?}", kind);
+        assert_eq!(spans.len(), 1, "Failed for kind {kind:?}");
     }
 }
 

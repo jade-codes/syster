@@ -37,6 +37,7 @@ fn make_definition(name: &str, kind: DefinitionKind, span: Option<Span>) -> Defi
         is_abstract: false,
         is_variation: false,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body: vec![],
         span,
@@ -47,6 +48,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>) -> Usage {
     Usage {
         kind,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body: vec![],
         span,

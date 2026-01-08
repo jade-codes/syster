@@ -21,7 +21,14 @@ fn test_open_sysml_document() {
     server.open_document(&uri, text).unwrap();
 
     assert_eq!(server.workspace().file_count(), 1);
-    assert!(!server.workspace().symbol_table().all_symbols().is_empty());
+    assert!(
+        server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .next()
+            .is_some()
+    );
 }
 
 #[test]
@@ -74,7 +81,7 @@ fn test_change_document() {
     // Open initial document
     server.open_document(&uri, "part def Car;").unwrap();
     assert_eq!(server.workspace().file_count(), 1);
-    let initial_symbols = server.workspace().symbol_table().all_symbols().len();
+    let initial_symbols = server.workspace().symbol_table().iter_symbols().count();
 
     // Change document content
     server
@@ -82,7 +89,7 @@ fn test_change_document() {
         .unwrap();
 
     assert_eq!(server.workspace().file_count(), 1);
-    let updated_symbols = server.workspace().symbol_table().all_symbols().len();
+    let updated_symbols = server.workspace().symbol_table().iter_symbols().count();
     assert!(updated_symbols > initial_symbols);
 }
 
@@ -725,14 +732,14 @@ fn test_find_references_nested_elements() {
     let _symbol = Resolver::new(server.workspace().symbol_table()).resolve("Auto::Wheel");
 
     // Debug: check all symbols
-    for (_key, _sym) in server.workspace().symbol_table().all_symbols() {}
+    for _sym in server.workspace().symbol_table().iter_symbols() {}
 
     // Debug: check relationship graph
-    for (key, _) in server.workspace().symbol_table().all_symbols() {
+    for sym in server.workspace().symbol_table().iter_symbols() {
         if let Some(_target) = server
             .workspace()
             .relationship_graph()
-            .get_one_to_one(REL_TYPING, key)
+            .get_one_to_one(REL_TYPING, sym.qualified_name())
         {}
     }
 
@@ -879,8 +886,8 @@ package Usage {
     );
     assert_eq!(
         file2_refs.len(),
-        2,
-        "Must have exactly 2 references in file2 (import + 1 usage that matches simple name)"
+        3,
+        "Must have exactly 3 references in file2 (import + 2 usages: car and truck)"
     );
 }
 
@@ -899,17 +906,15 @@ package Outer {
 
     server.open_document(&uri, text).unwrap();
 
-    // Debug: print all symbols and their references
-    for (_name, symbol) in server.workspace.symbol_table().all_symbols() {
-        for _r in symbol.references() {}
-    }
+    // Debug: print all symbols
+    for _symbol in server.workspace.symbol_table().iter_symbols() {}
 
     // Debug: check relationship graph
-    for (name, _) in server.workspace.symbol_table().all_symbols() {
+    for sym in server.workspace.symbol_table().iter_symbols() {
         if let Some((_target, _loc)) = server
             .workspace
             .relationship_graph()
-            .get_one_to_one_with_location("typing", name)
+            .get_one_to_one_with_location("typing", sym.qualified_name())
         {}
     }
 
@@ -963,7 +968,7 @@ fn test_references_symbol_not_found() {
 #[test]
 fn test_references_with_shadowing() {
     let mut server = LspServer::new();
-    let uri = Url::parse("file:///test.sysml").unwrap();
+    let uri = Url::parse("file:///test_shadowing.sysml").unwrap();
     let text = r#"
 package Test {
     part def Vehicle;
@@ -979,6 +984,7 @@ package Test {
 
     // Find references to outer Vehicle
     let position = Position::new(2, 14); // On outer "Vehicle"
+
     let locations = server
         .get_references(&uri, position, true)
         .expect("Must find references to outer Vehicle");
@@ -988,7 +994,7 @@ package Test {
     // MUST include outer Vehicle definition
     assert!(
         lines.contains(&2),
-        "Must include outer Vehicle definition at line 2"
+        "Must include outer Vehicle definition at line 2, got lines {lines:?}"
     );
 
     // MUST include usage of outer Vehicle (line 7: truck)
@@ -1039,12 +1045,11 @@ package Usage {
         .get_references(&uri, position, true)
         .expect("Must find references through import");
 
-    // MUST find definition and usage (import tracking requires additional work)
-    // Currently finds: definition (line 2) and usage (line 6)
+    // Now finds: definition (line 2), import (line 5), and usage (line 6)
     assert_eq!(
         locations.len(),
-        2,
-        "Must find exactly 2 references: definition (line 2) and usage (line 6)"
+        3,
+        "Must find exactly 3 references: definition (line 2), import (line 5), and usage (line 6)"
     );
 
     let lines: Vec<u32> = locations.iter().map(|l| l.range.start.line).collect();
@@ -1052,6 +1057,10 @@ package Usage {
     assert!(
         lines.contains(&2),
         "Must include definition 'part def Vehicle' at line 2"
+    );
+    assert!(
+        lines.contains(&5),
+        "Must include import 'import Test::Vehicle' at line 5"
     );
     assert!(
         lines.contains(&6),
@@ -1968,8 +1977,7 @@ fn test_cross_file_reference_resolution_basic() {
     server.open_document(&file1_uri, file1_text).unwrap();
     server.open_document(&file2_uri, file2_text).unwrap();
 
-    let all_syms = server.workspace().symbol_table().all_symbols();
-    for (_name, sym) in all_syms.iter() {
+    for sym in server.workspace().symbol_table().iter_symbols() {
         let _qualified = sym.qualified_name();
     }
 
@@ -2034,14 +2042,7 @@ fn test_cross_file_stdlib_reference_resolution() {
         .any(|p| p.to_string_lossy().contains("MeasurementReferences"));
 
     // Check what symbols ARE in the symbol table from stdlib
-    for (_i, (_name, symbol)) in server
-        .workspace()
-        .symbol_table()
-        .all_symbols()
-        .iter()
-        .enumerate()
-        .take(10)
-    {
+    for symbol in server.workspace().symbol_table().iter_symbols().take(10) {
         let _symbol_type = match symbol {
             Symbol::Package { .. } => "Package",
             Symbol::Classifier { .. } => "Classifier",
@@ -2055,7 +2056,7 @@ fn test_cross_file_stdlib_reference_resolution() {
 
     // Check specifically for attribute definitions
     let mut attr_count = 0;
-    for (_name, symbol) in server.workspace().symbol_table().all_symbols() {
+    for symbol in server.workspace().symbol_table().iter_symbols() {
         if let Symbol::Definition { kind, .. } = symbol
             && kind == "Attribute"
         {
@@ -2084,8 +2085,8 @@ fn test_cross_file_stdlib_reference_resolution() {
         .is_some()
     {
     } else {
-        for (name, _) in server.workspace().symbol_table().all_symbols() {
-            if name.contains("MeasurementReferences") {}
+        for sym in server.workspace().symbol_table().iter_symbols() {
+            if sym.qualified_name().contains("MeasurementReferences") {}
         }
     }
 
@@ -2136,7 +2137,12 @@ fn test_stdlib_files_actually_load() {
     );
 
     assert!(
-        !server.workspace().symbol_table().all_symbols().is_empty(),
+        server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .next()
+            .is_some(),
         "Stdlib symbols should be populated"
     );
 }
@@ -2175,7 +2181,7 @@ fn test_measurement_references_file_directly() {
         syster::syntax::SyntaxFile::SysML(sysml_file),
     );
     let _ = workspace.populate_all();
-    for (_name, symbol) in workspace.symbol_table().all_symbols() {
+    for symbol in workspace.symbol_table().iter_symbols() {
         let _sym_type = match symbol {
             Symbol::Package { .. } => "Package",
             Symbol::Definition { kind, .. } => kind.as_str(),
@@ -2188,20 +2194,21 @@ fn test_measurement_references_file_directly() {
     }
 
     // Check for attribute definitions
-    let all_syms = workspace.symbol_table().all_symbols();
-    let attr_defs: Vec<_> = all_syms
-        .iter()
-        .filter(|(_, sym)| matches!(sym, Symbol::Definition { kind, .. } if kind == "Attribute"))
-        .map(|(name, _)| name)
+    let attr_defs: Vec<_> = workspace
+        .symbol_table()
+        .iter_symbols()
+        .filter(|sym| matches!(sym, Symbol::Definition { kind, .. } if kind == "Attribute"))
+        .map(|sym| sym.qualified_name().to_string())
         .collect();
     for _name in attr_defs.iter().take(10) {}
 
     assert!(!attr_defs.is_empty(), "Should have attribute definitions");
 
     // Look for DimensionOneUnit specifically
-    let has_dimension_one = all_syms
-        .iter()
-        .any(|(name, _)| name.contains("DimensionOneUnit"));
+    let has_dimension_one = workspace
+        .symbol_table()
+        .iter_symbols()
+        .any(|sym| sym.qualified_name().contains("DimensionOneUnit"));
     assert!(has_dimension_one, "Should find DimensionOneUnit");
 }
 
@@ -2229,11 +2236,10 @@ fn test_dimension_one_unit_cross_file_resolution() {
     // Sample some package names from stdlib
     let _package_names: Vec<_> = workspace
         .symbol_table()
-        .all_symbols()
-        .iter()
-        .filter_map(|(name, sym)| {
+        .iter_symbols()
+        .filter_map(|sym| {
             if matches!(sym, Symbol::Package { .. }) {
-                Some(name.as_str())
+                Some(sym.qualified_name().to_string())
             } else {
                 None
             }
@@ -2244,10 +2250,12 @@ fn test_dimension_one_unit_cross_file_resolution() {
     // Check what symbols we actually have
     let _measurement_refs_syms: Vec<_> = workspace
         .symbol_table()
-        .all_symbols()
-        .iter()
-        .filter(|(name, _)| name.contains("MeasurementReferences") || name.contains("DimensionOne"))
-        .map(|(name, _)| name.as_str())
+        .iter_symbols()
+        .filter(|sym| {
+            sym.qualified_name().contains("MeasurementReferences")
+                || sym.qualified_name().contains("DimensionOne")
+        })
+        .map(|sym| sym.qualified_name().to_string())
         .collect();
 
     // Check if MeasurementReferences.sysml file is in workspace
@@ -2336,8 +2344,13 @@ fn test_incremental_insert_at_start() {
     assert_eq!(content, "// Comment\npart def Vehicle;");
 
     // Verify symbols still work
-    let symbols = server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
+    assert!(
+        server
+            .workspace()
+            .symbol_table()
+            .iter_symbols()
+            .any(|s| s.name() == "Vehicle")
+    );
 }
 
 #[test]
@@ -2363,10 +2376,10 @@ fn test_incremental_insert_in_middle() {
     server.parse_document(&uri);
 
     // Verify all three definitions exist
-    let symbols = server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Truck"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Bike"));
+    let st = server.workspace().symbol_table();
+    assert!(st.iter_symbols().any(|s| s.name() == "Car"));
+    assert!(st.iter_symbols().any(|s| s.name() == "Truck"));
+    assert!(st.iter_symbols().any(|s| s.name() == "Bike"));
 }
 
 #[test]
@@ -2392,9 +2405,9 @@ fn test_incremental_delete_range() {
     server.parse_document(&uri);
 
     // Verify only Car exists
-    let symbols = server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(!symbols.iter().any(|(_, s)| s.name() == "Bike"));
+    let st = server.workspace().symbol_table();
+    assert!(st.iter_symbols().any(|s| s.name() == "Car"));
+    assert!(!st.iter_symbols().any(|s| s.name() == "Bike"));
 }
 
 #[test]
@@ -2420,9 +2433,9 @@ fn test_incremental_replace_range() {
     server.parse_document(&uri);
 
     // Verify Vehicle exists, Car doesn't
-    let symbols = server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Vehicle"));
-    assert!(!symbols.iter().any(|(_, s)| s.name() == "Car"));
+    let st = server.workspace().symbol_table();
+    assert!(st.iter_symbols().any(|s| s.name() == "Vehicle"));
+    assert!(!st.iter_symbols().any(|s| s.name() == "Car"));
 }
 
 #[test]
@@ -2459,9 +2472,9 @@ fn test_incremental_multiple_changes() {
     server.parse_document(&uri);
 
     // Verify both definitions exist
-    let symbols = server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Bike"));
+    let st = server.workspace().symbol_table();
+    assert!(st.iter_symbols().any(|s| s.name() == "Car"));
+    assert!(st.iter_symbols().any(|s| s.name() == "Bike"));
 }
 
 #[test]
@@ -2486,10 +2499,10 @@ fn test_incremental_multiline_insert() {
     server.parse_document(&uri);
 
     // Verify both definitions and nested attribute exist
-    let symbols = server.workspace().symbol_table().all_symbols();
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Car"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "Bike"));
-    assert!(symbols.iter().any(|(_, s)| s.name() == "weight"));
+    let st = server.workspace().symbol_table();
+    assert!(st.iter_symbols().any(|s| s.name() == "Car"));
+    assert!(st.iter_symbols().any(|s| s.name() == "Bike"));
+    assert!(st.iter_symbols().any(|s| s.name() == "weight"));
 }
 
 #[test]

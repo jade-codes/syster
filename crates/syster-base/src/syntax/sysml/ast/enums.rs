@@ -10,8 +10,9 @@ pub enum Element {
     Alias(Alias),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum DefinitionKind {
+    #[default]
     Part,
     Port,
     Action,
@@ -39,8 +40,9 @@ pub enum DefinitionKind {
     Metadata,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum UsageKind {
+    #[default]
     Part,
     Port,
     Action,

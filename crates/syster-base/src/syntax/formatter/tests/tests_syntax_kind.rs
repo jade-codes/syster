@@ -76,7 +76,7 @@ fn assert_roundtrip_conversion(kinds: &[SyntaxKind]) {
     for kind in kinds {
         let raw = <SysMLLanguage as rowan::Language>::kind_to_raw(*kind);
         let back = <SysMLLanguage as rowan::Language>::kind_from_raw(raw);
-        assert_eq!(*kind, back, "Round-trip failed for {:?}", kind);
+        assert_eq!(*kind, back, "Round-trip failed for {kind:?}");
     }
 }
 

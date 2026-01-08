@@ -311,10 +311,7 @@ fn test_monotonic_increase() {
         let bytes = char_offset_to_byte(line, char_offset);
         assert!(
             bytes >= prev_bytes,
-            "Byte offset should increase monotonically: offset {}, bytes {} < prev {}",
-            char_offset,
-            bytes,
-            prev_bytes
+            "Byte offset should increase monotonically: offset {char_offset}, bytes {bytes} < prev {prev_bytes}"
         );
         prev_bytes = bytes;
     }

@@ -54,6 +54,7 @@ fn extract_classifier_members(pair: &Pair<Rule>, members: &mut Vec<ClassifierMem
                     path,
                     path_span,
                     is_recursive,
+                    is_public: false, // Classifier-level imports default to private
                     kind,
                     span: Some(to_span(pair.as_span())),
                 }));

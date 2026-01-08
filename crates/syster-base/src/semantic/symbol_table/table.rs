@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use crate::core::Span;
 use crate::core::events::EventEmitter;
@@ -8,29 +9,60 @@ use crate::semantic::SymbolTableEvent;
 use super::scope::{Import, Scope};
 use super::symbol::Symbol;
 
+/// Normalize a file path for consistent storage and lookup.
+/// For stdlib files (containing "sysml.library/"), extracts the relative path.
+/// For other files, attempts canonicalization.
+pub(super) fn normalize_path(path: &str) -> String {
+    // Check if this is a stdlib file
+    if let Some(idx) = path.find("sysml.library/") {
+        return path[idx..].to_string();
+    }
+
+    // For non-stdlib files, try to canonicalize
+    if let Ok(canonical) = Path::new(path).canonicalize() {
+        return canonical.to_string_lossy().to_string();
+    }
+
+    // If canonicalization fails, do simple normalization
+    let path_buf = PathBuf::from(path);
+    let normalized = if path_buf.is_absolute() {
+        path_buf
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("/"))
+            .join(path_buf)
+    };
+    normalized.to_string_lossy().to_string()
+}
+
+use super::symbol::SymbolId;
+
 pub struct SymbolTable {
+    /// Arena storage for all symbols - single source of truth
+    pub(super) arena: Vec<Symbol>,
     pub(super) scopes: Vec<Scope>,
     pub(super) current_scope: usize,
     current_file: Option<String>,
     pub events: EventEmitter<SymbolTableEvent, SymbolTable>,
-    /// Index mapping file paths to qualified names of symbols defined in that file
-    pub(super) symbols_by_file: HashMap<String, Vec<String>>,
+    /// Index mapping file paths to SymbolIds of symbols defined in that file
+    pub(super) symbols_by_file: HashMap<String, Vec<SymbolId>>,
     /// Index mapping file paths to imports originating from that file
     pub(super) imports_by_file: HashMap<String, Vec<Import>>,
-    /// Reverse index: target_qname -> [(file, span)] for O(1) import reference lookups
-    import_references: HashMap<String, Vec<(String, Span)>>,
+    /// Index for O(1) qualified name lookups: qname -> SymbolId
+    pub(super) symbols_by_qname: HashMap<String, SymbolId>,
 }
 
 impl SymbolTable {
     pub fn new() -> Self {
         Self {
+            arena: Vec::new(),
             scopes: vec![Scope::new(None)],
             current_scope: 0,
             current_file: None,
             events: EventEmitter::new(),
             symbols_by_file: HashMap::new(),
             imports_by_file: HashMap::new(),
-            import_references: HashMap::new(),
+            symbols_by_qname: HashMap::new(),
         }
     }
 
@@ -69,10 +101,10 @@ impl SymbolTable {
     pub fn insert(&mut self, name: String, symbol: Symbol) -> Result<(), String> {
         {
             let qualified_name = symbol.qualified_name().to_string();
-            let source_file = symbol.source_file().map(|s| s.to_string());
-            let symbol_id = self.scopes.iter().map(|s| s.symbols.len()).sum::<usize>();
+            let source_file = symbol.source_file().map(normalize_path);
 
-            let scope = &mut self.scopes[self.current_scope];
+            // Check for duplicate in scope
+            let scope = &self.scopes[self.current_scope];
             if scope.symbols.contains_key(&name) {
                 return OperationResult::failure(format!(
                     "Symbol '{name}' already defined in this scope"
@@ -80,19 +112,30 @@ impl SymbolTable {
                 .publish(self);
             }
 
-            scope.symbols.insert(name, symbol);
+            // Add symbol to arena and get its ID
+            let symbol_id = SymbolId::new(self.arena.len());
+            self.arena.push(symbol);
 
-            // Update the file -> symbols index
+            // Store SymbolId in scope
+            self.scopes[self.current_scope]
+                .symbols
+                .insert(name, symbol_id);
+
+            // Update the qname -> SymbolId index for O(1) lookup
+            self.symbols_by_qname
+                .insert(qualified_name.clone(), symbol_id);
+
+            // Update the file -> SymbolIds index (using normalized path)
             if let Some(file_path) = source_file {
                 self.symbols_by_file
                     .entry(file_path)
                     .or_default()
-                    .push(qualified_name.clone());
+                    .push(symbol_id);
             }
 
             let event = SymbolTableEvent::SymbolInserted {
                 qualified_name,
-                symbol_id,
+                symbol_id: symbol_id.index(),
             };
             OperationResult::success((), Some(event))
         }
@@ -103,6 +146,7 @@ impl SymbolTable {
         &mut self,
         path: String,
         is_recursive: bool,
+        is_public: bool,
         span: Option<crate::core::Span>,
         file: Option<String>,
     ) {
@@ -112,15 +156,17 @@ impl SymbolTable {
                 path: path.clone(),
                 is_recursive,
                 is_namespace,
+                is_public,
                 span,
                 file: file.clone(),
             };
             self.scopes[self.current_scope].imports.push(import.clone());
 
-            // Update the file -> imports index
+            // Update the file -> imports index (using normalized path)
             if let Some(file_path) = file {
+                let normalized = normalize_path(&file_path);
                 self.imports_by_file
-                    .entry(file_path)
+                    .entry(normalized)
                     .or_default()
                     .push(import);
             }
@@ -150,7 +196,13 @@ impl SymbolTable {
 
     /// Get a symbol directly from a specific scope (no chain walking).
     pub fn get_symbol_in_scope(&self, scope_id: usize, name: &str) -> Option<&Symbol> {
-        self.scopes.get(scope_id)?.symbols.get(name)
+        let id = self.scopes.get(scope_id)?.symbols.get(name)?;
+        self.get_symbol(*id)
+    }
+
+    /// Get a SymbolId from a specific scope
+    pub fn get_symbol_id_in_scope(&self, scope_id: usize, name: &str) -> Option<SymbolId> {
+        self.scopes.get(scope_id)?.symbols.get(name).copied()
     }
 
     /// Get the parent of a scope.
@@ -177,7 +229,7 @@ impl SymbolTable {
 
         // Fall back to the scope of the first symbol defined in the file
         self.get_symbols_for_file(file_path)
-            .next()
+            .first()
             .map(|symbol| symbol.scope_id())
     }
 
@@ -188,63 +240,14 @@ impl SymbolTable {
             .unwrap_or_default()
     }
 
-    /// Add references to a symbol identified by its qualified name
-    pub fn add_references_to_symbol(
-        &mut self,
-        qualified_name: &str,
-        references: Vec<super::symbol::SymbolReference>,
-    ) {
-        for scope in &mut self.scopes {
-            for symbol in scope.symbols.values_mut() {
-                if symbol.qualified_name() == qualified_name {
-                    for reference in references.clone() {
-                        symbol.add_reference(reference);
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
-    /// Get all imports that reference a given target (for "Find References")
-    /// Returns (file, span) pairs for each import of the target.
-    /// O(1) lookup using reverse index.
-    pub fn get_import_references(&self, target_qname: &str) -> Vec<(&str, &Span)> {
-        self.import_references
-            .get(target_qname)
-            .map(|refs| {
-                refs.iter()
-                    .map(|(file, span)| (file.as_str(), span))
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    /// Register an import reference for reverse lookup.
-    /// Called during import resolution when we know the target.
-    pub fn add_import_reference(&mut self, target_qname: String, file: String, span: Span) {
-        self.import_references
-            .entry(target_qname)
-            .or_default()
-            .push((file, span));
-    }
-
-    /// Clear import references for a file (called when file is reparsed)
-    pub fn clear_import_references_for_file(&mut self, file_path: &str) {
-        for refs in self.import_references.values_mut() {
-            refs.retain(|(file, _)| file != file_path);
-        }
-        // Clean up empty entries
-        self.import_references.retain(|_, refs| !refs.is_empty());
-    }
-
     /// Get all imports from a specific file
     ///
     /// Returns a vector of (import_path, span) tuples for all imports in the given file.
-    /// Uses an internal index for O(1) file lookup.
+    /// Uses an internal index for O(1) file lookup. Paths are normalized.
     pub fn get_file_imports(&self, file_path: &str) -> Vec<(String, Span)> {
+        let normalized = normalize_path(file_path);
         self.imports_by_file
-            .get(file_path)
+            .get(&normalized)
             .into_iter()
             .flatten()
             .filter_map(|import| import.span.map(|span| (import.path.clone(), span)))
@@ -253,35 +256,54 @@ impl SymbolTable {
 
     /// Get all symbols defined in a specific file
     ///
-    /// Returns an iterator of symbols whose source_file matches the given path.
+    /// Returns a Vec of symbols whose source_file matches the given path.
     /// Uses an internal index for O(1) file lookup instead of iterating all symbols.
-    pub fn get_symbols_for_file(&self, file_path: &str) -> impl Iterator<Item = &Symbol> {
+    /// Paths are normalized before lookup (handles stdlib path variations).
+    pub fn get_symbols_for_file(&self, file_path: &str) -> Vec<&Symbol> {
+        let normalized = normalize_path(file_path);
         self.symbols_by_file
-            .get(file_path)
+            .get(&normalized)
             .into_iter()
             .flatten()
-            .filter_map(|qname| self.find_by_qualified_name(qname))
+            .filter_map(|id| self.get_symbol(*id))
+            .collect()
+    }
+
+    /// Get a symbol by its SymbolId (O(1) arena lookup)
+    pub fn get_symbol(&self, id: SymbolId) -> Option<&Symbol> {
+        self.arena.get(id.index())
+    }
+
+    /// Get a mutable symbol by its SymbolId (O(1) arena lookup)
+    pub fn get_symbol_mut(&mut self, id: SymbolId) -> Option<&mut Symbol> {
+        self.arena.get_mut(id.index())
     }
 
     /// Find a symbol by its exact qualified name (data access, not resolution)
+    /// Uses O(1) index lookup.
     pub fn find_by_qualified_name(&self, qualified_name: &str) -> Option<&Symbol> {
-        self.scopes.iter().find_map(|scope| {
-            scope
-                .symbols
-                .values()
-                .find(|symbol| symbol.qualified_name() == qualified_name)
-        })
+        let id = self.symbols_by_qname.get(qualified_name)?;
+        self.get_symbol(*id)
+    }
+
+    /// Find a SymbolId by qualified name (for callers that need the ID)
+    pub fn find_id_by_qualified_name(&self, qualified_name: &str) -> Option<SymbolId> {
+        self.symbols_by_qname.get(qualified_name).copied()
     }
 
     /// Get qualified names of all symbols defined in a specific file
     ///
-    /// Returns a cloned Vec of qualified names for the file.
+    /// Returns a Vec of qualified names for the file.
     /// Used by enable_auto_invalidation to know which symbols to remove.
+    /// Paths are normalized.
     pub fn get_qualified_names_for_file(&self, file_path: &str) -> Vec<String> {
+        let normalized = normalize_path(file_path);
         self.symbols_by_file
-            .get(file_path)
-            .cloned()
-            .unwrap_or_default()
+            .get(&normalized)
+            .into_iter()
+            .flatten()
+            .filter_map(|id| self.get_symbol(*id).map(|s| s.qualified_name().to_string()))
+            .collect()
     }
 }
 

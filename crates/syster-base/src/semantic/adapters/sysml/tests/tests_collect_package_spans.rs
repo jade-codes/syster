@@ -95,6 +95,7 @@ fn test_collect_package_spans_with_definition() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(2, 2, 3, 3)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -127,6 +128,7 @@ fn test_collect_package_spans_multiple_children() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(1, 2, 2, 3)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };
@@ -137,6 +139,7 @@ fn test_collect_package_spans_multiple_children() {
         relationships: Relationships::none(),
         body: vec![],
         span: Some(make_span(3, 2, 4, 3)),
+        short_name: None,
         is_abstract: false,
         is_variation: false,
     };

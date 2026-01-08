@@ -26,6 +26,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>, body: Vec<UsageMe
     Usage {
         kind,
         name: Some(name.to_string()),
+        short_name: None,
         relationships: Default::default(),
         body,
         span,
@@ -210,7 +211,7 @@ fn test_collect_usage_spans_with_different_usage_kinds() {
         let pos = make_position(2, 0);
         let spans = find_sysml_selection_spans(&file, pos);
 
-        assert_eq!(spans.len(), 1, "Failed for kind {:?}", kind);
+        assert_eq!(spans.len(), 1, "Failed for kind {kind:?}");
     }
 }
 

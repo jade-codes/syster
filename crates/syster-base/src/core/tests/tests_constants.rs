@@ -223,9 +223,7 @@ fn test_is_supported_extension_only_supported() {
         assert_eq!(
             is_supported_extension(ext),
             expected,
-            "Expected is_supported_extension(\"{}\") to be {}",
-            ext,
-            expected
+            "Expected is_supported_extension(\"{ext}\") to be {expected}"
         );
     }
 }

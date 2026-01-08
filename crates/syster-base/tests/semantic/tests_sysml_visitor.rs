@@ -76,10 +76,9 @@ fn test_qualified_redefinition_does_not_create_duplicate_symbols() {
     );
 
     // Shell should be defined exactly once
-    let all_symbols = symbol_table.all_symbols();
-    let shell_count = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "Shell")
+    let shell_count = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "Shell")
         .count();
     assert_eq!(
         shell_count, 1,
@@ -113,10 +112,9 @@ fn test_same_name_in_different_namespaces_creates_two_symbols() {
     );
 
     // Should have two Shell symbols, one in each namespace
-    let all_symbols = symbol_table.all_symbols();
-    let shell_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "Shell")
+    let shell_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "Shell")
         .collect();
 
     assert_eq!(
@@ -129,7 +127,7 @@ fn test_same_name_in_different_namespaces_creates_two_symbols() {
     // Verify they have different qualified names
     let qualified_names: Vec<String> = shell_symbols
         .iter()
-        .filter_map(|(_, symbol)| match symbol {
+        .filter_map(|symbol| match symbol {
             Symbol::Definition { qualified_name, .. } => Some(qualified_name.clone()),
             _ => None,
         })
@@ -180,14 +178,13 @@ fn test_comma_separated_redefinitions_do_not_create_duplicate_symbols() {
     );
 
     // Disc and Circle should each be defined exactly once
-    let all_symbols = symbol_table.all_symbols();
-    let disc_count = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "Disc")
+    let disc_count = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "Disc")
         .count();
-    let circle_count = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "Circle")
+    let circle_count = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "Circle")
         .count();
 
     assert_eq!(
@@ -241,10 +238,9 @@ fn test_attribute_reference_in_expression_not_treated_as_definition() {
 
     // In SysML v2, `attribute :>> radius` creates a scoped symbol named "radius" in each child
     // So we have: TestPkg::radius, TestPkg::Circle::radius, TestPkg::Sphere::radius
-    let all_symbols = symbol_table.all_symbols();
-    let radius_count = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "radius")
+    let radius_count = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "radius")
         .count();
 
     assert_eq!(
@@ -324,10 +320,9 @@ fn test_radius_redefinition_in_multiple_items_no_duplicates() {
 
     // Each redefinition creates a symbol in the child's scope
     // So we have: ShapeItems::CircularDisc::radius, ShapeItems::Sphere::radius
-    let all_symbols = symbol_table.all_symbols();
-    let radius_count = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "radius")
+    let radius_count = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "radius")
         .count();
 
     assert_eq!(
@@ -362,10 +357,9 @@ fn test_simple_redefinition_creates_child_symbol() {
     let result = adapter.populate(&file);
 
     // Count radius symbols
-    let all_symbols = symbol_table.all_symbols();
-    let radius_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "radius")
+    let radius_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "radius")
         .collect();
 
     assert!(
@@ -449,13 +443,12 @@ fn test_visitor_handles_nested_usage() {
     assert!(Resolver::new(&symbol_table).resolve("Car").is_some());
 
     // Check that mass exists and has the correct qualified name
-    let all_symbols = symbol_table.all_symbols();
-    let mass_symbol = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "mass")
+    let mass_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "mass")
         .expect("Should have 'mass' symbol");
 
-    match mass_symbol.1 {
+    match mass_symbol {
         Symbol::Usage { qualified_name, .. } => {
             assert_eq!(qualified_name, "Car::mass");
         }
@@ -473,7 +466,7 @@ fn test_debug_symbol_table_contents() {
     let mut graph = RelationshipGraph::new();
     let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
-    for (_qname, _symbol) in symbol_table.all_symbols() {}
+    for _symbol in symbol_table.iter_symbols() {}
 }
 
 #[test]
@@ -535,25 +528,24 @@ fn test_deeply_nested_symbols() {
     // Check all three levels exist
     assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
 
-    let all_symbols = symbol_table.all_symbols();
-    let engine = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "engine")
+    let engine = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "engine")
         .expect("Should have 'engine' symbol");
 
-    match engine.1 {
+    match engine {
         Symbol::Usage { qualified_name, .. } => {
             assert_eq!(qualified_name, "Vehicle::engine");
         }
         _ => panic!("Expected Usage symbol for engine"),
     }
 
-    let cylinders = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "cylinders")
+    let cylinders = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "cylinders")
         .expect("Should have 'cylinders' symbol");
 
-    match cylinders.1 {
+    match cylinders {
         Symbol::Usage { qualified_name, .. } => {
             assert_eq!(qualified_name, "Vehicle::engine::cylinders");
         }
@@ -617,10 +609,9 @@ fn test_scoped_symbols_with_same_name() {
     adapter.populate(&file).unwrap();
 
     // Both should exist with different qualified names
-    let all_symbols = symbol_table.all_symbols();
-    let speed_symbols: Vec<_> = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "speed")
+    let speed_symbols: Vec<_> = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "speed")
         .collect();
 
     // We should have exactly 2 symbols named "speed" (this might fail if scoping is wrong!)
@@ -632,7 +623,7 @@ fn test_scoped_symbols_with_same_name() {
 
     let qualified_names: Vec<String> = speed_symbols
         .iter()
-        .map(|(_, symbol)| match symbol {
+        .map(|symbol| match symbol {
             Symbol::Usage { qualified_name, .. } => qualified_name.clone(),
             _ => panic!("Expected Usage symbol"),
         })
@@ -665,13 +656,12 @@ fn test_nested_packages() {
             .is_some()
     );
 
-    let all_symbols = symbol_table.all_symbols();
-    let inner = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "InnerPackage")
+    let inner = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "InnerPackage")
         .expect("Should have 'InnerPackage' symbol");
 
-    match inner.1 {
+    match inner {
         Symbol::Package { qualified_name, .. } => {
             assert_eq!(qualified_name, "OuterPackage::InnerPackage");
         }
@@ -748,25 +738,24 @@ fn test_qualified_names_are_correct() {
         _ => panic!("Expected Package symbol"),
     }
 
-    let all_symbols = symbol_table.all_symbols();
-    let car = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "Car")
+    let car = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "Car")
         .expect("Should have 'Car' symbol");
 
-    match car.1 {
+    match car {
         Symbol::Definition { qualified_name, .. } => {
             assert_eq!(qualified_name, "Vehicles::Car");
         }
         _ => panic!("Expected Definition symbol"),
     }
 
-    let mass = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "mass")
+    let mass = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "mass")
         .expect("Should have 'mass' symbol");
 
-    match mass.1 {
+    match mass {
         Symbol::Usage { qualified_name, .. } => {
             assert_eq!(qualified_name, "Vehicles::Car::mass");
         }
@@ -840,10 +829,8 @@ fn test_alias_definition() {
     adapter.populate(&file).unwrap();
 
     let symbol = symbol_table
-        .all_symbols()
-        .into_iter()
-        .find(|(name, _)| *name == "MyAlias")
-        .map(|(_, s)| s);
+        .iter_symbols()
+        .find(|sym| sym.name() == "MyAlias");
     assert!(symbol.is_some(), "Alias should be in symbol table");
 
     match symbol.unwrap() {
@@ -894,13 +881,12 @@ fn test_port_definition_and_usage() {
         _ => panic!("Expected Definition symbol"),
     }
 
-    let all_symbols = symbol_table.all_symbols();
-    let input_port = all_symbols
-        .iter()
-        .find(|(name, _)| *name == "input")
+    let input_port = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.name() == "input")
         .expect("Should have 'input' port");
 
-    match input_port.1 {
+    match input_port {
         Symbol::Usage {
             kind,
             qualified_name,
@@ -939,9 +925,10 @@ fn test_action_with_parameters() {
     }
 
     // Check that parameters exist
-    let all_symbols = symbol_table.all_symbols();
-    let has_data = all_symbols.iter().any(|(name, _)| *name == "data");
-    let has_result = all_symbols.iter().any(|(name, _)| *name == "result");
+    let has_data = symbol_table.iter_symbols().any(|sym| sym.name() == "data");
+    let has_result = symbol_table
+        .iter_symbols()
+        .any(|sym| sym.name() == "result");
 
     assert!(has_data, "Should have 'data' parameter");
     assert!(has_result, "Should have 'result' parameter");
@@ -999,10 +986,9 @@ fn test_enumeration_definition() {
     }
 
     // Check for enum values
-    let all_symbols = symbol_table.all_symbols();
-    let has_red = all_symbols.iter().any(|(name, _)| *name == "Red");
-    let has_green = all_symbols.iter().any(|(name, _)| *name == "Green");
-    let has_blue = all_symbols.iter().any(|(name, _)| *name == "Blue");
+    let has_red = symbol_table.iter_symbols().any(|sym| sym.name() == "Red");
+    let has_green = symbol_table.iter_symbols().any(|sym| sym.name() == "Green");
+    let has_blue = symbol_table.iter_symbols().any(|sym| sym.name() == "Blue");
 
     assert!(has_red, "Should have enum value 'Red'");
     assert!(has_green, "Should have enum value 'Green'");
@@ -1126,10 +1112,21 @@ fn test_mixed_definitions_and_usages() {
     assert!(Resolver::new(&symbol_table).resolve("myCar").is_some());
 
     // Check nested parts
-    let all_symbols = symbol_table.all_symbols();
-    assert!(all_symbols.iter().any(|(name, _)| *name == "engine"));
-    assert!(all_symbols.iter().any(|(name, _)| *name == "wheel1"));
-    assert!(all_symbols.iter().any(|(name, _)| *name == "wheel2"));
+    assert!(
+        symbol_table
+            .iter_symbols()
+            .any(|sym| sym.name() == "engine")
+    );
+    assert!(
+        symbol_table
+            .iter_symbols()
+            .any(|sym| sym.name() == "wheel1")
+    );
+    assert!(
+        symbol_table
+            .iter_symbols()
+            .any(|sym| sym.name() == "wheel2")
+    );
 }
 
 #[test]
@@ -1194,10 +1191,9 @@ fn test_identifier_in_default_value_not_treated_as_definition() {
     );
 
     // Should have exactly one "thisPerformance" symbol (the actual definition, not the reference)
-    let all_symbols = symbol_table.all_symbols();
-    let this_perf_count = all_symbols
-        .iter()
-        .filter(|(name, _)| *name == "thisPerformance")
+    let this_perf_count = symbol_table
+        .iter_symbols()
+        .filter(|sym| sym.name() == "thisPerformance")
         .count();
 
     assert_eq!(

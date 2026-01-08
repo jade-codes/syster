@@ -1,6 +1,6 @@
 use super::utils::{
-    extract_definition_flags, extract_flags, extract_relationships, find_identifier_span,
-    find_name, is_body_rule, is_usage_rule, to_def_kind, to_span, to_usage_kind,
+    extract_definition_flags, extract_flags, extract_relationships, find_name,
+    find_names_with_short, is_body_rule, is_usage_rule, to_def_kind, to_span, to_usage_kind,
 };
 use super::{
     enums::{DefinitionMember, UsageMember},
@@ -71,9 +71,9 @@ pub fn parse_definition(pair: Pair<Rule>) -> Result<Definition, ConversionError<
         .map(|p| parse_def_body(&p))
         .unwrap_or_default();
 
-    // Find the identifier and its span
+    // Find the identifier, span, and short_name
     let pairs: Vec<_> = pair.clone().into_inner().collect();
-    let (name, span) = find_identifier_span(pairs.iter().cloned());
+    let (name, span, short_name) = find_names_with_short(pairs.iter().cloned());
     let name = name.or_else(|| find_name(pairs.iter().cloned()));
 
     // Extract definition flags (abstract, variation)
@@ -82,6 +82,7 @@ pub fn parse_definition(pair: Pair<Rule>) -> Result<Definition, ConversionError<
     Ok(Definition {
         kind,
         name,
+        short_name,
         relationships: extract_relationships(&pair),
         body,
         span,
@@ -115,13 +116,14 @@ pub fn parse_usage(pair: Pair<Rule>) -> Usage {
 
     let (is_derived, is_readonly) = extract_flags(&pairs);
 
-    // Find the identifier and its span
-    let (name, span) = find_identifier_span(pairs.iter().cloned());
+    // Find the identifier, span, and short_name
+    let (name, span, short_name) = find_names_with_short(pairs.iter().cloned());
     let name = name.or_else(|| find_name(pairs.iter().cloned()));
 
     Usage {
         kind,
         name,
+        short_name,
         relationships: extract_relationships(&pair),
         body,
         span,

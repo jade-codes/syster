@@ -940,10 +940,9 @@ fn test_stdlib_no_duplicate_relationships() {
 
     // Find CelsiusTemperatureValue symbol
     let symbol_table = workspace.symbol_table();
-    let all_symbols = symbol_table.all_symbols();
-    let celsius_symbol = all_symbols
-        .iter()
-        .find(|(_, sym)| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
+    let celsius_symbol = symbol_table
+        .iter_symbols()
+        .find(|sym| sym.qualified_name() == "ISQThermodynamics::CelsiusTemperatureValue");
 
     assert!(
         celsius_symbol.is_some(),
@@ -952,7 +951,7 @@ fn test_stdlib_no_duplicate_relationships() {
 
     // Check for duplicates in relationships for CelsiusTemperatureValue
     let graph = workspace.relationship_graph();
-    let (_, first_symbol) = celsius_symbol.unwrap();
+    let first_symbol = celsius_symbol.unwrap();
     let qualified_name = first_symbol.qualified_name();
     let rels = graph.get_one_to_many(REL_SPECIALIZATION, qualified_name);
 
@@ -973,13 +972,13 @@ fn test_stdlib_no_duplicate_relationships() {
         targets
     );
 
-    // Should specialize exactly ScalarQuantityValue
+    // Should specialize exactly ScalarQuantityValue (with fully qualified name after resolution)
     assert_eq!(
         targets.len(),
         1,
         "Should have exactly 1 specialization target"
     );
-    assert_eq!(targets[0], "ScalarQuantityValue");
+    assert_eq!(targets[0], "Quantities::ScalarQuantityValue");
 }
 
 /// Test that repopulating a file doesn't create duplicate relationships.
@@ -1033,8 +1032,7 @@ fn test_repopulation_no_duplicate_relationships() {
     assert_eq!(
         targets.len(),
         1,
-        "Should still have 1 target after repopulation (fix works!). Got: {:?}",
-        targets
+        "Should still have 1 target after repopulation (fix works!). Got: {targets:?}"
     );
 }
 
@@ -1449,17 +1447,17 @@ fn test_nested_symbols_repopulation() {
             .resolve("Container")
             .is_some()
     );
-    let all_symbols = workspace.symbol_table().all_symbols();
+    let all_symbols: Vec<_> = workspace.symbol_table().iter_symbols().collect();
     assert!(
         all_symbols
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner1"),
+            .any(|s| s.qualified_name() == "Container::inner1"),
         "inner1 should exist"
     );
     assert!(
         all_symbols
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner2"),
+            .any(|s| s.qualified_name() == "Container::inner2"),
         "inner2 should exist"
     );
 
@@ -1474,17 +1472,17 @@ fn test_nested_symbols_repopulation() {
     workspace.populate_affected().expect("Failed to repopulate");
 
     // Old nested symbols should be gone
-    let all_symbols_after = workspace.symbol_table().all_symbols();
+    let all_symbols_after: Vec<_> = workspace.symbol_table().iter_symbols().collect();
     assert!(
         !all_symbols_after
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner1"),
+            .any(|s| s.qualified_name() == "Container::inner1"),
         "inner1 should be removed"
     );
     assert!(
         !all_symbols_after
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::inner2"),
+            .any(|s| s.qualified_name() == "Container::inner2"),
         "inner2 should be removed"
     );
 
@@ -1497,7 +1495,7 @@ fn test_nested_symbols_repopulation() {
     assert!(
         all_symbols_after
             .iter()
-            .any(|(_, s)| s.qualified_name() == "Container::newInner"),
+            .any(|s| s.qualified_name() == "Container::newInner"),
         "newInner should exist"
     );
 }
@@ -1633,8 +1631,8 @@ fn test_cross_language_sysml_specializes_kerml() {
 
     // Debug: print all symbols
     println!("All symbols:");
-    for (name, symbol) in workspace.symbol_table().all_symbols() {
-        println!("  {} -> {}", name, symbol.qualified_name());
+    for symbol in workspace.symbol_table().iter_symbols() {
+        println!("  {} -> {}", symbol.name(), symbol.qualified_name());
     }
 
     // lookup() is scope-aware, use resolve() for cross-scope lookups
@@ -1657,16 +1655,13 @@ fn test_cross_language_sysml_specializes_kerml() {
     let rels_qname = workspace
         .relationship_graph()
         .get_all_relationships("VectorValues::NumericalVectorValue");
-    println!(
-        "VectorValues::NumericalVectorValue relationships: {:?}",
-        rels_qname
-    );
+    println!("VectorValues::NumericalVectorValue relationships: {rels_qname:?}");
 
     // Check what VectorQuantityValue specializes
     let vqv_rels = workspace
         .relationship_graph()
         .get_one_to_many(REL_SPECIALIZATION, "Quantities::VectorQuantityValue");
-    println!("VectorQuantityValue specializes: {:?}", vqv_rels);
+    println!("VectorQuantityValue specializes: {vqv_rels:?}");
 
     // The SysML type should specialize the KerML type
     assert!(
@@ -1676,8 +1671,7 @@ fn test_cross_language_sysml_specializes_kerml() {
     let targets = vqv_rels.unwrap();
     assert!(
         targets.iter().any(|t| t.contains("NumericalVectorValue")),
-        "VectorQuantityValue should specialize NumericalVectorValue, got: {:?}",
-        targets
+        "VectorQuantityValue should specialize NumericalVectorValue, got: {targets:?}"
     );
 }
 
@@ -1712,7 +1706,7 @@ fn test_temperature_difference_value_no_duplicate_specialization() {
     );
     let targets = rels.unwrap();
 
-    println!("TemperatureDifferenceValue specializes: {:?}", targets);
+    println!("TemperatureDifferenceValue specializes: {targets:?}");
 
     // Check for duplicates
     let mut unique_targets: Vec<_> = targets.to_vec();
@@ -1732,7 +1726,6 @@ fn test_temperature_difference_value_no_duplicate_specialization() {
     assert_eq!(
         targets.len(),
         1,
-        "Should have exactly 1 specialization target, got: {:?}",
-        targets
+        "Should have exactly 1 specialization target, got: {targets:?}"
     );
 }

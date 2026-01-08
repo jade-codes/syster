@@ -10,7 +10,7 @@
 #![allow(unused_mut)]
 
 use std::path::PathBuf;
-use syster::semantic::{RelationshipGraph, Resolver, SemanticAnalyzer, SymbolTable, Workspace};
+use syster::semantic::{RelationshipGraph, Resolver, SymbolTable, Workspace};
 use syster::syntax::SyntaxFile;
 use syster::syntax::sysml::ast::SysMLFile;
 
@@ -67,7 +67,6 @@ fn test_documented_type_aliases_exist() {
 fn test_documented_modules_exist() {
     // If these imports fail, module organization has changed
     use syster::semantic;
-    use syster::semantic::analyzer;
     use syster::semantic::graphs;
     use syster::semantic::resolver;
     use syster::semantic::symbol_table;
@@ -77,7 +76,6 @@ fn test_documented_modules_exist() {
     let _: SymbolTable;
     let _: RelationshipGraph;
     let _: Resolver;
-    let _: SemanticAnalyzer;
     let _: Workspace<SyntaxFile>;
 }
 
@@ -93,7 +91,6 @@ fn test_symbol_enum_variants_documented() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     let classifier = Symbol::Classifier {
@@ -104,7 +101,6 @@ fn test_symbol_enum_variants_documented() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: Vec::new(),
     };
 
     // Verify symbol variants can be matched

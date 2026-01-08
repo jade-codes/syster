@@ -26,7 +26,6 @@ fn test_format_alias_basic() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -49,7 +48,6 @@ fn test_format_alias_with_qualified_target() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -70,7 +68,6 @@ fn test_format_package_basic() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -90,7 +87,6 @@ fn test_format_package_nested() {
         scope_id: 1,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -119,7 +115,6 @@ fn test_format_classifier_basic() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -141,7 +136,6 @@ fn test_format_classifier_abstract() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -165,7 +159,6 @@ fn test_format_definition_part() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -187,7 +180,6 @@ fn test_format_definition_attribute() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -209,7 +201,6 @@ fn test_format_definition_requirement() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -231,7 +222,6 @@ fn test_format_definition_action() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -253,7 +243,6 @@ fn test_format_definition_port() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -277,7 +266,6 @@ fn test_format_usage_part() {
         scope_id: 1,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -300,7 +288,6 @@ fn test_format_usage_attribute() {
         scope_id: 1,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -323,7 +310,6 @@ fn test_format_usage_action() {
         scope_id: 1,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -346,7 +332,6 @@ fn test_format_usage_port() {
         scope_id: 1,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -369,7 +354,6 @@ fn test_format_usage_requirement() {
         scope_id: 1,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -391,7 +375,6 @@ fn test_format_feature_without_type() {
         feature_type: None,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -417,7 +400,6 @@ fn test_format_feature_with_type() {
         feature_type: Some("Integer".to_string()),
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -438,7 +420,6 @@ fn test_format_feature_with_qualified_type() {
         feature_type: Some("Types::Real".to_string()),
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -459,7 +440,6 @@ fn test_format_with_empty_name() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -482,7 +462,6 @@ fn test_format_with_special_characters() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -506,7 +485,6 @@ fn test_format_with_very_long_name() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -526,7 +504,6 @@ fn test_format_with_unicode_characters() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -547,7 +524,6 @@ fn test_format_feature_type_with_spaces() {
         feature_type: Some("Some Complex Type".to_string()),
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -569,7 +545,6 @@ fn test_format_alias_with_empty_target() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -592,7 +567,6 @@ fn test_format_hover_includes_qualified_name() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -617,7 +591,6 @@ fn test_format_hover_includes_source_file() {
         scope_id: 0,
         source_file: Some("/path/to/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -642,7 +615,6 @@ fn test_format_hover_without_source_file() {
         scope_id: 0,
         source_file: None,
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -665,7 +637,6 @@ fn test_format_hover_markdown_structure() {
         scope_id: 0,
         source_file: Some("/test.sysml".to_string()),
         span: Some(test_span()),
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -704,7 +675,6 @@ fn test_format_all_symbol_variants_produce_output() {
             scope_id: 0,
             source_file: None,
             span: None,
-            references: vec![],
         },
         Symbol::Package {
             name: "P".to_string(),
@@ -712,7 +682,6 @@ fn test_format_all_symbol_variants_produce_output() {
             scope_id: 0,
             source_file: None,
             span: None,
-            references: vec![],
         },
         Symbol::Classifier {
             name: "C".to_string(),
@@ -722,7 +691,6 @@ fn test_format_all_symbol_variants_produce_output() {
             scope_id: 0,
             source_file: None,
             span: None,
-            references: vec![],
         },
         Symbol::Definition {
             name: "D".to_string(),
@@ -732,7 +700,6 @@ fn test_format_all_symbol_variants_produce_output() {
             scope_id: 0,
             source_file: None,
             span: None,
-            references: vec![],
         },
         Symbol::Usage {
             name: "U".to_string(),
@@ -743,7 +710,6 @@ fn test_format_all_symbol_variants_produce_output() {
             scope_id: 0,
             source_file: None,
             span: None,
-            references: vec![],
         },
         Symbol::Feature {
             name: "F".to_string(),
@@ -752,7 +718,6 @@ fn test_format_all_symbol_variants_produce_output() {
             feature_type: None,
             source_file: None,
             span: None,
-            references: vec![],
         },
     ];
 
@@ -760,13 +725,11 @@ fn test_format_all_symbol_variants_produce_output() {
         let result = format_rich_hover(&symbol, &workspace);
         assert!(
             !result.is_empty(),
-            "Hover for symbol {:?} should not be empty",
-            symbol
+            "Hover for symbol {symbol:?} should not be empty"
         );
         assert!(
             result.len() > 10,
-            "Hover for symbol {:?} should have substantial content, got: {result}",
-            symbol
+            "Hover for symbol {symbol:?} should have substantial content, got: {result}"
         );
     }
 }
@@ -782,7 +745,6 @@ fn test_format_definition_lowercase_kind() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
@@ -805,7 +767,6 @@ fn test_format_usage_lowercase_kind() {
         scope_id: 0,
         source_file: None,
         span: None,
-        references: vec![],
     };
 
     let workspace = Workspace::<SyntaxFile>::new();
