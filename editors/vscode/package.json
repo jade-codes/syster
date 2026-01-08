@@ -9,7 +9,7 @@
     "url": "https://github.com/jade-codes/syster"
   },
   "license": "MIT",
-  "icon": "images/icon.png",
+  "icon": "images/syster.jpg",
   "engines": {
     "vscode": "^1.85.0"
   },

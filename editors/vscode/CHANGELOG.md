@@ -7,6 +7,9 @@ All notable changes to the "SysML v2 Language Support" extension will be documen
 ### Added
 - Extension icon for marketplace and sidebar display
 
+### Fixed
+- Corrected icon path in package.json
+
 ## [0.1.2-alpha] - 2026-01-08
 
 ### Fixed
