@@ -2067,14 +2067,11 @@ fn test_hover_isq_massvalue() {
 /// This simulates exactly what happens when VS Code loads
 #[test]
 fn test_hover_isq_massvalue_extension_stdlib() {
-    // Use the SAME stdlib path the extension uses
+    // Use the stdlib path from syster-base
     let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
-        .parent()
-        .unwrap()
-        .join("editors")
-        .join("vscode")
+        .join("syster-base")
         .join("sysml.library");
 
     println!("Using stdlib path: {stdlib_path:?}");
