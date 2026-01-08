@@ -220,6 +220,7 @@ fn test_populate_definition() {
             is_variation: false,
             span: None,
             short_name: None,
+            short_name_span: None,
         })],
     };
 

@@ -225,6 +225,7 @@ fn test_visit_namespace_affects_subsequent_elements() {
             is_variation: false,
             span: None,
             short_name: None,
+            short_name_span: None,
         })],
     };
 
@@ -407,6 +408,7 @@ fn test_visit_comment_between_definitions() {
                 is_variation: false,
                 span: None,
                 short_name: None,
+                short_name_span: None,
             }),
             Element::Comment(Comment {
                 content: "Comment between definitions".to_string(),
@@ -421,6 +423,7 @@ fn test_visit_comment_between_definitions() {
                 is_variation: false,
                 span: None,
                 short_name: None,
+                short_name_span: None,
             }),
         ],
     };
@@ -487,6 +490,7 @@ fn test_visit_comment_does_not_change_current_namespace() {
                 is_variation: false,
                 span: None,
                 short_name: None,
+                short_name_span: None,
             }),
         ],
     };

@@ -101,6 +101,7 @@ fn test_all_refs_from_no_references() {
 #[test]
 fn test_all_refs_from_quoted_name_in_subsetting() {
     // Test extracting a quoted name reference from subsetting
+    // Quotes should be stripped
     let source = ":> 'Complex Name'";
     let mut pairs = SysMLParser::parse(Rule::subsettings, source).unwrap();
     let pair = pairs.next().unwrap();
@@ -108,7 +109,7 @@ fn test_all_refs_from_quoted_name_in_subsetting() {
     let refs = all_refs_from(&pair);
 
     assert_eq!(refs.len(), 1);
-    assert_eq!(refs[0], "'Complex Name'");
+    assert_eq!(refs[0], "Complex Name");
 }
 
 #[test]
@@ -429,6 +430,7 @@ fn test_all_refs_from_qualified_names() {
 #[test]
 fn test_all_refs_from_mixed_quoted_and_unquoted() {
     // Test with a mix of quoted and unquoted names
+    // Quotes should be stripped from extracted references
     let source = ":> NormalName, 'Quoted Name'";
     let mut pairs = SysMLParser::parse(Rule::subsettings, source).unwrap();
     let pair = pairs.next().unwrap();
@@ -437,7 +439,7 @@ fn test_all_refs_from_mixed_quoted_and_unquoted() {
 
     assert_eq!(refs.len(), 2);
     assert!(refs.contains(&"NormalName".to_string()));
-    assert!(refs.contains(&"'Quoted Name'".to_string()));
+    assert!(refs.contains(&"Quoted Name".to_string()));
 }
 
 #[test]

@@ -44,24 +44,26 @@ fn test_ref_from_identifier_with_numbers() {
 
 #[test]
 fn test_ref_from_quoted_name() {
+    // Quotes should be stripped from quoted names
     let source = "'My Vehicle'";
     let mut pairs = SysMLParser::parse(Rule::quoted_name, source).unwrap();
     let pair = pairs.next().unwrap();
 
     let result = ref_from(&pair);
 
-    assert_eq!(result, Some("'My Vehicle'".to_string()));
+    assert_eq!(result, Some("My Vehicle".to_string()));
 }
 
 #[test]
 fn test_ref_from_quoted_name_with_special_chars() {
+    // Quotes should be stripped from quoted names
     let source = "'Vehicle-123!@#'";
     let mut pairs = SysMLParser::parse(Rule::quoted_name, source).unwrap();
     let pair = pairs.next().unwrap();
 
     let result = ref_from(&pair);
 
-    assert_eq!(result, Some("'Vehicle-123!@#'".to_string()));
+    assert_eq!(result, Some("Vehicle-123!@#".to_string()));
 }
 
 #[test]
@@ -294,13 +296,14 @@ fn test_ref_from_with_qualified_name_in_typing() {
 
 #[test]
 fn test_ref_from_with_quoted_name_in_subsetting() {
+    // Quotes should be stripped from extracted references
     let source = ":> 'base feature'";
     let mut pairs = SysMLParser::parse(Rule::subsettings, source).unwrap();
     let pair = pairs.next().unwrap();
 
     let result = ref_from(&pair);
 
-    assert_eq!(result, Some("'base feature'".to_string()));
+    assert_eq!(result, Some("base feature".to_string()));
 }
 
 // ============================================================================

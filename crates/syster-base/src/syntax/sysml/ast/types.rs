@@ -138,6 +138,8 @@ pub struct Definition {
     pub name: Option<String>,
     /// Short name (e.g., "kg" from `<kg> kilogram`)
     pub short_name: Option<String>,
+    /// Span of the short name identifier (inside the `<` and `>`)
+    pub short_name_span: Option<Span>,
     pub relationships: Relationships,
     pub body: Vec<DefinitionMember>,
     /// Span of the definition name identifier
@@ -160,6 +162,7 @@ impl Definition {
             kind,
             name,
             short_name: None,
+            short_name_span: None,
             relationships,
             body,
             span: None,
@@ -175,6 +178,8 @@ pub struct Usage {
     pub name: Option<String>,
     /// Short name (e.g., "kg" from `<kg> kilogram`)
     pub short_name: Option<String>,
+    /// Span of the short name identifier (inside the `<` and `>`)
+    pub short_name_span: Option<Span>,
     pub relationships: Relationships,
     pub body: Vec<UsageMember>,
     /// Span of the usage name identifier
@@ -198,6 +203,7 @@ impl Usage {
             kind,
             name,
             short_name: None,
+            short_name_span: None,
             relationships,
             body,
             span: None,
