@@ -342,3 +342,53 @@ fn test_integration_all_functions_with_unicode() {
         assert!(content.contains("Café"));
     }
 }
+
+#[test]
+fn test_format_rich_hover_references_with_url_encoded_filenames() {
+    // Test that file names with spaces (URL-encoded) are displayed correctly
+    let mut server = LspServer::new();
+
+    // Create a file with spaces in the name (simulate URL encoding)
+    let uri_with_spaces = Url::parse("file:///test%20file%20name.sysml").unwrap();
+    let text = r#"
+package Test {
+    part def Base;
+    part usage : Base;
+}
+    "#;
+
+    server.open_document(&uri_with_spaces, text).unwrap();
+
+    // Get hover on Base to see the "Referenced by:" section
+    let hover = server.get_hover(&uri_with_spaces, Position::new(2, 14));
+    assert!(hover.is_some());
+
+    if let Some(h) = hover
+        && let async_lsp::lsp_types::HoverContents::Scalar(
+            async_lsp::lsp_types::MarkedString::String(content),
+        ) = h.contents
+    {
+        // The hover should contain the decoded file name (with spaces), not URL-encoded
+        // Looking for the file name in the "Referenced by:" section
+        assert!(
+            content.contains("Referenced by:"),
+            "Should have references section"
+        );
+
+        // The file name in the markdown link text should be decoded (have spaces, not %20)
+        // Format is: [filename:line:col](url)
+        // We check for the pattern but allow flexibility in line/col numbers
+        assert!(
+            content.contains("[test file name.sysml:"),
+            "File name in markdown link text should be decoded with spaces. Content:\n{}",
+            content
+        );
+
+        // The URL in the markdown link target should still be encoded (that's correct for URLs)
+        assert!(
+            content.contains("file:///test%20file%20name.sysml"),
+            "URL should remain encoded for proper linking. Content:\n{}",
+            content
+        );
+    }
+}
