@@ -32,11 +32,14 @@ pub fn char_offset_to_byte(line: &str, char_offset: usize) -> usize {
 /// Convert LSP Position to byte offset in text
 ///
 /// Handles multi-line documents by calculating line offsets and character positions
+/// Correctly handles both LF (\n) and CRLF (\r\n) line endings.
 /// Note: Treats position.character as character count (not strict UTF-16 code units)
 pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, String> {
-    let lines: Vec<&str> = text.lines().collect();
     let line_idx = pos.line as usize;
     let char_offset = pos.character as usize;
+
+    // Split by \n to handle both LF and CRLF (since \r\n split on \n leaves \r at line end)
+    let lines: Vec<&str> = text.split('\n').collect();
 
     // Allow line == lines.len() for end-of-document positions
     if line_idx > lines.len() {
@@ -53,15 +56,18 @@ pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, Strin
     }
 
     // Calculate byte offset up to the start of the target line
+    // Each line includes its content plus the \n separator (split removes \n)
     let mut byte_offset = 0;
     for (i, line) in lines.iter().enumerate() {
         if i == line_idx {
             break;
         }
-        byte_offset += line.len() + 1; // +1 for newline
+        // line.len() + 1 accounts for the \n that was split on
+        byte_offset += line.len() + 1;
     }
 
     // Add character offset within the line converted to bytes
+    // Note: For CRLF files, line still contains trailing \r
     let line = lines[line_idx];
     let line_byte_offset = char_offset_to_byte(line, char_offset);
 
