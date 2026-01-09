@@ -45,7 +45,6 @@ analysis_token = @{ "analysis" ~ !(ASCII_ALPHANUMERIC | "_") }
 abstract_token = @{ "abstract" ~ !(ASCII_ALPHANUMERIC | "_") }
 library_token = @{ "library" ~ !(ASCII_ALPHANUMERIC | "_") }
 require_token = @{ "require" ~ !(ASCII_ALPHANUMERIC | "_") }
-conjugate_token = @{ "conjugate" ~ !(ASCII_ALPHANUMERIC | "_") }
 perform_token = @{ "perform" ~ !(ASCII_ALPHANUMERIC | "_") }
 exhibit_token = @{ "exhibit" ~ !(ASCII_ALPHANUMERIC | "_") }
 include_token = @{ "include" ~ !(ASCII_ALPHANUMERIC | "_") }
@@ -118,7 +117,6 @@ meta_token = @{ "meta" ~ !(ASCII_ALPHANUMERIC | "_") }
 null_token = @{ "null" ~ !(ASCII_ALPHANUMERIC | "_") }
 when_token = @{ "when" ~ !(ASCII_ALPHANUMERIC | "_") }
 exit_token = @{ "exit" ~ !(ASCII_ALPHANUMERIC | "_") }
-life_token = @{ "life" ~ !(ASCII_ALPHANUMERIC | "_") }
 def_token = @{ "def" ~ !(ASCII_ALPHANUMERIC | "_") }
 doc_token = @{ "doc" ~ !(ASCII_ALPHANUMERIC | "_") }
 end_token = @{ "end" ~ !(ASCII_ALPHANUMERIC | "_") }
@@ -168,7 +166,7 @@ keyword = @{
     | terminate_token | transition_token | timeslice_token | protected_token | standard_token
     | readonly_token | metadata_token | language_token | snapshot_token | parallel_token
     | allocate_token | analysis_token | abstract_token | library_token | require_token 
-    | conjugate_token | perform_token | exhibit_token | include_token | satisfy_token | binding_token 
+    | constant_token | perform_token | exhibit_token | include_token | satisfy_token | binding_token 
     | crosses_token | message_token | package_token | private_token | variant_token
     | concern_token | connect_token | default_token | defined_token | derived_token 
     | subject_token | ordered_token | hastype_token | istype_token | implies_token 
@@ -181,7 +179,7 @@ keyword = @{
     | port_token | case_token | calc_token | send_token | then_token | flow_token 
     | fork_token | from_token | join_token | loop_token | part_token | true_token 
     | view_token | bind_token | else_token | enum_token | item_token | meta_token 
-    | null_token | when_token | exit_token | life_token
+    | null_token | when_token | exit_token
     | def_token | doc_token | end_token | for_token | not_token | ref_token | rep_token 
     | use_token | via_token | xor_token | all_token | and_token | out_token
     | to_token | as_token | at_token | by_token | do_token | if_token | in_token | of_token | or_token
@@ -285,9 +283,7 @@ variant_membership = { variant_token ~ variant_usage_element }
 conjugated_port_definition = {
     occurrence_definition_prefix ~ port_token ~ def_token ~ conjugate_operator ~ definition_declaration ~ definition_body
 }
-port_conjugation = { conjugate_token ~ conjugate_operator ~ identifier ~ semi_colon }
 conjugated_port_typing = { port_token ~ identifier ~ colon ~ conjugate_operator ~ identifier ~ semi_colon }
-life_class = { life_token ~ class_token ~ identifier ~ semi_colon }
 
 
 // Requirement Constraint Memberships

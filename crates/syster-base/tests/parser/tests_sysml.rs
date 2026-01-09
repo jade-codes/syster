@@ -356,13 +356,11 @@ fn test_parse_terminate_action(#[case] rule: Rule, #[case] input: &str, #[case] 
     "port def ~MyConjugatedPort;",
     "conjugated port definition"
 )]
-#[case(Rule::port_conjugation, "conjugate ~MyPort;", "port conjugation")]
 #[case(
     Rule::conjugated_port_typing,
     "port myPort : ~ConjugatedPortType;",
     "conjugated port typing"
 )]
-#[case(Rule::life_class, "life class MyLifeClass;", "life class")]
 fn test_parse_conjugated_port_definitions(
     #[case] rule: Rule,
     #[case] input: &str,

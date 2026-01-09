@@ -553,18 +553,6 @@ fn test_parse_conjugated_port_definition() {
 }
 
 #[test]
-fn test_parse_port_conjugation() {
-    let input = "conjugate ~MyPort;";
-    let result = SysMLParser::parse(Rule::port_conjugation, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse port conjugation: {:?}",
-        result.err()
-    );
-}
-
-#[test]
 fn test_parse_conjugated_port_typing() {
     let input = "port myPort : ~ConjugatedPortType;";
     let result = SysMLParser::parse(Rule::conjugated_port_typing, input);
@@ -572,18 +560,6 @@ fn test_parse_conjugated_port_typing() {
     assert!(
         result.is_ok(),
         "Failed to parse conjugated port typing: {:?}",
-        result.err()
-    );
-}
-
-#[test]
-fn test_parse_life_class() {
-    let input = "life class MyLifeClass;";
-    let result = SysMLParser::parse(Rule::life_class, input);
-
-    assert!(
-        result.is_ok(),
-        "Failed to parse life class: {:?}",
         result.err()
     );
 }
