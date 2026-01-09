@@ -23,7 +23,7 @@ package DecisionsAndMergesModelToBeExecuted {
 		succession i_before_r first [1] inspect then [0..1] recycle;
 		step recycle : MarkForRecycling [*];
 
-		  /* Two merge branches. */
+		/* Two merge branches. */
 		succession f_before_ms first [0..1] finish then [1] mShip;
 		succession r_before_ms first [0..1] recycle then [1] mShip;
 

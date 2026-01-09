@@ -954,10 +954,10 @@ fn test_parse_subsetting_redefinition(#[case] rule: Rule, #[case] input: &str, #
 )]
 #[case(Rule::unioning, "unions Type1", "unioning base")]
 #[case(Rule::unioning, "unions public Type2", "unioning with visibility")]
-#[case(Rule::differencing, "differs Type1", "differencing base")]
+#[case(Rule::differencing, "differences Type1", "differencing base")]
 #[case(
     Rule::differencing,
-    "differs private Type2",
+    "differences private Type2",
     "differencing with visibility"
 )]
 #[case(Rule::intersecting, "intersects Type1", "intersecting base")]
@@ -999,43 +999,47 @@ fn test_parse_type_operations(#[case] rule: Rule, #[case] input: &str, #[case] d
     "disjoint private Type2",
     "disjoining with visibility"
 )]
-#[case(Rule::feature_inverting, "inverse feature1", "feature inverting base")]
 #[case(
     Rule::feature_inverting,
-    "inverse public feature2",
-    "feature inverting with visibility"
+    "inverse feature1 of feature2;",
+    "feature inverting base"
+)]
+#[case(
+    Rule::feature_inverting,
+    "inverse feature2 of other;",
+    "feature inverting with target"
 )]
 #[case(Rule::featuring, "featured by Type1", "featuring base")]
 #[case(Rule::featuring, "featured by Type2", "featuring second type")]
-#[case(Rule::type_featuring, "featuring by Type1", "type featuring with ref")]
-#[case(Rule::type_featuring, "featuring", "type featuring standalone")]
+#[case(
+    Rule::type_featuring,
+    "featuring f by Type1;",
+    "type featuring with ref"
+)]
+#[case(
+    Rule::type_featuring,
+    "featuring of f by Type1;",
+    "type featuring standalone"
+)]
 fn test_parse_feature_operations(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case(Rule::feature_typing, "typed by :> BaseType", "feature typing base")]
-#[case(
-    Rule::feature_typing,
-    ": specializes TypeSpec",
-    "feature typing specializes"
-)]
-#[case(
-    Rule::feature_typing,
-    ": Complex[1]",
-    "feature typing with multiplicity"
-)]
-#[case(Rule::feature_typing, ": Boolean[1]", "feature typing boolean")]
-#[case(Rule::feature_typing, ": Anything[2]", "feature typing anything")]
-#[case(Rule::feature_typing, ": String[0..*]", "feature typing string range")]
+#[case(Rule::feature_typing, "typed by BaseType", "feature typing base")]
+#[case(Rule::feature_typing, ": TypeSpec", "feature typing colon")]
+#[case(Rule::feature_typing, ": Complex", "feature typing complex")]
+#[case(Rule::feature_typing, ": Boolean", "feature typing boolean")]
+#[case(Rule::feature_typing, ": Anything", "feature typing anything")]
+#[case(Rule::feature_typing, ": String", "feature typing string")]
 #[case(
     Rule::subclassification,
-    "subclassifier :> BaseClass",
+    "subclassifier Sub :> BaseClass;",
     "subclassification symbol"
 )]
 #[case(
     Rule::subclassification,
-    "subclassifier specializes ClassSpec",
+    "subclassifier Sub :> ClassSpec;",
     "subclassification keyword"
 )]
 #[case(Rule::membership, "MyRef", "membership simple")]
@@ -1058,11 +1062,11 @@ fn test_parse_typing_and_membership(#[case] rule: Rule, #[case] input: &str, #[c
 #[case(Rule::feature_value, ":= public MyRef", "bind with visibility")]
 #[case(Rule::feature_value, "= alias Target", "alias feature value")]
 // element_filter_membership
-#[case(Rule::element_filter_membership, "filter MyRef", "simple filter")]
+#[case(Rule::element_filter_membership, "filter MyRef;", "simple filter")]
 #[case(
     Rule::element_filter_membership,
-    "filter public alias Target",
-    "filter with visibility and alias"
+    "filter OtherRef;",
+    "filter with expression"
 )]
 // feature_membership
 #[case(
@@ -1466,12 +1470,12 @@ fn test_parse_annotations(#[case] rule: Rule, #[case] input: &str, #[case] desc:
     "multiplicity range with body"
 )]
 // metadata_feature
-#[case(Rule::metadata_feature, "metadata type;", "simple metadata")]
-#[case(Rule::metadata_feature, "metadata type myMeta;", "named metadata")]
-#[case(Rule::metadata_feature, "metadata type about Foo;", "metadata about")]
+#[case(Rule::metadata_feature, "metadata MyType;", "simple metadata")]
+#[case(Rule::metadata_feature, "metadata myMeta : MyType;", "named metadata")]
+#[case(Rule::metadata_feature, "metadata MyType about Foo;", "metadata about")]
 #[case(
     Rule::metadata_feature,
-    "metadata type myMeta about Foo, Bar;",
+    "metadata myMeta : MyType about Foo, Bar;",
     "metadata about multiple"
 )]
 // item_feature
@@ -1479,8 +1483,8 @@ fn test_parse_annotations(#[case] rule: Rule, #[case] input: &str, #[case] desc:
 #[case(Rule::item_feature, "feature myItem;", "named item feature")]
 #[case(Rule::item_feature, "feature myItem : ItemType;", "typed item feature")]
 // item_flow
-#[case(Rule::item_flow, "flow connector;", "simple item flow")]
-#[case(Rule::item_flow, "flow connector myFlow;", "named item flow")]
+#[case(Rule::item_flow, "flow myFlow;", "simple item flow")]
+#[case(Rule::item_flow, "flow myFlow from a to b;", "named item flow")]
 // succession_item_flow
 #[case(
     Rule::succession_item_flow,
@@ -1691,10 +1695,14 @@ fn test_parse_namespace_body(#[case] rule: Rule, #[case] input: &str, #[case] de
 #[rstest]
 #[case(Rule::type_def, "type MyType;", "simple type")]
 #[case(Rule::type_def, "abstract type MyType {}", "abstract type")]
-#[case(Rule::type_def, "type MyType all {}", "type with all")]
+#[case(Rule::type_def, "type all MyType {}", "type with all")]
 #[case(Rule::type_def, "type MyType ordered {}", "ordered type")]
 #[case(Rule::type_def, "type MyType unions BaseType {}", "type with unions")]
-#[case(Rule::type_def, "type MyType differs BaseType {}", "type with differs")]
+#[case(
+    Rule::type_def,
+    "type MyType differences BaseType {}",
+    "type with differences"
+)]
 fn test_parse_type_def(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
@@ -1708,7 +1716,7 @@ fn test_parse_type_def(#[case] rule: Rule, #[case] input: &str, #[case] desc: &s
 )]
 #[case(
     Rule::classifier,
-    "classifier MyClassifier all {}",
+    "classifier all MyClassifier {}",
     "classifier with all"
 )]
 #[case(
@@ -2323,7 +2331,7 @@ fn test_parse_complex_kerml_patterns(#[case] rule: Rule, #[case] input: &str, #[
 )]
 #[case(
     Rule::comment_annotation,
-    "comment about StructuredSurface, StructuredCurve, StructuredPoint",
+    "comment about StructuredSurface, StructuredCurve, StructuredPoint /* multi-element comment */",
     "comment with multiple about"
 )]
 #[case(
