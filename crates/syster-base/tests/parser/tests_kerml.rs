@@ -641,18 +641,18 @@ fn test_parse_identification(#[case] rule: Rule, #[case] input: &str, #[case] de
     assert_round_trip(rule, input, desc);
 }
 
-// Relationship Token Tests
+// Relationship Operator Tests
 
 #[rstest]
-#[case(Rule::specializes_token, ":>", "specializes symbol")]
-#[case(Rule::specializes_token, "specializes", "specializes keyword")]
-#[case(Rule::redefines_token, ":>>", "redefines symbol")]
-#[case(Rule::redefines_token, "redefines", "redefines keyword")]
-#[case(Rule::typed_by_token, ":", "typed by colon")]
-#[case(Rule::typed_by_token, "typed by", "typed by keyword")]
-#[case(Rule::conjugates_token, "~", "conjugates symbol")]
-#[case(Rule::conjugates_token, "conjugates", "conjugates keyword")]
-fn test_parse_relationship_tokens(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+#[case(Rule::specializes_operator, ":>", "specializes symbol")]
+#[case(Rule::specializes_operator, "specializes", "specializes keyword")]
+#[case(Rule::redefines_operator, ":>>", "redefines symbol")]
+#[case(Rule::redefines_operator, "redefines", "redefines keyword")]
+#[case(Rule::typed_by_operator, ":", "typed by colon")]
+#[case(Rule::typed_by_operator, "typed by", "typed by keyword")]
+#[case(Rule::conjugates_operator, "~", "conjugates symbol")]
+#[case(Rule::conjugates_operator, "conjugates", "conjugates keyword")]
+fn test_parse_relationship_operators(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
@@ -798,23 +798,23 @@ fn test_parse_inline_expression(#[case] rule: Rule, #[case] input: &str, #[case]
 
 // Additional Token Tests
 #[rstest]
-#[case(Rule::subsets_token, ":>", "symbol form")]
-#[case(Rule::subsets_token, "subsets", "keyword form")]
-fn test_parse_subsets_token(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+#[case(Rule::subsets_operator, ":>", "symbol form")]
+#[case(Rule::subsets_operator, "subsets", "keyword form")]
+fn test_parse_subsets_operator(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case(Rule::references_token, "::>", "symbol form")]
-#[case(Rule::references_token, "references", "keyword form")]
-fn test_parse_references_token(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+#[case(Rule::references_operator, "::>", "symbol form")]
+#[case(Rule::references_operator, "references", "keyword form")]
+fn test_parse_references_operator(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
 #[rstest]
-#[case(Rule::crosses_token, "=>", "symbol form")]
-#[case(Rule::crosses_token, "crosses", "keyword form")]
-fn test_parse_crosses_token(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
+#[case(Rule::crosses_operator, "=>", "symbol form")]
+#[case(Rule::crosses_operator, "crosses", "keyword form")]
+fn test_parse_crosses_operator(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
 
@@ -1005,18 +1005,10 @@ fn test_parse_type_operations(#[case] rule: Rule, #[case] input: &str, #[case] d
     "inverse public feature2",
     "feature inverting with visibility"
 )]
-#[case(Rule::featuring, "featured Type1", "featuring base")]
-#[case(Rule::featuring, "featured private Type2", "featuring with visibility")]
-#[case(
-    Rule::type_featuring,
-    "featuring featured Type1",
-    "type featuring base"
-)]
-#[case(
-    Rule::type_featuring,
-    "featuring featured public Type2",
-    "type featuring with visibility"
-)]
+#[case(Rule::featuring, "featured by Type1", "featuring base")]
+#[case(Rule::featuring, "featured by Type2", "featuring second type")]
+#[case(Rule::type_featuring, "featuring by Type1", "type featuring with ref")]
+#[case(Rule::type_featuring, "featuring", "type featuring standalone")]
 fn test_parse_feature_operations(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
@@ -1075,34 +1067,34 @@ fn test_parse_typing_and_membership(#[case] rule: Rule, #[case] input: &str, #[c
 // feature_membership
 #[case(
     Rule::feature_membership,
-    "featured MyType MyRef",
+    "featured by MyType alias MyRef",
     "simple feature membership"
 )]
 #[case(
     Rule::feature_membership,
-    "featured public BaseType alias Target",
+    "featured by BaseType public alias Target",
     "featured with visibility and alias"
 )]
 // end_feature_membership
 #[case(
     Rule::end_feature_membership,
-    "end featured MyType MyRef",
+    "end x : MyType;",
     "simple end feature membership"
 )]
 #[case(
     Rule::end_feature_membership,
-    "end featured public BaseType alias Target",
+    "end y : BaseType[1];",
     "end featured with visibility and alias"
 )]
 // result_expression_membership
 #[case(
     Rule::result_expression_membership,
-    "return featured MyType MyRef",
+    "return featured by MyType alias MyRef",
     "simple result expression"
 )]
 #[case(
     Rule::result_expression_membership,
-    "return featured public BaseType alias Target",
+    "return featured by BaseType public alias Target",
     "result expression with visibility and alias"
 )]
 fn test_parse_membership_constructs(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
@@ -1492,12 +1484,12 @@ fn test_parse_annotations(#[case] rule: Rule, #[case] input: &str, #[case] desc:
 // succession_item_flow
 #[case(
     Rule::succession_item_flow,
-    "succession flow flow connector;",
+    "succession flow;",
     "simple succession flow"
 )]
 #[case(
     Rule::succession_item_flow,
-    "succession flow flow connector myFlow;",
+    "succession flow myFlow;",
     "named succession flow"
 )]
 // boolean_expression
@@ -1933,16 +1925,16 @@ fn test_parse_function_variations(#[case] rule: Rule, #[case] input: &str, #[cas
 // Test quoted identifiers
 #[rstest]
 // simple quoted identifiers
-#[case(Rule::identifier, "'=='", "equality")]
-#[case(Rule::identifier, "'!='", "inequality")]
-#[case(Rule::identifier, "'+'", "plus")]
-#[case(Rule::identifier, "'-'", "minus")]
-#[case(Rule::identifier, "'*'", "multiply")]
-#[case(Rule::identifier, "'/'", "divide")]
-#[case(Rule::identifier, "'<'", "less than")]
-#[case(Rule::identifier, "'>'", "greater than")]
-#[case(Rule::identifier, "'<='", "less or equal")]
-#[case(Rule::identifier, "'>='", "greater or equal")]
+#[case(Rule::unrestricted_name, "'=='", "equality")]
+#[case(Rule::unrestricted_name, "'!='", "inequality")]
+#[case(Rule::unrestricted_name, "'+'", "plus")]
+#[case(Rule::unrestricted_name, "'-'", "minus")]
+#[case(Rule::unrestricted_name, "'*'", "multiply")]
+#[case(Rule::unrestricted_name, "'/'", "divide")]
+#[case(Rule::unrestricted_name, "'<'", "less than")]
+#[case(Rule::unrestricted_name, "'>'", "greater than")]
+#[case(Rule::unrestricted_name, "'<='", "less or equal")]
+#[case(Rule::unrestricted_name, "'>='", "greater or equal")]
 fn test_parse_quoted_identifier(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }

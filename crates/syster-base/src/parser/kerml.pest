@@ -7,6 +7,150 @@ COMMENT = _{ line_comment }
 line_comment = { "//" ~ (!"\n" ~ ANY)* }
 block_comment = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
+// Tokens
+subclassifier_token = @{ "subclassifier" ~ !(ASCII_ALPHANUMERIC | "_") }
+specialization_token = @{ "specialization" ~ !(ASCII_ALPHANUMERIC | "_") }
+redefinition_token = @{ "redefinition" ~ !(ASCII_ALPHANUMERIC | "_") }
+multiplicity_token = @{ "multiplicity" ~ !(ASCII_ALPHANUMERIC | "_") }
+interaction_token = @{ "interaction" ~ !(ASCII_ALPHANUMERIC | "_") }
+differences_token = @{ "differences" ~ !(ASCII_ALPHANUMERIC | "_") }
+conjugation_token = @{ "conjugation" ~ !(ASCII_ALPHANUMERIC | "_") }
+conjugates_token = @{ "conjugates" ~ !(ASCII_ALPHANUMERIC | "_") }
+classifier_token = @{ "classifier" ~ !(ASCII_ALPHANUMERIC | "_") }
+dependency_token = @{ "dependency" ~ !(ASCII_ALPHANUMERIC | "_") }
+disjoining_token = @{ "disjoining" ~ !(ASCII_ALPHANUMERIC | "_") }
+intersects_token = @{ "intersects" ~ !(ASCII_ALPHANUMERIC | "_") }
+inverting_token = @{ "inverting" ~ !(ASCII_ALPHANUMERIC | "_") }
+namespace_token = @{ "namespace" ~ !(ASCII_ALPHANUMERIC | "_") }
+nonunique_token = @{ "nonunique" ~ !(ASCII_ALPHANUMERIC | "_") }
+specializes_token = @{ "specializes" ~ !(ASCII_ALPHANUMERIC | "_") }
+succession_token = @{ "succession" ~ !(ASCII_ALPHANUMERIC | "_") }
+predicate_token = @{ "predicate" ~ !(ASCII_ALPHANUMERIC | "_") }
+protected_token = @{ "protected" ~ !(ASCII_ALPHANUMERIC | "_") }
+references_token = @{ "references" ~ !(ASCII_ALPHANUMERIC | "_") }
+redefines_token = @{ "redefines" ~ !(ASCII_ALPHANUMERIC | "_") }
+standard_token = @{ "standard" ~ !(ASCII_ALPHANUMERIC | "_") }
+featuring_token = @{ "featuring" ~ !(ASCII_ALPHANUMERIC | "_") }
+metaclass_token = @{ "metaclass" ~ !(ASCII_ALPHANUMERIC | "_") }
+connector_token = @{ "connector" ~ !(ASCII_ALPHANUMERIC | "_") }
+datatype_token = @{ "datatype" ~ !(ASCII_ALPHANUMERIC | "_") }
+disjoint_token = @{ "disjoint" ~ !(ASCII_ALPHANUMERIC | "_") }
+featured_token = @{ "featured" ~ !(ASCII_ALPHANUMERIC | "_") }
+function_token = @{ "function" ~ !(ASCII_ALPHANUMERIC | "_") }
+language_token = @{ "language" ~ !(ASCII_ALPHANUMERIC | "_") }
+metadata_token = @{ "metadata" ~ !(ASCII_ALPHANUMERIC | "_") }
+readonly_token = @{ "readonly" ~ !(ASCII_ALPHANUMERIC | "_") }
+behavior_token = @{ "behavior" ~ !(ASCII_ALPHANUMERIC | "_") }
+binding_token = @{ "binding" ~ !(ASCII_ALPHANUMERIC | "_") }
+comment_token = @{ "comment" ~ !(ASCII_ALPHANUMERIC | "_") }
+crosses_token = @{ "crosses" ~ !(ASCII_ALPHANUMERIC | "_") }
+default_token = @{ "default" ~ !(ASCII_ALPHANUMERIC | "_") }
+derived_token = @{ "derived" ~ !(ASCII_ALPHANUMERIC | "_") }
+feature_token = @{ "feature" ~ !(ASCII_ALPHANUMERIC | "_") }
+hastype_token = @{ "hastype" ~ !(ASCII_ALPHANUMERIC | "_") }
+implies_token = @{ "implies" ~ !(ASCII_ALPHANUMERIC | "_") }
+inverse_token = @{ "inverse" ~ !(ASCII_ALPHANUMERIC | "_") }
+istype_token = @{ "istype" ~ !(ASCII_ALPHANUMERIC | "_") }
+library_token = @{ "library" ~ !(ASCII_ALPHANUMERIC | "_") }
+ordered_token = @{ "ordered" ~ !(ASCII_ALPHANUMERIC | "_") }
+package_token = @{ "package" ~ !(ASCII_ALPHANUMERIC | "_") }
+portion_token = @{ "portion" ~ !(ASCII_ALPHANUMERIC | "_") }
+private_token = @{ "private" ~ !(ASCII_ALPHANUMERIC | "_") }
+public_token = @{ "public" ~ !(ASCII_ALPHANUMERIC | "_") }
+struct_token = @{ "struct" ~ !(ASCII_ALPHANUMERIC | "_") }
+subsets_token = @{ "subsets" ~ !(ASCII_ALPHANUMERIC | "_") }
+subtype_token = @{ "subtype" ~ !(ASCII_ALPHANUMERIC | "_") }
+typing_token = @{ "typing" ~ !(ASCII_ALPHANUMERIC | "_") }
+variation_token = @{ "variation" ~ !(ASCII_ALPHANUMERIC | "_") }
+abstract_token = @{ "abstract" ~ !(ASCII_ALPHANUMERIC | "_") }
+about_token = @{ "about" ~ !(ASCII_ALPHANUMERIC | "_") }
+alias_token = @{ "alias" ~ !(ASCII_ALPHANUMERIC | "_") }
+assoc_token = @{ "assoc" ~ !(ASCII_ALPHANUMERIC | "_") }
+chains_token = @{ "chains" ~ !(ASCII_ALPHANUMERIC | "_") }
+class_token = @{ "class" ~ !(ASCII_ALPHANUMERIC | "_") }
+composite_token = @{ "composite" ~ !(ASCII_ALPHANUMERIC | "_") }
+conjugate_token = @{ "conjugate" ~ !(ASCII_ALPHANUMERIC | "_") }
+differs_token = @{ "differs" ~ !(ASCII_ALPHANUMERIC | "_") }
+expr_token = @{ "expr" ~ !(ASCII_ALPHANUMERIC | "_") }
+false_token = @{ "false" ~ !(ASCII_ALPHANUMERIC | "_") }
+filter_token = @{ "filter" ~ !(ASCII_ALPHANUMERIC | "_") }
+first_token = @{ "first" ~ !(ASCII_ALPHANUMERIC | "_") }
+import_token = @{ "import" ~ !(ASCII_ALPHANUMERIC | "_") }
+inout_token = @{ "inout" ~ !(ASCII_ALPHANUMERIC | "_") }
+locale_token = @{ "locale" ~ !(ASCII_ALPHANUMERIC | "_") }
+member_token = @{ "member" ~ !(ASCII_ALPHANUMERIC | "_") }
+return_token = @{ "return" ~ !(ASCII_ALPHANUMERIC | "_") }
+subset_token = @{ "subset" ~ !(ASCII_ALPHANUMERIC | "_") }
+unions_token = @{ "unions" ~ !(ASCII_ALPHANUMERIC | "_") }
+typed_token = @{ "typed" ~ !(ASCII_ALPHANUMERIC | "_") }
+bool_token = @{ "bool" ~ !(ASCII_ALPHANUMERIC | "_") }
+else_token = @{ "else" ~ !(ASCII_ALPHANUMERIC | "_") }
+flow_token = @{ "flow" ~ !(ASCII_ALPHANUMERIC | "_") }
+from_token = @{ "from" ~ !(ASCII_ALPHANUMERIC | "_") }
+meta_token = @{ "meta" ~ !(ASCII_ALPHANUMERIC | "_") }
+new_token = @{ "new" ~ !(ASCII_ALPHANUMERIC | "_") }
+null_token = @{ "null" ~ !(ASCII_ALPHANUMERIC | "_") }
+step_token = @{ "step" ~ !(ASCII_ALPHANUMERIC | "_") }
+then_token = @{ "then" ~ !(ASCII_ALPHANUMERIC | "_") }
+true_token = @{ "true" ~ !(ASCII_ALPHANUMERIC | "_") }
+type_token = @{ "type" ~ !(ASCII_ALPHANUMERIC | "_") }
+and_token = @{ "and" ~ !(ASCII_ALPHANUMERIC | "_") }
+doc_token = @{ "doc" ~ !(ASCII_ALPHANUMERIC | "_") }
+end_token = @{ "end" ~ !(ASCII_ALPHANUMERIC | "_") }
+for_token = @{ "for" ~ !(ASCII_ALPHANUMERIC | "_") }
+inv_token = @{ "inv" ~ !(ASCII_ALPHANUMERIC | "_") }
+var_token = @{ "var" ~ !(ASCII_ALPHANUMERIC | "_") }
+not_token = @{ "not" ~ !(ASCII_ALPHANUMERIC | "_") }
+out_token = @{ "out" ~ !(ASCII_ALPHANUMERIC | "_") }
+rep_token = @{ "rep" ~ !(ASCII_ALPHANUMERIC | "_") }
+xor_token = @{ "xor" ~ !(ASCII_ALPHANUMERIC | "_") }
+all_token = @{ "all" ~ !(ASCII_ALPHANUMERIC | "_") }
+as_token = @{ "as" ~ !(ASCII_ALPHANUMERIC | "_") }
+by_token = @{ "by" ~ !(ASCII_ALPHANUMERIC | "_") }
+if_token = @{ "if" ~ !(ASCII_ALPHANUMERIC | "_") }
+in_token = @{ "in" ~ !(ASCII_ALPHANUMERIC | "_") }
+of_token = @{ "of" ~ !(ASCII_ALPHANUMERIC | "_") }
+or_token = @{ "or" ~ !(ASCII_ALPHANUMERIC | "_") }
+to_token = @{ "to" ~ !(ASCII_ALPHANUMERIC | "_") }
+
+// Delimiters and Operators
+forward_curl_brace = @{ "{" }
+backward_curl_brace = @{ "}" }
+semi_colon = @{ ";" }
+double_colon = @{ "::" }
+colon = @{ ":" }
+wildcard = @{ "*" }
+space = @{ " " }
+question_mark = @{ "?" }
+double_question_mark = @{ "??" }
+conjugate_operator = @{ "~" }
+conjugation_operator = { "~" }
+at_symbol = @{ "@" }
+
+// Keywords - ordered by length (longest first) to avoid prefix matching issues
+keyword = @{
+    subclassifier_token | specialization_token | redefinition_token | multiplicity_token | interaction_token
+    | differences_token | conjugation_token | conjugates_token | classifier_token | dependency_token
+    | disjoining_token | intersects_token | inverting_token | namespace_token | nonunique_token
+    | specializes_token | succession_token | predicate_token | protected_token | references_token
+    | redefines_token | standard_token | featuring_token | metaclass_token | connector_token
+    | datatype_token | disjoint_token | featured_token | function_token | language_token
+    | metadata_token | readonly_token | behavior_token | binding_token | comment_token
+    | crosses_token | default_token | derived_token | feature_token | hastype_token
+    | implies_token | inverse_token | istype_token | library_token | ordered_token
+    | package_token | portion_token | private_token | public_token | struct_token
+    | subsets_token | subtype_token | typing_token | abstract_token | about_token
+    | alias_token | assoc_token | chains_token | class_token | composite_token
+    | conjugate_token | differs_token | expr_token | false_token | filter_token
+    | first_token | import_token | inout_token | locale_token | member_token
+    | return_token | subset_token | unions_token | typed_token | bool_token
+    | else_token | flow_token | from_token | meta_token | null_token | step_token
+    | then_token | true_token | type_token | and_token | doc_token | end_token
+    | for_token | inv_token | var_token | not_token | out_token | rep_token | xor_token
+    | all_token | as_token | by_token | if_token | in_token | of_token | or_token | to_token
+    | variation_token
+}
+
 // Terminals
 
 decimal = @{ ASCII_DIGIT+ }
@@ -18,34 +162,8 @@ number = @{ float ~ exponent? }
 unrestricted_name = @{ "'" ~ (("\\" ~ ("'" | "\"" | "b" | "f" | "t" | "n" | "r" | "\\")) | (!"'" ~ !"\\" ~ ANY))* ~ "'" }
 name = @{ identifier | unrestricted_name }
 
-// Keywords - KerML specific, ordered by length (longest first)
-keyword = @{
-    "subclassifier" | "specialization" | "redefinition" | "multiplicty" | "interaction"
-    | "differences" | "conjugation" | "conjugates" | "classifier" | "dependency"
-    | "disjoining" | "intersects" | "inverting" | "namespace" | "nonunique"
-    | "specializes" | "succession" | "predicate" | "protected" | "reference"
-    | "redefines" | "standard" | "featuring" | "metaclass" | "connector"
-    | "datatype" | "disjoint" | "featured" | "function" | "language"
-    | "metadata" | "readonly" | "behavior" | "binding" | "comment"
-    | "crosses" | "default" | "derived" | "feature" | "hastype"
-    | "implies" | "inverse" | "istype" | "library" | "ordered"
-    | "package" | "portion" | "private" | "public" | "struct"
-    | "subsets" | "subtype" | "typing" | "abstract" | "about"
-    | "alias" | "assoc" | "chains" | "class" | "composite"
-    | "conjugate" | "differs" | "expr" | "false" | "filter"
-    | "first" | "import" | "inout" | "locale" | "member"
-    | "return" | "subset" | "unions" | "typed" | "bool"
-    | "else" | "flow" | "from" | "meta" | "null" | "step"
-    | "then" | "true" | "type" | "and" | "doc" | "end"
-    | "for" | "inv" | "not" | "out" | "rep" | "xor"
-    | "all" | "as" | "by" | "if" | "in" | "of" | "or" | "to"
-}
-
-// Identifiers  
-identifier = @{ 
-    unrestricted_name 
-    | (!(keyword ~ !(ASCII_ALPHANUMERIC | "_")) ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*)
-}
+// Identifiers
+identifier = @{ !keyword ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 
 // Name that can be a keyword (used for type identifiers)
 name_identifier = @{ 
@@ -58,42 +176,45 @@ short_name = { "<" ~ name ~ ">" }
 regular_name = { name }
 identification = { (short_name ~ regular_name?) | regular_name }
 
-// Relationship Tokens (alternative syntax)
-specializes_token = @{ ":>" | "specializes" }
-subsets_token = @{ ":>" | "subsets" }
-references_token = @{ "::>" | "references" }
-crosses_token = @{ "=>" | "crosses" }
-redefines_token = @{ ":>>" | "redefines" }
-typed_by_token = @{ ":" | ("typed" ~ " " ~ "by") }
-conjugates_token = @{ "~" | "conjugates" }
+// Relationship Operators (alternative syntax)
+specializes_operator = @{ ":>" | specializes_token }
+subsets_operator = @{ ":>" | subsets_token }
+references_operator = @{ "::>" | references_token }
+crosses_operator = @{ "=>" | crosses_token }
+redefines_operator = @{ ":>>" | redefines_token }
+typed_by_operator = @{ ":" | (typed_token ~ " " ~ by_token) }
+conjugates_operator = @{ "~" | conjugates_token }
 
 // Enum Types
-visibility_kind = @{ "protected" | "private" | "public" }
+visibility_kind = @{ protected_token | private_token | public_token }
 // Use negative lookahead to ensure direction kinds are complete words
 // This prevents "in" from matching the start of "interface"
-feature_direction_kind = @{ ("inout" | "in" | "out") ~ !(ASCII_ALPHANUMERIC | "_") }
-unary_operator = @{ "+" | "-" ~ !(">" | "->") | "not" | "~" }
-classification_test_operator = @{ "@@" | "hastype" | "istype" | "@" }
+feature_direction_kind = @{ inout_token | in_token | out_token }
+unary_operator = @{ "+" | "-" ~ !(">" | "->") | not_token | "~" }
+classification_test_operator = @{ "@@" | hastype_token | istype_token | "@" }
 equality_operator = @{ "!==" | "!=" | "===" | "==" }
 import_kind = @{ "::*::**" | "::**" | "::*" }
 relational_operator = @{ "<=" | "<" | ">=" | ">" }
 
 // Common Fragments
 
-abstract_marker = { "abstract" }
+abstract_marker = { abstract_token }
 visibility = { visibility_kind }
-readonly = { "readonly" }
-derived = { "derived" }
-end_marker = { "end" }
-variable_marker = { "variation" | "var" }
+readonly = { readonly_token }
+derived = { derived_token }
+end_marker = { end_token }
+variable_marker = { variation_token | var_token }
 feature_modifier = { readonly | derived | end_marker | variable_marker }
-sufficient = { "all" }
-standard_marker = { "standard" }
-import_all = { "all" }
+sufficient = { all_token }
+standard_marker = { standard_token }
+import_all = { all_token }
+
+// Common modifier pattern for abstract/composite/portion
+acp_modifier = { abstract_token | composite_token | portion_token }
 
 multiplicity_properties = {
-    ("ordered" ~ "nonunique"?)
-    | ("nonunique" ~ "ordered"?)
+    (ordered_token ~ nonunique_token?)
+    | (nonunique_token ~ ordered_token?)
 }
 
 enum_type = {
@@ -133,15 +254,23 @@ annotation = {
     element_reference
 }
 
-comment_annotation = { "comment" ~ identification? ~ ("locale" ~ string_value)? ~ ("about" ~ element_reference ~ ("," ~ element_reference)*)? ~ (block_comment | ";")? }
+// Comment per official grammar:
+// Comment = ( 'comment' Identification? ('about' Annotation (',' Annotation)*)? )?
+//           ( 'locale' STRING_VALUE )?
+//           REGULAR_COMMENT
+comment_annotation = { 
+    (comment_token ~ identification? ~ (about_token ~ element_reference ~ ("," ~ element_reference)*)?)? ~
+    (locale_token ~ string_value)? ~ 
+    block_comment
+}
 
 documentation = { 
-    "doc" ~ identification? ~ ("locale" ~ string_value)? ~ (block_comment | ";")? }
+    doc_token ~ identification? ~ (locale_token ~ string_value)? ~ (block_comment | ";")? }
 
 
 // Textual representation with language
 textual_representation = {
-    ("rep" ~ identification?)? ~ "language" ~ string_value ~ block_comment? ~ ";"?
+    (rep_token ~ identification?)? ~ language_token ~ string_value ~ block_comment? ~ ";"?
 }
 
 // Owned Annotations
@@ -160,9 +289,11 @@ annotating_element = {
 
 ignored_block_comment = _{ block_comment }
 
-// Prefix Metadata Annotation
-prefix_metadata_annotation = {
-    "#" ~ metadata_feature
+// User-Defined Keyword
+// A user-defined keyword is a (possibly qualified) metaclass name or short name preceded by #
+// Examples: #atom, #command, #SecurityRelated, #MyPackage::MyMetaclass
+user_defined_keyword = {
+    "#" ~ (identifier ~ ("::" ~ identifier)*)
 }
 
 // Elements
@@ -175,7 +306,7 @@ element = {
 // Namespace contains other elements
 namespace = {
     prefix_metadata? ~
-    "namespace" ~ identification? ~
+    namespace_token ~ identification? ~
     namespace_body
 }
 
@@ -191,9 +322,15 @@ non_feature_member = {
     visibility_kind? ~ non_feature_element
 }
 
-// Namespace Feature Member
+// Namespace Feature Member (OwnedFeatureMember in official grammar)
 namespace_feature_member = {
     visibility_kind? ~ feature_element
+}
+
+// Type Feature Member (TypeFeatureMember in official grammar)
+// 'member' keyword indicates the feature is a member of the type, not owned
+type_feature_member = {
+    visibility_kind? ~ member_token ~ feature_element
 }
 
 // Relationship Member
@@ -209,14 +346,14 @@ annotating_member = {
 // Alias Member
 alias_member = {
     visibility_kind? ~
-    "alias" ~ identification? ~
-    "for" ~ element_reference ~
+    alias_token ~ identification? ~
+    for_token ~ element_reference ~
     relationship_body
 }
 
 // Prefix Metadata (shorthand for metadata annotations)
 prefix_metadata = {
-    prefix_metadata_annotation+
+    user_defined_keyword+
 }
 
 // Namespace Elements - Union Types
@@ -224,14 +361,15 @@ prefix_metadata = {
 // RelationshipElement - union of relationship types
 relationship_element = {
     dependency
-    | specialization
+    | standalone_specialization
+    | standalone_conjugation
     | conjugation
-    | feature_typing
+    | standalone_feature_typing
     | subclassification
     | disjoining
     | feature_inverting
-    | subsetting
-    | redefinition
+    | standalone_subsetting
+    | standalone_redefinition
     | type_featuring
 }
 
@@ -293,7 +431,7 @@ feature_relationship = {
     type_relationship
     | feature_typing
     | feature_chaining
-    | feature_inverting
+    | owned_feature_inverting
     | type_featuring
 }
 
@@ -314,11 +452,10 @@ multiplicity_bound = {
 type_def = {
     prefix_metadata? ~
     abstract_marker? ~
-    "type" ~ identification? ~
-    "all"? ~
+    type_token ~ all_token? ~ identification? ~
     (heritage | type_relationship | feature_relationship)* ~
     multiplicity? ~
-    ("ordered" | "nonunique")* ~
+    (ordered_token | nonunique_token)* ~
     namespace_body
 }
 
@@ -326,8 +463,7 @@ type_def = {
 classifier = {
     prefix_metadata? ~
     abstract_marker? ~
-    "classifier" ~ identification? ~
-    "all"? ~
+    classifier_token ~ all_token? ~ identification? ~
     (heritage | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
@@ -338,22 +474,22 @@ data_type = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "datatype" ~ identification? ~
-    "all"? ~
+    datatype_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
 }
 
 // Class extends Classifier
+// ClassifierDeclaration: (all)? Identification? OwnedMultiplicity? (SuperclassingPart)? TypeRelationshipPart*
 class = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "class" ~ identification? ~
-    "all"? ~
+    class_token ~ all_token? ~ identification? ~
+    multiplicity_bounds? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
-    multiplicity? ~
     namespace_body
 }
 
@@ -362,8 +498,8 @@ structure = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "struct" ~ identification? ~
-    "all"? ~
+    struct_token ~ identification? ~
+    all_token? ~
     multiplicity_bounds? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     namespace_body
@@ -374,8 +510,8 @@ behavior = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "behavior" ~ identification? ~
-    "all"? ~
+    behavior_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
@@ -386,8 +522,8 @@ association = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "assoc" ~ identification? ~
-    "all"? ~
+    assoc_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
@@ -397,8 +533,8 @@ association = {
 association_structure = {
     prefix_metadata? ~
     abstract_marker? ~
-    "assoc" ~ "struct" ~ identification? ~
-    "all"? ~
+    assoc_token ~ struct_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
@@ -409,8 +545,8 @@ metaclass = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "metaclass" ~ identification? ~
-    "all"? ~
+    metaclass_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
@@ -421,8 +557,8 @@ function = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "function" ~ identification? ~
-    "all"? ~
+    function_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     result_expression_membership? ~
@@ -433,8 +569,8 @@ function = {
 predicate = {
     prefix_metadata? ~
     abstract_marker? ~
-    "predicate" ~ identification? ~
-    "all"? ~
+    predicate_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     result_expression_membership? ~
@@ -446,8 +582,8 @@ interaction = {
     prefix_metadata? ~
     visibility_kind? ~
     abstract_marker? ~
-    "interaction" ~ identification? ~
-    "all"? ~
+    interaction_token ~ identification? ~
+    all_token? ~
     (heritage | inheritance | type_relationship | feature_relationship)* ~
     multiplicity? ~
     namespace_body
@@ -458,21 +594,27 @@ feature = {
     prefix_metadata? ~
     visibility_kind? ~
     feature_direction_kind? ~
-    ("abstract"| "composite" | "portion" | "member" | readonly | derived | end_marker | variable_marker)* ~
-    "feature" ~ "all"? ~ identification? ~
+    (abstract_token | composite_token | portion_token | member_token | readonly | derived | end_marker | variable_marker)* ~
+    feature_token ~ all_token? ~ identification? ~
     feature_specialization_part? ~
-    ("ordered" | "nonunique")* ~
+    (ordered_token | nonunique_token)* ~
+    feature_relationship_part* ~
     feature_value? ~
     namespace_body
+}
+
+// FeatureRelationshipPart per official grammar: TypeRelationshipPart | ChainingPart | InvertingPart | TypeFeaturingPart
+feature_relationship_part = {
+    featuring | owned_feature_inverting | feature_chaining | type_relationship
 }
 
 // End feature with identification and multiplicity: end <id> [mult] feature ... or end [mult] feature <id> ...
 end_feature = {
     prefix_metadata? ~
     end_marker ~ (
-        identification ~ multiplicity_bounds ~ feature_specialization_part? ~ "feature" ~ identification? ~ feature_specialization_part?  // end name [mult] relationships? feature ...
-        | identification ~ feature_specialization_part ~ "feature" ~ identification? ~ feature_specialization_part?                       // end name relationships feature ...
-        | multiplicity_bounds ~ "feature" ~ identification? ~ feature_specialization_part?                                                // end [mult] feature name ...
+        identification ~ multiplicity_bounds ~ multiplicity_properties? ~ feature_specialization_part? ~ feature_token ~ identification? ~ feature_specialization_part?  // end name [mult] ordered? nonunique? relationships? feature ...
+        | identification ~ feature_specialization_part ~ feature_token ~ identification? ~ feature_specialization_part?                       // end name relationships feature ...
+        | multiplicity_bounds ~ multiplicity_properties? ~ feature_token ~ identification? ~ feature_specialization_part?                     // end [mult] ordered? nonunique? feature name ...
     ) ~
     feature_value? ~
     namespace_body
@@ -491,27 +633,50 @@ multiplicity_part = {
 }
 
 // MetadataFeature extends Feature and AnnotatingElement
+// MetadataFeature per official grammar:
+// MetadataFeature = PrefixMetadataMember* ( '@' | 'metadata' ) MetadataFeatureDeclaration 
+//                   ( 'about' Annotation (',' Annotation)* )? MetadataBody
+// MetadataFeatureDeclaration = ( Identification ( ':' | 'typed' 'by' ) )? MetadataTyping
+// MetadataTyping = QualifiedName
+// MetadataBody = ';' | '{' ... '}'
 metadata_feature = {
-    "metadata" ~
-    feature_direction_kind? ~
-    ("abstract" | "composite" | "portion")? ~
-    feature_modifier? ~
     prefix_metadata? ~
-    abstract_marker? ~
-    "type" ~ identification? ~
-    "all"? ~
-    (inheritance | type_relationship | feature_relationship)* ~
-    multiplicity? ~
-    ("about" ~ annotation ~ ("," ~ annotation)*)? ~
-    namespace_body
+    (at_symbol | metadata_token) ~
+    (identification ~ (":" | typed_token ~ by_token))? ~
+    qualified_reference_chain ~
+    (about_token ~ annotation ~ ("," ~ annotation)*)? ~
+    metadata_body
+}
+
+metadata_body = {
+    ";"
+    | "{" ~ metadata_body_element* ~ "}"
+}
+
+metadata_body_element = {
+    non_feature_member
+    | metadata_body_feature_member
+    | alias_member
+    | import
+}
+
+// MetadataBodyFeature per official grammar:
+// 'feature'? ( ':>>' | 'redefines' )? OwnedRedefinition FeatureSpecializationPart? ValuePart? MetadataBody
+// OwnedRedefinition = QualifiedName | FeatureChain
+metadata_body_feature_member = {
+    feature_token? ~ (redefines_operator)? ~
+    (owned_feature_chain | element_reference) ~
+    feature_specialization_part? ~
+    feature_value? ~
+    metadata_body
 }
 
 // Multiplicity extends Feature
 multiplicity = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    ("abstract"| "composite" | "portion" | "member" | readonly | derived | end_marker | variable_marker)* ~
-    ("multiplicity" | "feature") ~ identification? ~
+    (acp_modifier | member_token | readonly | derived | end_marker | variable_marker)* ~
+    (multiplicity_token | feature_token) ~ identification? ~
     feature_specialization_part? ~
     feature_value? ~
     namespace_body
@@ -532,9 +697,9 @@ item_feature = {
 step = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    ("abstract" | "composite" | "portion")? ~
+    acp_modifier? ~
     feature_modifier? ~
-    "step" ~ identification? ~
+    step_token ~ identification? ~
     feature_specialization_part? ~
     feature_value? ~
     membership? ~
@@ -544,20 +709,36 @@ step = {
 
 // Connector extends Feature and Relationship
 // Connector endpoint definition for from/to clauses
+// ConnectorEnd = [mult]? [Name '::>']? (QualifiedName | FeatureChain)
 connector_endpoint = {
-    multiplicity_bounds? ~ (owned_feature_chain | identification) ~ feature_specialization_part?
+    multiplicity_bounds? ~ (name ~ references_operator)? ~ (owned_feature_chain | element_reference)
 }
 
+// Per official grammar:
+//   Connector = FeaturePrefix 'connector' (FeatureDeclaration? ValuePart? | ConnectorDeclaration) TypeBody
+//   BinaryConnectorDeclaration = (FeatureDeclaration? 'from' | 'all' 'from'?)? ConnectorEnd 'to' ConnectorEnd
+// The FeatureDeclaration includes: redefines, typing, multiplicity, etc.
+// Per official grammar:
+//   BinaryConnectorDeclaration = ( FeatureDeclaration? 'from' | 'all' 'from'? )? ConnectorEnd 'to' ConnectorEnd
+//   FeatureDeclaration includes 'all' as isSufficient flag
+//   - Declaration is ONLY consumed if followed by 'from'
+//   - Standalone 'all' can appear with optional 'from'
 connector = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    ("abstract" | "composite" | "portion")? ~
+    acp_modifier? ~
     feature_modifier? ~
-    "connector" ~ "all"? ~ multiplicity_bounds? ~ identification? ~
-    feature_typing? ~
-    ("from" ~ connector_endpoint)? ~
-    ("to" ~ connector_endpoint)? ~
-    ("ordered" | "nonunique")* ~
+    connector_token ~ 
+    (
+        // Binary connector: [all? declaration from | all from?]? end to end
+        // FeatureDeclaration includes FeatureRelationshipPart* (featuring, inverse of, chains)
+        (all_token? ~ identification? ~ feature_specialization_part? ~ feature_relationship_part* ~ from_token | all_token ~ from_token?)? ~ connector_endpoint ~ to_token ~ connector_endpoint
+        // N-ary connector: [declaration] (end, end, ...)
+        | identification? ~ feature_specialization_part? ~ feature_relationship_part* ~ "(" ~ connector_endpoint ~ ("," ~ connector_endpoint)+ ~ ")"
+        // Simple connector without endpoints
+        | all_token? ~ identification? ~ feature_specialization_part? ~ feature_relationship_part*
+    ) ~
+    (ordered_token | nonunique_token)* ~
     feature_value? ~
     end_feature_membership* ~
     namespace_body
@@ -569,20 +750,20 @@ item_flow_end = {
 }
 
 // Succession extends Connector
+// Per official grammar: succession [declaration] first end then end
 succession = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    ("abstract" | "composite" | "portion")? ~
+    acp_modifier? ~
     feature_modifier? ~
-    "succession" ~ "all"? ~ identification? ~
-    multiplicity_bounds? ~
-    feature_typing? ~
+    succession_token ~ all_token? ~ identification? ~
+    feature_specialization_part? ~
     (
-        ("first" ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
+        (first_token ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
         | (multiplicity_bounds? ~ (owned_feature_chain | element_reference))
     )? ~
-    ("then" ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))? ~
-    ("ordered" | "nonunique")* ~
+    (then_token ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))? ~
+    (ordered_token | nonunique_token)* ~
     feature_value? ~
     membership? ~
     owning_membership? ~
@@ -594,19 +775,19 @@ succession = {
 binding_connector = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    ("abstract" | "composite" | "portion")? ~
+    acp_modifier? ~
     feature_modifier? ~
-    "binding" ~ (
+    binding_token ~ (
         owned_feature_chain ~ ("=" ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
         | identification? ~ multiplicity_bounds? ~
           (
               feature_typing
-              | (("featuring" | "of") ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
+              | ((featuring_token | of_token) ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
               | (multiplicity_bounds? ~ (owned_feature_chain | element_reference))
           )? ~
           ("=" ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))?
     ) ~
-    ("ordered" | "nonunique")* ~
+    (ordered_token | nonunique_token)* ~
     feature_value? ~
     membership? ~
     owning_membership? ~
@@ -619,9 +800,9 @@ expression = {
     prefix_metadata? ~
     visibility_kind? ~
     feature_direction_kind? ~
-    ("abstract" | "composite" | "portion")? ~
+    acp_modifier? ~
     feature_modifier? ~
-    "expr" ~ identification? ~
+    expr_token ~ identification? ~
     feature_specialization_part? ~
     feature_value? ~
     membership? ~
@@ -630,34 +811,50 @@ expression = {
     namespace_body
 }
 
-// ItemFlow extends Connector and Step
+// ItemFlow (Flow) per official grammar:
+// Flow = FeaturePrefix 'flow' FlowDeclaration TypeBody
+// FlowDeclaration = FeatureDeclaration? ValuePart? ('of' PayloadFeature)? ('from' FlowEnd 'to' FlowEnd)?
+//                 | ('all')? FlowEnd 'to' FlowEnd
+// FlowEnd = FlowEndSubsetting? FlowFeature
+// FlowEndSubsetting = QualifiedName '.' | FeatureChainPrefix
 item_flow = {
-    ("abstract" | "composite" | "portion")? ~
-    "flow" ~ (
-        "connector" ~ identification? ~
-        feature_specialization_part? ~
-        ("from" ~ connector_endpoint)? ~
-        ("to" ~ connector_endpoint)? ~
-        ("ordered" | "nonunique")* ~
-        feature_value? ~
-        end_feature_membership* ~
-        (namespace_body | ";")
-        | identification ~ feature_specialization_part? ~
-          ("ordered" | "nonunique")* ~
+    prefix_metadata? ~
+    feature_direction_kind? ~
+    acp_modifier? ~
+    feature_modifier? ~
+    flow_token ~ (
+        // Pattern 2: [all] FlowEnd 'to' FlowEnd (direct endpoints, no 'from')
+        all_token? ~ flow_end ~ to_token ~ flow_end ~ namespace_body
+        // Pattern 1: [declaration] [of payload] [from end to end]
+        | identification? ~ feature_specialization_part? ~
           feature_value? ~
+          (of_token ~ element_reference)? ~
+          (from_token ~ flow_end ~ to_token ~ flow_end)? ~
+          (ordered_token | nonunique_token)* ~
           end_feature_membership* ~
-          (namespace_body | ";")
+          namespace_body
     )
 }
 
+// FlowEnd = [prefix.] feature
+// The prefix is a feature chain ending with '.'
+flow_end = {
+    (owned_feature_chain ~ ".")? ~ (owned_feature_chain | element_reference)
+}
+
 // SuccessionItemFlow extends ItemFlow and Succession
+// Syntax: succession flow name[mult] of Type from endpoint to endpoint;
 succession_item_flow = {
-    "succession" ~ "flow" ~ ("abstract" | "composite" | "portion")? ~
-    "flow" ~ "connector" ~ identification? ~
+    prefix_metadata? ~
+    visibility_kind? ~
+    acp_modifier* ~
+    succession_token ~ flow_token ~ identification? ~
+    multiplicity_bounds? ~
+    (of_token ~ element_reference)? ~
     feature_specialization_part? ~
-    ("from" ~ connector_endpoint)? ~
-    ("to" ~ connector_endpoint)? ~
-    ("ordered" | "nonunique")* ~
+    (from_token ~ feature_chain_expression)? ~
+    (to_token ~ feature_chain_expression)? ~
+    (ordered_token | nonunique_token)* ~
     feature_value? ~
     end_feature_membership* ~
     (namespace_body | ";")
@@ -671,23 +868,23 @@ boolean_expression = {
 // Invariant extends BooleanExpression
 invariant = {
     prefix_metadata? ~
-    "inv" ~ "not"? ~ identification? ~
+    inv_token ~ not_token? ~ identification? ~
     (namespace_body | ("{" ~ operator_expression ~ "}"))
 }
 
 // Package extends Namespace
 package = {
     prefix_metadata? ~
-    "package" ~ identification? ~
+    package_token ~ identification? ~
     namespace_body
 }
 
 // LibraryPackage extends Package
 library_package = {
     standard_marker?
-    ~ "library"
+    ~ library_token
     ~ prefix_metadata?
-    ~ "package" ~ identification?
+    ~ package_token ~ identification?
     ~ namespace_body
 }
 
@@ -707,93 +904,178 @@ inheritance = {
 
 // Unioning extends Relationship
 unioning = {
-    "unions" ~ relationship ~ ("," ~ relationship)*
+    unions_token ~ relationship ~ ("," ~ relationship)*
 }
 
-// Differencing extends Relationship
+// Differencing extends Relationship (official grammar uses 'differences' keyword)
 differencing = {
-    "differs" ~ relationship
+    differences_token ~ relationship ~ ("," ~ relationship)*
 }
 
 // Intersecting extends Relationship
 intersecting = {
-    "intersects" ~ relationship ~ ("," ~ relationship)*
+    intersects_token ~ relationship ~ ("," ~ relationship)*
 }
 
 // FeatureChaining extends Relationship
 feature_chaining = {
-    "chains" ~ ((identifier ~ ("." ~ identifier)+) | qualified_reference_chain | relationship)
+    chains_token ~ ((identifier ~ ("." ~ identifier)+) | qualified_reference_chain | relationship)
 }
 
-// Specialization extends Inheritance
+// Specialization extends Inheritance (inline form used in heritage)
 specialization = {
-    specializes_token ~ inheritance ~ ("," ~ inheritance)*
+    specializes_operator ~ inheritance ~ ("," ~ inheritance)*
+}
+
+// Standalone Specialization - top-level 'subtype' keyword form per official grammar
+// ( 'specialization' Identification? )? 'subtype' FeatureChain ( ':>' | 'specializes' ) FeatureChain RelationshipBody
+standalone_specialization = {
+    (specialization_token ~ identification?)? ~
+    subtype_token ~
+    (owned_feature_chain | element_reference) ~
+    specializes_operator ~
+    (owned_feature_chain | element_reference) ~
+    relationship_body
 }
 
 // Disjoining extends Relationship
 disjoining = {
-    "disjoint" ~ (
-        element_reference ~ "from" ~ element_reference  // disjoint a.b from c.d
-        | "from" ~ relationship                          // disjoint from X
+    disjoint_token ~ (
+        element_reference ~ from_token ~ element_reference  // disjoint a.b from c.d
+        | from_token ~ relationship                          // disjoint from X
         | visibility_kind? ~ element_reference            // disjoint Type1 or disjoint private Type2
     )
 }
 
-// FeatureInverting extends Relationship
+// FeatureInverting per official grammar (standalone form):
+// ( 'inverting' Identification? )? 'inverse' FeatureChain 'of' FeatureChain RelationshipBody
 feature_inverting = {
-    "inverse" ~ "of"? ~ relationship
+    (inverting_token ~ identification?)? ~
+    inverse_token ~
+    (owned_feature_chain | element_reference) ~
+    of_token ~
+    (owned_feature_chain | element_reference) ~
+    relationship_body
+}
+
+// OwnedFeatureInverting per official grammar (inline form in feature declarations):
+// 'inverse' 'of' (QualifiedName | FeatureChain)
+owned_feature_inverting = {
+    inverse_token ~ of_token ~ (owned_feature_chain | element_reference)
 }
 
 // Featuring extends Relationship
+// Syntax: featured by TypeName
 featuring = {
-    "featured" ~ relationship
+    featured_token ~ by_token ~ element_reference
 }
 
-// TypeFeaturing extends Featuring
+// TypeFeaturing per official grammar:
+// 'featuring' ( Identification? 'of')? featureOfType 'by' featuringType RelationshipBody
 type_featuring = {
-    "featuring" ~ featuring
+    featuring_token ~
+    (identification? ~ of_token)? ~
+    element_reference ~
+    by_token ~ element_reference ~
+    relationship_body
 }
 
-// FeatureTyping extends Specialization
+// FeatureTyping per official grammar (inline form):
+// TypedBy (',' OwnedFeatureTyping)*
+// OwnedFeatureTyping = QualifiedName | FeatureChain
 feature_typing = {
-    typed_by_token ~ (specialization | (visibility_kind? ~ element_reference)) ~ multiplicity_bounds?
+    typed_by_operator ~ feature_type ~ ("," ~ feature_type)*
+}
+
+// Standalone FeatureTyping per official grammar:
+// ( 'specialization' Identification? )? 'typing' typedFeature (':' | 'typed' 'by') FeatureType RelationshipBody
+standalone_feature_typing = {
+    (specialization_token ~ identification?)? ~
+    typing_token ~
+    element_reference ~
+    typed_by_operator ~
+    feature_type ~
+    relationship_body
+}
+
+// FeatureType = QualifiedName | FeatureChain
+feature_type = {
+    owned_feature_chain | element_reference
 }
 
 // Subclassification extends Specialization
+// Subclassification per official grammar:
+// ( 'specialization' Identification? )? 'subclassifier' subclassifier (':>' | 'specializes') superclassifier RelationshipBody
 subclassification = {
-    "subclassifier" ~ specialization
+    (specialization_token ~ identification?)? ~
+    subclassifier_token ~ element_reference ~
+    specializes_operator ~ element_reference ~
+    relationship_body
 }
 
-// Subsetting extends Specialization
+// Subsetting extends Specialization (inline form used in heritage)
 subsetting = {
-    subsets_token ~ inheritance ~ ("," ~ inheritance)*
+    subsets_operator ~ inheritance ~ ("," ~ inheritance)*
 }
 
-// Conjugation extends Inheritance
+// Standalone Subsetting - top-level 'subset' keyword form per official grammar
+// ( 'specialization' Identification? )? 'subset' FeatureChain ( ':>' | 'subsets' ) FeatureChain RelationshipBody
+standalone_subsetting = {
+    (specialization_token ~ identification?)? ~
+    subset_token ~
+    (owned_feature_chain | element_reference) ~
+    subsets_operator ~
+    (owned_feature_chain | element_reference) ~
+    relationship_body
+}
+
+// Standalone Redefinition - top-level 'redefinition' keyword form per official grammar
+// ( 'specialization' Identification? )? 'redefinition' FeatureChain ( ':>>' | 'redefines' ) FeatureChain RelationshipBody
+standalone_redefinition = {
+    (specialization_token ~ identification?)? ~
+    redefinition_token ~
+    (owned_feature_chain | element_reference) ~
+    redefines_operator ~
+    (owned_feature_chain | element_reference) ~
+    relationship_body
+}
+
+// Conjugation extends Inheritance (inline form: ~ Type)
 conjugation = {
-    conjugates_token ~ inheritance
+    conjugates_operator ~ inheritance
 }
 
-// Redefinition extends Subsetting
+// Standalone Conjugation per official grammar:
+// ('conjugation' Identification?)? 'conjugate' type1 ('~' | 'conjugates') type2 RelationshipBody
+standalone_conjugation = {
+    (conjugation_token ~ identification?)? ~
+    conjugate_token ~
+    (owned_feature_chain | element_reference) ~
+    conjugates_operator ~
+    (owned_feature_chain | element_reference) ~
+    relationship_body
+}
+
+// Redefinition extends Subsetting (inline form used in heritage)
 redefinition = {
-    redefines_token ~ inheritance ~ ("," ~ inheritance)*
+    redefines_operator ~ inheritance ~ ("," ~ inheritance)*
 }
 
 // ReferenceSubsetting extends Subsetting
 reference_subsetting = {
-    references_token ~ inheritance
+    references_operator ~ inheritance
 }
 
 // CrossSubsetting extends Subsetting
 cross_subsetting = {
-    crosses_token ~ inheritance
+    crosses_operator ~ inheritance
 }
 
 // Dependency extends Relationship
 dependency = {
-    prefix_metadata_annotation* ~
-    "dependency" ~ (identification? ~ "from")? ~
-    element_reference ~ ("," ~ element_reference)* ~ "to" ~
+    user_defined_keyword* ~
+    dependency_token ~ (identification? ~ from_token)? ~
+    element_reference ~ ("," ~ element_reference)* ~ to_token ~
     element_reference ~ ("," ~ element_reference)* ~
     relationship_body
 }
@@ -802,7 +1084,7 @@ dependency = {
 
 // Import prefix fragment
 import_prefix = {
-    visibility_kind? ~ "import" ~ import_all?
+    visibility_kind? ~ import_token ~ import_all?
 }
 
 // Imported reference with namespace and recursive flags
@@ -825,7 +1107,7 @@ filter_package = {
 
 // Filter Package Member
 filter_package_member = {
-    "[" ~ owned_expression ~ "]"
+    "[" ~ operator_expression ~ "]"
 }
 
 // Owned Expression (forward reference - define later with expressions)
@@ -846,7 +1128,7 @@ namespace_import = {
 // Membership extends Relationship
 membership = {
     visibility_kind? ~
-    "alias"? ~
+    alias_token? ~
     element_reference?
 }
 
@@ -857,13 +1139,14 @@ owning_membership = {
 
 // FeatureValue extends OwningMembership
 feature_value = {
-    ("=" | ":=" | "default") ~
+    ("=" | ":=" | default_token) ~
     owning_membership
 }
 
-// ElementFilterMembership extends OwningMembership
+// ElementFilterMembership per official grammar:
+// MemberPrefix 'filter' OwnedExpression ';'
 element_filter_membership = {
-    "filter" ~ owning_membership
+    filter_token ~ operator_expression ~ ";"
 }
 
 // FeatureMembership extends Featuring and OwningMembership
@@ -874,7 +1157,7 @@ feature_membership = {
 
 // EndFeatureMembership extends FeatureMembership
 end_feature_membership = {
-    "end" ~ (
+    end_token ~ (
         typed_feature_member
         | feature_membership
     )
@@ -901,23 +1184,27 @@ parameter_specialization_part = {
 
 // ResultExpressionMembership extends FeatureMembership
 result_expression_membership = {
-    "return" ~ feature_membership
+    return_token ~ feature_membership
 }
 
 // ReturnParameterMembership extends ParameterMembership
 // Simplified: return : type[mult] default expr ;
 return_parameter_membership = {
-    "return" ~ "feature"? ~ (
-        identifier ~ parameter_specialization_part? ~ (("=" | "default") ~ inline_expression)?
-        | parameter_specialization_part ~ (("=" | "default") ~ inline_expression)?
+    return_token ~ feature_token? ~ (
+        identifier ~ parameter_specialization_part? ~ (("=" | default_token) ~ inline_expression)?
+        | parameter_specialization_part ~ (("=" | default_token) ~ inline_expression)?
     ) ~ (namespace_body | ";")
 }
 
 // References
 
 // QualifiedReferenceChain - name::name::name or name.name.name pattern
+// Uses 'name' to allow both regular identifiers and quoted names like 'not'
+// GlobalQualification: '$::' prefix for root namespace references
+global_qualification = { "$" ~ "::" }
 qualified_reference_chain = {
-    identifier ~ ("::" ~ identifier | "." ~ identifier)*
+    global_qualification ~ (name ~ "::")* ~ name ~ ("." ~ name)*
+    | name ~ ("::" ~ name | "." ~ name)*
 }
 
 // ElementReference - base reference type
@@ -958,7 +1245,7 @@ membership_reference = {
 // Literal Expressions
 
 literal_boolean = {
-    "false" | "true"
+    false_token | true_token
 }
 
 literal_string = {
@@ -987,7 +1274,7 @@ literal_expression = {
 
 // Null Expression
 null_expression = {
-    "null" | ("(" ~ ")")
+    null_token | ("(" ~ ")")
 }
 
 // Complex Expression Types (placeholders for full implementation)
@@ -999,7 +1286,7 @@ operator_expression = {
 
 // Conditional Expression (if-then-else ternary)
 conditional_expression = {
-    "if" ~ null_coalescing_expression ~ "?" ~ operator_expression ~ "else" ~ operator_expression
+    if_token ~ null_coalescing_expression ~ "?" ~ operator_expression ~ else_token ~ operator_expression
     | null_coalescing_expression
 }
 
@@ -1010,22 +1297,22 @@ null_coalescing_expression = {
 
 // Implies expression (logical implication)
 implies_expression = {
-    or_expression ~ ("implies" ~ or_expression)*
+    or_expression ~ (implies_token ~ or_expression)*
 }
 
 // Logical OR expressions
 or_expression = {
-    xor_expression ~ (("or" | "|") ~ xor_expression)*
+    xor_expression ~ ((or_token | "|") ~ xor_expression)*
 }
 
 // Logical XOR expressions
 xor_expression = {
-    and_expression ~ ("xor" ~ and_expression)*
+    and_expression ~ (xor_token ~ and_expression)*
 }
 
 // Logical AND expressions
 and_expression = {
-    equality_expression ~ (("and" | "&") ~ equality_expression)*
+    equality_expression ~ ((and_token | "&") ~ equality_expression)*
 }
 
 // Equality Expressions
@@ -1033,12 +1320,13 @@ equality_expression = {
     classification_expression ~ (equality_operator ~ classification_expression)*
 }
 
-// Classification Expressions (as/istype/hastype operators for type operations)
+// Classification Expressions (as/istype/hastype/meta operators for type operations)
+// Per official grammar: 'meta' is MetaCastOperator for metadata type casting
+// '@TypeName' is a shorthand with implicit self operand (like 'self @ TypeName')
 classification_expression = {
-    relational_expression ~ ((as_operator | classification_test_operator) ~ type_reference)?
+    classification_test_operator ~ type_reference              // @Structure (implicit self)
+    | relational_expression ~ ((as_token | meta_token | classification_test_operator) ~ type_reference)?
 }
-
-as_operator = @{ "as" ~ !(ASCII_ALPHANUMERIC | "_") }
 
 // Relational Expressions
 relational_expression = {
@@ -1079,19 +1367,39 @@ exponentiation_operator = {
 
 // Unary Expressions
 unary_expression = {
-    unary_operator ~ collect_operator_expression
+    unary_operator ~ extent_expression
+    | extent_expression
+}
+
+// ExtentExpression per official grammar: 'all' TypeReference | PrimaryExpression
+extent_expression = {
+    all_token ~ type_reference
     | collect_operator_expression
 }
 
 // Collect Operator Expressions (-> for collection operations, . for feature chaining, # for indexing)
+// Also handles shorthand collect `.{` and shorthand select `.?{` per official grammar
 collect_operator_expression = {
-    primary_expression ~ (("." ~ identifier) | (arrow_operator ~ identifier ~ collect_operation_args?) | ("#" ~ "(" ~ operator_expression ~ ("," ~ operator_expression)* ~ ")"))*
+    primary_expression ~ (
+        ("." ~ "?" ~ "{" ~ body_expression_body ~ "}")  // shorthand select: x.?{...}
+        | ("." ~ "{" ~ body_expression_body ~ "}")      // shorthand collect: x.{...}
+        | ("." ~ identifier)                            // feature chaining: x.y
+        | (arrow_operator ~ identifier ~ collect_operation_args?)  // explicit: x->collect {...}
+        | ("#" ~ "(" ~ operator_expression ~ ("," ~ operator_expression)* ~ ")")  // indexing: x#(1)
+    )*
 }
 
 arrow_operator = @{ "->" }
 
+// Body of a body expression (shared by collect/select)
+body_expression_body = {
+    (in_token ~ name_identifier ~ (":" ~ type_reference)? ~ ";")+ ~ operator_expression
+    | in_token ~ name_identifier ~ (":" ~ type_reference)? ~ ";" ~ operator_expression
+    | operator_expression
+}
+
 collect_operation_args = {
-    "{" ~ "in" ~ name_identifier ~ feature_typing ~ ";" ~ operator_expression ~ "}"
+    "{" ~ in_token ~ name_identifier ~ feature_typing ~ ";" ~ operator_expression ~ "}"
     | "{" ~ parameter_membership+ ~ operator_expression ~ "}"
     | "{" ~ operator_expression ~ "}"
     | "(" ~ (operator_expression ~ ("," ~ operator_expression)*)? ~ ")"
@@ -1109,7 +1417,7 @@ primary_expression = {
 }
 
 feature_reference_creation = {
-    "new" ~ qualified_reference_chain ~ "(" ~ (operator_expression ~ ("," ~ operator_expression)*)? ~ ")"
+    new_token ~ qualified_reference_chain ~ "(" ~ (operator_expression ~ ("," ~ operator_expression)*)? ~ ")"
 }
 
 invocation_primary = {
@@ -1240,7 +1548,7 @@ feature_reference_member = {
 // Metadata Access Expressions
 
 metadata_access_expression = {
-    element_reference ~ "." ~ "metadata"
+    element_reference ~ "." ~ metadata_token
 }
 
 // Relationship Body Fragments
@@ -1273,10 +1581,13 @@ namespace_body_element = {
     | parameter_membership
     | return_parameter_membership
     | end_feature_membership
+    | element_filter_membership
+    | type_feature_member
     | namespace_feature_member
     | non_feature_member
     | typed_feature_member
     | subset_member
+    | prefix_metadata_feature_member
     | shorthand_feature_member
     | relationship_member
     | operator_expression
@@ -1292,9 +1603,22 @@ shorthand_feature_member = {
     ";"
 }
 
+// Feature member with prefix metadata instead of 'feature' keyword
+// Per official grammar: modifiers* #MetaName+ declaration
+// Examples: abstract #Classified z2; or #Security feature z;
+prefix_metadata_feature_member = {
+    visibility_kind? ~
+    (abstract_token | composite_token | portion_token | readonly | derived | end_marker | variable_marker)* ~
+    prefix_metadata ~
+    identification? ~
+    feature_specialization_part? ~
+    feature_value? ~
+    (namespace_body | ";")
+}
+
 // Subset member shorthand: subset x.y subsets a.b;
 subset_member = {
-    "subset" ~ qualified_reference_chain ~ (heritage | type_relationship | feature_relationship)+ ~ ";"
+    subset_token ~ qualified_reference_chain ~ (heritage | type_relationship | feature_relationship)+ ~ ";"
 }
 
 // Typed feature shorthand: <type> <name>? <relationships>* <mult>? <body>
@@ -1305,10 +1629,10 @@ typed_feature_member = {
     name_identifier ~ // Type reference (can be keyword like "bool")
     identification? ~ // Optional feature name
     (
-        (heritage | type_relationship | feature_relationship)+ ~ multiplicity_bounds? ~ (heritage | type_relationship | feature_relationship)*
+        (heritage | type_relationship | feature_relationship)+ ~ multiplicity_part? ~ (heritage | type_relationship | feature_relationship)*
         | (heritage | type_relationship | feature_relationship)+
-        | multiplicity_bounds ~ (heritage | type_relationship | feature_relationship)*
-        | multiplicity_bounds
+        | multiplicity_part ~ (heritage | type_relationship | feature_relationship)*
+        | multiplicity_part
     )? ~
     feature_value? ~
     namespace_body
