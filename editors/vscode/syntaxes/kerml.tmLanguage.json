@@ -25,11 +25,11 @@
         },
         {
           "name": "storage.modifier.kerml",
-          "match": "\\b(package|library|import|alias|member|abstract|readonly|derived|composite|portion|ordered|nonunique|public|private|protected|standard|in|out|inout|end|default|of|as)\\b"
+          "match": "\\b(package|library|import|alias|member|abstract|readonly|derived|composite|portion|ordered|nonunique|public|private|protected|standard|in|out|inout|end|default|of|as|var|variation|new|multiplicity)\\b"
         },
         {
           "name": "keyword.other.relationship.kerml",
-          "match": "\\b(specializes|specialization|subclassifier|subtype|subsets|subset|redefines|redefinition|conjugates|conjugation|conjugate|typing|typed|chains|inverting|inverse|differs|differences|disjoint|disjoining|intersects|unions|featured|featuring|dependency|reference|crosses)\\b"
+          "match": "\\b(specializes|specialization|subclassifier|subtype|subsets|subset|redefines|redefinition|conjugates|conjugation|conjugate|typing|typed|chains|inverting|inverse|differs|differences|disjoint|disjoining|intersects|unions|featured|featuring|dependency|references|reference|crosses)\\b"
         },
         {
           "name": "keyword.other.metadata.kerml",

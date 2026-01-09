@@ -2,6 +2,18 @@
 
 All notable changes to the "SysML v2 Language Support" extension will be documented in this file.
 
+## [0.1.6-alpha] - 2026-01-09
+
+### Improved
+- Consolidated KerML grammar with unified rules for better maintainability
+- Added unified patterns: `any_relationship`, `feature_or_chain`, `classifier_relationships`, `ordering_modifiers`, `feature_prefix_modifiers`, `connector_feature_modifiers`, `type_body`, `feature_declaration`
+- Synchronized all keywords across parser, code completion, and syntax highlighting
+- Added missing keywords: `meta`, `multiplicity`, `new`, `var`, `variation`, `references`
+
+### Fixed
+- Fixed `readonly` and `derived` feature modifier detection in AST parsing
+- Corrected multiple test cases with invalid KerML syntax
+
 ## [0.1.5-alpha] - 2026-01-08
 
 ### Fixed
