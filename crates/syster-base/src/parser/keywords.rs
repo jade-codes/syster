@@ -107,6 +107,11 @@ pub const KERML_KEYWORDS: &[&str] = &[
     "flow",
     "crosses",
     "default",
+    "meta",
+    "multiplicity",
+    "new",
+    "var",
+    "variation",
 ];
 
 /// All SysML keywords for code completion

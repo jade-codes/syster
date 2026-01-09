@@ -128,7 +128,9 @@ fn extract_reference(pair: &Pair<Rule>) -> Option<String> {
         Rule::inheritance
         | Rule::element_reference
         | Rule::qualified_reference_chain
-        | Rule::relationship => {
+        | Rule::relationship
+        | Rule::feature_type
+        | Rule::feature_or_chain => {
             // Recursively search for qualified_reference_chain or identifier
             for inner in pair.clone().into_inner() {
                 match inner.as_rule() {
