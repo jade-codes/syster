@@ -290,10 +290,10 @@ fn test_url_path_segments_needs_decoding() {
         .path_segments()
         .and_then(|mut s| s.next_back())
         .unwrap_or("unknown");
-    
+
     // path_segments() returns encoded string
     assert_eq!(file_name, "my%20test%20file.sysml");
-    
+
     // Use decode_uri_component to decode it
     let decoded = decode_uri_component(file_name);
     assert_eq!(decoded, "my test file.sysml");
