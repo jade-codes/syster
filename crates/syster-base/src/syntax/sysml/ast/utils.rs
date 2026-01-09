@@ -519,11 +519,11 @@ pub fn has_flag(pair: &Pair<Rule>, flag: Rule) -> bool {
     false
 }
 
-/// Extract derived and readonly flags from pairs
+/// Extract derived and constant flags from pairs
 pub fn extract_flags(pairs: &[Pair<Rule>]) -> (bool, bool) {
     let derived = pairs.iter().any(|p| has_flag(p, Rule::derived_token));
-    let readonly = pairs.iter().any(|p| has_flag(p, Rule::readonly_token));
-    (derived, readonly)
+    let constant = pairs.iter().any(|p| has_flag(p, Rule::constant_token));
+    (derived, constant)
 }
 
 /// Check if a pair has a definition flag (with recursion into prefixes)

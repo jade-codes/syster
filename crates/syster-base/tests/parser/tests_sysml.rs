@@ -141,7 +141,6 @@ fn test_parse_simple_identifier(#[case] rule: Rule, #[case] input: &str, #[case]
 #[case("private")]
 #[case("protected")]
 #[case("public")]
-#[case("readonly")]
 #[case("redefines")]
 #[case("ref")]
 #[case("references")]
@@ -292,11 +291,25 @@ fn test_parse_succession_keyword(#[case] rule: Rule, #[case] input: &str, #[case
 #[rstest]
 #[case(Rule::expose, "expose MyElement;", "expose")]
 #[case(
-    Rule::membership_expose,
+    Rule::expose,
     "expose MyElement::member;",
-    "membership expose"
+    "membership expose (via expose rule)"
 )]
-#[case(Rule::namespace_expose, "expose MyNamespace::*;", "namespace expose")]
+#[case(
+    Rule::expose,
+    "expose MyNamespace::*;",
+    "namespace expose (via expose rule)"
+)]
+#[case(
+    Rule::membership_expose,
+    "expose MyElement::member",
+    "membership expose sub-rule"
+)]
+#[case(
+    Rule::namespace_expose,
+    "expose MyNamespace::*",
+    "namespace expose sub-rule"
+)]
 fn test_parse_expose(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
@@ -350,17 +363,20 @@ fn test_parse_terminate_action(#[case] rule: Rule, #[case] input: &str, #[case] 
 
 // Port Definition and Conjugation Tests
 
+// Updated to match official SysML v2 grammar structure:
+// - conjugated_port_typing now only matches ~QualifiedName (the type part)
+// - conjugated_port_definition is an implicit semantic element, no syntax
+// - Full port usage with conjugated type uses port_usage rule
 #[rstest]
 #[case(
-    Rule::conjugated_port_definition,
-    "port def ~MyConjugatedPort;",
-    "conjugated port definition"
+    Rule::conjugated_qualified_name,
+    "~MyConjugatedPort",
+    "conjugated qualified name"
 )]
-#[case(Rule::port_conjugation, "conjugate ~MyPort;", "port conjugation")]
 #[case(
-    Rule::conjugated_port_typing,
+    Rule::port_usage,
     "port myPort : ~ConjugatedPortType;",
-    "conjugated port typing"
+    "port usage with conjugated type"
 )]
 #[case(Rule::life_class, "life class MyLifeClass;", "life class")]
 fn test_parse_conjugated_port_definitions(
@@ -785,11 +801,8 @@ fn test_parse_import(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str
     "connection def MyConnection;",
     "connection definition"
 )]
-#[case(
-    Rule::definition_element,
-    "flow connection def MyFlowConnection;",
-    "flow connection definition"
-)]
+// Note: flow connection def was removed as it's not part of official SysML v2 grammar
+// FlowConnectionDefinition is an internal abstract syntax element
 #[case(
     Rule::definition_element,
     "interface def MyInterface;",
@@ -1117,7 +1130,7 @@ fn test_parse_definition_member(#[case] rule: Rule, #[case] input: &str, #[case]
 // Usage Structure Tests
 
 #[rstest]
-#[case(Rule::readonly_token, "readonly", "readonly")]
+#[case(Rule::constant_token, "constant", "constant")]
 #[case(Rule::derived_token, "derived", "derived")]
 fn test_parse_usage_modifiers(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
@@ -1135,9 +1148,9 @@ fn test_parse_feature_direction_kind(#[case] rule: Rule, #[case] input: &str, #[
 #[case(Rule::ref_prefix, "", "empty")]
 #[case(Rule::ref_prefix, "in", "with direction")]
 #[case(Rule::ref_prefix, "abstract", "with abstract")]
-#[case(Rule::ref_prefix, "readonly", "with readonly")]
+#[case(Rule::ref_prefix, "constant", "with constant")]
 #[case(Rule::ref_prefix, "derived", "with derived")]
-#[case(Rule::ref_prefix, "in abstract readonly derived", "all modifiers")]
+#[case(Rule::ref_prefix, "in abstract constant derived", "all modifiers")]
 fn test_parse_ref_prefix(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_parse_succeeds(rule, input, desc);
 }
@@ -1146,7 +1159,7 @@ fn test_parse_ref_prefix(#[case] rule: Rule, #[case] input: &str, #[case] desc: 
 #[case(Rule::basic_usage_prefix, "", "without ref")]
 #[case(Rule::basic_usage_prefix, "ref", "with ref")]
 #[case(Rule::basic_usage_prefix, "in ref", "with direction and ref")]
-#[case(Rule::basic_usage_prefix, "readonly ref", "with readonly and ref")]
+#[case(Rule::basic_usage_prefix, "constant ref", "with constant and ref")]
 fn test_parse_basic_usage_prefix(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
 }
@@ -4356,4 +4369,106 @@ fn test_parse_boolean_value(#[case] rule: Rule, #[case] input: &str, #[case] des
 #[case(Rule::literal, "null", "literal with null")]
 fn test_parse_literal(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
+}
+
+// =============================================================================
+// Grammar Pattern Extraction Tests
+// These tests validate extracted common patterns for better error messages
+// =============================================================================
+
+/// Tests transition_target pattern (then X | if guard then X | else X)
+#[rstest]
+#[case("then a", "simple then target")]
+#[case("then a.b", "then with feature chain")]
+#[case("if guard then x", "guarded target")]
+#[case("else fallback", "default target")]
+fn test_parse_transition_target(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::transition_target, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse transition_target '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests typed_reference pattern (subsetting with optional specializations)
+#[rstest]
+#[case("MyType", "simple type reference")]
+#[case("Package::Type", "qualified type reference")]
+#[case("MyType :> Base", "reference with specialization")]
+fn test_parse_typed_reference(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::typed_reference, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse typed_reference '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests action_declaration_header pattern
+#[rstest]
+#[case("action", "just action keyword")]
+#[case("action myAction", "action with name")]
+#[case("action myAction : ActionType", "action with name and type")]
+fn test_parse_action_declaration_header(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::action_declaration_header, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse action_declaration_header '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests reference_chain pattern (subsetting with zero or more specializations)
+#[rstest]
+#[case("MyType", "simple type reference")]
+#[case("Package::Type", "qualified type reference")]
+#[case("MyType :> Base", "reference with one specialization")]
+#[case("MyType :> Base, Other", "reference with multiple specializations")]
+fn test_parse_reference_chain(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::reference_chain, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse reference_chain '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Tests succession_header pattern
+#[rstest]
+#[case("succession", "just succession keyword")]
+#[case("succession mySuccession", "succession with name")]
+fn test_parse_succession_header(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::succession_header, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse succession_header '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+}
+
+/// Regression test for RequirementTest.sysml parsing
+#[test]
+fn test_parse_package_with_constraints_and_import() {
+    let input = r#"package RequirementTest {
+        constraint def C;
+        constraint c : C;
+        private import q::**;
+    }"#;
+    let result = SysMLParser::parse(Rule::model, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse package with constraints and import: {:?}",
+        result.err()
+    );
 }
