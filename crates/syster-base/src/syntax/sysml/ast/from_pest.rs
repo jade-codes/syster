@@ -8,7 +8,7 @@ use super::{
 };
 use crate::parser::sysml::Rule;
 use from_pest::{ConversionError, FromPest, Void};
-use pest::iterators::Pairs;
+use pest::iterators::{Pair, Pairs};
 
 // ============================================================================
 // FromPest implementations
@@ -89,21 +89,65 @@ impl_from_pest!(Import, |pest: &mut Pairs<Rule>| {
     let mut path_span = None;
     let mut span = None;
 
+    // Helper to extract visibility from import_prefix
+    fn extract_visibility(pair: &Pair<Rule>) -> bool {
+        for child in pair.clone().into_inner() {
+            if child.as_rule() == Rule::visibility {
+                return child.as_str().trim() == "public";
+            }
+        }
+        false
+    }
+
+    // Helper to extract path and visibility from membership_import or namespace_import
+    fn extract_from_import_rule(
+        pair: Pair<Rule>,
+    ) -> (String, Option<crate::core::Span>, bool, bool) {
+        let mut path = String::new();
+        let mut span = None;
+        let mut is_recursive = false;
+        let mut is_public = false;
+
+        for child in pair.into_inner() {
+            match child.as_rule() {
+                Rule::import_prefix => {
+                    is_public = extract_visibility(&child);
+                }
+                Rule::imported_membership | Rule::imported_namespace => {
+                    path = child.as_str().to_string();
+                    span = Some(to_span(child.as_span()));
+                    is_recursive = child
+                        .clone()
+                        .into_inner()
+                        .any(|p| p.as_rule() == Rule::recursive_marker);
+                }
+                Rule::qualified_name => {
+                    path = child.as_str().to_string();
+                    span = Some(to_span(child.as_span()));
+                }
+                _ => {}
+            }
+        }
+        (path, span, is_recursive, is_public)
+    }
+
     for pair in pest {
         match pair.as_rule() {
             Rule::import_prefix => {
                 // import_prefix contains: visibility? ~ import_token ~ import_all?
-                for child in pair.into_inner() {
-                    if child.as_rule() == Rule::visibility {
-                        is_public = child.as_str().trim() == "public";
-                    }
-                }
+                is_public = extract_visibility(&pair);
             }
-            Rule::imported_reference => {
+            Rule::membership_import | Rule::namespace_import => {
+                let (p, s, r, pub_flag) = extract_from_import_rule(pair);
+                path = p;
+                path_span = s;
+                span = s;
+                is_recursive = r;
+                is_public = pub_flag;
+            }
+            Rule::imported_membership | Rule::imported_namespace => {
                 path = pair.as_str().to_string();
-                // Capture the span of the imported path, not the whole import statement
                 span = Some(to_span(pair.as_span()));
-                // Also capture the path_span for semantic tokens
                 path_span = Some(to_span(pair.as_span()));
                 is_recursive = pair
                     .clone()
@@ -192,29 +236,46 @@ impl_from_pest!(SysMLFile, |pest: &mut Pairs<Rule>| {
     let mut namespace = None;
     let mut namespaces = Vec::new();
 
+    // model = { SOI ~ root_namespace ~ EOI }
+    // root_namespace = { package_body_element* }
+    // namespace_element = { package_body_element } (legacy alias)
     for pair in model.into_inner() {
-        if pair.as_rule() == Rule::namespace_element
-            && let Ok(element) = Element::from_pest(&mut pair.into_inner())
+        // Handle both root_namespace container and legacy namespace_element
+        let inner_pairs = if pair.as_rule() == Rule::root_namespace {
+            // New grammar structure: get package_body_elements from root_namespace
+            pair.into_inner().collect::<Vec<_>>()
+        } else if pair.as_rule() == Rule::namespace_element
+            || pair.as_rule() == Rule::package_body_element
         {
-            // Track all package declarations (Issue #10)
-            if let Element::Package(ref pkg) = element
-                && pkg.elements.is_empty()
-                && let Some(ref name) = pkg.name
-            {
-                let ns = NamespaceDeclaration {
-                    name: name.clone(),
-                    span: pkg.span,
-                };
+            // Direct element (legacy or package_body_element)
+            vec![pair]
+        } else {
+            continue;
+        };
 
-                // Keep first namespace for backward compatibility
-                if namespace.is_none() {
-                    namespace = Some(ns.clone());
+        for element_pair in inner_pairs {
+            // Each package_body_element or namespace_element contains the actual element
+            if let Ok(element) = Element::from_pest(&mut element_pair.into_inner()) {
+                // Track all package declarations (Issue #10)
+                if let Element::Package(ref pkg) = element
+                    && pkg.elements.is_empty()
+                    && let Some(ref name) = pkg.name
+                {
+                    let ns = NamespaceDeclaration {
+                        name: name.clone(),
+                        span: pkg.span,
+                    };
+
+                    // Keep first namespace for backward compatibility
+                    if namespace.is_none() {
+                        namespace = Some(ns.clone());
+                    }
+
+                    // Collect all namespaces
+                    namespaces.push(ns);
                 }
-
-                // Collect all namespaces
-                namespaces.push(ns);
+                elements.push(element);
             }
-            elements.push(element);
         }
     }
 

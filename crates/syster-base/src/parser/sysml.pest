@@ -35,7 +35,6 @@ standard_token = @{ "standard" ~ !(ASCII_ALPHANUMERIC | "_") }
 typed_token = @{ "typed" ~ !(ASCII_ALPHANUMERIC | "_") }
 class_token = @{ "class" ~ !(ASCII_ALPHANUMERIC | "_") }
 constant_token = @{ "constant" ~ !(ASCII_ALPHANUMERIC | "_") }
-readonly_token = @{ "readonly" ~ !(ASCII_ALPHANUMERIC | "_") }
 metadata_token = @{ "metadata" ~ !(ASCII_ALPHANUMERIC | "_") }
 language_token = @{ "language" ~ !(ASCII_ALPHANUMERIC | "_") }
 snapshot_token = @{ "snapshot" ~ !(ASCII_ALPHANUMERIC | "_") }
@@ -166,7 +165,7 @@ keyword = @{
     | dependency_token | occurrence_token | rendering_token | viewpoint_token | variation_token 
     | attribute_token | interface_token | objective_token | nonunique_token | succession_token 
     | terminate_token | transition_token | timeslice_token | protected_token | standard_token
-    | readonly_token | metadata_token | language_token | snapshot_token | parallel_token
+    | metadata_token | language_token | snapshot_token | parallel_token
     | allocate_token | analysis_token | abstract_token | library_token | require_token 
     | conjugate_token | perform_token | exhibit_token | include_token | satisfy_token | binding_token 
     | crosses_token | message_token | package_token | private_token | variant_token
@@ -257,6 +256,44 @@ stakeholder_membership = { stakeholder_token ~ identifier ~ semi_colon }
 objective_membership = { objective_token ~ identifier ~ semi_colon }
 view_rendering_membership = { render_token ~ identifier ~ semi_colon }
 
+// =============================================================================
+// Extracted Common Patterns
+// These rules improve error messages by naming commonly used patterns
+// =============================================================================
+
+// TransitionTarget: the target of a succession/transition
+// Matches: "then X" | "if guard then X" | "else X"
+transition_target = {
+    then_token ~ connector_end_member
+    | guarded_target_succession
+    | default_target_succession
+}
+
+// TypedReference: a reference with optional feature specialization part
+// Used for perform/exhibit/satisfy/include patterns
+typed_reference = {
+    owned_reference_subsetting ~ feature_specialization_part?
+}
+
+// ReferenceChain: a reference with zero or more feature specializations
+// Used for requirement constraints, framed concerns, etc.
+reference_chain = {
+    owned_reference_subsetting ~ feature_specialization*
+}
+
+// ActionDeclarationHeader: "action" with optional declaration
+// Used in action nodes, perform actions, etc.
+action_declaration_header = {
+    action_usage_keyword ~ usage_declaration?
+}
+
+// SuccessionHeader: "succession" with optional declaration
+succession_header = {
+    succession_keyword ~ usage_declaration?
+}
+
+// =============================================================================
+
 // Succession and Expose
 
 // Succession keyword
@@ -264,29 +301,52 @@ succession_keyword = @{ succession_token }
 
 succession_as_usage = {
     usage_prefix
-    ~ (succession_keyword ~ usage_declaration?)?
+    ~ succession_header?
     ~ first_token
     ~ connector_end_member
-    ~ (then_token ~ connector_end_member | guarded_target_succession | default_target_succession)
+    ~ transition_target
     ~ definition_body
 }
 
+// Expose - similar to Import but for exposing elements in views
 expose_prefix = { visibility? ~ expose_token }
 
-expose = {
-    expose_prefix ~ imported_reference ~ filter_package? ~ relationship_body
-}
+// MembershipExpose: expose a specific member
+membership_expose = { expose_prefix ~ imported_membership }
 
-membership_expose = { expose_token ~ identifier ~ double_colon ~ identifier ~ semi_colon }
-namespace_expose = { expose_token ~ identifier ~ double_colon ~ wildcard ~ semi_colon }
+// NamespaceExpose: expose all members of a namespace
+namespace_expose = { expose_prefix ~ imported_namespace }
+
+// Main expose rule - union of membership and namespace exposes
+// IMPORTANT: namespace_expose must come first since it's more specific
+// (membership_expose would partially match namespace patterns)
+// filter_package? is optional and applies to both expose types
+expose = {
+    (namespace_expose | membership_expose)
+    ~ filter_package?
+    ~ relationship_body
+}
 
 // Port and Conjugation
+// Per official grammar, PortDefinition implicitly creates a ConjugatedPortDefinition
+// The ~ prefix in type references indicates a conjugated port typing
 variant_membership = { variant_token ~ variant_usage_element }
-conjugated_port_definition = {
-    occurrence_definition_prefix ~ port_token ~ def_token ~ conjugate_operator ~ definition_declaration ~ definition_body
-}
-port_conjugation = { conjugate_token ~ conjugate_operator ~ identifier ~ semi_colon }
-conjugated_port_typing = { port_token ~ identifier ~ colon ~ conjugate_operator ~ identifier ~ semi_colon }
+
+// ConjugatedQualifiedName: ~QualifiedName for referencing conjugated port types
+conjugated_qualified_name = { conjugation_operator ~ qualified_name }
+
+// ConjugatedPortTyping: references a conjugated port definition
+// e.g., ": ~MyPort" where MyPort is a port definition
+conjugated_port_typing = { conjugated_qualified_name }
+
+// PortConjugation is an implicit semantic marker (empty in grammar)
+port_conjugation = { "" }
+
+// ConjugatedPortDefinition is implicitly created by PortDefinition
+// This semantic element holds the PortConjugation relationship
+conjugated_port_definition_member = { conjugated_port_definition }
+conjugated_port_definition = { port_conjugation }
+
 life_class = { life_token ~ class_token ~ identifier ~ semi_colon }
 
 
@@ -321,16 +381,7 @@ package_body = { semi_colon | ( forward_curl_brace ~ package_body_items ~ backwa
 
 package_body_items = { package_body_element* }
 
-package_body_element = {
-    import
-    | alias_member_element
-    | element_filter_member
-    | visible_annotating_member
-    | usage_member
-    | definition_member_element
-    | relationship_member_element
-    | dependency
-}
+// package_body_element is now defined in Model Entry Point section
 
 usage_member = { visibility? ~ usage_element }
 
@@ -788,7 +839,6 @@ definition_element = {
     | metadata_definition
     | part_definition
     | connection_definition
-    | flow_connection_definition
     | flow_definition
     | interface_definition
     | allocation_definition
@@ -885,7 +935,6 @@ connection_usage_keyword = { connection_token }
 connection_definition = {
     occurrence_definition_prefix ~ connection_def_keyword ~ definition_declaration ~ definition_body
 }
-flow_connection_definition = { flow_token ~ connection_token ~ def_token ~ identifier ~ semi_colon }
 
 // Flow keywords
 flow_keyword = { flow_token }
@@ -1327,7 +1376,7 @@ action_body_parameter_member = {
 }
 
 action_body_parameter = {
-    (action_usage_keyword ~ usage_declaration?)? ~ forward_curl_brace ~ action_body_item* ~ backward_curl_brace
+    action_declaration_header? ~ forward_curl_brace ~ action_body_item* ~ backward_curl_brace
 }
 
 if_node_parameter_member = {
@@ -1655,7 +1704,6 @@ ref_prefix = {
     ~ derived_token?
     ~ basic_definition_prefix?
     ~ constant_token?
-    ~ readonly_token?
 }
 
 reference = { ref_token }
@@ -1778,8 +1826,8 @@ structure_usage_element = {
     | allocation_usage
     | allocate_usage
     | message
-    | flow_connection_usage
-    | succession_flow_connection_usage
+    | flow_usage
+    | succession_flow_usage
 }
 
 behavior_usage_element = {
@@ -1820,8 +1868,8 @@ variant_usage_element = {
     | interface_usage
     | allocation_usage
     | message
-    | flow_connection_usage
-    | succession_flow_connection_usage
+    | flow_usage
+    | succession_flow_usage
     | behavior_usage_element
 }
 
@@ -2078,10 +2126,10 @@ flow_redefinition = {
     feature_reference
 }
 
-flow_connection_usage_keyword = { flow_keyword }
+flow_usage_keyword = { flow_keyword }
 
-flow_connection_usage = {
-    occurrence_usage_prefix ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body
+flow_usage = {
+    occurrence_usage_prefix ~ flow_usage_keyword ~ flow_usage_declaration ~ usage_body
 }
 
 // FlowConnectionUsageDeclaration per spec 8.2.2.9.5:
@@ -2093,7 +2141,7 @@ flow_connection_usage = {
 // 2. flow_part - handles shorthand "flow X.Y to A.B" or "flow from X.Y to A.B" (no name)
 // 3. usage_declaration ~ (of_token ~ owned_feature_typing ~ owned_multiplicity?)? ~ flow_part? - handles named "flow myFlow of Type[1] from X to Y"
 //    or "flow myFlow from X.Y to A.B"
-flow_connection_usage_declaration = {
+flow_usage_declaration = {
     of_token ~ owned_feature_typing ~ owned_multiplicity? ~ flow_part
     | flow_part
     | usage_declaration ~ (of_token ~ owned_feature_typing ~ owned_multiplicity?)? ~ flow_part?
@@ -2107,8 +2155,8 @@ flow_part = {
     | flow_end_member ~ to_token ~ flow_end_member
 }
 
-succession_flow_connection_usage = { 
-    succession_keyword ~ flow_connection_usage_keyword ~ flow_connection_usage_declaration ~ usage_body 
+succession_flow_usage = { 
+    succession_keyword ~ flow_usage_keyword ~ flow_usage_declaration ~ usage_body 
 }
 
 // Action Usages
@@ -2127,8 +2175,8 @@ perform_action_usage = {
 }
 
 perform_action_usage_declaration = {
-    owned_reference_subsetting ~ feature_specialization_part? ~ value_part?
-    | action_usage_keyword ~ usage_declaration? ~ value_part?
+    typed_reference ~ value_part?
+    | action_declaration_header ~ value_part?
 }
 
 // Calculation Usage
@@ -2463,10 +2511,14 @@ multiplicity_properties = {
 }
 
 // Model Entry Point
+// RootNamespace is the semantic entry point per the official SysML v2 grammar
+// It represents an implicit root namespace containing all top-level elements
+root_namespace = { package_body_element* }
 
-model = { SOI ~ namespace_element* ~ EOI }
+model = { SOI ~ root_namespace ~ EOI }
 
-namespace_element = {
+// Package body elements that can appear at the root level
+package_body_element = {
     package
     | library_package
     | import
@@ -2478,6 +2530,9 @@ namespace_element = {
     | relationship_member_element
     | dependency
 }
+
+// Legacy namespace_element alias for compatibility
+namespace_element = { package_body_element }
 
 // Supporting Rules
 element_reference = { qualified_name | identifier | quoted_name }
@@ -2572,25 +2627,50 @@ relationship_member = { identifier ~ semi_colon }
 visible_annotating_member = { annotating_element }
 metadata_alias_member = { alias_token ~ identifier ~ for_token ~ identifier ~ semi_colon }
 
-// Imports
+// Imports - per official SysML v2 grammar
+// Import is either a MembershipImport or NamespaceImport
 import_prefix = { visibility? ~ import_token ~ import_all? }
 import_all = { all_token }
-imported_reference = {
-    qualified_name
-    ~ (recursive_marker | namespace_marker ~ recursive_marker | namespace_marker)?
-}
 
 qualified_name = { (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
 namespace_marker = { "::*" }
 recursive_marker = { "::**" }
 
+// MembershipImport: imports a specific member by qualified name
+// e.g., "import MyPackage::MyElement" or "import MyPackage::MyElement::**"
+imported_membership = {
+    qualified_name ~ recursive_marker?
+}
+
+// NamespaceImport: imports all members of a namespace
+// e.g., "import MyPackage::*" or "import MyPackage::*::**"
+// Uses negative lookahead to prevent namespace_marker from matching start of recursive_marker
+imported_namespace = {
+    qualified_name ~ !recursive_marker ~ namespace_marker ~ recursive_marker?
+}
+
+// MembershipImport production
+membership_import = {
+    import_prefix ~ imported_membership
+}
+
+// NamespaceImport production
+namespace_import = {
+    import_prefix ~ imported_namespace
+}
+
+// Main import rule - union of membership and namespace imports
+// IMPORTANT: namespace_import must come first since it's more specific
+// (membership_import would partially match namespace patterns)
+// filter_package? is optional and applies to both import types
 import = {
-    import_prefix
-    ~ imported_reference
+    (namespace_import | membership_import)
     ~ filter_package?
     ~ relationship_body
 }
 
+// FilterPackage: optional filter expressions for imports
+// e.g., "import X::*[filter1][filter2]"
 filter_package = { filter_package_member+ }
 filter_package_member = { "[" ~ owned_expression ~ "]" }
 
@@ -2606,5 +2686,5 @@ dependency = {
     ~ relationship_body
 }
 
-// Entry point
-file = { SOI ~ namespace_element* ~ EOI }
+// Entry point - uses root_namespace for semantic model
+file = { SOI ~ root_namespace ~ EOI }
