@@ -110,7 +110,6 @@ fn test_parse_simple_identifier() {
 #[case("private")]
 #[case("protected")]
 #[case("public")]
-#[case("readonly")]
 #[case("redefines")]
 #[case("ref")]
 #[case("references")]
@@ -564,14 +563,29 @@ fn test_parse_port_conjugation() {
     );
 }
 
+// Test conjugated port typing - now just the ~QualifiedName portion
+// per official SysML v2 grammar (not the full port usage statement)
 #[test]
 fn test_parse_conjugated_port_typing() {
-    let input = "port myPort : ~ConjugatedPortType;";
+    let input = "~ConjugatedPortType";
     let result = SysMLParser::parse(Rule::conjugated_port_typing, input);
 
     assert!(
         result.is_ok(),
         "Failed to parse conjugated port typing: {:?}",
+        result.err()
+    );
+}
+
+// Test full port usage with conjugated type
+#[test]
+fn test_parse_port_usage_with_conjugated_type() {
+    let input = "port myPort : ~ConjugatedPortType;";
+    let result = SysMLParser::parse(Rule::port_usage, input);
+
+    assert!(
+        result.is_ok(),
+        "Failed to parse port usage with conjugated type: {:?}",
         result.err()
     );
 }
@@ -1152,7 +1166,8 @@ fn test_parse_import(#[case] input: &str, #[case] desc: &str) {
 #[case("item def MyItem;", "item definition")]
 #[case("part def MyPart;", "part definition")]
 #[case("connection def MyConnection;", "connection definition")]
-#[case("flow connection def MyFlowConnection;", "flow connection definition")]
+// Note: "flow connection def" removed - not part of official SysML v2 grammar
+// FlowConnectionDefinition is an internal abstract syntax element
 #[case("interface def MyInterface;", "interface definition")]
 #[case("allocation def MyAllocation;", "allocation definition")]
 #[case("port def MyPort;", "port definition")]
@@ -1685,17 +1700,17 @@ fn test_parse_definition_member(#[case] input: &str, #[case] desc: &str) {
 // Usage Structure Tests
 
 #[rstest]
-#[case("readonly", "readonly")]
+#[case("constant", "constant")]
 #[case("derived", "derived")]
 fn test_parse_usage_modifiers(#[case] input: &str, #[case] desc: &str) {
-    let readonly_result = SysMLParser::parse(Rule::readonly_token, input);
+    let constant_result = SysMLParser::parse(Rule::constant_token, input);
     let derived_result = SysMLParser::parse(Rule::derived_token, input);
 
     assert!(
-        readonly_result.is_ok() || derived_result.is_ok(),
-        "Failed to parse {}: readonly={:?}, derived={:?}",
+        constant_result.is_ok() || derived_result.is_ok(),
+        "Failed to parse {}: constant={:?}, derived={:?}",
         desc,
-        readonly_result.err(),
+        constant_result.err(),
         derived_result.err()
     );
 }
@@ -1745,13 +1760,11 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
 #[case("", "empty")]
 #[case("in", "with direction")]
 #[case("abstract", "with abstract")]
-#[case("readonly", "with readonly")]
 #[case("derived", "with derived")]
 #[case("constant", "with constant")]
-// Per spec 8.2.2.6.2: FeatureDirection? derived? BasicDefinitionPrefix? constant? readonly?
+// Per spec 8.2.2.6.2: FeatureDirection? derived? BasicDefinitionPrefix? constant?
 #[case("derived constant", "derived constant (spec order)")]
-#[case("derived constant readonly", "derived constant readonly (spec order)")]
-#[case("in derived abstract constant readonly", "all modifiers (spec order)")]
+#[case("in derived abstract constant", "all modifiers (spec order)")]
 fn test_parse_ref_prefix(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::ref_prefix, input);
 
@@ -1765,9 +1778,9 @@ fn test_parse_ref_prefix(#[case] input: &str, #[case] desc: &str) {
 
 // Issue #634: ref_prefix should NOT allow concatenated keywords without whitespace
 #[rstest]
-#[case("constantreadonly", "constantreadonly should not fully parse")]
 #[case("derivedconstant", "derivedconstant should not fully parse")]
 #[case("abstractconstant", "abstractconstant should not fully parse")]
+#[case("abstractderived", "abstractderived should not fully parse")]
 fn test_ref_prefix_rejects_concatenated_keywords(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::ref_prefix, input);
     // The parse should either fail or not consume the entire input
@@ -1784,7 +1797,7 @@ fn test_ref_prefix_rejects_concatenated_keywords(#[case] input: &str, #[case] de
 #[case("", "without ref")]
 #[case("ref", "with ref")]
 #[case("in ref", "with direction and ref")]
-#[case("readonly ref", "with readonly and ref")]
+#[case("constant ref", "with constant and ref")]
 fn test_parse_basic_usage_prefix(#[case] input: &str, #[case] desc: &str) {
     let result = SysMLParser::parse(Rule::basic_usage_prefix, input);
 
@@ -2825,11 +2838,11 @@ fn test_parse_interface_usage_declaration(#[case] input: &str, #[case] desc: &st
 #[case("interface connect left to right;", "simple interface usage")]
 #[case("interface connect left to right{}", "interface with empty body")]
 #[case(
-    "readonly interface connect left to right;",
-    "interface with readonly prefix"
+    "constant interface connect left to right;",
+    "interface with constant prefix"
 )]
 #[case(
-    "readonly interface interfaceA connect left to right;",
+    "constant interface interfaceA connect left to right;",
     "named interface with prefix"
 )]
 #[case(
@@ -6641,18 +6654,21 @@ fn test_flow_part(#[case] input: &str, #[case] desc: &str) {
     );
 }
 
-/// Tests recursive import syntax (q::**)
+/// Tests imported_membership syntax (single element imports like a::b)
+/// Can include recursive marker (::**) to import all nested public members
 #[rstest]
+#[case("q", "single-char import")]
+#[case("myPackage", "named import")]
+#[case("A::B", "qualified import")]
+#[case("A::B::C", "multi-level qualified import")]
 #[case("q::**", "single-char recursive import")]
 #[case("myPackage::**", "named recursive import")]
 #[case("A::B::**", "qualified recursive import")]
-#[case("pkg::*", "namespace import")]
-#[case("A::B::*", "qualified namespace import")]
-fn test_imported_reference_recursive(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::imported_reference, input);
+fn test_imported_membership(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::imported_membership, input);
     assert!(
         result.is_ok(),
-        "Failed to parse imported_reference '{}' ({}): {:?}",
+        "Failed to parse imported_membership '{}' ({}): {:?}",
         input,
         desc,
         result.err()
@@ -6662,11 +6678,36 @@ fn test_imported_reference_recursive(#[case] input: &str, #[case] desc: &str) {
     let consumed: String = pairs.map(|p| p.as_str()).collect();
     assert_eq!(
         consumed, input,
-        "imported_reference only consumed '{consumed}', expected '{input}'"
+        "imported_membership only consumed '{consumed}', expected '{input}'"
     );
 }
 
-/// Tests flow_connection_usage with feature chain paths (from FeaturePathTest.sysml)
+/// Tests imported_namespace syntax (wildcard imports like pkg::*)
+/// Requires ::* marker to import all direct members; can add ::* for recursive
+#[rstest]
+#[case("q::*", "single-char namespace import")]
+#[case("myPackage::*", "named namespace import")]
+#[case("A::B::*", "qualified namespace import")]
+#[case("A::B::*::**", "namespace with recursive import")]
+fn test_imported_namespace(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::imported_namespace, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse imported_namespace '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+    // Verify full consumption
+    let pairs = result.unwrap();
+    let consumed: String = pairs.map(|p| p.as_str()).collect();
+    assert_eq!(
+        consumed, input,
+        "imported_namespace only consumed '{consumed}', expected '{input}'"
+    );
+}
+
+/// Tests flow_usage with feature chain paths (from FeaturePathTest.sysml)
 #[rstest]
 #[case("flow a to b;", "simple identifiers")]
 #[case("flow a.b to c;", "two-part source chain")]
@@ -6676,11 +6717,11 @@ fn test_imported_reference_recursive(#[case] input: &str, #[case] desc: &str) {
     "flow b.f.a to c.aa;",
     "three-part source, two-part target - from FeaturePathTest"
 )]
-fn test_flow_connection_usage_with_feature_chains(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::flow_connection_usage, input);
+fn test_flow_usage_with_feature_chains(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_usage, input);
     assert!(
         result.is_ok(),
-        "Failed to parse flow_connection_usage '{}' ({}): {:?}",
+        "Failed to parse flow_usage '{}' ({}): {:?}",
         input,
         desc,
         result.err()
@@ -6718,7 +6759,7 @@ fn test_send_node_declaration(#[case] input: &str, #[case] desc: &str) {
     );
 }
 
-/// Tests succession_flow_connection_usage (succession flow x to y;)
+/// Tests succession_flow_usage (succession flow x to y;)
 #[rstest]
 #[case("succession flow x.p to a.b;", "succession flow with chains")]
 #[case("succession flow a to b;", "succession flow simple")]
@@ -6726,11 +6767,11 @@ fn test_send_node_declaration(#[case] input: &str, #[case] desc: &str) {
     "succession flow onOffCmdFlow from sendOnOffCmd.onOffCmd to produceDirectedLight.onOffCmd;",
     "succession flow with name and from-to"
 )]
-fn test_succession_flow_connection_usage(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::succession_flow_connection_usage, input);
+fn test_succession_flow_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::succession_flow_usage, input);
     assert!(
         result.is_ok(),
-        "Failed to parse succession_flow_connection_usage '{}' ({}): {:?}",
+        "Failed to parse succession_flow_usage '{}' ({}): {:?}",
         input,
         desc,
         result.err()
@@ -7010,7 +7051,7 @@ fn test_parse_decision_test_action_def() {
 // PictureTaking.sysml patterns - flow of Type from X to Y
 // =============================================================================
 
-/// Tests flow_connection_usage_declaration with typed flow pattern
+/// Tests flow_usage_declaration with typed flow pattern
 #[rstest]
 #[case("of Exposure from focus.xrsl to shoot.xsf", "typed flow with from-to")]
 #[case("from focus.xrsl to shoot.xsf", "flow with from-to")]
@@ -7024,29 +7065,29 @@ fn test_parse_decision_test_action_def() {
     "call_getItems of CallGiveItems[1] from tlu.cll to apsph.cll",
     "named typed flow with multiplicity"
 )]
-fn test_parse_flow_connection_usage_declaration(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::flow_connection_usage_declaration, input);
+fn test_parse_flow_usage_declaration(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_usage_declaration, input);
 
     assert!(
         result.is_ok(),
-        "Failed to parse flow_connection_usage_declaration '{}' ({}): {:?}",
+        "Failed to parse flow_usage_declaration '{}' ({}): {:?}",
         input,
         desc,
         result.err()
     );
 }
 
-/// Tests flow_connection_usage with multi-line declaration
+/// Tests flow_usage with multi-line declaration
 #[rstest]
 #[case("flow publish of Publish from a.b to c.d;", "single line flow")]
 #[case("flow publish of Publish\nfrom a.b to c.d;", "multi-line flow LF")]
 #[case("flow publish of Publish\r\nfrom a.b to c.d;", "multi-line flow CRLF")]
-fn test_parse_flow_connection_usage(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::flow_connection_usage, input);
+fn test_parse_flow_usage(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::flow_usage, input);
 
     assert!(
         result.is_ok(),
-        "Failed to parse flow_connection_usage '{}' ({}): {:?}",
+        "Failed to parse flow_usage '{}' ({}): {:?}",
         input,
         desc,
         result.err()
@@ -8594,5 +8635,33 @@ fn test_parse_action_usage_variants(#[case] input: &str, #[case] desc: &str) {
         "Failed to parse action usage {}: {:?}",
         desc,
         result.err()
+    );
+}
+
+/// Tests expose rule with namespace patterns (::*)
+/// Regression test: namespace_expose must be tried before membership_expose
+/// in the expose rule, otherwise qualified_name in membership_expose will
+/// greedily consume the namespace prefix leaving ::* unconsumed
+#[rstest]
+#[case("expose MyNamespace::*;", "namespace expose with wildcard")]
+#[case("expose A::B::*;", "qualified namespace expose")]
+#[case("expose MyPackage::*::**;", "namespace expose with recursive")]
+#[case("expose MyElement;", "simple membership expose")]
+#[case("expose A::B::C;", "qualified membership expose")]
+fn test_expose_namespace_before_membership(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::expose, input);
+    assert!(
+        result.is_ok(),
+        "Failed to parse expose '{}' ({}): {:?}",
+        input,
+        desc,
+        result.err()
+    );
+    // Verify full consumption
+    let pairs = result.unwrap();
+    let consumed: String = pairs.map(|p| p.as_str()).collect();
+    assert_eq!(
+        consumed, input,
+        "expose only consumed '{consumed}', expected '{input}'"
     );
 }
