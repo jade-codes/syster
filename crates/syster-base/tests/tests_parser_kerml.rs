@@ -603,8 +603,7 @@ fn test_feature_reference() {
 #[case("myName", "myName")]
 #[case("'unrestricted name'", "'unrestricted name'")]
 fn test_parse_name(#[case] input: &str, #[case] expected: &str) {
-    let pairs = KerMLParser::parse(Rule::name, input).unwrap();
-    let parsed = pairs.into_iter().next().unwrap();
+    let _pairs = KerMLParser::parse(Rule::name, input).unwrap();
     assert_round_trip(Rule::name, input, expected);
 }
 
@@ -803,7 +802,7 @@ fn test_feature_with_prefix_metadata(#[case] input: &str, #[case] expected: &str
 #[case("out")]
 #[case("inout")]
 fn test_parse_feature_direction_kind(#[case] input: &str) {
-    let pairs = assert_round_trip(Rule::feature_direction_kind, input, input);
+    assert_round_trip(Rule::feature_direction_kind, input, input);
 }
 
 // Additional Common Fragment Tests
@@ -1400,7 +1399,8 @@ fn test_parse_step_with_multiple_subsets() {
 // Test comment with multiple about targets
 #[test]
 fn test_parse_comment_with_multiple_about() {
-    let input = "comment about StructuredSurface, StructuredCurve, StructuredPoint";
+    let input =
+        "comment about StructuredSurface, StructuredCurve, StructuredPoint /* comment body */";
     let result = KerMLParser::parse(Rule::comment_annotation, input);
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
 }
@@ -2245,10 +2245,15 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     Rule::unioning,
     "unioning"
 )]
-#[case("differs Type1", "differs Type1", Rule::differencing, "differencing")]
 #[case(
-    "differs private Type2",
-    "differs private Type2",
+    "differences Type1",
+    "differences Type1",
+    Rule::differencing,
+    "differencing"
+)]
+#[case(
+    "differences private Type2",
+    "differences private Type2",
     Rule::differencing,
     "differencing"
 )]
@@ -2308,61 +2313,61 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "disjoining"
 )]
 #[case(
-    "inverse feature1",
-    "inverse feature1",
+    "inverse feature1 of feature2;",
+    "inverse feature1 of feature2;",
     Rule::feature_inverting,
     "feature_inverting"
 )]
 #[case(
-    "inverse public feature2",
-    "inverse public feature2",
+    "inverse feature2 of other;",
+    "inverse feature2 of other;",
     Rule::feature_inverting,
     "feature_inverting"
 )]
 #[case("featured by Type1", "featured by Type1", Rule::featuring, "featuring")]
 #[case("featured by Type2", "featured by Type2", Rule::featuring, "featuring")]
 #[case(
-    "featuring by Type1",
-    "featuring by Type1",
+    "featuring feature1 by Type1 ;",
+    "featuring feature1 by Type1 ;",
     Rule::type_featuring,
     "type_featuring"
 )]
-#[case("featuring", "featuring", Rule::type_featuring, "type_featuring")]
 #[case(
-    "typed by :> BaseType",
-    "typed by :> BaseType",
+    "featuring of f by Type1 ;",
+    "featuring of f by Type1 ;",
+    Rule::type_featuring,
+    "type_featuring"
+)]
+#[case(": BaseType", ": BaseType", Rule::feature_typing, "feature_typing")]
+#[case(
+    "typed by TypeSpec",
+    "typed by TypeSpec",
+    Rule::feature_typing,
+    "feature_typing"
+)]
+#[case(": Complex", ": Complex", Rule::feature_typing, "feature_typing")]
+#[case(
+    ": Boolean, String",
+    ": Boolean, String",
+    Rule::feature_typing,
+    "feature_typing"
+)]
+#[case(": Anything", ": Anything", Rule::feature_typing, "feature_typing")]
+#[case(
+    ": String, Integer",
+    ": String, Integer",
     Rule::feature_typing,
     "feature_typing"
 )]
 #[case(
-    ": specializes TypeSpec",
-    ": specializes TypeSpec",
-    Rule::feature_typing,
-    "feature_typing"
-)]
-#[case(": Complex[1]", ": Complex[1]", Rule::feature_typing, "feature_typing")]
-#[case(": Boolean[1]", ": Boolean[1]", Rule::feature_typing, "feature_typing")]
-#[case(
-    ": Anything[2]",
-    ": Anything[2]",
-    Rule::feature_typing,
-    "feature_typing"
-)]
-#[case(
-    ": String[0..*]",
-    ": String[0..*]",
-    Rule::feature_typing,
-    "feature_typing"
-)]
-#[case(
-    "subclassifier :> BaseClass",
-    "subclassifier :> BaseClass",
+    "subclassifier SubClass :> BaseClass;",
+    "subclassifier SubClass :> BaseClass;",
     Rule::subclassification,
     "subclassification"
 )]
 #[case(
-    "subclassifier specializes ClassSpec",
-    "subclassifier specializes ClassSpec",
+    "subclassifier MyClass specializes ClassSpec;",
+    "subclassifier MyClass specializes ClassSpec;",
     Rule::subclassification,
     "subclassification"
 )]
@@ -2391,14 +2396,14 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "feature_value"
 )]
 #[case(
-    "filter MyRef",
-    "filter MyRef",
+    "filter MyRef;",
+    "filter MyRef;",
     Rule::element_filter_membership,
     "element_filter_membership"
 )]
 #[case(
-    "filter public alias Target",
-    "filter public alias Target",
+    "filter OtherRef;",
+    "filter OtherRef;",
     Rule::element_filter_membership,
     "element_filter_membership"
 )]
@@ -2936,26 +2941,26 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "multiplicity_range"
 )]
 #[case(
-    "metadata type;",
-    "metadata type;",
+    "metadata MyType;",
+    "metadata MyType;",
     Rule::metadata_feature,
     "metadata_feature"
 )]
 #[case(
-    "metadata type myMeta;",
-    "metadata type myMeta;",
+    "metadata myMeta : MyType;",
+    "metadata myMeta : MyType;",
     Rule::metadata_feature,
     "metadata_feature"
 )]
 #[case(
-    "metadata type about Foo;",
-    "metadata type about Foo;",
+    "metadata MyType about Foo;",
+    "metadata MyType about Foo;",
     Rule::metadata_feature,
     "metadata_feature"
 )]
 #[case(
-    "metadata type myMeta about Foo, Bar;",
-    "metadata type myMeta about Foo, Bar;",
+    "metadata myMeta : MyType about Foo, Bar;",
+    "metadata myMeta : MyType about Foo, Bar;",
     Rule::metadata_feature,
     "metadata_feature"
 )]
@@ -2972,10 +2977,10 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     Rule::item_feature,
     "item_feature"
 )]
-#[case("flow connector;", "flow connector;", Rule::item_flow, "item_flow")]
+#[case("flow myFlow;", "flow myFlow;", Rule::item_flow, "item_flow")]
 #[case(
-    "flow connector myFlow;",
-    "flow connector myFlow;",
+    "flow myFlow from a to b;",
+    "flow myFlow from a to b;",
     Rule::item_flow,
     "item_flow"
 )]
@@ -3069,7 +3074,7 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     Rule::type_def,
     "type_def"
 )]
-#[case("type MyType all {}", "type MyType all {}", Rule::type_def, "type_def")]
+#[case("type all MyType {}", "type all MyType {}", Rule::type_def, "type_def")]
 #[case(
     "type MyType ordered {}",
     "type MyType ordered {}",
@@ -3083,8 +3088,8 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "type_def"
 )]
 #[case(
-    "type MyType differs BaseType {}",
-    "type MyType differs BaseType {}",
+    "type MyType differences BaseType {}",
+    "type MyType differences BaseType {}",
     Rule::type_def,
     "type_def"
 )]
@@ -3101,8 +3106,8 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "classifier"
 )]
 #[case(
-    "classifier MyClassifier all {}",
-    "classifier MyClassifier all {}",
+    "classifier all MyClassifier {}",
+    "classifier all MyClassifier {}",
     Rule::classifier,
     "classifier"
 )]
@@ -3519,6 +3524,7 @@ fn test_parse_round_trip(
         desc,
         result.err()
     );
+    #[allow(clippy::useless_conversion)]
     let parsed: String = result.unwrap().into_iter().map(|p| p.as_str()).collect();
     assert_eq!(
         parsed, expected,
@@ -3787,6 +3793,126 @@ fn test_standalone_conjugation(#[case] input: &str, #[case] desc: &str) {
 )]
 fn test_shorthand_feature_with_multiplicity_props(#[case] input: &str, #[case] desc: &str) {
     assert_round_trip(Rule::namespace_body_element, input, desc);
+}
+
+// ============================================================================
+// Unified grammar rules (any_relationship, feature_or_chain)
+// ============================================================================
+
+/// Test any_relationship - unified rule for heritage, type, and feature relationships
+#[rstest]
+#[case(":> Base", "heritage specialization")]
+#[case("subsets parent", "heritage subsetting")]
+#[case(":>> original", "heritage redefinition")]
+#[case("~ Conjugate", "heritage conjugation")]
+#[case("unions A", "type relationship unioning")]
+#[case("differences B", "type relationship differencing")]
+#[case(": Type", "feature typing")]
+#[case("chains a.b", "feature chaining")]
+fn test_any_relationship(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::any_relationship, input, desc);
+}
+
+/// Test feature_or_chain - unified rule for feature chain or element reference
+#[rstest]
+#[case("name", "simple identifier")]
+#[case("Package::Element", "qualified name")]
+#[case("a.b.c", "feature chain")]
+#[case("$::Root::Element", "global qualified name")]
+fn test_feature_or_chain(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::feature_or_chain, input, desc);
+}
+
+/// Test classifier_relationships - unified rule for classifier inheritance patterns
+#[rstest]
+#[case(":> Base", "heritage specialization")]
+#[case(":> A, B", "multiple specialization")]
+#[case(":> Base unions Other", "heritage with unioning")]
+#[case("specializes Parent differences Child", "specializes with differences")]
+fn test_classifier_relationships(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::classifier_relationships, input, desc);
+}
+
+/// Test ordering_modifiers - unified rule for ordered/nonunique
+#[rstest]
+#[case("ordered", "ordered only")]
+#[case("nonunique", "nonunique only")]
+#[case("ordered nonunique", "both ordered first")]
+#[case("nonunique ordered", "both nonunique first")]
+#[case("", "empty is valid")]
+fn test_ordering_modifiers(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::ordering_modifiers, input, desc);
+}
+
+/// Test feature_prefix_modifiers - unified rule for feature modifiers
+#[rstest]
+#[case("abstract", "abstract only")]
+#[case("composite", "composite only")]
+#[case("abstract readonly", "abstract readonly")]
+#[case("composite derived", "composite derived")]
+#[case("portion var", "portion with var")]
+#[case("", "empty is valid")]
+fn test_feature_prefix_modifiers(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::feature_prefix_modifiers, input, desc);
+}
+
+/// Test connector_feature_modifiers - unified prefix for connector-like features
+#[rstest]
+#[case("abstract", "abstract only")]
+#[case("composite", "composite only")]
+#[case("abstract readonly", "abstract then readonly")]
+#[case("readonly", "readonly only")]
+#[case("", "empty is valid")]
+fn test_connector_feature_modifiers(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::connector_feature_modifiers, input, desc);
+}
+
+/// Test connector_body_suffix - unified suffix for connector rules
+#[rstest]
+#[case("{}", "empty body")]
+#[case(";", "semicolon terminator")]
+fn test_connector_body_suffix(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::connector_body_suffix, input, desc);
+}
+
+/// Test specialization_prefix - optional specialization identification
+#[rstest]
+#[case("specialization", "just specialization")]
+#[case("specialization mySpec", "specialization with name")]
+#[case("", "empty is valid")]
+fn test_specialization_prefix(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::specialization_prefix, input, desc);
+}
+
+/// Test optional_specialization_part - optional relationships with multiplicity
+#[rstest]
+#[case(":> Base", "just heritage")]
+#[case(":> Base [1..*]", "heritage with multiplicity")]
+#[case("[1..*]", "just multiplicity")]
+#[case("[1..*] :> Base", "multiplicity then heritage")]
+#[case(":> A, B [0..1] :> C", "mixed heritage and multiplicity")]
+#[case("", "empty is valid")]
+fn test_optional_specialization_part(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::optional_specialization_part, input, desc);
+}
+
+/// Test type_body - namespace body or semicolon terminator
+#[rstest]
+#[case("{}", "empty body")]
+#[case(";", "semicolon terminator")]
+fn test_type_body(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::type_body, input, desc);
+}
+
+/// Test feature_declaration - optional identification with optional specialization
+#[rstest]
+#[case("myFeature", "just name")]
+#[case("myFeature :> Base", "name with specialization")]
+#[case(":> Base", "just specialization")]
+#[case("myFeature [1..*]", "name with multiplicity")]
+#[case("", "empty is valid")]
+fn test_feature_declaration(#[case] input: &str, #[case] desc: &str) {
+    assert_round_trip(Rule::feature_declaration, input, desc);
 }
 
 // ============================================================================

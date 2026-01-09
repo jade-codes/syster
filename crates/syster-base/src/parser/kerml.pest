@@ -212,6 +212,39 @@ import_all = { all_token }
 // Common modifier pattern for abstract/composite/portion
 acp_modifier = { abstract_token | composite_token | portion_token }
 
+// Unified: Feature prefix modifiers (abstract, composite, portion, member, readonly, etc.)
+feature_prefix_modifiers = { (abstract_token | composite_token | portion_token | member_token | readonly | derived | end_marker | variable_marker)* }
+
+// Unified: Classifier relationships (includes inheritance for classifiers)
+classifier_relationships = { (any_relationship | inheritance)* }
+
+// Unified: Ordering modifiers for multiplicities
+ordering_modifiers = { (ordered_token | nonunique_token)* }
+
+// Unified: Connector-like feature modifiers (acp_modifier? ~ feature_modifier?)
+connector_feature_modifiers = { acp_modifier? ~ feature_modifier? }
+
+// Unified: Connector body suffix (memberships and body)
+connector_body_suffix = { membership? ~ owning_membership? ~ end_feature_membership* ~ namespace_body }
+
+// Unified: Specialization prefix for standalone relationship rules
+specialization_prefix = { (specialization_token ~ identification?)? }
+
+// Unified: Optional specialization part (relationships and/or multiplicity, all optional)
+optional_specialization_part = { specialization_part_content? }
+
+// Unified: Required specialization part content (at least one relationship or multiplicity)
+specialization_part_content = {
+    any_relationship+ ~ multiplicity_part? ~ any_relationship*
+    | multiplicity_part ~ any_relationship*
+}
+
+// Unified: Type body (namespace body or semicolon terminator)
+type_body = { namespace_body | ";" }
+
+// Unified: Feature declaration (optional identification with optional specialization)
+feature_declaration = { identification? ~ feature_specialization_part? }
+
 multiplicity_properties = {
     (ordered_token ~ nonunique_token?)
     | (nonunique_token ~ ordered_token?)
@@ -435,6 +468,12 @@ feature_relationship = {
     | type_featuring
 }
 
+// Unified: Any type/feature relationship (heritage, type, or feature)
+any_relationship = { heritage | type_relationship | feature_relationship }
+
+// Unified: Feature or feature chain reference
+feature_or_chain = { owned_feature_chain | element_reference }
+
 // Multiplicity Bounds - the [lower..upper] syntax
 multiplicity_bounds = {
     "[" ~ multiplicity_bounds_range ~ "]"
@@ -453,9 +492,9 @@ type_def = {
     prefix_metadata? ~
     abstract_marker? ~
     type_token ~ all_token? ~ identification? ~
-    (heritage | type_relationship | feature_relationship)* ~
+    any_relationship* ~
     multiplicity? ~
-    (ordered_token | nonunique_token)* ~
+    ordering_modifiers ~
     namespace_body
 }
 
@@ -464,7 +503,7 @@ classifier = {
     prefix_metadata? ~
     abstract_marker? ~
     classifier_token ~ all_token? ~ identification? ~
-    (heritage | type_relationship | feature_relationship)* ~
+    any_relationship* ~
     multiplicity? ~
     namespace_body
 }
@@ -476,7 +515,7 @@ data_type = {
     abstract_marker? ~
     datatype_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     namespace_body
 }
@@ -489,7 +528,7 @@ class = {
     abstract_marker? ~
     class_token ~ all_token? ~ identification? ~
     multiplicity_bounds? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     namespace_body
 }
 
@@ -501,7 +540,7 @@ structure = {
     struct_token ~ identification? ~
     all_token? ~
     multiplicity_bounds? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     namespace_body
 }
 
@@ -512,7 +551,7 @@ behavior = {
     abstract_marker? ~
     behavior_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     namespace_body
 }
@@ -524,7 +563,7 @@ association = {
     abstract_marker? ~
     assoc_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     namespace_body
 }
@@ -535,7 +574,7 @@ association_structure = {
     abstract_marker? ~
     assoc_token ~ struct_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     namespace_body
 }
@@ -547,7 +586,7 @@ metaclass = {
     abstract_marker? ~
     metaclass_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     namespace_body
 }
@@ -559,7 +598,7 @@ function = {
     abstract_marker? ~
     function_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     result_expression_membership? ~
     namespace_body
@@ -571,7 +610,7 @@ predicate = {
     abstract_marker? ~
     predicate_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     result_expression_membership? ~
     namespace_body
@@ -584,7 +623,7 @@ interaction = {
     abstract_marker? ~
     interaction_token ~ identification? ~
     all_token? ~
-    (heritage | inheritance | type_relationship | feature_relationship)* ~
+    classifier_relationships ~
     multiplicity? ~
     namespace_body
 }
@@ -594,10 +633,10 @@ feature = {
     prefix_metadata? ~
     visibility_kind? ~
     feature_direction_kind? ~
-    (abstract_token | composite_token | portion_token | member_token | readonly | derived | end_marker | variable_marker)* ~
+    feature_prefix_modifiers ~
     feature_token ~ all_token? ~ identification? ~
     feature_specialization_part? ~
-    (ordered_token | nonunique_token)* ~
+    ordering_modifiers ~
     feature_relationship_part* ~
     feature_value? ~
     namespace_body
@@ -620,12 +659,7 @@ end_feature = {
     namespace_body
 }
 
-feature_specialization_part = {
-    (heritage | type_relationship | feature_relationship)+ ~ multiplicity_part ~ (heritage | type_relationship | feature_relationship)*
-    | (heritage | type_relationship | feature_relationship)+
-    | multiplicity_part ~ (heritage | type_relationship | feature_relationship)*
-    | multiplicity_part
-}
+feature_specialization_part = { specialization_part_content }
 
 multiplicity_part = {
     multiplicity_bounds ~ multiplicity_properties?
@@ -665,7 +699,7 @@ metadata_body_element = {
 // OwnedRedefinition = QualifiedName | FeatureChain
 metadata_body_feature_member = {
     feature_token? ~ (redefines_operator)? ~
-    (owned_feature_chain | element_reference) ~
+    feature_or_chain ~
     feature_specialization_part? ~
     feature_value? ~
     metadata_body
@@ -697,8 +731,7 @@ item_feature = {
 step = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    acp_modifier? ~
-    feature_modifier? ~
+    connector_feature_modifiers ~
     step_token ~ identification? ~
     feature_specialization_part? ~
     feature_value? ~
@@ -711,7 +744,7 @@ step = {
 // Connector endpoint definition for from/to clauses
 // ConnectorEnd = [mult]? [Name '::>']? (QualifiedName | FeatureChain)
 connector_endpoint = {
-    multiplicity_bounds? ~ (name ~ references_operator)? ~ (owned_feature_chain | element_reference)
+    multiplicity_bounds? ~ (name ~ references_operator)? ~ feature_or_chain
 }
 
 // Per official grammar:
@@ -726,19 +759,18 @@ connector_endpoint = {
 connector = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    acp_modifier? ~
-    feature_modifier? ~
+    connector_feature_modifiers ~
     connector_token ~ 
     (
         // Binary connector: [all? declaration from | all from?]? end to end
         // FeatureDeclaration includes FeatureRelationshipPart* (featuring, inverse of, chains)
-        (all_token? ~ identification? ~ feature_specialization_part? ~ feature_relationship_part* ~ from_token | all_token ~ from_token?)? ~ connector_endpoint ~ to_token ~ connector_endpoint
+        (all_token? ~ feature_declaration ~ feature_relationship_part* ~ from_token | all_token ~ from_token?)? ~ connector_endpoint ~ to_token ~ connector_endpoint
         // N-ary connector: [declaration] (end, end, ...)
-        | identification? ~ feature_specialization_part? ~ feature_relationship_part* ~ "(" ~ connector_endpoint ~ ("," ~ connector_endpoint)+ ~ ")"
+        | feature_declaration ~ feature_relationship_part* ~ "(" ~ connector_endpoint ~ ("," ~ connector_endpoint)+ ~ ")"
         // Simple connector without endpoints
-        | all_token? ~ identification? ~ feature_specialization_part? ~ feature_relationship_part*
+        | all_token? ~ feature_declaration ~ feature_relationship_part*
     ) ~
-    (ordered_token | nonunique_token)* ~
+    ordering_modifiers ~
     feature_value? ~
     end_feature_membership* ~
     namespace_body
@@ -754,45 +786,37 @@ item_flow_end = {
 succession = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    acp_modifier? ~
-    feature_modifier? ~
+    connector_feature_modifiers ~
     succession_token ~ all_token? ~ identification? ~
     feature_specialization_part? ~
     (
-        (first_token ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
-        | (multiplicity_bounds? ~ (owned_feature_chain | element_reference))
+        (first_token ~ multiplicity_bounds? ~ feature_or_chain)
+        | (multiplicity_bounds? ~ feature_or_chain)
     )? ~
-    (then_token ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))? ~
-    (ordered_token | nonunique_token)* ~
+    (then_token ~ multiplicity_bounds? ~ feature_or_chain)? ~
+    ordering_modifiers ~
     feature_value? ~
-    membership? ~
-    owning_membership? ~
-    end_feature_membership* ~
-    namespace_body
+    connector_body_suffix
 }
 
 // BindingConnector extends Connector
 binding_connector = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    acp_modifier? ~
-    feature_modifier? ~
+    connector_feature_modifiers ~
     binding_token ~ (
-        owned_feature_chain ~ ("=" ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
+        owned_feature_chain ~ ("=" ~ multiplicity_bounds? ~ feature_or_chain)
         | identification? ~ multiplicity_bounds? ~
           (
               feature_typing
-              | ((featuring_token | of_token) ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))
-              | (multiplicity_bounds? ~ (owned_feature_chain | element_reference))
+              | ((featuring_token | of_token) ~ multiplicity_bounds? ~ feature_or_chain)
+              | (multiplicity_bounds? ~ feature_or_chain)
           )? ~
-          ("=" ~ multiplicity_bounds? ~ (owned_feature_chain | element_reference))?
+          ("=" ~ multiplicity_bounds? ~ feature_or_chain)?
     ) ~
-    (ordered_token | nonunique_token)* ~
+    ordering_modifiers ~
     feature_value? ~
-    membership? ~
-    owning_membership? ~
-    end_feature_membership* ~
-    namespace_body
+    connector_body_suffix
 }
 
 // Expression extends Step
@@ -800,8 +824,7 @@ expression = {
     prefix_metadata? ~
     visibility_kind? ~
     feature_direction_kind? ~
-    acp_modifier? ~
-    feature_modifier? ~
+    connector_feature_modifiers ~
     expr_token ~ identification? ~
     feature_specialization_part? ~
     feature_value? ~
@@ -820,17 +843,16 @@ expression = {
 item_flow = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    acp_modifier? ~
-    feature_modifier? ~
+    connector_feature_modifiers ~
     flow_token ~ (
         // Pattern 2: [all] FlowEnd 'to' FlowEnd (direct endpoints, no 'from')
         all_token? ~ flow_end ~ to_token ~ flow_end ~ namespace_body
         // Pattern 1: [declaration] [of payload] [from end to end]
-        | identification? ~ feature_specialization_part? ~
+        | feature_declaration ~
           feature_value? ~
           (of_token ~ element_reference)? ~
           (from_token ~ flow_end ~ to_token ~ flow_end)? ~
-          (ordered_token | nonunique_token)* ~
+          ordering_modifiers ~
           end_feature_membership* ~
           namespace_body
     )
@@ -839,7 +861,7 @@ item_flow = {
 // FlowEnd = [prefix.] feature
 // The prefix is a feature chain ending with '.'
 flow_end = {
-    (owned_feature_chain ~ ".")? ~ (owned_feature_chain | element_reference)
+    (owned_feature_chain ~ ".")? ~ feature_or_chain
 }
 
 // SuccessionItemFlow extends ItemFlow and Succession
@@ -854,10 +876,10 @@ succession_item_flow = {
     feature_specialization_part? ~
     (from_token ~ feature_chain_expression)? ~
     (to_token ~ feature_chain_expression)? ~
-    (ordered_token | nonunique_token)* ~
+    ordering_modifiers ~
     feature_value? ~
     end_feature_membership* ~
-    (namespace_body | ";")
+    type_body
 }
 
 // BooleanExpression extends Expression
@@ -930,11 +952,9 @@ specialization = {
 // Standalone Specialization - top-level 'subtype' keyword form per official grammar
 // ( 'specialization' Identification? )? 'subtype' FeatureChain ( ':>' | 'specializes' ) FeatureChain RelationshipBody
 standalone_specialization = {
-    (specialization_token ~ identification?)? ~
-    subtype_token ~
-    (owned_feature_chain | element_reference) ~
-    specializes_operator ~
-    (owned_feature_chain | element_reference) ~
+    specialization_prefix ~
+    subtype_token ~ feature_or_chain ~
+    specializes_operator ~ feature_or_chain ~
     relationship_body
 }
 
@@ -951,17 +971,15 @@ disjoining = {
 // ( 'inverting' Identification? )? 'inverse' FeatureChain 'of' FeatureChain RelationshipBody
 feature_inverting = {
     (inverting_token ~ identification?)? ~
-    inverse_token ~
-    (owned_feature_chain | element_reference) ~
-    of_token ~
-    (owned_feature_chain | element_reference) ~
+    inverse_token ~ feature_or_chain ~
+    of_token ~ feature_or_chain ~
     relationship_body
 }
 
 // OwnedFeatureInverting per official grammar (inline form in feature declarations):
 // 'inverse' 'of' (QualifiedName | FeatureChain)
 owned_feature_inverting = {
-    inverse_token ~ of_token ~ (owned_feature_chain | element_reference)
+    inverse_token ~ of_token ~ feature_or_chain
 }
 
 // Featuring extends Relationship
@@ -990,7 +1008,7 @@ feature_typing = {
 // Standalone FeatureTyping per official grammar:
 // ( 'specialization' Identification? )? 'typing' typedFeature (':' | 'typed' 'by') FeatureType RelationshipBody
 standalone_feature_typing = {
-    (specialization_token ~ identification?)? ~
+    specialization_prefix ~
     typing_token ~
     element_reference ~
     typed_by_operator ~
@@ -999,15 +1017,13 @@ standalone_feature_typing = {
 }
 
 // FeatureType = QualifiedName | FeatureChain
-feature_type = {
-    owned_feature_chain | element_reference
-}
+feature_type = { feature_or_chain }
 
 // Subclassification extends Specialization
 // Subclassification per official grammar:
 // ( 'specialization' Identification? )? 'subclassifier' subclassifier (':>' | 'specializes') superclassifier RelationshipBody
 subclassification = {
-    (specialization_token ~ identification?)? ~
+    specialization_prefix ~
     subclassifier_token ~ element_reference ~
     specializes_operator ~ element_reference ~
     relationship_body
@@ -1021,22 +1037,18 @@ subsetting = {
 // Standalone Subsetting - top-level 'subset' keyword form per official grammar
 // ( 'specialization' Identification? )? 'subset' FeatureChain ( ':>' | 'subsets' ) FeatureChain RelationshipBody
 standalone_subsetting = {
-    (specialization_token ~ identification?)? ~
-    subset_token ~
-    (owned_feature_chain | element_reference) ~
-    subsets_operator ~
-    (owned_feature_chain | element_reference) ~
+    specialization_prefix ~
+    subset_token ~ feature_or_chain ~
+    subsets_operator ~ feature_or_chain ~
     relationship_body
 }
 
 // Standalone Redefinition - top-level 'redefinition' keyword form per official grammar
 // ( 'specialization' Identification? )? 'redefinition' FeatureChain ( ':>>' | 'redefines' ) FeatureChain RelationshipBody
 standalone_redefinition = {
-    (specialization_token ~ identification?)? ~
-    redefinition_token ~
-    (owned_feature_chain | element_reference) ~
-    redefines_operator ~
-    (owned_feature_chain | element_reference) ~
+    specialization_prefix ~
+    redefinition_token ~ feature_or_chain ~
+    redefines_operator ~ feature_or_chain ~
     relationship_body
 }
 
@@ -1049,10 +1061,8 @@ conjugation = {
 // ('conjugation' Identification?)? 'conjugate' type1 ('~' | 'conjugates') type2 RelationshipBody
 standalone_conjugation = {
     (conjugation_token ~ identification?)? ~
-    conjugate_token ~
-    (owned_feature_chain | element_reference) ~
-    conjugates_operator ~
-    (owned_feature_chain | element_reference) ~
+    conjugate_token ~ feature_or_chain ~
+    conjugates_operator ~ feature_or_chain ~
     relationship_body
 }
 
@@ -1172,7 +1182,7 @@ parameter_membership = {
         | identifier ~ parameter_specialization_part? ~ feature_value?  // just name
         | name_identifier ~ parameter_specialization_part ~ feature_value?  // type + relationships
         | parameter_specialization_part ~ feature_value?  // just relationships
-    ) ~ (namespace_body | ";")
+    ) ~ type_body
 }
 
 parameter_specialization_part = {
@@ -1193,7 +1203,7 @@ return_parameter_membership = {
     return_token ~ feature_token? ~ (
         identifier ~ parameter_specialization_part? ~ (("=" | default_token) ~ inline_expression)?
         | parameter_specialization_part ~ (("=" | default_token) ~ inline_expression)?
-    ) ~ (namespace_body | ";")
+    ) ~ type_body
 }
 
 // References
@@ -1597,8 +1607,8 @@ namespace_body_element = {
 shorthand_feature_member = {
     visibility_kind? ~
     (
-        identification ~ feature_typing? ~ (heritage | type_relationship | feature_relationship)* ~ feature_value?
-        | (heritage | type_relationship | feature_relationship)+ ~ feature_value?
+        identification ~ feature_typing? ~ any_relationship* ~ feature_value?
+        | any_relationship+ ~ feature_value?
     ) ~
     ";"
 }
@@ -1613,12 +1623,12 @@ prefix_metadata_feature_member = {
     identification? ~
     feature_specialization_part? ~
     feature_value? ~
-    (namespace_body | ";")
+    type_body
 }
 
 // Subset member shorthand: subset x.y subsets a.b;
 subset_member = {
-    subset_token ~ qualified_reference_chain ~ (heritage | type_relationship | feature_relationship)+ ~ ";"
+    subset_token ~ qualified_reference_chain ~ any_relationship+ ~ ";"
 }
 
 // Typed feature shorthand: <type> <name>? <relationships>* <mult>? <body>
@@ -1628,12 +1638,7 @@ typed_feature_member = {
     visibility_kind? ~
     name_identifier ~ // Type reference (can be keyword like "bool")
     identification? ~ // Optional feature name
-    (
-        (heritage | type_relationship | feature_relationship)+ ~ multiplicity_part? ~ (heritage | type_relationship | feature_relationship)*
-        | (heritage | type_relationship | feature_relationship)+
-        | multiplicity_part ~ (heritage | type_relationship | feature_relationship)*
-        | multiplicity_part
-    )? ~
+    optional_specialization_part ~
     feature_value? ~
     namespace_body
 }
