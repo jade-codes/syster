@@ -354,6 +354,9 @@ make test
 # Build project
 make build
 
+# Install syster-lsp and VS Code extension
+make install
+
 # Clean build artifacts
 make clean
 ```
