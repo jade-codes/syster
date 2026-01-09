@@ -1,0 +1,17 @@
+KerML Example Files
+===================
+
+The example files in this directory are copied from the OMG SysML v2 Release
+repository and are licensed under the GNU Lesser General Public License v3.0
+(LGPL-3.0).
+
+Source: https://github.com/Systems-Modeling/SysML-v2-Release
+License: LGPL-3.0-or-later
+
+These files are provided by the OMG Systems Modeling Community (SMC) Reference
+Implementation Working Group and are part of the SysML v2 Pilot Implementation.
+
+For the full license text, see:
+https://www.gnu.org/licenses/lgpl-3.0.en.html
+
+Or refer to the LICENSE-GPL file in the original repository.
