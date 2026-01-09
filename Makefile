@@ -115,13 +115,18 @@ install:
 	@echo "✓ VS Code extension packaged"
 	@echo ""
 	@echo "Step 3/3: Installing VS Code extension..."
-	@if command -v code >/dev/null 2>&1; then \
-		code --install-extension ${EDITORS_VSCODE_DIR}/syster-*.vsix --force && \
+	@vsix_file=$$(ls -t ${EDITORS_VSCODE_DIR}/syster-*.vsix 2>/dev/null | head -1); \
+	if [ -z "$$vsix_file" ]; then \
+		echo "❌ Error: No .vsix file found"; \
+		exit 1; \
+	fi; \
+	if command -v code >/dev/null 2>&1; then \
+		code --install-extension "$$vsix_file" --force && \
 		echo "✓ VS Code extension installed"; \
 	else \
 		echo "⚠ VS Code 'code' command not found. Extension packaged but not installed."; \
 		echo "  To install manually, run:"; \
-		echo "  code --install-extension ${EDITORS_VSCODE_DIR}/syster-*.vsix --force"; \
+		echo "  code --install-extension $$vsix_file --force"; \
 	fi
 	@echo ""
 	@echo "=== ✓ Installation complete! ==="
