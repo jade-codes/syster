@@ -14,7 +14,7 @@ help:
 	@echo "  run-guidelines    - Run complete validation (fmt + lint + build + test)"
 	@echo "  run-ui-guidelines - Run ui validation (typecheck + lint + test + build)"
 	@echo "  watch             - Watch and rebuild on changes"
-	@echo "  install           - Install the binary"
+	@echo "  install           - Build and install syster-lsp and VS Code extension"
 
 # Build the project
 build:
@@ -101,9 +101,30 @@ run-guidelines-clean:
 watch:
 	cargo watch -x build
 
-# Install the binary
+# Install the binary and VS Code extension
+EDITORS_VSCODE_DIR?=editors/vscode
 install:
-	cargo install --path .
+	@echo "=== Installing Syster ==="
+	@echo ""
+	@echo "Step 1/3: Building syster-lsp in release mode..."
+	@cargo build --release -p syster-lsp
+	@echo "✓ syster-lsp built"
+	@echo ""
+	@echo "Step 2/3: Building and packaging VS Code extension..."
+	@(cd ${EDITORS_VSCODE_DIR} && npm install && npm run package)
+	@echo "✓ VS Code extension packaged"
+	@echo ""
+	@echo "Step 3/3: Installing VS Code extension..."
+	@if command -v code >/dev/null 2>&1; then \
+		code --install-extension ${EDITORS_VSCODE_DIR}/syster-*.vsix --force && \
+		echo "✓ VS Code extension installed"; \
+	else \
+		echo "⚠ VS Code 'code' command not found. Extension packaged but not installed."; \
+		echo "  To install manually, run:"; \
+		echo "  code --install-extension ${EDITORS_VSCODE_DIR}/syster-*.vsix --force"; \
+	fi
+	@echo ""
+	@echo "=== ✓ Installation complete! ==="
 
 # Lint test file naming convention
 # - Test files must be in tests/ directories
