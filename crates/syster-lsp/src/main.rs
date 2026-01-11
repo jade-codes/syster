@@ -253,6 +253,19 @@ impl LanguageServer for ServerState {
         Box::pin(async move { Ok(result) })
     }
 
+    fn symbol(
+        &mut self,
+        params: WorkspaceSymbolParams,
+    ) -> BoxFuture<'static, Result<Option<WorkspaceSymbolResponse>, Self::Error>> {
+        let symbols = self.server.get_workspace_symbols(&params.query);
+        let result = if symbols.is_empty() {
+            None
+        } else {
+            Some(WorkspaceSymbolResponse::Nested(symbols))
+        };
+        Box::pin(async move { Ok(result) })
+    }
+
     // Notification handlers - these are called synchronously in async-lsp!
     // This is the key difference from tower-lsp that fixes our ordering issues.
 

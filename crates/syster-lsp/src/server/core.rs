@@ -84,6 +84,7 @@ impl LspServer {
                 resolve_provider: Some(false),
                 work_done_progress_options: WorkDoneProgressOptions::default(),
             }),
+            workspace_symbol_provider: Some(OneOf::Left(true)),
             workspace: Some(WorkspaceServerCapabilities {
                 workspace_folders: None,
                 file_operations: None,
