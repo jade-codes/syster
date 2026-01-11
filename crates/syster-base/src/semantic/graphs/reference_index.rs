@@ -6,6 +6,7 @@
 //! - "Find Specializations": given a source, find all targets it references
 
 use crate::core::Span;
+use crate::semantic::types::TokenType;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -18,6 +19,9 @@ pub struct ReferenceInfo {
     pub file: PathBuf,
     /// Span of the reference (where the target name appears)
     pub span: Span,
+    /// Optional token type for semantic highlighting.
+    /// If None, defaults to TokenType::Type when generating semantic tokens.
+    pub token_type: Option<TokenType>,
 }
 
 /// Entry in the reverse index: all references to a target
@@ -62,12 +66,35 @@ impl ReferenceIndex {
         source_file: Option<&PathBuf>,
         span: Option<Span>,
     ) {
+        self.add_reference_with_type(source_qname, target_name, source_file, span, None);
+    }
+
+    /// Add a reference with an explicit token type for semantic highlighting.
+    ///
+    /// Use this when the reference target's token type differs from the default (Type).
+    /// For example, redefinition and subsetting targets should use Property.
+    ///
+    /// # Arguments
+    /// * `source_qname` - Qualified name of the symbol that has the reference
+    /// * `target_name` - Name of the target (may be simple or qualified)
+    /// * `source_file` - File containing the reference
+    /// * `span` - Location of the reference in source code
+    /// * `token_type` - Token type for semantic highlighting (None defaults to Type)
+    pub fn add_reference_with_type(
+        &mut self,
+        source_qname: &str,
+        target_name: &str,
+        source_file: Option<&PathBuf>,
+        span: Option<Span>,
+        token_type: Option<TokenType>,
+    ) {
         // Only add if we have both file and span
         if let (Some(file), Some(span)) = (source_file, span) {
             let info = ReferenceInfo {
                 source_qname: source_qname.to_string(),
                 file: file.clone(),
                 span,
+                token_type,
             };
 
             // Add to reverse index (target → sources)

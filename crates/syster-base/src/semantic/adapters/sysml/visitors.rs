@@ -1,4 +1,5 @@
 use crate::semantic::symbol_table::Symbol;
+use crate::semantic::types::TokenType;
 use crate::syntax::sysml::ast::{
     Alias, Comment, Definition, Import, NamespaceDeclaration, Package, Usage,
 };
@@ -119,18 +120,63 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     }
 
     fn visit_usage(&mut self, usage: &Usage) {
-        // Determine the name and span: prefer explicit name, fall back to first redefinition target
+        // Determine the name and span: prefer explicit name, fall back to first redefinition or subsetting target
         let (name, name_span, is_anonymous) = if let Some(name) = &usage.name {
             (name.clone(), usage.span, false)
         } else if let Some(first_redef) = usage.relationships.redefines.first() {
-            // Use the redefinition target as the name, with its span
+            // Use the redefinition target as the name, with its span (for :>>)
             (first_redef.target.clone(), first_redef.span, true)
+        } else if let Some(first_subset) = usage.relationships.subsets.first() {
+            // Use the subsetting target as the name, with its span (for :>)
+            (first_subset.target.clone(), first_subset.span, true)
         } else {
             return;
         };
 
         let qualified_name = self.qualified_name(&name);
 
+        // Always index relationship references, even for duplicate anonymous usages.
+        // This ensures semantic tokens are generated for type references like
+        // `ref :> annotatedElement : SysML::ConnectionDefinition;`
+        //
+        // Token types are determined by what the reference points to:
+        // - redefines/subsets → Property (they reference usages/features)
+        // - typed_by → Type (they reference definitions/classifiers)
+        for rel in &usage.relationships.redefines {
+            self.index_reference_with_type(
+                &qualified_name,
+                &rel.target,
+                rel.span,
+                Some(TokenType::Property),
+            );
+        }
+        for subset in &usage.relationships.subsets {
+            self.index_reference_with_type(
+                &qualified_name,
+                &subset.target,
+                subset.span,
+                Some(TokenType::Property),
+            );
+        }
+        if let Some(ref target) = usage.relationships.typed_by {
+            self.index_reference_with_type(
+                &qualified_name,
+                target,
+                usage.relationships.typed_by_span,
+                Some(TokenType::Type),
+            );
+        }
+        for reference in &usage.relationships.references {
+            self.index_reference(&qualified_name, &reference.target, reference.span);
+        }
+        for cross in &usage.relationships.crosses {
+            self.index_reference(&qualified_name, &cross.target, cross.span);
+        }
+        for meta in &usage.relationships.meta {
+            self.index_reference(&qualified_name, &meta.target, meta.span);
+        }
+
+        // Skip duplicate anonymous usages (don't add to symbol table twice)
         if is_anonymous
             && self
                 .symbol_table
@@ -169,26 +215,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 span: usage.short_name_span,
             };
             self.insert_symbol(short_name.clone(), alias_symbol);
-        }
-
-        // Index all relationship references
-        for rel in &usage.relationships.redefines {
-            self.index_reference(&qualified_name, &rel.target, rel.span);
-        }
-        for subset in &usage.relationships.subsets {
-            self.index_reference(&qualified_name, &subset.target, subset.span);
-        }
-        if let Some(ref target) = usage.relationships.typed_by {
-            self.index_reference(&qualified_name, target, usage.relationships.typed_by_span);
-        }
-        for reference in &usage.relationships.references {
-            self.index_reference(&qualified_name, &reference.target, reference.span);
-        }
-        for cross in &usage.relationships.crosses {
-            self.index_reference(&qualified_name, &cross.target, cross.span);
-        }
-        for meta in &usage.relationships.meta {
-            self.index_reference(&qualified_name, &meta.target, meta.span);
         }
 
         // Visit nested members

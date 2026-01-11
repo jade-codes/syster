@@ -340,6 +340,135 @@ fn test_anonymous_usage_with_redefinition_gets_property_token() {
     );
 }
 
+/// Tests that anonymous usages with subsettings (:>) get correct semantic tokens.
+/// Anonymous usages (like `ref :> annotatedElement`) derive their name from
+/// the first subsetting target and should get Property tokens.
+#[test]
+fn test_anonymous_usage_with_subsetting_gets_property_token() {
+    let workspace = create_workspace(
+        r#"metadata def TestMeta {
+    ref :> annotatedElement : ConnectionDefinition;
+    ref :> baseType : ConnectionUsage;
+}"#,
+    );
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    let property_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Property)
+        .collect();
+
+    // annotatedElement + baseType = 2 Property tokens
+    assert_eq!(
+        property_tokens.len(),
+        2,
+        "Expected 2 Property tokens (annotatedElement, baseType), got {}",
+        property_tokens.len()
+    );
+
+    // Verify the Property tokens are at the expected positions
+    assert!(
+        property_tokens
+            .iter()
+            .any(|t| t.line == 1 && t.column == 11),
+        "annotatedElement should have Property token"
+    );
+    assert!(
+        property_tokens
+            .iter()
+            .any(|t| t.line == 2 && t.column == 11),
+        "baseType should have Property token"
+    );
+}
+
+/// Tests that qualified type references in metadata body get correct semantic tokens.
+/// e.g., `ref :> annotatedElement : SysML::ConnectionDefinition;`
+/// Both `annotatedElement` (Property) and `SysML::ConnectionDefinition` (Type) should be highlighted.
+#[test]
+fn test_metadata_body_qualified_type_reference() {
+    let workspace = create_workspace(
+        r#"metadata def CausationMetadata {
+    ref :> annotatedElement : SysML::ConnectionDefinition;
+    ref :> annotatedElement : SysML::ConnectionUsage;
+}"#,
+    );
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Debug output - symbols
+    println!("\n=== Symbol Table ===");
+    for sym in workspace.symbol_table().iter_symbols() {
+        println!(
+            "  {} -> {:?} @ {:?}",
+            sym.qualified_name(),
+            std::mem::discriminant(sym),
+            sym.span()
+        );
+    }
+
+    // Debug output - reference index
+    println!("\n=== Reference Index ===");
+    for target in workspace.reference_index().targets() {
+        for ref_info in workspace.reference_index().get_references(target) {
+            println!(
+                "  {} <- {} @ {:?}",
+                target, ref_info.source_qname, ref_info.span
+            );
+        }
+    }
+
+    // Debug output - tokens
+    println!("\n=== All Semantic Tokens ===");
+    for t in &tokens {
+        println!(
+            "Line {}, Col {}, Len {}: {:?}",
+            t.line, t.column, t.length, t.token_type
+        );
+    }
+
+    let type_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Type)
+        .collect();
+    let property_tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| t.token_type == TokenType::Property)
+        .collect();
+
+    println!("\n=== Type tokens ({}) ===", type_tokens.len());
+    for t in &type_tokens {
+        println!("  Line {}, Col {}, Len {}", t.line, t.column, t.length);
+    }
+
+    println!("\n=== Property tokens ({}) ===", property_tokens.len());
+    for t in &property_tokens {
+        println!("  Line {}, Col {}, Len {}", t.line, t.column, t.length);
+    }
+
+    // We expect:
+    // - CausationMetadata (Type) - the metadata def name
+    // - annotatedElement (Property) - the subsetted feature name (line 1)
+    // - SysML::ConnectionDefinition (Type) - the qualified type reference (line 1)
+    // - annotatedElement (Property) - the subsetted feature name (line 2)
+    // - SysML::ConnectionUsage (Type) - the qualified type reference (line 2)
+
+    // CausationMetadata + SysML::ConnectionDefinition + SysML::ConnectionUsage = at least 3 Type tokens
+    assert!(
+        type_tokens.len() >= 3,
+        "Expected at least 3 Type tokens (CausationMetadata, SysML::ConnectionDefinition, SysML::ConnectionUsage), got {}",
+        type_tokens.len()
+    );
+
+    // Both annotatedElement references should be Property tokens now
+    // (first from symbol table, second from reference index with Property token type)
+    assert!(
+        property_tokens.len() >= 2,
+        "Expected at least 2 Property tokens (annotatedElement x2), got {}",
+        property_tokens.len()
+    );
+}
+
 #[test]
 fn test_metadata_def_with_specialization() {
     let workspace = create_workspace("metadata def CustomMeta :> SemanticMetadata;");
