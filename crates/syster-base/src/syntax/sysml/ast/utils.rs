@@ -6,7 +6,7 @@ use crate::{core::Span, parser::sysml::Rule};
 use pest::iterators::Pair;
 
 use super::enums::{DefinitionKind, UsageKind};
-use super::parsers::ParseError;
+use super::parsers::{ParseError, all_refs_with_spans_from, ref_with_span_from};
 
 // ============================================================================
 // Span conversion
@@ -17,6 +17,11 @@ pub fn to_span(pest_span: pest::Span) -> Span {
     let (sl, sc) = pest_span.start_pos().line_col();
     let (el, ec) = pest_span.end_pos().line_col();
     Span::from_coords(sl - 1, sc - 1, el - 1, ec - 1)
+}
+
+/// Extract just the name from a reference (without span)
+pub fn ref_from(pair: &Pair<Rule>) -> Option<String> {
+    ref_with_span_from(pair).map(|(name, _span)| name)
 }
 
 // ============================================================================
@@ -50,11 +55,6 @@ pub fn is_body_rule(r: Rule) -> bool {
             // Usage bodies
             | Rule::state_usage_body
             | Rule::usage_body
-            | Rule::constraint_body
-            | Rule::interface_body
-            | Rule::metadata_body
-            | Rule::view_definition_body
-            | Rule::state_usage_body
             | Rule::view_body
     )
 }
@@ -242,9 +242,12 @@ pub fn to_usage_kind(rule: Rule) -> Option<UsageKind> {
         Rule::case_usage => UsageKind::Case,
         Rule::view_usage => UsageKind::View,
         Rule::enumeration_usage | Rule::enumerated_value => UsageKind::Enumeration,
-        Rule::reference_usage | Rule::default_reference_usage | Rule::metadata_usage => {
-            UsageKind::Reference
-        }
+        Rule::reference_usage
+        | Rule::default_reference_usage
+        | Rule::metadata_usage
+        | Rule::directed_parameter_member
+        | Rule::metadata_body_usage
+        | Rule::metadata_body_usage_member => UsageKind::Reference,
         Rule::satisfy_requirement_usage => UsageKind::SatisfyRequirement,
         Rule::perform_action_usage => UsageKind::PerformAction,
         Rule::exhibit_state_usage => UsageKind::ExhibitState,
@@ -254,22 +257,11 @@ pub fn to_usage_kind(rule: Rule) -> Option<UsageKind> {
         Rule::constraint_usage | Rule::assert_constraint_usage => UsageKind::Constraint,
         Rule::calculation_usage => UsageKind::Calculation,
         Rule::allocation_usage => UsageKind::Allocation,
+        Rule::interface_usage => UsageKind::Interface,
         // Occurrence-based usages
         Rule::occurrence_usage => UsageKind::Occurrence,
         Rule::individual_usage => UsageKind::Individual,
         Rule::portion_usage => UsageKind::Snapshot,
-        Rule::reference_usage
-        | Rule::default_reference_usage
-        | Rule::directed_parameter_member
-        | Rule::metadata_body_usage
-        | Rule::metadata_body_usage_member => UsageKind::Reference,
-        Rule::constraint_usage | Rule::assert_constraint_usage => UsageKind::Constraint,
-        Rule::calculation_usage => UsageKind::Calculation,
-        Rule::state_usage => UsageKind::State,
-        Rule::connection_usage => UsageKind::Connection,
-        Rule::interface_usage => UsageKind::Interface,
-        Rule::allocation_usage => UsageKind::Allocation,
-        Rule::flow_connection_usage | Rule::succession_flow_connection_usage => UsageKind::Flow,
         _ => return None,
     })
 }

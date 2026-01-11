@@ -107,7 +107,7 @@ fn strip_qualified_name_quotes(s: &str) -> String {
 }
 
 /// Extract a single reference with span from a pair
-fn ref_with_span_from(pair: &Pair<Rule>) -> Option<(String, Span)> {
+pub(super) fn ref_with_span_from(pair: &Pair<Rule>) -> Option<(String, Span)> {
     for inner in pair.clone().into_inner() {
         match inner.as_rule() {
             Rule::qualified_name | Rule::feature_reference | Rule::owned_feature_chain => {
@@ -146,7 +146,7 @@ fn ref_with_span_from(pair: &Pair<Rule>) -> Option<(String, Span)> {
 }
 
 /// Extract all references with spans from a pair
-fn all_refs_with_spans_from(pair: &Pair<Rule>) -> Vec<(String, Option<Span>)> {
+pub(super) fn all_refs_with_spans_from(pair: &Pair<Rule>) -> Vec<(String, Option<Span>)> {
     let mut refs = Vec::new();
     collect_refs_recursive(pair, &mut refs);
     refs

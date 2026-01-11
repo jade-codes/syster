@@ -332,9 +332,7 @@ variant_membership = { variant_token ~ variant_usage_element }
 conjugated_port_definition = {
     occurrence_definition_prefix ~ port_token ~ def_token ~ conjugate_operator ~ definition_declaration ~ definition_body
 }
-port_conjugation = { conjugate_token ~ conjugate_operator ~ identifier ~ semi_colon }
 conjugated_port_typing = { port_token ~ identifier ~ colon ~ conjugate_operator ~ identifier ~ semi_colon }
-life_class = { life_token ~ class_token ~ identifier ~ semi_colon }
 
 
 // Requirement Constraint Memberships
