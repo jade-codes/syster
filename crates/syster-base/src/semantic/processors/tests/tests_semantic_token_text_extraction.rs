@@ -6,7 +6,7 @@
 
 use crate::semantic::Workspace;
 use crate::semantic::adapters::syntax_factory::populate_syntax_file;
-use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::processors::SemanticTokenCollector;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::syntax::SyntaxFile;
@@ -100,10 +100,10 @@ fn test_kerml_classifiers() {
     let syntax_file = parse_content(source, &path).expect("Parse should succeed");
 
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
     symbol_table.set_current_file(Some("test.kerml".to_string()));
 
-    let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
+    let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut reference_index);
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.kerml");
@@ -155,10 +155,10 @@ fn test_attribute_definitions_and_usages() {
 }"#;
     let syntax_file = parse_sysml(source);
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
     symbol_table.set_current_file(Some("test.sysml".to_string()));
 
-    let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
+    let result = populate_syntax_file(&syntax_file, &mut symbol_table, &mut reference_index);
     assert!(result.is_ok(), "Symbol population failed: {result:?}");
 
     let tokens = SemanticTokenCollector::collect_from_symbols(&symbol_table, "test.sysml");
@@ -201,11 +201,11 @@ fn test_semantic_token_text_extraction() {
 
     // Build symbol table
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
     symbol_table.set_current_file(Some("test.sysml".to_string()));
 
     let populate_result =
-        populate_syntax_file(&syntax_file, &mut symbol_table, &mut relationship_graph);
+        populate_syntax_file(&syntax_file, &mut symbol_table, &mut reference_index);
     assert!(
         populate_result.is_ok(),
         "Symbol population failed: {populate_result:?}"
@@ -335,5 +335,53 @@ fn test_kerml_nested_packages_semantic_tokens() {
     assert!(
         has_nested_token,
         "Should have tokens from nested elements (line 2+)"
+    );
+}
+
+/// Test that metadata def with short name and specialization generates semantic tokens
+/// This is currently broken - no semantic tokens are generated at all.
+#[test]
+fn test_metadata_def_with_short_name_and_specialization() {
+    let source = r#"metadata def <original> OriginalRequirementMetadata :> SemanticMetadata {
+    doc /* Metadata for original requirements. */
+}"#;
+
+    let syntax_file = parse_sysml(source);
+
+    let mut workspace = Workspace::<SyntaxFile>::new();
+    let path = PathBuf::from("test.sysml");
+    workspace.add_file(path.clone(), syntax_file);
+    workspace.populate_file(&path).expect("Failed to populate");
+
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    // Debug: print symbols in the symbol table
+    println!("Symbols in symbol table:");
+    for symbol in workspace.symbol_table().get_symbols_for_file("test.sysml") {
+        println!("  {:?}", symbol);
+    }
+
+    // Debug: print all tokens
+    println!("Tokens found: {:?}", tokens);
+    for token in &tokens {
+        println!(
+            "  line={}, col={}, len={}, type={:?}",
+            token.line, token.column, token.length, token.token_type
+        );
+    }
+
+    // Should have at least a token for OriginalRequirementMetadata
+    assert!(
+        !tokens.is_empty(),
+        "Expected semantic tokens for metadata def, got none"
+    );
+
+    // The definition name should have a token
+    let has_def_token = tokens
+        .iter()
+        .any(|t| t.line == 0 && t.column >= 24 && t.column <= 52);
+    assert!(
+        has_def_token,
+        "Expected token for 'OriginalRequirementMetadata' on line 0"
     );
 }

@@ -381,7 +381,7 @@ fn test_semantic_tokens_nonexistent_file() {
 }
 
 #[test]
-fn test_semantic_tokens_with_relationships() {
+fn test_semantic_tokens_with_index() {
     let mut server = LspServer::new();
     let uri = Url::parse("file:///test.sysml").unwrap();
     let text = r#"package Test {

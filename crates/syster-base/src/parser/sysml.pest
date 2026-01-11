@@ -2542,7 +2542,10 @@ identification = { (short_name ~ regular_name?) | regular_name }
 quoted_name = @{ "'" ~ (!("'") ~ ANY)+ ~ "'" }
 relationship_body = { ";" | ( forward_curl_brace ~ relationship_body_elements ~ backward_curl_brace ) }
 relationship_body_elements = { owned_annotation* }
-prefix_metadata_annotation = { "#" ~ identifier }
+
+// Metadata annotation names can be any word including keywords (e.g., #original, #derive, #derivation)
+metadata_annotation_name = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+prefix_metadata_annotation = { "#" ~ metadata_annotation_name }
 
 // Annotations
 owned_annotation = { annotating_element }
@@ -2570,7 +2573,7 @@ textual_representation = {
 }
 textual_rep_name = { !language_token ~ identifier }
 
-metadata_usage_annotation = { "#" ~ identifier ~ semi_colon }
+metadata_usage_annotation = { "#" ~ metadata_annotation_name ~ semi_colon }
 
 // Metadata
 metadata_definition = {
@@ -2578,7 +2581,7 @@ metadata_definition = {
     ~ prefix_metadata?
     ~ metadata_token
     ~ def_token
-    ~ ("<" ~ identifier ~ ">")?
+    ~ short_name?
     ~ definition_suffix
 }
 

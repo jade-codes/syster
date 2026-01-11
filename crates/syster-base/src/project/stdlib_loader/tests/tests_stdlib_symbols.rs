@@ -221,8 +221,8 @@ fn test_stdlib_hover_simulation() {
 #[test]
 fn test_stdlib_hover_with_user_file() {
     use crate::parser::{SysMLParser, sysml::Rule};
-    use crate::syntax::sysml::ast::SysMLFile;
-    use from_pest::FromPest;
+    use crate::syntax::sysml::ast::parse_file;
+
     use pest::Parser;
 
     let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sysml.library");
@@ -243,7 +243,7 @@ fn test_stdlib_hover_with_user_file() {
 
     // Parse and add user file
     let mut pairs = SysMLParser::parse(Rule::model, user_source).expect("parse user source");
-    let sysml_file = SysMLFile::from_pest(&mut pairs).expect("from_pest");
+    let sysml_file = parse_file(&mut pairs).expect("from_pest");
     let user_path = PathBuf::from("/test/mytest.sysml");
     workspace.add_file(user_path.clone(), SyntaxFile::SysML(sysml_file));
     workspace

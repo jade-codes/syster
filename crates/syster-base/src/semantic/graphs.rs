@@ -1,14 +1,3 @@
-mod dependency_graph;
-mod one_to_many_graph;
-mod one_to_one_graph;
-mod relationship_graph;
-mod symmetric_graph;
+mod reference_index;
 
-pub use dependency_graph::DependencyGraph;
-pub use one_to_many_graph::{OneToManyGraph, RefLocation};
-pub use one_to_one_graph::OneToOneGraph;
-pub use relationship_graph::RelationshipGraph;
-pub use symmetric_graph::SymmetricGraph;
-
-#[cfg(test)]
-mod tests;
+pub use reference_index::{ReferenceIndex, ReferenceInfo};

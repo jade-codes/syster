@@ -1,24 +1,23 @@
 #![allow(clippy::unwrap_used)]
 use syster::semantic::resolver::Resolver;
 
-use from_pest::FromPest;
 use pest::Parser;
 use syster::core::constants::*;
 use syster::parser::{SysMLParser, sysml::Rule};
-use syster::semantic::RelationshipGraph;
 use syster::semantic::adapters::SysmlAdapter;
+use syster::semantic::graphs::ReferenceIndex;
 use syster::semantic::symbol_table::{Symbol, SymbolTable};
-use syster::syntax::sysml::ast::SysMLFile;
+use syster::syntax::sysml::ast::parse_file;
 
 #[test]
 fn test_visitor_creates_package_symbol() {
     let source = "package MyPackage;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     assert!(Resolver::new(&symbol_table).resolve("MyPackage").is_some());
@@ -28,11 +27,11 @@ fn test_visitor_creates_package_symbol() {
 fn test_visitor_creates_definition_symbol() {
     let source = "part def Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -61,11 +60,11 @@ fn test_qualified_redefinition_does_not_create_duplicate_symbols() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     // This should not produce duplicate symbol errors
     let result = adapter.populate(&file);
@@ -98,11 +97,11 @@ fn test_same_name_in_different_namespaces_creates_two_symbols() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
     assert!(
@@ -164,11 +163,11 @@ fn test_comma_separated_redefinitions_do_not_create_duplicate_symbols() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
     assert!(
@@ -221,11 +220,11 @@ fn test_attribute_reference_in_expression_not_treated_as_definition() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
 
@@ -270,11 +269,11 @@ fn test_inline_attribute_definitions_with_same_name_create_duplicates() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
 
@@ -303,11 +302,11 @@ fn test_radius_redefinition_in_multiple_items_no_duplicates() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
 
@@ -348,11 +347,11 @@ fn test_simple_redefinition_creates_child_symbol() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
 
@@ -381,11 +380,11 @@ fn test_simple_redefinition_creates_child_symbol() {
 fn test_visitor_creates_usage_symbol() {
     let source = "part myCar : Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -402,41 +401,53 @@ fn test_visitor_creates_usage_symbol() {
 fn test_visitor_records_specialization_relationship() {
     let source = "part def Car :> Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let specializations = graph.get_one_to_many(REL_SPECIALIZATION, "Car").unwrap();
-    assert_eq!(specializations, &["Vehicle"]);
+    // Car references Vehicle via specialization
+    // get_sources("Vehicle") returns sources that reference Vehicle
+    let sources = graph.get_sources("Vehicle");
+    assert!(
+        sources.contains(&"Car"),
+        "Car should be in sources for Vehicle"
+    );
 }
 
 #[test]
 fn test_visitor_records_typing_relationship() {
     let source = "part myCar : Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let typing = graph.get_one_to_one(REL_TYPING, "myCar").unwrap();
-    assert_eq!(typing, "Vehicle");
+    // myCar references Vehicle via typing
+    // get_sources("Vehicle") returns sources that reference Vehicle
+    let sources = graph.get_sources("Vehicle");
+    assert!(
+        sources.contains(&"myCar"),
+        "myCar should be in sources for Vehicle"
+    );
 }
 
 #[test]
 fn test_visitor_handles_nested_usage() {
     let source = r#"part def Car { attribute mass : Real; }"#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     // Check that Car definition exists
@@ -460,11 +471,11 @@ fn test_visitor_handles_nested_usage() {
 fn test_debug_symbol_table_contents() {
     let source = r#"part def Car { attribute mass : Real; }"#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
     for _symbol in symbol_table.iter_symbols() {}
 }
@@ -473,20 +484,19 @@ fn test_debug_symbol_table_contents() {
 fn test_multiple_specializations() {
     let source = "part def ElectricCar :> Car, Electric, Vehicle;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    let specializations = graph
-        .get_one_to_many(REL_SPECIALIZATION, "ElectricCar")
-        .unwrap();
-    assert_eq!(specializations.len(), 3);
-    assert!(specializations.contains(&"Car"));
-    assert!(specializations.contains(&"Electric"));
-    assert!(specializations.contains(&"Vehicle"));
+    // ElectricCar references Car, Electric, and Vehicle
+    // Each target's sources should include ElectricCar
+    assert!(graph.get_sources("Car").contains(&"ElectricCar"));
+    assert!(graph.get_sources("Electric").contains(&"ElectricCar"));
+    assert!(graph.get_sources("Vehicle").contains(&"ElectricCar"));
 }
 
 #[test]
@@ -497,11 +507,11 @@ fn test_multiple_symbols_in_same_scope() {
         part def Motorcycle;
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     assert!(Resolver::new(&symbol_table).resolve("Car").is_some());
@@ -519,11 +529,11 @@ fn test_deeply_nested_symbols() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
     // Check all three levels exist
     assert!(Resolver::new(&symbol_table).resolve("Vehicle").is_some());
@@ -561,11 +571,11 @@ fn test_different_definition_kinds() {
         requirement def ReqDef;
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -601,11 +611,11 @@ fn test_scoped_symbols_with_same_name() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     // Both should exist with different qualified names
@@ -643,11 +653,11 @@ fn test_nested_packages() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     assert!(
@@ -673,11 +683,11 @@ fn test_nested_packages() {
 fn test_empty_definition() {
     let source = "part def EmptyPart { }";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -692,11 +702,11 @@ fn test_empty_definition() {
 fn test_usage_without_type() {
     let source = "part untyped;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -722,11 +732,11 @@ fn test_qualified_names_are_correct() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -771,11 +781,12 @@ fn test_multiple_usages_of_same_type() {
         part car3 : Vehicle;
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     // All three should exist and have the same typing
@@ -791,8 +802,11 @@ fn test_multiple_usages_of_same_type() {
             _ => panic!("Expected Usage symbol for {name}"),
         }
 
-        let typing = graph.get_one_to_one(REL_TYPING, name).unwrap();
-        assert_eq!(typing, "Vehicle");
+        let sources = graph.get_sources("Vehicle");
+        assert!(
+            sources.contains(&name),
+            "{name} should be in sources for Vehicle"
+        );
     }
 }
 
@@ -800,20 +814,22 @@ fn test_multiple_usages_of_same_type() {
 fn test_redefinition_relationship() {
     let source = "part def SportsCar :>> Car;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     assert!(Resolver::new(&symbol_table).resolve("SportsCar").is_some());
 
-    // Check if redefinition relationship is recorded
-    let redefinitions = graph.get_one_to_many(REL_REDEFINITION, "SportsCar");
+    // SportsCar references Car via redefinition
+    // get_sources("Car") should contain SportsCar
+    let sources = graph.get_sources("Car");
     assert!(
-        redefinitions.is_some() && redefinitions.unwrap().contains(&"Car"),
-        "Should record redefinition relationship"
+        sources.contains(&"SportsCar"),
+        "SportsCar should be in sources for Car"
     );
 }
 
@@ -821,11 +837,11 @@ fn test_redefinition_relationship() {
 fn test_alias_definition() {
     let source = "alias MyAlias for SomeType;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let symbol = symbol_table
@@ -845,11 +861,11 @@ fn test_alias_definition() {
 fn test_import_statement() {
     let source = "import Vehicles::*;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     // Imports should be recorded in the symbol table's scope
@@ -865,11 +881,11 @@ fn test_port_definition_and_usage() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -908,11 +924,11 @@ fn test_action_with_parameters() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -942,11 +958,11 @@ fn test_constraint_definition() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -969,11 +985,11 @@ fn test_enumeration_definition() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -1005,11 +1021,11 @@ fn test_state_definition() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -1026,11 +1042,11 @@ fn test_state_definition() {
 fn test_connection_definition() {
     let source = "connection def DataFlow;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -1047,11 +1063,11 @@ fn test_connection_definition() {
 fn test_interface_definition() {
     let source = "interface def NetworkInterface;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -1068,11 +1084,11 @@ fn test_interface_definition() {
 fn test_allocation_definition() {
     let source = "allocation def ResourceAllocation;";
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -1098,11 +1114,11 @@ fn test_mixed_definitions_and_usages() {
         part myCar : Car;
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     // All definitions should exist
@@ -1136,11 +1152,11 @@ fn test_concern_and_requirement() {
         requirement def SafetyRequirement;
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
     let resolver = Resolver::new(&symbol_table);
@@ -1175,11 +1191,11 @@ fn test_identifier_in_default_value_not_treated_as_definition() {
         }
     "#;
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-    let mut adapter = SysmlAdapter::with_relationships(&mut symbol_table, &mut graph);
+    let mut graph = ReferenceIndex::new();
+    let mut adapter = SysmlAdapter::with_index(&mut symbol_table, &mut graph);
 
     let result = adapter.populate(&file);
 
