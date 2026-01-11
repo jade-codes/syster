@@ -11,11 +11,11 @@ pub mod symbol_table;
 pub mod types;
 pub mod workspace;
 
+pub use graphs::ReferenceIndex;
 pub use adapters::{
     SysmlAdapter, extract_folding_ranges, extract_inlay_hints, find_selection_spans,
     populate_syntax_file,
 };
-pub use graphs::{DependencyGraph, RelationshipGraph};
 pub use resolver::{
     Resolver, extract_imports, extract_kerml_imports, is_wildcard_import, parse_import_path,
 };

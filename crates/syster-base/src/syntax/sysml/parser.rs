@@ -1,6 +1,5 @@
 use crate::core::{ParseError, ParseResult, get_extension, load_file, validate_extension};
-use crate::syntax::sysml::ast::SysMLFile;
-use from_pest::FromPest;
+use crate::syntax::sysml::ast::{SysMLFile, parse_file};
 use pest::Parser;
 use std::path::{Path, PathBuf};
 
@@ -30,8 +29,7 @@ pub fn parse_content(content: &str, path: &Path) -> Result<SysMLFile, String> {
     let mut pairs = crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, content)
         .map_err(|e| format!("Parse error in {}: {}", path.display(), e))?;
 
-    SysMLFile::from_pest(&mut pairs)
-        .map_err(|e| format!("AST error in {}: {:?}", path.display(), e))
+    parse_file(&mut pairs).map_err(|e| format!("AST error in {}: {:?}", path.display(), e))
 }
 
 /// Parses content and returns a ParseResult with detailed error information.
@@ -46,7 +44,7 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
 
     // Try full parse first (fastest for valid files)
     match crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, content) {
-        Ok(mut pairs) => match SysMLFile::from_pest(&mut pairs) {
+        Ok(mut pairs) => match parse_file(&mut pairs) {
             Ok(file) => ParseResult::success(file),
             Err(e) => {
                 let error = ParseError::ast_error(format!("{e:?}"), 0, 0);
@@ -106,8 +104,7 @@ fn parse_valid_definitions(content: &str) -> Option<SysMLFile> {
 
 fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element> {
     use crate::parser::{SysMLParser, sysml::Rule};
-    use crate::syntax::sysml::ast::{Definition, Element, Usage};
-    use from_pest::FromPest;
+    use crate::syntax::sysml::ast::{Element, parse_definition, parse_usage};
 
     // Try as definition (any kind)
     if line.contains(" def ") {
@@ -128,7 +125,8 @@ fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element
             Rule::calculation_definition,
         ] {
             if let Ok(mut pairs) = SysMLParser::parse(rule, line)
-                && let Ok(def) = Definition::from_pest(&mut pairs)
+                && let Some(pair) = pairs.next()
+                && let Ok(def) = parse_definition(pair)
             {
                 return Some(Element::Definition(def));
             }
@@ -145,9 +143,9 @@ fn try_parse_as_element(line: &str) -> Option<crate::syntax::sysml::ast::Element
             Rule::action_usage,
         ] {
             if let Ok(mut pairs) = SysMLParser::parse(rule, line)
-                && let Ok(usage) = Usage::from_pest(&mut pairs)
+                && let Some(pair) = pairs.next()
             {
-                return Some(Element::Usage(usage));
+                return Some(Element::Usage(parse_usage(pair)));
             }
         }
     }

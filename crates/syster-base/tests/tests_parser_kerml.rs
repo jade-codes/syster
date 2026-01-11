@@ -2743,7 +2743,7 @@ fn test_parse_istype_operator() {
 
 // Test end feature with relationships before feature keyword
 #[test]
-fn test_parse_end_feature_with_relationships_before_feature() {
+fn test_parse_end_feature_with_index_before_feature() {
     let input = "end happensWhile [1..*] subsets timeCoincidentOccurrences feature thatOccurrence: Occurrence redefines longerOccurrence;";
     let result = KerMLParser::parse(syster::parser::kerml::Rule::end_feature, input);
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
@@ -2892,11 +2892,11 @@ fn test_parse_scalar_values_stdlib_file() {
     }
 
     // Try to convert to KerMLFile
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, content).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
     for _elem in file.elements.iter() {}
 
     assert!(!file.elements.is_empty(), "File should have elements!");
@@ -2908,12 +2908,12 @@ fn test_parse_scalar_values_stdlib_file() {
 
 #[test]
 fn test_parse_classifier_with_specialization_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "classifier Car specializes Vehicle;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -2933,12 +2933,12 @@ fn test_parse_classifier_with_specialization_ast() {
 
 #[test]
 fn test_parse_classifier_with_multiple_specializations_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "classifier SportsCar specializes Car, Vehicle;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -2964,12 +2964,12 @@ fn test_parse_classifier_with_multiple_specializations_ast() {
 
 #[test]
 fn test_parse_feature_with_typing_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "feature mass : Real;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -2989,12 +2989,12 @@ fn test_parse_feature_with_typing_ast() {
 
 #[test]
 fn test_parse_feature_with_redefinition_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "feature currentMass redefines mass;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -3014,12 +3014,12 @@ fn test_parse_feature_with_redefinition_ast() {
 
 #[test]
 fn test_parse_feature_with_subsetting_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "feature wheelMass subsets mass;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -3039,12 +3039,12 @@ fn test_parse_feature_with_subsetting_ast() {
 
 #[test]
 fn test_parse_feature_with_typing_and_redefinition_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "feature currentMass : Real redefines mass;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -3070,12 +3070,12 @@ fn test_parse_feature_with_typing_and_redefinition_ast() {
 
 #[test]
 fn test_parse_abstract_classifier_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "abstract classifier Vehicle;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -3089,8 +3089,8 @@ fn test_parse_abstract_classifier_ast() {
 
 #[test]
 fn test_parse_readonly_feature_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = r#"
         package Test {
@@ -3098,7 +3098,7 @@ fn test_parse_readonly_feature_ast() {
         }
     "#;
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     // Extract the package and feature directly with assertions
     assert_eq!(file.elements.len(), 1, "Should have exactly one package");
@@ -3121,12 +3121,12 @@ fn test_parse_readonly_feature_ast() {
 
 #[test]
 fn test_parse_datatype_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "datatype Real;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -3140,12 +3140,12 @@ fn test_parse_datatype_ast() {
 
 #[test]
 fn test_parse_function_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = "function calculateArea;";
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -3159,14 +3159,14 @@ fn test_parse_function_ast() {
 
 #[test]
 fn test_parse_classifier_with_nested_feature_ast() {
-    use from_pest::FromPest;
-    use syster::syntax::kerml::ast::KerMLFile;
+    use syster::syntax::kerml::ast::parse_file;
+    // KerMLFile import no longer needed
 
     let input = r#"classifier Vehicle {
         feature mass : Real;
     }"#;
     let mut pairs = KerMLParser::parse(syster::parser::kerml::Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {

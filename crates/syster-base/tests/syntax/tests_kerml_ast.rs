@@ -1,17 +1,15 @@
 //! KerML AST construction tests
 //!
-//! These tests verify that parsing produces correct AST structures,
-//! testing the FromPest implementations for KerML types.
+//! These tests verify that parsing produces correct AST structures.
 
 #![allow(clippy::unwrap_used)]
 #![allow(clippy::panic)]
 
-use from_pest::FromPest;
 use pest::Parser;
 use syster::parser::KerMLParser;
 use syster::parser::kerml::Rule;
 use syster::syntax::kerml::ast::{
-    ClassifierKind, ClassifierMember, Element as AstElement, FeatureMember, KerMLFile,
+    ClassifierKind, ClassifierMember, Element as AstElement, FeatureMember, parse_file,
 };
 
 #[test]
@@ -31,7 +29,7 @@ fn test_parse_scalar_values_stdlib_file() {
 
     // Try to convert to KerMLFile
     let mut pairs = KerMLParser::parse(Rule::file, content).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
     for _elem in file.elements.iter() {}
 
     assert!(!file.elements.is_empty(), "File should have elements!");
@@ -41,7 +39,7 @@ fn test_parse_scalar_values_stdlib_file() {
 fn test_parse_classifier_with_specialization_ast() {
     let input = "classifier Car specializes Vehicle;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -63,7 +61,7 @@ fn test_parse_classifier_with_specialization_ast() {
 fn test_parse_classifier_with_multiple_specializations_ast() {
     let input = "classifier SportsCar specializes Car, Vehicle;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -91,7 +89,7 @@ fn test_parse_classifier_with_multiple_specializations_ast() {
 fn test_parse_feature_with_typing_ast() {
     let input = "feature mass : Real;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -113,7 +111,7 @@ fn test_parse_feature_with_typing_ast() {
 fn test_parse_feature_with_redefinition_ast() {
     let input = "feature currentMass redefines mass;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -135,7 +133,7 @@ fn test_parse_feature_with_redefinition_ast() {
 fn test_parse_feature_with_subsetting_ast() {
     let input = "feature wheelMass subsets mass;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -157,7 +155,7 @@ fn test_parse_feature_with_subsetting_ast() {
 fn test_parse_feature_with_typing_and_redefinition_ast() {
     let input = "feature currentMass : Real redefines mass;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -185,7 +183,7 @@ fn test_parse_feature_with_typing_and_redefinition_ast() {
 fn test_parse_abstract_classifier_ast() {
     let input = "abstract classifier Vehicle;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -205,7 +203,7 @@ fn test_parse_readonly_feature_ast() {
         }
     "#;
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     // Extract the package and feature directly with assertions
     assert_eq!(file.elements.len(), 1, "Should have exactly one package");
@@ -230,7 +228,7 @@ fn test_parse_readonly_feature_ast() {
 fn test_parse_datatype_ast() {
     let input = "datatype Real;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -246,7 +244,7 @@ fn test_parse_datatype_ast() {
 fn test_parse_function_ast() {
     let input = "function calculateArea;";
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
@@ -264,7 +262,7 @@ fn test_parse_classifier_with_nested_feature_ast() {
         feature mass : Real;
     }"#;
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
-    let file = KerMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     assert_eq!(file.elements.len(), 1);
     match &file.elements[0] {
