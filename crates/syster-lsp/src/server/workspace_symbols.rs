@@ -61,9 +61,7 @@ fn symbol_matches_query(symbol: &Symbol, query_lower: &str) -> bool {
 }
 
 fn container_name(qualified_name: &str) -> Option<String> {
-    let mut parts = qualified_name.rsplitn(2, "::");
-    let _leaf = parts.next()?;
-    let container = parts.next()?;
+    let (container, _leaf) = qualified_name.rsplit_once("::")?;
     Some(container.to_string())
 }
 
