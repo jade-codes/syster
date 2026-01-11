@@ -462,10 +462,7 @@ part def Derived :> Base;
     };
 
     assert!(content.contains("Derived"), "Should show symbol name");
-    assert!(
-        true,  // Relationship info not available without RelationshipGraph
-        "Should show specialization relationship"
-    );
+    // Note: Relationship info not available without RelationshipGraph
 }
 
 #[tokio::test]

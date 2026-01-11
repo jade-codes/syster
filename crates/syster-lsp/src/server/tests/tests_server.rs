@@ -2,7 +2,6 @@ use crate::server::LspServer;
 use async_lsp::lsp_types::{
     DiagnosticSeverity, HoverContents, MarkedString, Position, PrepareRenameResponse, Url,
 };
-use syster::core::constants::REL_TYPING;
 use syster::semantic::resolver::Resolver;
 use syster::semantic::symbol_table::Symbol;
 

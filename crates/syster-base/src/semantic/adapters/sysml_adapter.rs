@@ -33,11 +33,76 @@ impl<'a> SysmlAdapter<'a> {
         }
     }
 
-    /// Index a reference from source to target for reverse lookups
+    /// Index a reference from source to target for reverse lookups.
+    ///
+    /// The target is resolved to its full qualified name by trying:
+    /// 1. The target as-is (already fully qualified)
+    /// 2. Prefixed with the current namespace (relative to current scope)
+    /// 3. Walking up the namespace chain to find the symbol
     pub(super) fn index_reference(&mut self, source_qname: &str, target: &str, span: Option<Span>) {
+        // First resolve the target (needs immutable borrow of self)
+        let resolved_target = self.resolve_reference_target(target);
+        let file = self.symbol_table.current_file().map(PathBuf::from);
+
+        // Then add to index (needs mutable borrow of reference_index)
         if let Some(index) = &mut self.reference_index {
-            let file = self.symbol_table.current_file().map(PathBuf::from);
-            index.add_reference(source_qname, target, file.as_ref(), span);
+            index.add_reference(source_qname, &resolved_target, file.as_ref(), span);
         }
+    }
+
+    /// Resolve a reference target to its full qualified name.
+    ///
+    /// Tries multiple resolution strategies:
+    /// 1. Check if target already exists as a fully qualified name
+    /// 2. Try prefixing with current namespace parts (walking up the chain)
+    fn resolve_reference_target(&self, target: &str) -> String {
+        // Strategy 1: Check if it's already a valid fully qualified name
+        if self.symbol_table.find_by_qualified_name(target).is_some() {
+            return target.to_string();
+        }
+
+        // Strategy 2: Try prefixing with current namespace, walking up the chain
+        // e.g., if we're in Outer and target is Inner::Vehicle,
+        // try Outer::Inner::Vehicle
+        let mut namespace = self.current_namespace.clone();
+        while !namespace.is_empty() {
+            let candidate = format!("{}::{}", namespace.join("::"), target);
+            if self
+                .symbol_table
+                .find_by_qualified_name(&candidate)
+                .is_some()
+            {
+                return candidate;
+            }
+            namespace.pop();
+        }
+
+        // Strategy 3: If target contains ::, try resolving just the first segment
+        // and build the full path from there
+        if let Some(first_segment) = target.split("::").next() {
+            let mut ns = self.current_namespace.clone();
+            while !ns.is_empty() {
+                let candidate_prefix = format!("{}::{}", ns.join("::"), first_segment);
+                if self
+                    .symbol_table
+                    .find_by_qualified_name(&candidate_prefix)
+                    .is_some()
+                {
+                    // Found the first segment, now build the full path
+                    let full_target = format!("{}::{}", ns.join("::"), target);
+                    if self
+                        .symbol_table
+                        .find_by_qualified_name(&full_target)
+                        .is_some()
+                    {
+                        return full_target;
+                    }
+                }
+                ns.pop();
+            }
+        }
+
+        // Fallback: return original target (unresolved references)
+        target.to_string()
     }
 }

@@ -119,10 +119,12 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     }
 
     fn visit_usage(&mut self, usage: &Usage) {
-        let (name, is_anonymous) = if let Some(name) = &usage.name {
-            (name.clone(), false)
+        // Determine the name and span: prefer explicit name, fall back to first redefinition target
+        let (name, name_span, is_anonymous) = if let Some(name) = &usage.name {
+            (name.clone(), usage.span, false)
         } else if let Some(first_redef) = usage.relationships.redefines.first() {
-            (first_redef.target.clone(), true)
+            // Use the redefinition target as the name, with its span
+            (first_redef.target.clone(), first_redef.span, true)
         } else {
             return;
         };
@@ -150,7 +152,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             usage_type: usage.relationships.typed_by.clone(),
             scope_id,
             source_file: self.symbol_table.current_file().map(String::from),
-            span: usage.span,
+            span: name_span,
         };
         self.insert_symbol(name.clone(), symbol);
 

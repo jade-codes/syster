@@ -2,7 +2,6 @@
 use syster::semantic::resolver::Resolver;
 
 use pest::Parser;
-use syster::core::constants::*;
 use syster::parser::{SysMLParser, sysml::Rule};
 use syster::semantic::adapters::SysmlAdapter;
 use syster::semantic::graphs::ReferenceIndex;

@@ -1,4 +1,5 @@
 // Test modules
+mod tests_semantic_token_all_constructs;
 mod tests_semantic_token_collector_normalize_path;
 mod tests_semantic_token_collector_semantictokencollector;
 mod tests_semantic_token_text_extraction;

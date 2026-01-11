@@ -75,6 +75,23 @@ impl LspServer {
                     .unwrap_or(word_range);
                 return Some((qualified_name, range));
             }
+
+            // Fallback: search for symbols in this file whose qualified name ends with the pattern.
+            // This handles nested scopes where the cursor is inside a package body but
+            // get_scope_for_file returns the file's root scope.
+            let suffix = format!("::{}", word);
+            for symbol in self.workspace.symbol_table().iter_symbols() {
+                if symbol.source_file() == Some(&file_path_str)
+                    && symbol.qualified_name().ends_with(&suffix)
+                {
+                    let qualified_name = symbol.qualified_name().to_string();
+                    let range = symbol
+                        .span()
+                        .map(|s| span_to_lsp_range(&s))
+                        .unwrap_or(word_range);
+                    return Some((qualified_name, range));
+                }
+            }
         }
 
         // Check if the word matches a symbol defined in THIS file.

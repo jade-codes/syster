@@ -60,7 +60,8 @@ impl<T: ParsedFile> Workspace<T> {
 
             // Remove references from this file
             let file_path_str = path.to_string_lossy().to_string();
-            self.reference_index.remove_references_from_file(&file_path_str);
+            self.reference_index
+                .remove_references_from_file(&file_path_str);
 
             let _ = {
                 let event = WorkspaceEvent::FileRemoved { path: path.clone() };

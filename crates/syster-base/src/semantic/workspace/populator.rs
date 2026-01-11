@@ -72,7 +72,8 @@ impl<'a> WorkspacePopulator<'a> {
         let file_path_str = path.to_string_lossy().to_string();
 
         // Remove references from this file
-        self.reference_index.remove_references_from_file(&file_path_str);
+        self.reference_index
+            .remove_references_from_file(&file_path_str);
 
         // Remove imports from the file
         self.symbol_table.remove_imports_from_file(&file_path_str);
