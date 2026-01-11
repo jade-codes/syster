@@ -3,14 +3,14 @@
 /// Stores the source location (line/column) of AST nodes for LSP features
 /// like hover, go-to-definition, and error reporting.
 /// A span representing a range in source code (0-indexed for LSP compatibility)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Span {
     pub start: Position,
     pub end: Position,
 }
 
 /// A position in source code (0-indexed)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Position {
     pub line: usize,
     pub column: usize,

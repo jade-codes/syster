@@ -9,7 +9,7 @@
 //! - KerML adapter tests
 
 use super::super::*;
-use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::{Resolver, SemanticError};
 use crate::syntax::SyntaxFile;
@@ -22,7 +22,7 @@ use crate::syntax::sysml::ast::{Definition, DefinitionKind, Element, Package, Sy
 #[test]
 fn test_populate_sysml_file() {
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
     // Create a minimal valid SysML file
     let sysml_file = SysMLFile {
@@ -42,7 +42,7 @@ fn test_populate_kerml_file_returns_unsupported_error() {
     use crate::syntax::kerml::KerMLFile;
 
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
     let kerml_file = KerMLFile {
         namespace: None,
@@ -59,7 +59,7 @@ fn test_populate_kerml_file_returns_unsupported_error() {
 #[test]
 fn test_populate_preserves_existing_symbols() {
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
     // Add a symbol before population
     table
@@ -91,7 +91,7 @@ fn test_populate_preserves_existing_symbols() {
 #[test]
 fn test_populate_multiple_files_sequentially() {
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
     let file1 = SysMLFile {
         namespaces: vec![],
@@ -244,7 +244,6 @@ fn test_kerml_adapter_new_basic_initialization() {
     // Verify the adapter is created successfully
     assert!(adapter.errors.is_empty());
     assert!(adapter.current_namespace.is_empty());
-    assert!(adapter.relationship_graph.is_none());
 }
 
 #[test]
@@ -327,20 +326,6 @@ fn test_kerml_adapter_new_multiple_instances() {
 }
 
 #[test]
-fn test_kerml_adapter_new_vs_with_relationships() {
-    let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
-
-    // Create adapter with new()
-    let adapter_new = KermlAdapter::new(&mut table);
-    assert!(adapter_new.relationship_graph.is_none());
-
-    // Create adapter with with_relationships()
-    let adapter_with_rel = KermlAdapter::with_relationships(&mut table, &mut graph);
-    assert!(adapter_with_rel.relationship_graph.is_some());
-}
-
-#[test]
 fn test_kerml_adapter_new_initial_state() {
     let mut table = SymbolTable::new();
     let adapter = KermlAdapter::new(&mut table);
@@ -348,7 +333,6 @@ fn test_kerml_adapter_new_initial_state() {
     // Verify all fields have expected initial values
     assert_eq!(adapter.errors.len(), 0);
     assert_eq!(adapter.current_namespace.len(), 0);
-    assert!(adapter.relationship_graph.is_none());
 }
 
 #[test]

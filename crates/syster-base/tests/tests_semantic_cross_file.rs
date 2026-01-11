@@ -1,26 +1,28 @@
 #![allow(clippy::unwrap_used)]
+use syster::semantic::ReferenceIndex;
 use syster::semantic::resolver::Resolver;
 
-fn assert_targets_eq(result: Option<Vec<&str>>, expected: &[&str]) {
-    match result {
-        Some(targets) => {
-            assert_eq!(targets, expected);
-        }
-        None => panic!("Expected Some({expected:?}), got None"),
+/// Helper to assert that sources contain the expected values.
+fn assert_sources_contain(sources: Vec<&str>, expected: &[&str]) {
+    for e in expected {
+        assert!(
+            sources.contains(e),
+            "Expected sources to contain {:?}, got {:?}",
+            e,
+            sources
+        );
     }
 }
 
-use from_pest::FromPest;
 use pest::Parser;
 use std::path::PathBuf;
-use syster::core::constants::REL_SPECIALIZATION;
 use syster::parser::SysMLParser;
 use syster::parser::sysml::Rule;
+use syster::semantic::Workspace;
 use syster::semantic::adapters::SysmlAdapter;
 use syster::semantic::symbol_table::SymbolTable;
-use syster::semantic::{RelationshipGraph, Workspace};
 use syster::syntax::SyntaxFile;
-use syster::syntax::sysml::ast::SysMLFile;
+use syster::syntax::sysml::ast::parse_file;
 
 #[test]
 fn test_cross_file_specialization() {
@@ -32,25 +34,23 @@ fn test_cross_file_specialization() {
 
     // Parse both files
     let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
-    let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
+    let file1 = parse_file(&mut pairs1).unwrap();
 
     let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
-    let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+    let file2 = parse_file(&mut pairs2).unwrap();
 
-    // Create a shared symbol table and relationship graph
+    // Create a shared symbol table and reference index
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
 
     // Populate from file 1 with source tracking
     symbol_table.set_current_file(Some("base.sysml".to_string()));
-    let mut populator1 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator1 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     populator1.populate(&file1).unwrap();
 
     // Populate from file 2 - this should be able to resolve Vehicle from file 1
     symbol_table.set_current_file(Some("derived.sysml".to_string()));
-    let mut populator2 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator2 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     let result = populator2.populate(&file2);
 
     // This test will fail initially because cross-file resolution isn't implemented
@@ -81,10 +81,9 @@ fn test_cross_file_specialization() {
     );
 
     // Verify the specialization relationship was created
-    assert_targets_eq(
-        relationship_graph.get_one_to_many(REL_SPECIALIZATION, "Car"),
-        &["Vehicle"],
-    );
+    // Car references Vehicle, so get_sources("Vehicle") should contain "Car"
+    let sources = reference_index.get_sources("Vehicle");
+    assert_sources_contain(sources, &["Car"]);
 }
 
 #[test]
@@ -96,21 +95,19 @@ fn test_cross_file_typing() {
     let file2_source = "part myCar : Vehicle;";
 
     let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
-    let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
+    let file1 = parse_file(&mut pairs1).unwrap();
 
     let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
-    let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+    let file2 = parse_file(&mut pairs2).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
 
     // Populate both files into shared symbol table
-    let mut populator1 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator1 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     populator1.populate(&file1).unwrap();
 
-    let mut populator2 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator2 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     let result = populator2.populate(&file2);
 
     assert!(
@@ -134,31 +131,28 @@ fn test_cross_file_transitive_relationships() {
     let file3_source = "part def Car :> Vehicle;";
 
     let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
-    let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
+    let file1 = parse_file(&mut pairs1).unwrap();
 
     let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
-    let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+    let file2 = parse_file(&mut pairs2).unwrap();
 
     let mut pairs3 = SysMLParser::parse(Rule::model, file3_source).unwrap();
-    let file3 = SysMLFile::from_pest(&mut pairs3).unwrap();
+    let file3 = parse_file(&mut pairs3).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
 
     // Populate all three files with file tracking
     symbol_table.set_current_file(Some("file1.sysml".to_string()));
-    let mut populator1 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator1 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     populator1.populate(&file1).unwrap();
 
     symbol_table.set_current_file(Some("file2.sysml".to_string()));
-    let mut populator2 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator2 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     populator2.populate(&file2).unwrap();
 
     symbol_table.set_current_file(Some("file3.sysml".to_string()));
-    let mut populator3 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator3 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     let result = populator3.populate(&file3);
 
     assert!(
@@ -180,9 +174,14 @@ fn test_cross_file_transitive_relationships() {
     let car_symbol = resolver.resolve("Car").unwrap();
     assert_eq!(car_symbol.source_file(), Some("file3.sysml"));
 
-    // Verify transitive relationships across files
-    assert!(relationship_graph.has_transitive_path(REL_SPECIALIZATION, "Car", "Vehicle"));
-    assert!(relationship_graph.has_transitive_path(REL_SPECIALIZATION, "Car", "Thing"));
+    // Verify relationships:
+    // - Vehicle references Thing, so get_sources("Thing") should contain "Vehicle"
+    // - Car references Vehicle, so get_sources("Vehicle") should contain "Car"
+    let thing_sources = reference_index.get_sources("Thing");
+    assert_sources_contain(thing_sources, &["Vehicle"]);
+
+    let vehicle_sources = reference_index.get_sources("Vehicle");
+    assert_sources_contain(vehicle_sources, &["Car"]);
 }
 
 #[test]
@@ -191,12 +190,11 @@ fn test_unresolved_cross_file_reference() {
     let source = "part def Car :> NonExistentVehicle;";
 
     let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
-    let file = SysMLFile::from_pest(&mut pairs).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
-    let mut populator =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut reference_index = ReferenceIndex::new();
+    let mut populator = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
 
     let result = populator.populate(&file);
 
@@ -217,24 +215,22 @@ fn test_symbol_source_tracking() {
     let file2_source = "part def Car :> Vehicle;";
 
     let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
-    let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
+    let file1 = parse_file(&mut pairs1).unwrap();
 
     let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
-    let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+    let file2 = parse_file(&mut pairs2).unwrap();
 
     let mut symbol_table = SymbolTable::new();
-    let mut relationship_graph = RelationshipGraph::new();
+    let mut reference_index = ReferenceIndex::new();
 
     // Populate file 1 with source tracking
     symbol_table.set_current_file(Some("vehicle.sysml".to_string()));
-    let mut populator1 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator1 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     populator1.populate(&file1).unwrap();
 
     // Populate file 2 with source tracking
     symbol_table.set_current_file(Some("car.sysml".to_string()));
-    let mut populator2 =
-        SysmlAdapter::with_relationships(&mut symbol_table, &mut relationship_graph);
+    let mut populator2 = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
     populator2.populate(&file2).unwrap();
 
     // We can now query which file a symbol came from
@@ -259,17 +255,17 @@ fn test_workspace_with_file_paths() {
     // File 1: Base type
     let file1_source = "part def Vehicle;";
     let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
-    let file1 = SysMLFile::from_pest(&mut pairs1).unwrap();
+    let file1 = parse_file(&mut pairs1).unwrap();
 
     // File 2: Intermediate type
     let file2_source = "part def Car :> Vehicle;";
     let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
-    let file2 = SysMLFile::from_pest(&mut pairs2).unwrap();
+    let file2 = parse_file(&mut pairs2).unwrap();
 
     // File 3: Final type
     let file3_source = "part def SportsCar :> Car;";
     let mut pairs3 = SysMLParser::parse(Rule::model, file3_source).unwrap();
-    let file3 = SysMLFile::from_pest(&mut pairs3).unwrap();
+    let file3 = parse_file(&mut pairs3).unwrap();
 
     // Add files to workspace
     workspace.add_file(
@@ -307,29 +303,50 @@ fn test_workspace_with_file_paths() {
     let sports_car = resolver.resolve("SportsCar").unwrap();
     assert_eq!(sports_car.source_file(), Some("derived/sports_car.sysml"));
 
-    // Verify relationships across files
-    assert_targets_eq(
-        workspace
-            .relationship_graph()
-            .get_one_to_many(REL_SPECIALIZATION, "Car"),
-        &["Vehicle"],
-    );
-    assert_targets_eq(
-        workspace
-            .relationship_graph()
-            .get_one_to_many(REL_SPECIALIZATION, "SportsCar"),
-        &["Car"],
+    // Verify relationships across files:
+    // Car references Vehicle, so get_sources("Vehicle") should contain "Car"
+    // SportsCar references Car, so get_sources("Car") should contain "SportsCar"
+    let vehicle_sources = workspace.reference_index().get_sources("Vehicle");
+    assert_sources_contain(vehicle_sources, &["Car"]);
+
+    let car_sources = workspace.reference_index().get_sources("Car");
+    assert_sources_contain(car_sources, &["SportsCar"]);
+}
+
+/// Test that `meta` type annotations in expressions are indexed as references.
+/// This is important for "Find References" on types like `SysML::Usage`.
+#[test]
+fn test_meta_type_in_expression_indexed() {
+    // File that uses `meta SysML::Usage` in a reference expression
+    let source = r#"
+        metadata def MyMeta {
+            ref :>> baseType = causations meta SysML::Usage;
+        }
+    "#;
+
+    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let file = parse_file(&mut pairs).unwrap();
+
+    let mut symbol_table = SymbolTable::new();
+    let mut reference_index = ReferenceIndex::new();
+
+    // Set source file so references are indexed properly
+    symbol_table.set_current_file(Some("test.sysml".to_string()));
+    let mut populator = SysmlAdapter::with_index(&mut symbol_table, &mut reference_index);
+    populator.populate(&file).unwrap();
+
+    // The `meta SysML::Usage` should be indexed as a reference to `SysML::Usage`
+    let sources = reference_index.get_sources("SysML::Usage");
+    assert!(
+        !sources.is_empty(),
+        "Expected `meta SysML::Usage` to be indexed as a reference to `SysML::Usage`, got: {:?}",
+        sources
     );
 
-    // Verify transitive relationships
-    assert!(workspace.relationship_graph().has_transitive_path(
-        REL_SPECIALIZATION,
-        "SportsCar",
-        "Car"
-    ));
-    assert!(workspace.relationship_graph().has_transitive_path(
-        REL_SPECIALIZATION,
-        "SportsCar",
-        "Vehicle"
-    ));
+    // Verify the reference includes span information
+    let refs = reference_index.get_references("SysML::Usage");
+    assert!(
+        !refs.is_empty(),
+        "Expected reference info with span for `SysML::Usage`"
+    );
 }

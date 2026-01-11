@@ -44,7 +44,6 @@ analysis_token = @{ "analysis" ~ !(ASCII_ALPHANUMERIC | "_") }
 abstract_token = @{ "abstract" ~ !(ASCII_ALPHANUMERIC | "_") }
 library_token = @{ "library" ~ !(ASCII_ALPHANUMERIC | "_") }
 require_token = @{ "require" ~ !(ASCII_ALPHANUMERIC | "_") }
-conjugate_token = @{ "conjugate" ~ !(ASCII_ALPHANUMERIC | "_") }
 perform_token = @{ "perform" ~ !(ASCII_ALPHANUMERIC | "_") }
 exhibit_token = @{ "exhibit" ~ !(ASCII_ALPHANUMERIC | "_") }
 include_token = @{ "include" ~ !(ASCII_ALPHANUMERIC | "_") }
@@ -117,7 +116,6 @@ meta_token = @{ "meta" ~ !(ASCII_ALPHANUMERIC | "_") }
 null_token = @{ "null" ~ !(ASCII_ALPHANUMERIC | "_") }
 when_token = @{ "when" ~ !(ASCII_ALPHANUMERIC | "_") }
 exit_token = @{ "exit" ~ !(ASCII_ALPHANUMERIC | "_") }
-life_token = @{ "life" ~ !(ASCII_ALPHANUMERIC | "_") }
 def_token = @{ "def" ~ !(ASCII_ALPHANUMERIC | "_") }
 doc_token = @{ "doc" ~ !(ASCII_ALPHANUMERIC | "_") }
 end_token = @{ "end" ~ !(ASCII_ALPHANUMERIC | "_") }
@@ -167,7 +165,7 @@ keyword = @{
     | terminate_token | transition_token | timeslice_token | protected_token | standard_token
     | metadata_token | language_token | snapshot_token | parallel_token
     | allocate_token | analysis_token | abstract_token | library_token | require_token 
-    | conjugate_token | perform_token | exhibit_token | include_token | satisfy_token | binding_token 
+    | constant_token | perform_token | exhibit_token | include_token | satisfy_token | binding_token 
     | crosses_token | message_token | package_token | private_token | variant_token
     | concern_token | connect_token | default_token | defined_token | derived_token 
     | subject_token | ordered_token | hastype_token | istype_token | implies_token 
@@ -180,7 +178,7 @@ keyword = @{
     | port_token | case_token | calc_token | send_token | then_token | flow_token 
     | fork_token | from_token | join_token | loop_token | part_token | true_token 
     | view_token | bind_token | else_token | enum_token | item_token | meta_token 
-    | null_token | when_token | exit_token | life_token
+    | null_token | when_token | exit_token
     | def_token | doc_token | end_token | for_token | not_token | ref_token | rep_token 
     | use_token | via_token | xor_token | all_token | and_token | out_token
     | to_token | as_token | at_token | by_token | do_token | if_token | in_token | of_token | or_token
@@ -331,23 +329,10 @@ expose = {
 // Per official grammar, PortDefinition implicitly creates a ConjugatedPortDefinition
 // The ~ prefix in type references indicates a conjugated port typing
 variant_membership = { variant_token ~ variant_usage_element }
-
-// ConjugatedQualifiedName: ~QualifiedName for referencing conjugated port types
-conjugated_qualified_name = { conjugation_operator ~ qualified_name }
-
-// ConjugatedPortTyping: references a conjugated port definition
-// e.g., ": ~MyPort" where MyPort is a port definition
-conjugated_port_typing = { conjugated_qualified_name }
-
-// PortConjugation is an implicit semantic marker (empty in grammar)
-port_conjugation = { "" }
-
-// ConjugatedPortDefinition is implicitly created by PortDefinition
-// This semantic element holds the PortConjugation relationship
-conjugated_port_definition_member = { conjugated_port_definition }
-conjugated_port_definition = { port_conjugation }
-
-life_class = { life_token ~ class_token ~ identifier ~ semi_colon }
+conjugated_port_definition = {
+    occurrence_definition_prefix ~ port_token ~ def_token ~ conjugate_operator ~ definition_declaration ~ definition_body
+}
+conjugated_port_typing = { port_token ~ identifier ~ colon ~ conjugate_operator ~ identifier ~ semi_colon }
 
 
 // Requirement Constraint Memberships
@@ -2487,7 +2472,8 @@ owned_redefinition = {
 // Feature references and chains (matching KerML structure)
 feature_reference = { qualified_name | identifier | quoted_name | all_token}
 
-owned_feature_chain = { (identifier | quoted_name) ~ ("." ~ (identifier | quoted_name))+ }
+// Use @{ } (atomic) to prevent trailing whitespace from being included in span
+owned_feature_chain = @{ (identifier | quoted_name) ~ ("." ~ (identifier | quoted_name))+ }
 
 // Multiplicity (matching KerML structure)
 owned_multiplicity = { "[" ~ multiplicity_range ~ "]" }
@@ -2542,7 +2528,10 @@ identification = { (short_name ~ regular_name?) | regular_name }
 quoted_name = @{ "'" ~ (!("'") ~ ANY)+ ~ "'" }
 relationship_body = { ";" | ( forward_curl_brace ~ relationship_body_elements ~ backward_curl_brace ) }
 relationship_body_elements = { owned_annotation* }
-prefix_metadata_annotation = { "#" ~ identifier }
+
+// Metadata annotation names can be any word including keywords (e.g., #original, #derive, #derivation)
+metadata_annotation_name = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+prefix_metadata_annotation = { "#" ~ metadata_annotation_name }
 
 // Annotations
 owned_annotation = { annotating_element }
@@ -2570,7 +2559,7 @@ textual_representation = {
 }
 textual_rep_name = { !language_token ~ identifier }
 
-metadata_usage_annotation = { "#" ~ identifier ~ semi_colon }
+metadata_usage_annotation = { "#" ~ metadata_annotation_name ~ semi_colon }
 
 // Metadata
 metadata_definition = {
@@ -2578,7 +2567,7 @@ metadata_definition = {
     ~ prefix_metadata?
     ~ metadata_token
     ~ def_token
-    ~ ("<" ~ identifier ~ ">")?
+    ~ short_name?
     ~ definition_suffix
 }
 
@@ -2632,7 +2621,8 @@ metadata_alias_member = { alias_token ~ identifier ~ for_token ~ identifier ~ se
 import_prefix = { visibility? ~ import_token ~ import_all? }
 import_all = { all_token }
 
-qualified_name = { (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
+// Use @{ } (atomic) to prevent trailing whitespace from being included in span
+qualified_name = @{ (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
 namespace_marker = { "::*" }
 recursive_marker = { "::**" }
 

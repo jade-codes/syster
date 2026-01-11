@@ -522,19 +522,6 @@ match symbol {
 }
 ```
 
-### Relationship Queries
-
-```rust
-// Find all types that specialize Vehicle
-let specializations = relationship_graph
-    .get_specializations("Vehicle")
-    .unwrap_or(&[]);
-
-// Check if Car specializes Vehicle (transitively)
-let is_subtype = relationship_graph
-    .is_specialization("Car", "Vehicle");
-```
-
 ## Further Reading
 
 - [SysML v2 Specification (OMG)](https://www.omg.org/spec/SysML/2.0/)

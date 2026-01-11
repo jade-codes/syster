@@ -1,5 +1,6 @@
 use super::symbol::{Symbol, SymbolId};
-use super::table::{SymbolTable, normalize_path};
+use super::table::SymbolTable;
+use crate::semantic::types::normalize_path;
 
 impl SymbolTable {
     // ============================================================

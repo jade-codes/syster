@@ -1,17 +1,16 @@
 use crate::core::events::EventEmitter;
-use crate::semantic::graphs::{DependencyGraph, RelationshipGraph};
+use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::types::WorkspaceEvent;
 use crate::semantic::workspace::{ParsedFile, WorkspaceFile};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-/// A workspace manages multiple SysML files with a shared symbol table and relationship graph
+/// A workspace manages multiple SysML files with a shared symbol table and reference index
 pub struct Workspace<T: ParsedFile> {
     pub(super) files: HashMap<PathBuf, WorkspaceFile<T>>,
     pub(super) symbol_table: SymbolTable,
-    pub(super) relationship_graph: RelationshipGraph,
-    pub(super) dependency_graph: DependencyGraph,
+    pub(super) reference_index: ReferenceIndex,
     pub(super) file_imports: HashMap<PathBuf, Vec<String>>,
     pub(super) stdlib_loaded: bool,
     pub events: EventEmitter<WorkspaceEvent, Workspace<T>>,
@@ -23,8 +22,7 @@ impl<T: ParsedFile> Workspace<T> {
         Self {
             files: HashMap::new(),
             symbol_table: SymbolTable::new(),
-            relationship_graph: RelationshipGraph::new(),
-            dependency_graph: DependencyGraph::new(),
+            reference_index: ReferenceIndex::new(),
             file_imports: HashMap::new(),
             stdlib_loaded: false,
             events: EventEmitter::new(),

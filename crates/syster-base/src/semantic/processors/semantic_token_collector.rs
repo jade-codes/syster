@@ -1,9 +1,6 @@
 use crate::core::Span;
-use crate::core::constants::{
-    PROPERTY_REFERENCE_RELATIONSHIPS, REL_TYPING, TYPE_REFERENCE_RELATIONSHIPS,
-};
-use crate::semantic::graphs::RelationshipGraph;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
+use crate::semantic::types::TokenType;
 use crate::semantic::workspace::Workspace;
 use crate::syntax::SyntaxFile;
 
@@ -24,12 +21,10 @@ impl SemanticToken {
     /// Create a semantic token from a span and token type
     fn from_span(span: &Span, token_type: TokenType) -> Self {
         // Calculate the character length from the span
-        // Span columns are character offsets (from Pest)
         let char_length = if span.start.line == span.end.line {
             span.end.column.saturating_sub(span.start.column)
         } else {
             // Multi-line spans: just use a reasonable default
-            // (semantic tokens are typically single-line)
             1
         };
 
@@ -40,16 +35,6 @@ impl SemanticToken {
             token_type,
         }
     }
-}
-
-/// Token types for semantic highlighting
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TokenType {
-    Namespace = 0,
-    Type = 1,
-    Variable = 2,
-    Property = 3,
-    Keyword = 4,
 }
 
 /// Collects semantic tokens from a symbol table
@@ -66,78 +51,6 @@ impl SemanticTokenCollector {
             if let Some(span) = symbol.span() {
                 let token_type = Self::map_symbol_to_token_type(symbol);
                 tokens.push(SemanticToken::from_span(&span, token_type));
-            }
-        }
-
-        // Sort tokens by position (line, then column)
-        tokens.sort_by_key(|t| (t.line, t.column));
-
-        tokens
-    }
-
-    /// Collect semantic tokens from workspace (includes type references from relationship graph)
-    pub fn collect_from_workspace(
-        workspace: &Workspace<SyntaxFile>,
-        file_path: &str,
-    ) -> Vec<SemanticToken> {
-        let mut tokens = Self::collect_from_symbols(workspace.symbol_table(), file_path);
-
-        // Add type reference tokens from relationship graph
-        let type_tokens = Self::extract_type_references_from_graph(
-            workspace.symbol_table(),
-            workspace.relationship_graph(),
-            file_path,
-        );
-        tokens.extend(type_tokens);
-        tokens.sort_by_key(|t| (t.line, t.column));
-
-        tokens
-    }
-
-    /// Extract type reference tokens from the relationship graph.
-    /// This replaces AST traversal with semantic data lookup.
-    fn extract_type_references_from_graph(
-        symbol_table: &SymbolTable,
-        relationship_graph: &RelationshipGraph,
-        file_path: &str,
-    ) -> Vec<SemanticToken> {
-        let mut tokens = Vec::new();
-
-        // Use indexed lookup instead of iterating all symbols
-        for symbol in symbol_table.get_symbols_for_file(file_path) {
-            let qname = symbol.qualified_name();
-
-            // Typing (one-to-one relationship) → Type token
-            if let Some((_target, Some(loc))) =
-                relationship_graph.get_one_to_one_with_location(REL_TYPING, qname)
-            {
-                tokens.push(SemanticToken::from_span(&loc.span, TokenType::Type));
-            }
-
-            // Type reference relationships (specialization, satisfy, etc.) → Type tokens
-            for rel_type in TYPE_REFERENCE_RELATIONSHIPS {
-                if let Some(targets_with_locs) =
-                    relationship_graph.get_one_to_many_with_locations(rel_type, qname)
-                {
-                    for (_target, loc_opt) in targets_with_locs {
-                        if let Some(loc) = loc_opt {
-                            tokens.push(SemanticToken::from_span(&loc.span, TokenType::Type));
-                        }
-                    }
-                }
-            }
-
-            // Property reference relationships (redefinition, subsetting, etc.) → Property tokens
-            for rel_type in PROPERTY_REFERENCE_RELATIONSHIPS {
-                if let Some(targets_with_locs) =
-                    relationship_graph.get_one_to_many_with_locations(rel_type, qname)
-                {
-                    for (_target, loc_opt) in targets_with_locs {
-                        if let Some(loc) = loc_opt {
-                            tokens.push(SemanticToken::from_span(&loc.span, TokenType::Property));
-                        }
-                    }
-                }
             }
 
             // Handle alias targets (the "for X" part of "alias Y for X")
@@ -158,6 +71,41 @@ impl SemanticTokenCollector {
                 tokens.push(SemanticToken::from_span(span, TokenType::Namespace));
             }
         }
+
+        // Sort tokens by position (line, then column)
+        tokens.sort_by_key(|t| (t.line, t.column));
+
+        tokens
+    }
+
+    /// Collect semantic tokens from workspace (uses symbol table AND reference index)
+    pub fn collect_from_workspace(
+        workspace: &Workspace<SyntaxFile>,
+        file_path: &str,
+    ) -> Vec<SemanticToken> {
+        let mut tokens = Self::collect_from_symbols(workspace.symbol_table(), file_path);
+
+        // Track positions that already have tokens from symbols
+        // (symbol tokens take precedence over reference tokens)
+        let existing_positions: std::collections::HashSet<(u32, u32)> =
+            tokens.iter().map(|t| (t.line, t.column)).collect();
+
+        // Also collect type references from the reference index
+        // Skip if there's already a token at this position (from the symbol table)
+        for ref_info in workspace
+            .reference_index()
+            .get_references_in_file(file_path)
+        {
+            // Use the token type from the reference, or default to Type
+            let token_type = ref_info.token_type.unwrap_or(TokenType::Type);
+            let token = SemanticToken::from_span(&ref_info.span, token_type);
+            if !existing_positions.contains(&(token.line, token.column)) {
+                tokens.push(token);
+            }
+        }
+
+        // Sort tokens by position (line, then column)
+        tokens.sort_by_key(|t| (t.line, t.column));
 
         tokens
     }

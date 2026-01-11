@@ -2,7 +2,7 @@
   "name": "syster",
   "displayName": "SysML v2 Language Support",
   "description": "Language support for SysML v2 and KerML with LSP-based features",
-  "version": "0.1.6-alpha",
+  "version": "0.1.7-alpha",
   "publisher": "jade-codes",
   "repository": {
     "type": "git",

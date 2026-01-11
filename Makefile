@@ -1,4 +1,27 @@
-.PHONY: help build run test clean fmt lint check run-guidelines watch install lint-test-naming run-ui-guidelines
+.PHONY: help build run test clean fmt lint check run-guidelines watch install install-dev lint-test-naming run-ui-guidelines
+
+# VS Code extension installation paths
+VSCODE_EXT_DIR_LINUX = $(HOME)/.vscode-server/extensions
+VSCODE_EXT_DIR_MAC = $(HOME)/.vscode/extensions
+VSCODE_EXT_DIR_WIN = $(APPDATA)/Code/User/extensions
+EXT_NAME = jade-codes.sysml-language-support
+
+# Detect OS and set extension directory
+ifeq ($(OS),Windows_NT)
+    VSCODE_EXT_DIR = $(VSCODE_EXT_DIR_WIN)
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        VSCODE_EXT_DIR = $(VSCODE_EXT_DIR_MAC)
+    else
+        # Check if running in devcontainer/remote
+        ifneq ($(wildcard $(VSCODE_EXT_DIR_LINUX)),)
+            VSCODE_EXT_DIR = $(VSCODE_EXT_DIR_LINUX)
+        else
+            VSCODE_EXT_DIR = $(HOME)/.vscode/extensions
+        endif
+    endif
+endif
 
 # Default target
 help:
@@ -14,7 +37,8 @@ help:
 	@echo "  run-guidelines    - Run complete validation (fmt + lint + build + test)"
 	@echo "  run-ui-guidelines - Run ui validation (typecheck + lint + test + build)"
 	@echo "  watch             - Watch and rebuild on changes"
-	@echo "  install           - Build and install syster-lsp and VS Code extension"
+	@echo "  install           - Install the binary"
+	@echo "  install-dev       - Install VS Code extension for development"
 
 # Build the project
 build:
@@ -203,3 +227,32 @@ run-ui-guidelines:
 	@echo "✓ Build passed"
 	@echo ""
 	@echo "=== ✓ All frontend guidelines passed! ==="
+
+# Install VS Code extension for development
+# Builds release binaries and copies extension to VS Code extensions folder
+install-dev: release
+	@echo "=== Installing VS Code Extension for Development ==="
+	@echo ""
+	@echo "Step 1/3: Building VS Code extension..."
+	@cd editors/vscode && npm install && npm run compile
+	@echo "✓ Extension built"
+	@echo ""
+	@echo "Step 2/3: Copying extension to $(VSCODE_EXT_DIR)/$(EXT_NAME)..."
+	@mkdir -p "$(VSCODE_EXT_DIR)/$(EXT_NAME)"
+	@rm -rf "$(VSCODE_EXT_DIR)/$(EXT_NAME)/*"
+	@cp -r editors/vscode/* "$(VSCODE_EXT_DIR)/$(EXT_NAME)/"
+	@echo "✓ Extension copied"
+	@echo ""
+	@echo "Step 3/3: Copying LSP server binary..."
+	@mkdir -p "$(VSCODE_EXT_DIR)/$(EXT_NAME)/server"
+	@PLATFORM=$$(uname -s | tr '[:upper:]' '[:lower:]'); \
+	ARCH=$$(uname -m); \
+	if [ "$$ARCH" = "x86_64" ]; then ARCH="x64"; fi; \
+	if [ "$$ARCH" = "aarch64" ]; then ARCH="arm64"; fi; \
+	BINARY_NAME="syster-lsp-$$PLATFORM-$$ARCH"; \
+	cp target/release/syster-lsp "$(VSCODE_EXT_DIR)/$(EXT_NAME)/server/$$BINARY_NAME"; \
+	echo "  Copied as $$BINARY_NAME"
+	@echo "✓ LSP server copied"
+	@echo ""
+	@echo "=== ✓ Extension installed! ==="
+	@echo "Reload VS Code to activate the extension."

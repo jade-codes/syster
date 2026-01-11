@@ -1,39 +1,13 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 
 use crate::core::Span;
 use crate::core::events::EventEmitter;
 use crate::core::operation::{EventBus, OperationResult};
 use crate::semantic::SymbolTableEvent;
+use crate::semantic::types::normalize_path;
 
 use super::scope::{Import, Scope};
 use super::symbol::Symbol;
-
-/// Normalize a file path for consistent storage and lookup.
-/// For stdlib files (containing "sysml.library/"), extracts the relative path.
-/// For other files, attempts canonicalization.
-pub(super) fn normalize_path(path: &str) -> String {
-    // Check if this is a stdlib file
-    if let Some(idx) = path.find("sysml.library/") {
-        return path[idx..].to_string();
-    }
-
-    // For non-stdlib files, try to canonicalize
-    if let Ok(canonical) = Path::new(path).canonicalize() {
-        return canonical.to_string_lossy().to_string();
-    }
-
-    // If canonicalization fails, do simple normalization
-    let path_buf = PathBuf::from(path);
-    let normalized = if path_buf.is_absolute() {
-        path_buf
-    } else {
-        std::env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("/"))
-            .join(path_buf)
-    };
-    normalized.to_string_lossy().to_string()
-}
 
 use super::symbol::SymbolId;
 

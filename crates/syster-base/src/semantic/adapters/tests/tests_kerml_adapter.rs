@@ -3,7 +3,7 @@
 //! Tests for KermlAdapter constructors and initialization.
 
 use super::super::kerml_adapter::KermlAdapter;
-use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::resolver::Resolver;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 
@@ -16,11 +16,11 @@ fn test_new_creates_adapter_with_empty_namespace() {
 }
 
 #[test]
-fn test_new_creates_adapter_with_no_relationship_graph() {
+fn test_new_creates_adapter_with_no_reference_index() {
     let mut table = SymbolTable::new();
     let adapter = KermlAdapter::new(&mut table);
 
-    assert!(adapter.relationship_graph.is_none());
+    assert!(adapter.reference_index.is_none());
 }
 
 #[test]
@@ -93,31 +93,31 @@ fn test_new_with_populated_symbol_table() {
 }
 
 #[test]
-fn test_with_relationships_includes_relationship_graph() {
+fn test_with_index_includes_reference_index() {
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
-    let adapter = KermlAdapter::with_relationships(&mut table, &mut graph);
+    let adapter = KermlAdapter::with_index(&mut table, &mut graph);
 
-    assert!(adapter.relationship_graph.is_some());
+    assert!(adapter.reference_index.is_some());
 }
 
 #[test]
-fn test_with_relationships_has_empty_namespace() {
+fn test_with_index_has_empty_namespace() {
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
-    let adapter = KermlAdapter::with_relationships(&mut table, &mut graph);
+    let adapter = KermlAdapter::with_index(&mut table, &mut graph);
 
     assert!(adapter.current_namespace.is_empty());
 }
 
 #[test]
-fn test_with_relationships_has_empty_errors() {
+fn test_with_index_has_empty_errors() {
     let mut table = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
-    let adapter = KermlAdapter::with_relationships(&mut table, &mut graph);
+    let adapter = KermlAdapter::with_index(&mut table, &mut graph);
 
     assert!(adapter.errors.is_empty());
 }
@@ -148,24 +148,24 @@ fn test_adapter_initialization_state() {
         "namespace should be empty"
     );
     assert!(
-        adapter.relationship_graph.is_none(),
-        "relationship_graph should be None"
+        adapter.reference_index.is_none(),
+        "reference_index should be None"
     );
     assert!(adapter.errors.is_empty(), "errors should be empty");
 }
 
 #[test]
-fn test_new_vs_with_relationships_difference() {
+fn test_new_vs_with_index_difference() {
     let mut table1 = SymbolTable::new();
     let mut table2 = SymbolTable::new();
-    let mut graph = RelationshipGraph::new();
+    let mut graph = ReferenceIndex::new();
 
     let adapter_without_graph = KermlAdapter::new(&mut table1);
-    let adapter_with_graph = KermlAdapter::with_relationships(&mut table2, &mut graph);
+    let adapter_with_graph = KermlAdapter::with_index(&mut table2, &mut graph);
 
-    // The key difference is the relationship_graph field
-    assert!(adapter_without_graph.relationship_graph.is_none());
-    assert!(adapter_with_graph.relationship_graph.is_some());
+    // The key difference is the reference_index field
+    assert!(adapter_without_graph.reference_index.is_none());
+    assert!(adapter_with_graph.reference_index.is_some());
 
     // All other fields should be the same
     assert!(adapter_without_graph.current_namespace.is_empty());

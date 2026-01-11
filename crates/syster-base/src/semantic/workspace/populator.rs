@@ -1,10 +1,10 @@
 //! # Workspace Populator
 //!
 //! Handles the population of files in a workspace - extracting symbols from
-//! ASTs and building the symbol table and relationship graph.
+//! ASTs and building the symbol table and reference index.
 
 use crate::semantic::adapters;
-use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::workspace::WorkspaceFile;
 use crate::syntax::SyntaxFile;
@@ -15,19 +15,19 @@ use std::path::PathBuf;
 pub struct WorkspacePopulator<'a> {
     files: &'a HashMap<PathBuf, WorkspaceFile<SyntaxFile>>,
     symbol_table: &'a mut SymbolTable,
-    relationship_graph: &'a mut RelationshipGraph,
+    reference_index: &'a mut ReferenceIndex,
 }
 
 impl<'a> WorkspacePopulator<'a> {
     pub fn new(
         files: &'a HashMap<PathBuf, WorkspaceFile<SyntaxFile>>,
         symbol_table: &'a mut SymbolTable,
-        relationship_graph: &'a mut RelationshipGraph,
+        reference_index: &'a mut ReferenceIndex,
     ) -> Self {
         Self {
             files,
             symbol_table,
-            relationship_graph,
+            reference_index,
         }
     }
 
@@ -58,9 +58,6 @@ impl<'a> WorkspacePopulator<'a> {
             }
         }
 
-        // NOTE: collect_references removed - references are now queried
-        // directly from RelationshipGraph via get_references_to() for O(1) lookup
-        // instead of O(n) on every keystroke
         Ok(unpopulated)
     }
 
@@ -74,24 +71,9 @@ impl<'a> WorkspacePopulator<'a> {
 
         let file_path_str = path.to_string_lossy().to_string();
 
-        // Collect qualified names of symbols from this file BEFORE removing them
-        // so we can also remove their relationships
-        let symbols_to_remove: Vec<String> = self
-            .symbol_table
-            .get_symbols_for_file(&file_path_str)
-            .into_iter()
-            .map(|symbol| symbol.qualified_name().to_string())
-            .collect();
-
-        // Remove relationships for all symbols from this file
-        for qualified_name in &symbols_to_remove {
-            self.relationship_graph
-                .remove_relationships_for_source(qualified_name);
-        }
-
-        // Also remove relationships stored by file path (the RefLocation entries)
-        self.relationship_graph
-            .remove_relationships_for_file(&file_path_str);
+        // Remove references from this file
+        self.reference_index
+            .remove_references_from_file(&file_path_str);
 
         // Remove imports from the file
         self.symbol_table.remove_imports_from_file(&file_path_str);
@@ -102,7 +84,7 @@ impl<'a> WorkspacePopulator<'a> {
             .set_current_file(Some(file_path_str.clone()));
 
         // Delegate to adapter factory - workspace doesn't know about specific languages
-        adapters::populate_syntax_file(&content, self.symbol_table, self.relationship_graph)
+        adapters::populate_syntax_file(&content, self.symbol_table, self.reference_index)
             .map_err(|errors| format!("Failed to populate {file_path_str}: {errors:?}"))
     }
 

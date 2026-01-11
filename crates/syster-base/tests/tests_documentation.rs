@@ -10,9 +10,8 @@
 #![allow(unused_mut)]
 
 use std::path::PathBuf;
-use syster::semantic::{RelationshipGraph, Resolver, SymbolTable, Workspace};
+use syster::semantic::{Resolver, SymbolTable, Workspace};
 use syster::syntax::SyntaxFile;
-use syster::syntax::sysml::ast::SysMLFile;
 
 /// Verify that code examples in ARCHITECTURE.md compile and work
 #[test]
@@ -37,7 +36,7 @@ fn test_workspace_api_exists() {
 
     // Verify APIs exist as documented and return correct types
     let symbol_table = workspace.symbol_table();
-    let _relationship_graph = workspace.relationship_graph();
+    let _reference_index = workspace.reference_index();
 
     // Verify they work correctly
     assert!(
@@ -74,7 +73,6 @@ fn test_documented_modules_exist() {
 
     // Verify key types are public as documented
     let _: SymbolTable;
-    let _: RelationshipGraph;
     let _: Resolver;
     let _: Workspace<SyntaxFile>;
 }
@@ -116,33 +114,28 @@ fn test_symbol_enum_variants_documented() {
     // If any variant changes, this test breaks and reminds us to update docs
 }
 
-/// Verify relationship graph methods documented in ARCHITECTURE.md exist
+/// Verify reference index methods exist
 #[test]
-fn test_relationship_graph_api_matches_docs() {
-    use syster::core::constants::REL_SPECIALIZATION;
-    use syster::semantic::graphs::RelationshipGraph;
+fn test_reference_index_api_matches_docs() {
+    use std::path::PathBuf;
+    use syster::core::Span;
+    use syster::semantic::graphs::ReferenceIndex;
 
-    let mut graph = RelationshipGraph::new();
+    let mut index = ReferenceIndex::new();
 
-    // These methods are documented - ensure they exist and work correctly
-    graph.add_one_to_many(REL_SPECIALIZATION, "Vehicle", "Car", None, None);
+    // Add a reference with span information
+    let file = PathBuf::from("test.sysml");
+    let span = Span::from_coords(0, 0, 0, 10);
+    index.add_reference("Vehicle", "Car", Some(&file), Some(span));
 
-    let targets = graph.get_one_to_many(REL_SPECIALIZATION, "Vehicle");
-    assert_eq!(targets.as_ref().map(|v| v.len()), Some(1));
-    assert!(targets.unwrap().contains(&"Car"));
-
-    let sources = graph.get_one_to_many_sources(REL_SPECIALIZATION, "Car");
+    // Get sources that reference a target
+    let sources = index.get_sources("Car");
     assert_eq!(sources.len(), 1);
     assert!(sources.contains(&"Vehicle"));
 
-    assert!(
-        graph.has_transitive_path(REL_SPECIALIZATION, "Vehicle", "Car"),
-        "Should have path from Vehicle to Car"
-    );
-    assert!(
-        !graph.has_transitive_path(REL_SPECIALIZATION, "Car", "Vehicle"),
-        "Should not have reverse path without adding it"
-    );
+    // Check if has references
+    assert!(index.has_references("Car"));
+    assert!(!index.has_references("Unknown"));
 }
 
 /// Verify the three-phase pipeline terminology is accurate

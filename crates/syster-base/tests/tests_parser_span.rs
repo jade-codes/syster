@@ -1,5 +1,4 @@
 #![allow(clippy::unwrap_used)]
-
 //! Tests for source position tracking (span) in AST nodes
 //!
 //! These tests verify that the parser correctly captures source locations

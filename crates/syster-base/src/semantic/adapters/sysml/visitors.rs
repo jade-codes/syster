@@ -1,5 +1,5 @@
-use crate::core::constants::*;
 use crate::semantic::symbol_table::Symbol;
+use crate::semantic::types::TokenType;
 use crate::syntax::sysml::ast::{
     Alias, Comment, Definition, Import, NamespaceDeclaration, Package, Usage,
 };
@@ -9,7 +9,6 @@ use crate::semantic::adapters::SysmlAdapter;
 
 impl<'a> AstVisitor for SysmlAdapter<'a> {
     fn visit_namespace(&mut self, namespace: &NamespaceDeclaration) {
-        // Create the Package symbol for the file-level namespace
         let qualified_name = self.qualified_name(&namespace.name);
         let scope_id = self.symbol_table.current_scope_id();
         let current_file = self.symbol_table.current_file().map(String::from);
@@ -21,9 +20,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             span: namespace.span,
         };
         self.insert_symbol(namespace.name.clone(), symbol);
-
-        // Enter the file-level namespace
-        // This ensures all subsequent elements at file level are qualified with the namespace
         self.enter_namespace(namespace.name.clone());
     }
 
@@ -57,12 +53,11 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 semantic_role: Some(semantic_role),
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
-                // Use name_span if available, fallback to full span
                 span: definition.span,
             };
             self.insert_symbol(name.clone(), symbol);
 
-            // If there's a short name (e.g., <mV> MassValue), create an alias for it
+            // If there's a short name, create an alias for it
             if let Some(ref short_name) = definition.short_name {
                 let short_qualified_name = self.qualified_name(short_name);
                 let alias_symbol = Symbol::Alias {
@@ -72,95 +67,45 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                     target_span: definition.span,
                     scope_id,
                     source_file: self.symbol_table.current_file().map(String::from),
-                    // Use the short name's own span, not the definition's span
                     span: definition.short_name_span,
                 };
                 self.insert_symbol(short_name.clone(), alias_symbol);
             }
 
-            if let Some(ref mut graph) = self.relationship_graph {
-                let file = self.symbol_table.current_file();
-                for spec in &definition.relationships.specializes {
-                    graph.add_one_to_many(
-                        REL_SPECIALIZATION,
-                        &qualified_name,
-                        &spec.target,
-                        file,
-                        spec.span,
-                    );
-                }
+            // Index all relationship references for reverse lookups
+            for spec in &definition.relationships.specializes {
+                self.index_reference(&qualified_name, &spec.target, spec.span);
+            }
+            for redef in &definition.relationships.redefines {
+                self.index_reference(&qualified_name, &redef.target, redef.span);
+            }
+            for include in &definition.relationships.includes {
+                self.index_reference(&qualified_name, &include.target, include.span);
+            }
 
-                for redef in &definition.relationships.redefines {
-                    graph.add_one_to_many(
-                        REL_REDEFINITION,
-                        &qualified_name,
-                        &redef.target,
-                        file,
-                        redef.span,
-                    );
-                }
-
-                // Extract top-level domain relationships (e.g., include in use case definitions)
-                // Note: exhibit/perform/satisfy are handled as nested usages below
-                for include in &definition.relationships.includes {
-                    graph.add_one_to_many(
-                        REL_INCLUDE,
-                        &qualified_name,
-                        &include.target,
-                        file,
-                        include.span,
-                    );
-                }
-
-                // Extract domain relationships from nested usages in the body
-                for member in &definition.body {
-                    if let crate::syntax::sysml::ast::enums::DefinitionMember::Usage(usage) = member
-                    {
-                        // Extract satisfy relationships
-                        for satisfy in &usage.relationships.satisfies {
-                            graph.add_one_to_many(
-                                REL_SATISFY,
-                                &qualified_name,
-                                &satisfy.target,
-                                file,
-                                satisfy.span,
-                            );
-                        }
-                        // Extract perform relationships
-                        for perform in &usage.relationships.performs {
-                            graph.add_one_to_many(
-                                REL_PERFORM,
-                                &qualified_name,
-                                &perform.target,
-                                file,
-                                perform.span,
-                            );
-                        }
-                        // Extract exhibit relationships
-                        for exhibit in &usage.relationships.exhibits {
-                            graph.add_one_to_many(
-                                REL_EXHIBIT,
-                                &qualified_name,
-                                &exhibit.target,
-                                file,
-                                exhibit.span,
-                            );
-                        }
-                        // Extract include relationships (from use case bodies)
-                        for include in &usage.relationships.includes {
-                            graph.add_one_to_many(
-                                REL_INCLUDE,
-                                &qualified_name,
-                                &include.target,
-                                file,
-                                include.span,
-                            );
-                        }
+            // Index domain relationships from nested usages
+            for member in &definition.body {
+                if let crate::syntax::sysml::ast::enums::DefinitionMember::Usage(usage) = member {
+                    if let Some((target, span)) = usage.domain_target() {
+                        self.index_reference(&qualified_name, target, span);
+                    }
+                    // Also index explicit relationship targets
+                    for satisfy in &usage.relationships.satisfies {
+                        self.index_reference(&qualified_name, &satisfy.target, satisfy.span);
+                    }
+                    for perform in &usage.relationships.performs {
+                        self.index_reference(&qualified_name, &perform.target, perform.span);
+                    }
+                    for exhibit in &usage.relationships.exhibits {
+                        self.index_reference(&qualified_name, &exhibit.target, exhibit.span);
+                    }
+                    for include in &usage.relationships.includes {
+                        self.index_reference(&qualified_name, &include.target, include.span);
                     }
                 }
             }
 
-            // Visit nested members in the body (add them to symbol table)
+            // Visit nested members in the body
             self.enter_namespace(name.clone());
             for member in &definition.body {
                 match member {
@@ -175,23 +120,75 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     }
 
     fn visit_usage(&mut self, usage: &Usage) {
-        // Get the name: explicit name, or inferred from first redefinition target
-        // In SysML v2, `attribute :>> num` creates a feature named "num" that redefines the inherited one
-        let (name, is_anonymous) = if let Some(name) = &usage.name {
-            (name.clone(), false)
+        // Determine the name and span: prefer explicit name, fall back to first redefinition or subsetting target
+        let (name, name_span, is_anonymous) = if let Some(name) = &usage.name {
+            (name.clone(), usage.span, false)
         } else if let Some(first_redef) = usage.relationships.redefines.first() {
-            // Anonymous redefinition inherits name from redefined feature
-            (first_redef.target.clone(), true)
+            // Use the redefinition target as the name, with its span (for :>>)
+            (first_redef.target.clone(), first_redef.span, true)
+        } else if let Some(first_subset) = usage.relationships.subsets.first() {
+            // Use the subsetting target as the name, with its span (for :>)
+            (first_subset.target.clone(), first_subset.span, true)
         } else {
-            // No name and no redefinition - skip
             return;
         };
 
         let qualified_name = self.qualified_name(&name);
 
-        // For anonymous redefinitions, avoid symbol table collisions by checking if a symbol
-        // with this qualified name already exists. This prevents duplicate symbols when the
-        // same redefinition is processed multiple times (e.g., from different file paths).
+        // Always index relationship references, even for duplicate anonymous usages.
+        // This ensures semantic tokens are generated for type references like
+        // `ref :> annotatedElement : SysML::ConnectionDefinition;`
+        //
+        // Token types are determined by what the reference points to:
+        // - redefines/subsets → Property (they reference usages/features)
+        // - typed_by → Type (they reference definitions/classifiers)
+        for rel in &usage.relationships.redefines {
+            self.index_reference_with_type(
+                &qualified_name,
+                &rel.target,
+                rel.span,
+                Some(TokenType::Property),
+            );
+        }
+        for subset in &usage.relationships.subsets {
+            self.index_reference_with_type(
+                &qualified_name,
+                &subset.target,
+                subset.span,
+                Some(TokenType::Property),
+            );
+        }
+        if let Some(ref target) = usage.relationships.typed_by {
+            self.index_reference_with_type(
+                &qualified_name,
+                target,
+                usage.relationships.typed_by_span,
+                Some(TokenType::Type),
+            );
+        }
+        // references (::>) target usages, so Property token
+        for reference in &usage.relationships.references {
+            self.index_reference_with_type(
+                &qualified_name,
+                &reference.target,
+                reference.span,
+                Some(TokenType::Property),
+            );
+        }
+        // crosses (=>) target usages, so Property token
+        for cross in &usage.relationships.crosses {
+            self.index_reference_with_type(
+                &qualified_name,
+                &cross.target,
+                cross.span,
+                Some(TokenType::Property),
+            );
+        }
+        for meta in &usage.relationships.meta {
+            self.index_reference(&qualified_name, &meta.target, meta.span);
+        }
+
+        // Skip duplicate anonymous usages (don't add to symbol table twice)
         if is_anonymous
             && self
                 .symbol_table
@@ -201,7 +198,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             return;
         }
 
-        // Create a symbol for all usages (named and inferred from redefinition)
         let kind = Self::map_usage_kind(&usage.kind);
         let semantic_role = Self::usage_kind_to_semantic_role(&usage.kind);
         let scope_id = self.symbol_table.current_scope_id();
@@ -214,11 +210,11 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             usage_type: usage.relationships.typed_by.clone(),
             scope_id,
             source_file: self.symbol_table.current_file().map(String::from),
-            span: usage.span,
+            span: name_span,
         };
         self.insert_symbol(name.clone(), symbol);
 
-        // If there's a short name (e.g., <kg> kilogram), create an alias for it
+        // If there's a short name, create an alias
         if let Some(ref short_name) = usage.short_name {
             let short_qualified_name = self.qualified_name(short_name);
             let alias_symbol = Symbol::Alias {
@@ -228,78 +224,21 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 target_span: usage.span,
                 scope_id,
                 source_file: self.symbol_table.current_file().map(String::from),
-                // Use the short name's own span, not the usage's span
                 span: usage.short_name_span,
             };
             self.insert_symbol(short_name.clone(), alias_symbol);
         }
 
-        // Store relationships for both named and anonymous usages
-        if let Some(ref mut graph) = self.relationship_graph {
-            let file = self.symbol_table.current_file();
-            // Redefinitions (:>>)
-            for rel in &usage.relationships.redefines {
-                graph.add_one_to_many(
-                    REL_REDEFINITION,
-                    &qualified_name,
-                    &rel.target,
-                    file,
-                    rel.span,
-                );
-            }
-            // Subsetting (:>)
-            for subset in &usage.relationships.subsets {
-                graph.add_one_to_many(
-                    REL_SUBSETTING,
-                    &qualified_name,
-                    &subset.target,
-                    file,
-                    subset.span,
-                );
-            }
-            // Feature typing (:) - store raw target name, resolved post-population
-            if let Some(ref target) = usage.relationships.typed_by {
-                graph.add_one_to_one(
-                    REL_TYPING,
-                    &qualified_name,
-                    target,
-                    file,
-                    usage.relationships.typed_by_span,
-                );
-            }
-            // References (::>)
-            for reference in &usage.relationships.references {
-                graph.add_one_to_many(
-                    REL_REFERENCE_SUBSETTING,
-                    &qualified_name,
-                    &reference.target,
-                    file,
-                    reference.span,
-                );
-            }
-            // Cross (=>)
-            for cross in &usage.relationships.crosses {
-                graph.add_one_to_many(
-                    REL_CROSS_SUBSETTING,
-                    &qualified_name,
-                    &cross.target,
-                    file,
-                    cross.span,
-                );
-            }
-        }
-
-        // Visit nested members in the usage body (only for named usages)
-        if let Some(name) = &usage.name {
+        // Visit nested members
+        // Use the actual name for named usages, or the generated anonymous name for anonymous usages
+        if !usage.body.is_empty() {
             self.enter_namespace(name.clone());
             for member in &usage.body {
                 match member {
                     crate::syntax::sysml::ast::enums::UsageMember::Usage(nested_usage) => {
                         self.visit_usage(nested_usage);
                     }
-                    crate::syntax::sysml::ast::enums::UsageMember::Comment(_) => {
-                        // Comments don't affect symbol table
-                    }
+                    crate::syntax::sysml::ast::enums::UsageMember::Comment(_) => {}
                 }
             }
             self.exit_namespace();
@@ -307,7 +246,6 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
     }
 
     fn visit_import(&mut self, import: &Import) {
-        // Record the import in the current scope for resolution
         let current_file = self.symbol_table.current_file().map(String::from);
         self.symbol_table.add_import(
             import.path.clone(),
@@ -317,14 +255,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
             current_file.clone(),
         );
 
-        // Also create a Symbol::Import for semantic token highlighting
         let scope_id = self.symbol_table.current_scope_id();
-
-        // Note: Two different identifier formats are used here:
-        // 1. qualified_name: "import::scope_id::path" - Globally unique identifier for the symbol,
-        //    includes scope_id to distinguish same import path used in different scopes
-        // 2. key: "import::path" - Symbol table insertion key, simpler format without scope_id
-        //    used to store the symbol in the current scope without conflicts
         let qualified_name = format!("import::{}::{}", scope_id, import.path);
         let key = format!("import::{}", import.path);
 
@@ -340,9 +271,7 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         self.insert_symbol(key, symbol);
     }
 
-    fn visit_comment(&mut self, _comment: &Comment) {
-        // Comments don't affect symbol table
-    }
+    fn visit_comment(&mut self, _comment: &Comment) {}
 
     fn visit_alias(&mut self, alias: &Alias) {
         if let Some(name) = &alias.name {

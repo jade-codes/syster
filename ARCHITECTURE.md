@@ -67,7 +67,9 @@ crates/
 │   │   │   ├── graph.rs         # Relationship graphs
 │   │   │   ├── resolver.rs      # Name resolution (qualified names)
 │   │   │   ├── analyzer.rs      # Validation passes
-│   │   │   └── workspace.rs     # Multi-file coordination
+│   │   │   ├── workspace.rs     # Multi-file coordination
+│   │   │   └── types/
+│   │   │       └── path_utils.rs  # Consistent file path normalization
 │   │   └── project/     # File loading
 │   │       ├── workspace_loader.rs  # Load user files on demand
 │   │       └── stdlib_loader.rs     # Load standard library
