@@ -879,12 +879,52 @@ fn test_sysml_import_generates_namespace_token() {
 // ============================================================================
 
 /// Helper struct to track test results for each construct
-#[derive(Debug)]
+#[derive(Debug, Default)]
+#[allow(dead_code)]
 struct ConstructTest {
     name: &'static str,
     source: &'static str,
     expected_definitions: Vec<&'static str>,
     expected_type_refs: Vec<&'static str>,
+    /// Expected Property token references (for redefines/subsets on usages)
+    expected_property_refs: Vec<&'static str>,
+}
+
+impl ConstructTest {
+    /// Create a new test with no property refs (default for most tests)
+    #[allow(dead_code)]
+    fn new(
+        name: &'static str,
+        source: &'static str,
+        expected_definitions: Vec<&'static str>,
+        expected_type_refs: Vec<&'static str>,
+    ) -> Self {
+        Self {
+            name,
+            source,
+            expected_definitions,
+            expected_type_refs,
+            expected_property_refs: vec![],
+        }
+    }
+
+    /// Create a new test with property refs (for redefines/subsets on usages)
+    #[allow(dead_code)]
+    fn with_property_refs(
+        name: &'static str,
+        source: &'static str,
+        expected_definitions: Vec<&'static str>,
+        expected_type_refs: Vec<&'static str>,
+        expected_property_refs: Vec<&'static str>,
+    ) -> Self {
+        Self {
+            name,
+            source,
+            expected_definitions,
+            expected_type_refs,
+            expected_property_refs,
+        }
+    }
 }
 
 /// Test ALL SysML definition types get semantic tokens
@@ -897,6 +937,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "part def Vehicle;",
             expected_definitions: vec!["Vehicle"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Part definition with specialization
         ConstructTest {
@@ -904,6 +945,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "part def Car :> Vehicle;",
             expected_definitions: vec!["Car"],
             expected_type_refs: vec!["Vehicle"],
+            ..Default::default()
         },
         // Port definition
         ConstructTest {
@@ -911,6 +953,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "port def DataPort;",
             expected_definitions: vec!["DataPort"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Action definition
         ConstructTest {
@@ -918,6 +961,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "action def Move;",
             expected_definitions: vec!["Move"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Attribute definition
         ConstructTest {
@@ -925,6 +969,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "attribute def Speed;",
             expected_definitions: vec!["Speed"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Item definition
         ConstructTest {
@@ -932,6 +977,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "item def Fuel;",
             expected_definitions: vec!["Fuel"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Connection definition
         ConstructTest {
@@ -939,6 +985,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "connection def Link;",
             expected_definitions: vec!["Link"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Interface definition
         ConstructTest {
@@ -946,6 +993,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "interface def DataInterface;",
             expected_definitions: vec!["DataInterface"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Allocation definition
         ConstructTest {
@@ -953,6 +1001,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "allocation def ResourceAlloc;",
             expected_definitions: vec!["ResourceAlloc"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Requirement definition
         ConstructTest {
@@ -960,6 +1009,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "requirement def SafetyReq;",
             expected_definitions: vec!["SafetyReq"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Constraint definition
         ConstructTest {
@@ -967,6 +1017,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "constraint def MassLimit;",
             expected_definitions: vec!["MassLimit"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // State definition
         ConstructTest {
@@ -974,6 +1025,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "state def EngineState;",
             expected_definitions: vec!["EngineState"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Calc definition
         ConstructTest {
@@ -981,6 +1033,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "calc def TotalMass;",
             expected_definitions: vec!["TotalMass"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Case definition
         ConstructTest {
@@ -988,6 +1041,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "case def TestCase;",
             expected_definitions: vec!["TestCase"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Analysis case definition
         ConstructTest {
@@ -995,6 +1049,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "analysis def PerformanceAnalysis;",
             expected_definitions: vec!["PerformanceAnalysis"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Verification case definition
         ConstructTest {
@@ -1002,6 +1057,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "verification def SafetyVerification;",
             expected_definitions: vec!["SafetyVerification"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Use case definition
         ConstructTest {
@@ -1009,6 +1065,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "use case def DriveVehicle;",
             expected_definitions: vec!["DriveVehicle"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // View definition
         ConstructTest {
@@ -1016,6 +1073,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "view def StructuralView;",
             expected_definitions: vec!["StructuralView"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Viewpoint definition
         ConstructTest {
@@ -1023,6 +1081,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "viewpoint def EngineerViewpoint;",
             expected_definitions: vec!["EngineerViewpoint"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Rendering definition
         ConstructTest {
@@ -1030,6 +1089,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "rendering def DiagramRender;",
             expected_definitions: vec!["DiagramRender"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Metadata definition
         ConstructTest {
@@ -1037,6 +1097,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "metadata def CustomMetadata;",
             expected_definitions: vec!["CustomMetadata"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Metadata definition with short name and specialization
         ConstructTest {
@@ -1044,6 +1105,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "metadata def <orig> OriginalMetadata :> SemanticMetadata;",
             expected_definitions: vec!["OriginalMetadata", "orig"],
             expected_type_refs: vec!["SemanticMetadata"],
+            ..Default::default()
         },
         // Occurrence definition
         ConstructTest {
@@ -1051,6 +1113,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "occurrence def Event;",
             expected_definitions: vec!["Event"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Flow connection definition
         ConstructTest {
@@ -1058,6 +1121,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "flow def DataFlow;",
             expected_definitions: vec!["DataFlow"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
         // Concern definition
         ConstructTest {
@@ -1065,6 +1129,7 @@ fn test_all_definition_types_get_semantic_tokens() {
             source: "concern def SafetyConcern;",
             expected_definitions: vec!["SafetyConcern"],
             expected_type_refs: vec![],
+            ..Default::default()
         },
     ];
 
@@ -1111,6 +1176,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "part myCar : Vehicle;",
             expected_definitions: vec![],
             expected_type_refs: vec!["Vehicle"],
+            ..Default::default()
         },
         // Port usage
         ConstructTest {
@@ -1118,6 +1184,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "port dataIn : DataPort;",
             expected_definitions: vec![],
             expected_type_refs: vec!["DataPort"],
+            ..Default::default()
         },
         // Action usage
         ConstructTest {
@@ -1125,6 +1192,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "action move : Move;",
             expected_definitions: vec![],
             expected_type_refs: vec!["Move"],
+            ..Default::default()
         },
         // Attribute usage
         ConstructTest {
@@ -1132,6 +1200,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "attribute speed : Real;",
             expected_definitions: vec![],
             expected_type_refs: vec!["Real"],
+            ..Default::default()
         },
         // Item usage
         ConstructTest {
@@ -1139,13 +1208,15 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "item fuel : Fuel;",
             expected_definitions: vec![],
             expected_type_refs: vec!["Fuel"],
+            ..Default::default()
         },
-        // Reference usage with redefines
+        // Reference usage with redefines (target is a usage/feature, not a type)
         ConstructTest {
             name: "ref usage redefines",
             source: "ref velocity :>> speed;",
             expected_definitions: vec![],
-            expected_type_refs: vec!["speed"],
+            expected_type_refs: vec![], // redefines targets usages, not types
+            expected_property_refs: vec!["speed"],
         },
         // Connection usage
         ConstructTest {
@@ -1153,6 +1224,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "connection link : Link;",
             expected_definitions: vec![],
             expected_type_refs: vec!["Link"],
+            ..Default::default()
         },
         // Allocation usage
         ConstructTest {
@@ -1160,6 +1232,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "allocation alloc : ResourceAlloc;",
             expected_definitions: vec![],
             expected_type_refs: vec!["ResourceAlloc"],
+            ..Default::default()
         },
         // State usage
         ConstructTest {
@@ -1167,6 +1240,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "state running : EngineState;",
             expected_definitions: vec![],
             expected_type_refs: vec!["EngineState"],
+            ..Default::default()
         },
         // Exhibit state usage
         ConstructTest {
@@ -1174,6 +1248,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "exhibit state running : EngineState;",
             expected_definitions: vec![],
             expected_type_refs: vec!["EngineState"],
+            ..Default::default()
         },
         // Perform action usage
         ConstructTest {
@@ -1181,6 +1256,7 @@ fn test_all_usage_types_get_semantic_tokens() {
             source: "perform action move : Move;",
             expected_definitions: vec![],
             expected_type_refs: vec!["Move"],
+            ..Default::default()
         },
     ];
 
@@ -1227,6 +1303,7 @@ fn test_nested_usages_in_definitions_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["Vehicle"],
             expected_type_refs: vec!["Real", "Real"],
+            ..Default::default()
         },
         // Connection def with end usages
         ConstructTest {
@@ -1237,6 +1314,7 @@ fn test_nested_usages_in_definitions_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["Derivation"],
             expected_type_refs: vec!["Req1", "Req1_1"],
+            ..Default::default()
         },
         // Part def with part members
         ConstructTest {
@@ -1247,6 +1325,7 @@ fn test_nested_usages_in_definitions_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["Car"],
             expected_type_refs: vec!["Engine", "Transmission"],
+            ..Default::default()
         },
         // Interface def with port members
         ConstructTest {
@@ -1257,6 +1336,7 @@ fn test_nested_usages_in_definitions_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["DataInterface"],
             expected_type_refs: vec!["DataPort", "DataPort"],
+            ..Default::default()
         },
         // Requirement def with constraint
         ConstructTest {
@@ -1266,6 +1346,7 @@ fn test_nested_usages_in_definitions_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["SafetyReq"],
             expected_type_refs: vec!["Real"],
+            ..Default::default()
         },
     ];
 
@@ -1311,6 +1392,7 @@ fn test_relationship_type_refs_get_semantic_tokens() {
             source: "part def ElectricCar :> Car;",
             expected_definitions: vec!["ElectricCar"],
             expected_type_refs: vec!["Car"],
+            ..Default::default()
         },
         // Multiple specializations
         ConstructTest {
@@ -1318,6 +1400,7 @@ fn test_relationship_type_refs_get_semantic_tokens() {
             source: "part def HybridCar :> Car, Electric;",
             expected_definitions: vec!["HybridCar"],
             expected_type_refs: vec!["Car", "Electric"],
+            ..Default::default()
         },
         // Redefinition
         ConstructTest {
@@ -1325,13 +1408,15 @@ fn test_relationship_type_refs_get_semantic_tokens() {
             source: "part def SportsCar :>> Car;",
             expected_definitions: vec!["SportsCar"],
             expected_type_refs: vec!["Car"],
+            ..Default::default()
         },
-        // Subsetting
+        // Subsetting (on usage - target is a usage/feature, not a type)
         ConstructTest {
             name: "subsetting",
             source: "part frontWheels :> wheels;",
             expected_definitions: vec![],
-            expected_type_refs: vec!["wheels"],
+            expected_type_refs: vec![], // subsetting targets usages, not types
+            expected_property_refs: vec!["wheels"],
         },
         // Metadata body usage with ref :>> redefines
         ConstructTest {
@@ -1341,6 +1426,7 @@ fn test_relationship_type_refs_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["TestMeta"],
             expected_type_refs: vec!["Usage"],
+            ..Default::default()
         },
         // Metadata body usage with value assignment
         ConstructTest {
@@ -1350,6 +1436,7 @@ fn test_relationship_type_refs_get_semantic_tokens() {
             }"#,
             expected_definitions: vec!["TestMeta2"],
             expected_type_refs: vec!["Usage"], // "causes" is a value, "Usage" is a type
+            ..Default::default()
         },
     ];
 
@@ -1382,5 +1469,118 @@ fn test_relationship_type_refs_get_semantic_tokens() {
         failures.is_empty(),
         "Relationship type ref coverage failures:\n{}",
         failures.join("\n")
+    );
+}
+
+#[test]
+fn test_debug_time_varying_attribute_tokens() {
+    // TimeVaryingAttribute.sysml patterns - anonymous features with redefinition
+    let source = r#"package TimeVaryingAttribute {
+    private import SI::s;
+    
+    item def PwrCmd {
+        attribute pwrLevel: ScalarValues::Integer;
+    }
+    
+    part def Transport2 {
+        private import Time::*;
+        attribute startTime = TimeOf(start);
+        attribute elapseTime :> ISQ::duration;
+        attribute :>> localClock.currentTime = startTime + elapseTime;
+        
+        out item pwrCmd:PwrCmd;
+        // Lifetime conditions
+        timeslice :>> portionOfLife {
+            snapshot :>> start {
+                :>> elapseTime = 0 [s];
+                :>> pwrCmd.pwrLevel = 0;
+            }
+            snapshot :>> done {
+                :>> elapseTime = 2 [s];
+                :>> pwrCmd.pwrLevel = 1;
+            }
+        }
+    }
+}"#;
+
+    let workspace = create_sysml_workspace(source, "test.sysml");
+    let tokens = SemanticTokenCollector::collect_from_workspace(&workspace, "test.sysml");
+
+    println!("\n=== Symbols ===");
+    for symbol in workspace.symbol_table().iter_symbols() {
+        if let Some(span) = symbol.span()
+            && symbol.source_file() == Some("test.sysml")
+        {
+            println!(
+                "  {} at line {}, col {}",
+                symbol.qualified_name(),
+                span.start.line,
+                span.start.column
+            );
+        }
+    }
+
+    println!("\n=== References ===");
+    for ref_info in workspace
+        .reference_index()
+        .get_references_in_file("test.sysml")
+    {
+        println!(
+            "  {} -> line {}, col {}->{}, token_type: {:?}",
+            ref_info.source_qname,
+            ref_info.span.start.line,
+            ref_info.span.start.column,
+            ref_info.span.end.column,
+            ref_info.token_type
+        );
+    }
+
+    println!("\n=== Semantic Tokens ===");
+    for token in &tokens {
+        // Get the text at this position
+        let lines: Vec<&str> = source.lines().collect();
+        let text = if (token.line as usize) < lines.len() {
+            let line = lines[token.line as usize];
+            let start = token.column as usize;
+            let end = (token.column + token.length) as usize;
+            if end <= line.len() {
+                &line[start..end]
+            } else {
+                "<out of bounds>"
+            }
+        } else {
+            "<line out of bounds>"
+        };
+        println!(
+            "  Line {:2}, Col {:2}, Len {:2}: {:?} = '{}'",
+            token.line, token.column, token.length, token.token_type, text
+        );
+    }
+    println!("\nTotal tokens: {}", tokens.len());
+
+    // Verify no trailing whitespace in token lengths
+    for token in &tokens {
+        let lines: Vec<&str> = source.lines().collect();
+        if (token.line as usize) < lines.len() {
+            let line = lines[token.line as usize];
+            let start = token.column as usize;
+            let end = (token.column + token.length) as usize;
+            if end <= line.len() {
+                let text = &line[start..end];
+                assert!(
+                    !text.ends_with(' '),
+                    "Token at line {} col {} should not include trailing whitespace: '{}'",
+                    token.line,
+                    token.column,
+                    text
+                );
+            }
+        }
+    }
+
+    // Verify we have at least some tokens
+    assert!(
+        tokens.len() >= 10,
+        "Should have at least 10 semantic tokens"
     );
 }

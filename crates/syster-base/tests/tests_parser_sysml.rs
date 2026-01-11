@@ -8572,3 +8572,86 @@ fn test_parse_action_usage_variants(#[case] input: &str, #[case] desc: &str) {
         result.err()
     );
 }
+
+/// Tests that owned_feature_chain span is correct (no trailing whitespace)
+#[test]
+fn test_owned_feature_chain_span_no_trailing_whitespace() {
+    let input = "attribute :>> localClock.currentTime = startTime;";
+    let result = SysMLParser::parse(Rule::attribute_usage, input).expect("Failed to parse");
+
+    // Find the owned_feature_chain in the parse tree
+    fn find_owned_feature_chain<'a>(
+        pair: pest::iterators::Pair<'a, Rule>,
+    ) -> Option<pest::iterators::Pair<'a, Rule>> {
+        if pair.as_rule() == Rule::owned_feature_chain {
+            return Some(pair);
+        }
+        for inner in pair.into_inner() {
+            if let Some(found) = find_owned_feature_chain(inner) {
+                return Some(found);
+            }
+        }
+        None
+    }
+
+    let pairs = result.into_iter().next().unwrap();
+    let chain = find_owned_feature_chain(pairs).expect("Should find owned_feature_chain");
+
+    let span = chain.as_span();
+    let matched_text = span.as_str();
+
+    println!(
+        "Matched text: '{}' (len={})",
+        matched_text,
+        matched_text.len()
+    );
+    println!("Span start: {}, end: {}", span.start(), span.end());
+
+    // The span should NOT include trailing whitespace
+    assert!(
+        !matched_text.ends_with(' '),
+        "Span should not include trailing space"
+    );
+    assert_eq!(
+        matched_text, "localClock.currentTime",
+        "Should match exactly"
+    );
+    assert_eq!(matched_text.len(), 22, "Length should be 22");
+}
+
+/// Tests that feature_reference (identifier) span is correct - no trailing whitespace
+#[test]
+fn test_feature_reference_identifier_span() {
+    let input = ":>> elapseTime = 0;";
+    let result = SysMLParser::parse(Rule::redefinitions, input).expect("Failed to parse");
+
+    // Find the qualified_name in the parse tree and verify its span
+    fn find_qualified_name<'a>(
+        pair: pest::iterators::Pair<'a, Rule>,
+    ) -> Option<pest::iterators::Pair<'a, Rule>> {
+        if pair.as_rule() == Rule::qualified_name {
+            return Some(pair);
+        }
+        for inner in pair.into_inner() {
+            if let Some(found) = find_qualified_name(inner) {
+                return Some(found);
+            }
+        }
+        None
+    }
+
+    let pairs = result.into_iter().next().unwrap();
+    let qname = find_qualified_name(pairs).expect("Should find qualified_name");
+
+    let span = qname.as_span();
+    let matched_text = span.as_str();
+
+    // The span should NOT include trailing whitespace
+    assert!(
+        !matched_text.ends_with(' '),
+        "Span should not include trailing space: '{}'",
+        matched_text
+    );
+    assert_eq!(matched_text, "elapseTime", "Should match exactly");
+    assert_eq!(matched_text.len(), 10, "Length should be 10");
+}
