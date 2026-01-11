@@ -28,6 +28,7 @@ pub use types::{
     WorkspaceEvent,
 };
 pub use types::{InlayHint, InlayHintKind};
+pub use types::{normalize_path, normalize_pathbuf};
 pub use workspace::{ParsedFile, Workspace};
 
 // Type alias for the common case of Workspace<SyntaxFile>

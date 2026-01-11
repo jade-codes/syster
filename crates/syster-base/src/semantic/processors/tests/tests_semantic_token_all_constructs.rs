@@ -235,9 +235,12 @@ fn test_redefinition_produces_type_token_for_target() {
 }
 
 #[test]
-fn test_subsetting_produces_type_token_for_target() {
+fn test_subsetting_produces_property_token_for_target() {
+    // Subsetting on a usage (`part wheels :> components;`) targets another usage,
+    // so the target `components` should be highlighted as Property, not Type.
     let workspace = create_workspace("part wheels :> components;");
-    assert!(count_tokens_by_type(&workspace, TokenType::Type) >= 1);
+    // wheels (usage) + components (subsetting target, which is also a usage)
+    assert!(count_tokens_by_type(&workspace, TokenType::Property) >= 2);
 }
 
 #[test]

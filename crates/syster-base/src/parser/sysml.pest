@@ -2487,7 +2487,8 @@ owned_redefinition = {
 // Feature references and chains (matching KerML structure)
 feature_reference = { qualified_name | identifier | quoted_name | all_token}
 
-owned_feature_chain = { (identifier | quoted_name) ~ ("." ~ (identifier | quoted_name))+ }
+// Use @{ } (atomic) to prevent trailing whitespace from being included in span
+owned_feature_chain = @{ (identifier | quoted_name) ~ ("." ~ (identifier | quoted_name))+ }
 
 // Multiplicity (matching KerML structure)
 owned_multiplicity = { "[" ~ multiplicity_range ~ "]" }
@@ -2635,7 +2636,8 @@ metadata_alias_member = { alias_token ~ identifier ~ for_token ~ identifier ~ se
 import_prefix = { visibility? ~ import_token ~ import_all? }
 import_all = { all_token }
 
-qualified_name = { (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
+// Use @{ } (atomic) to prevent trailing whitespace from being included in span
+qualified_name = @{ (identifier | quoted_name) ~ ("::" ~ (identifier | quoted_name))* }
 namespace_marker = { "::*" }
 recursive_marker = { "::**" }
 

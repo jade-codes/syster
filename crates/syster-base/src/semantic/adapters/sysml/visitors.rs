@@ -166,11 +166,23 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
                 Some(TokenType::Type),
             );
         }
+        // references (::>) target usages, so Property token
         for reference in &usage.relationships.references {
-            self.index_reference(&qualified_name, &reference.target, reference.span);
+            self.index_reference_with_type(
+                &qualified_name,
+                &reference.target,
+                reference.span,
+                Some(TokenType::Property),
+            );
         }
+        // crosses (=>) target usages, so Property token
         for cross in &usage.relationships.crosses {
-            self.index_reference(&qualified_name, &cross.target, cross.span);
+            self.index_reference_with_type(
+                &qualified_name,
+                &cross.target,
+                cross.span,
+                Some(TokenType::Property),
+            );
         }
         for meta in &usage.relationships.meta {
             self.index_reference(&qualified_name, &meta.target, meta.span);
@@ -218,7 +230,8 @@ impl<'a> AstVisitor for SysmlAdapter<'a> {
         }
 
         // Visit nested members
-        if let Some(name) = &usage.name {
+        // Use the actual name for named usages, or the generated anonymous name for anonymous usages
+        if !usage.body.is_empty() {
             self.enter_namespace(name.clone());
             for member in &usage.body {
                 match member {

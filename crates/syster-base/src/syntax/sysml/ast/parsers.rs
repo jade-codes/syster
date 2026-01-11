@@ -96,6 +96,16 @@ fn strip_quotes(s: &str) -> String {
     }
 }
 
+/// Strip quotes from each part of a qualified name like "'Foo'::'Bar'" -> "Foo::Bar"
+/// Also handles single identifiers like "'packet header'" -> "packet header"
+fn strip_qualified_name_quotes(s: &str) -> String {
+    // Split on :: and strip quotes from each part
+    s.split("::")
+        .map(|part| strip_quotes(part.trim()))
+        .collect::<Vec<_>>()
+        .join("::")
+}
+
 /// Extract a single reference with span from a pair
 fn ref_with_span_from(pair: &Pair<Rule>) -> Option<(String, Span)> {
     for inner in pair.clone().into_inner() {
@@ -144,7 +154,40 @@ fn all_refs_with_spans_from(pair: &Pair<Rule>) -> Vec<(String, Option<Span>)> {
 
 fn collect_refs_recursive(pair: &Pair<Rule>, refs: &mut Vec<(String, Option<Span>)>) {
     match pair.as_rule() {
-        Rule::qualified_name | Rule::owned_feature_chain => {
+        Rule::owned_feature_chain => {
+            // For feature chains like `pwrCmd.pwrLevel`, emit each part as a separate reference.
+            // This enables semantic highlighting for each identifier in the chain.
+            let raw = pair.as_str().trim();
+            let base_span = pair.as_span();
+            let (base_line, base_col) = base_span.start_pos().line_col();
+
+            let mut offset = 0;
+            for part in raw.split('.') {
+                let part = part.trim();
+                if part.is_empty() {
+                    continue;
+                }
+
+                // Calculate the span for this part
+                let part_start = offset;
+                let part_end = part_start + part.len();
+                let part_span = Span::from_coords(
+                    base_line - 1,
+                    base_col - 1 + part_start,
+                    base_line - 1,
+                    base_col - 1 + part_end,
+                );
+
+                // Strip quotes if present
+                let name = strip_quotes(part);
+                refs.push((name, Some(part_span)));
+
+                // Move offset past this part and the dot separator
+                offset = part_end + 1; // +1 for the '.'
+            }
+        }
+        Rule::qualified_name => {
+            // For qualified names like `SysML::Usage`, emit as a single reference
             // Build the qualified name from parts, stripping quotes where needed
             let parts: Vec<String> = pair
                 .clone()
@@ -161,11 +204,11 @@ fn collect_refs_recursive(pair: &Pair<Rule>, refs: &mut Vec<(String, Option<Span
             if !parts.is_empty() {
                 refs.push((parts.join("::"), Some(to_span(pair.as_span()))));
             } else {
-                // Fallback: use the raw string
-                refs.push((
-                    pair.as_str().trim().to_string(),
-                    Some(to_span(pair.as_span())),
-                ));
+                // Fallback for atomic rules: use the raw string but strip quotes if needed
+                // Handle qualified names with quoted parts like "'Foo'::'Bar'" or "'Foo'"
+                let raw = pair.as_str().trim();
+                let name = strip_qualified_name_quotes(raw);
+                refs.push((name, Some(to_span(pair.as_span()))));
             }
         }
         Rule::identifier => {
@@ -1035,5 +1078,51 @@ mod tests {
             usages[1].relationships.typed_by_span.is_some(),
             "Second end should have typed_by_span"
         );
+    }
+
+    #[test]
+    fn test_owned_feature_chain_extracts_separate_references() {
+        // Test that owned_feature_chain like `pwrCmd.pwrLevel` extracts each part separately
+        let source = "attribute :>> pwrCmd.pwrLevel = 0;";
+        let pair = SysMLParser::parse(Rule::attribute_usage, source)
+            .unwrap()
+            .next()
+            .unwrap();
+
+        // Use the all_refs_with_spans_from function to check extracted references
+        let refs = all_refs_with_spans_from(&pair);
+
+        // Find the references from the owned_feature_chain
+        let pwr_cmd_refs: Vec<_> = refs.iter().filter(|(name, _)| name == "pwrCmd").collect();
+        let pwr_level_refs: Vec<_> = refs.iter().filter(|(name, _)| name == "pwrLevel").collect();
+
+        assert!(
+            !pwr_cmd_refs.is_empty(),
+            "Should have a reference for 'pwrCmd', got: {:?}",
+            refs
+        );
+        assert!(
+            !pwr_level_refs.is_empty(),
+            "Should have a reference for 'pwrLevel', got: {:?}",
+            refs
+        );
+
+        // Check that pwrCmd span is correct (starts at position of 'p' in pwrCmd)
+        if let Some((_, Some(span))) = pwr_cmd_refs.first() {
+            // "attribute :>> pwrCmd.pwrLevel = 0;"
+            //               ^ pwrCmd starts here (column 15, 0-indexed = 14)
+            assert_eq!(span.start.column, 14, "pwrCmd should start at column 14");
+            // pwrCmd is 6 characters long, so end column should be 14+6=20
+            assert_eq!(span.end.column, 20, "pwrCmd should end at column 20");
+        }
+
+        // Check that pwrLevel span is correct
+        if let Some((_, Some(span))) = pwr_level_refs.first() {
+            // "attribute :>> pwrCmd.pwrLevel = 0;"
+            //                      ^ pwrLevel starts here (column 21, 0-indexed = 20+1=21)
+            assert_eq!(span.start.column, 21, "pwrLevel should start at column 21");
+            // pwrLevel is 8 characters long, so end column should be 21+8=29
+            assert_eq!(span.end.column, 29, "pwrLevel should end at column 29");
+        }
     }
 }

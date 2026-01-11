@@ -6,7 +6,7 @@
 //! - "Find Specializations": given a source, find all targets it references
 
 use crate::core::Span;
-use crate::semantic::types::TokenType;
+use crate::semantic::types::{TokenType, normalize_path, normalize_pathbuf};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -171,19 +171,22 @@ impl ReferenceIndex {
     /// Remove all references from symbols in the given file.
     ///
     /// Called when a file is modified or deleted to invalidate stale references.
+    /// Paths are normalized before comparison to handle stdlib path variations.
     pub fn remove_references_from_file(&mut self, file_path: &str) {
-        let path = PathBuf::from(file_path);
+        let normalized = normalize_path(file_path);
 
         // Remove references that came from this file
         for entry in self.reverse.values_mut() {
-            entry.references.retain(|r| r.file != path);
+            entry
+                .references
+                .retain(|r| normalize_pathbuf(&r.file) != normalized);
         }
 
         // Find all sources from this file and remove from tracking
         let sources_to_remove: Vec<String> = self
             .source_to_file
             .iter()
-            .filter(|(_, f)| *f == &path)
+            .filter(|(_, f)| normalize_pathbuf(f) == normalized)
             .map(|(s, _)| s.clone())
             .collect();
 
@@ -233,12 +236,13 @@ impl ReferenceIndex {
     /// Get all references that occur in a specific file.
     ///
     /// Returns references with their spans for semantic token highlighting.
+    /// Paths are normalized before comparison to handle stdlib path variations.
     pub fn get_references_in_file(&self, file_path: &str) -> Vec<&ReferenceInfo> {
-        let path = PathBuf::from(file_path);
+        let normalized = normalize_path(file_path);
         self.reverse
             .values()
             .flat_map(|entry| entry.references.iter())
-            .filter(|r| r.file == path)
+            .filter(|r| normalize_pathbuf(&r.file) == normalized)
             .collect()
     }
 }
