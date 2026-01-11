@@ -292,7 +292,16 @@ pub fn format_rich_hover(
 
     // Incoming references (use Shift+F12 to see all)
     // Reuse the shared collect_reference_locations to include both relationship and import refs
-    let references: Vec<Location> = collect_reference_locations(workspace, symbol.qualified_name());
+    let mut references: Vec<Location> =
+        collect_reference_locations(workspace, symbol.qualified_name());
+    // Sort for deterministic output (by file path, then line, then column)
+    references.sort_by(|a, b| {
+        a.uri
+            .as_str()
+            .cmp(b.uri.as_str())
+            .then(a.range.start.line.cmp(&b.range.start.line))
+            .then(a.range.start.character.cmp(&b.range.start.character))
+    });
     if !references.is_empty() {
         let count = references.len();
         let plural = if count == 1 { "" } else { "s" };

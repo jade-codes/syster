@@ -3,7 +3,34 @@
 //! Tests the full stack from server initialization through symbol resolution
 
 use std::path::PathBuf;
+use std::sync::OnceLock;
+use syster::semantic::Workspace;
+use syster::syntax::file::SyntaxFile;
 use syster_lsp::LspServer;
+
+/// Shared stdlib workspace loaded once for all tests that need it.
+/// This avoids re-parsing the ~100+ stdlib files for each test.
+static STDLIB_WORKSPACE: OnceLock<Workspace<SyntaxFile>> = OnceLock::new();
+
+/// Get a reference to the pre-loaded stdlib workspace.
+/// The first call loads and populates the stdlib; subsequent calls return the cached version.
+fn get_stdlib_workspace() -> &'static Workspace<SyntaxFile> {
+    STDLIB_WORKSPACE.get_or_init(|| {
+        let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("syster-base")
+            .join("sysml.library");
+
+        let mut workspace: Workspace<SyntaxFile> = Workspace::new();
+        let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path);
+        stdlib_loader
+            .load(&mut workspace)
+            .expect("Failed to load stdlib");
+        workspace.populate_all().expect("Failed to populate stdlib");
+        workspace
+    })
+}
 
 #[test]
 fn test_server_initialization() {
@@ -894,24 +921,8 @@ fn test_timing_with_stdlib_loaded() {
 /// two relationships for ScalarQuantityValue
 #[test]
 fn test_hover_temperature_difference_value_no_duplicate_specialization() {
-    use std::path::PathBuf;
-    use syster::semantic::Workspace;
-    use syster::syntax::file::SyntaxFile;
-
-    // Create workspace and load stdlib
-    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
-    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("syster-base")
-        .join("sysml.library");
-    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
-
-    // Load and populate stdlib
-    stdlib_loader
-        .load(&mut workspace)
-        .expect("Failed to load stdlib");
-    workspace.populate_all().expect("Failed to populate");
+    // Use shared pre-loaded stdlib workspace
+    let workspace = get_stdlib_workspace();
 
     // Find ISQ::TemperatureDifferenceValue symbol
     let symbol_table = workspace.symbol_table();
@@ -940,25 +951,10 @@ fn test_hover_temperature_difference_value_no_duplicate_specialization() {
 /// Test that hover for TemperatureDifferenceValue doesn't show duplicate relationships
 #[test]
 fn test_hover_output_temperature_difference_value() {
-    use std::path::PathBuf;
-    use syster::semantic::Workspace;
-    use syster::syntax::file::SyntaxFile;
     use syster_lsp::server::helpers::format_rich_hover;
 
-    // Create workspace and load stdlib
-    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
-    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("syster-base")
-        .join("sysml.library");
-    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
-
-    // Load and populate stdlib
-    stdlib_loader
-        .load(&mut workspace)
-        .expect("Failed to load stdlib");
-    workspace.populate_all().expect("Failed to populate");
+    // Use shared pre-loaded stdlib workspace
+    let workspace = get_stdlib_workspace();
 
     // Find ISQ::TemperatureDifferenceValue symbol
     let symbol_table = workspace.symbol_table();
@@ -973,7 +969,7 @@ fn test_hover_output_temperature_difference_value() {
     let symbol = temp_diff_symbol.unwrap();
 
     // Generate the actual hover output
-    let hover_output = format_rich_hover(symbol, &workspace);
+    let hover_output = format_rich_hover(symbol, workspace);
 
     println!("=== HOVER OUTPUT ===");
     println!("{hover_output}");
@@ -989,25 +985,10 @@ fn test_hover_output_temperature_difference_value() {
 
 #[test]
 fn test_hover_output_celsius_temperature_value() {
-    use std::path::PathBuf;
-    use syster::semantic::Workspace;
-    use syster::syntax::file::SyntaxFile;
     use syster_lsp::server::helpers::format_rich_hover;
 
-    // Create workspace and load stdlib
-    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
-    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("syster-base")
-        .join("sysml.library");
-    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
-
-    // Load and populate stdlib
-    stdlib_loader
-        .load(&mut workspace)
-        .expect("Failed to load stdlib");
-    workspace.populate_all().expect("Failed to populate");
+    // Use shared pre-loaded stdlib workspace
+    let workspace = get_stdlib_workspace();
 
     // Find ISQThermodynamics::CelsiusTemperatureValue symbol
     let symbol_table = workspace.symbol_table();
@@ -1022,7 +1003,7 @@ fn test_hover_output_celsius_temperature_value() {
     let symbol = celsius_symbol.unwrap();
 
     // Generate the actual hover output
-    let hover_output = format_rich_hover(symbol, &workspace);
+    let hover_output = format_rich_hover(symbol, workspace);
 
     println!("=== HOVER OUTPUT (CelsiusTemperatureValue) ===");
     println!("{hover_output}");
@@ -1038,25 +1019,10 @@ fn test_hover_output_celsius_temperature_value() {
 
 #[test]
 fn test_hover_at_position_temperature_difference_value() {
-    use std::path::PathBuf;
-    use syster::semantic::Workspace;
-    use syster::syntax::file::SyntaxFile;
     use syster_lsp::server::helpers::format_rich_hover;
 
-    // Create workspace and load stdlib
-    let mut workspace: Workspace<SyntaxFile> = Workspace::new();
-    let stdlib_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("syster-base")
-        .join("sysml.library");
-    let stdlib_loader = syster::project::StdLibLoader::with_path(stdlib_path.clone());
-
-    // Load and populate stdlib
-    stdlib_loader
-        .load(&mut workspace)
-        .expect("Failed to load stdlib");
-    workspace.populate_all().expect("Failed to populate");
+    // Use shared pre-loaded stdlib workspace
+    let workspace = get_stdlib_workspace();
 
     // Check: are there multiple symbols with name "TemperatureDifferenceValue"?
     let symbol_table = workspace.symbol_table();
@@ -1073,7 +1039,7 @@ fn test_hover_at_position_temperature_difference_value() {
 
     // Now generate hover for each and check
     for sym in &matching_symbols {
-        let hover = format_rich_hover(sym, &workspace);
+        let hover = format_rich_hover(sym, workspace);
         let count = hover.matches("ScalarQuantityValue").count();
         println!("\n--- Hover for {} ---\n{}", sym.qualified_name(), hover);
         assert_eq!(
