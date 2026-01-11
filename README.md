@@ -82,7 +82,8 @@ Full IDE integration support with:
   - Rename Symbol (with prepare rename validation)
   - Completion (context-aware suggestions)
 - **Analysis**:
-  - Semantic Tokens (syntax highlighting)
+  - Semantic Tokens (syntax highlighting for definitions, usages, types, and properties)
+  - Feature chain highlighting (each part of `a.b.c` highlighted individually)
   - Inlay Hints (type annotations)
   - Diagnostics (parse errors)
 - **Code Structure**:

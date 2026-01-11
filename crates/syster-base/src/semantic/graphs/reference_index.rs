@@ -168,6 +168,61 @@ impl ReferenceIndex {
         self.reverse.keys().map(|s| s.as_str()).collect()
     }
 
+    /// Re-resolve simple reference targets to qualified names using the provided resolver.
+    ///
+    /// Called after import resolution to update references that were stored with simple names
+    /// during population (before imports were resolved).
+    ///
+    /// # Arguments
+    /// * `resolve_fn` - A function that takes (simple_name, source_file) and returns Option<qualified_name>
+    pub fn resolve_targets<F>(&mut self, mut resolve_fn: F)
+    where
+        F: FnMut(&str, &PathBuf) -> Option<String>,
+    {
+        // Collect references that need to be re-indexed under a new target name
+        let mut updates: Vec<(String, String, ReferenceInfo)> = Vec::new();
+
+        for (target_name, entry) in &self.reverse {
+            // Only process simple names (no ::)
+            if target_name.contains("::") {
+                continue;
+            }
+
+            for ref_info in &entry.references {
+                if let Some(qualified_name) = resolve_fn(target_name, &ref_info.file) {
+                    // Only update if the resolved name is different
+                    if &qualified_name != target_name {
+                        updates.push((target_name.clone(), qualified_name, ref_info.clone()));
+                    }
+                }
+            }
+        }
+
+        // Apply updates: remove from old target, add to new target
+        for (old_target, new_target, ref_info) in updates {
+            // Remove from old target
+            if let Some(entry) = self.reverse.get_mut(&old_target) {
+                entry.references.remove(&ref_info);
+            }
+
+            // Add to new target
+            self.reverse
+                .entry(new_target.clone())
+                .or_default()
+                .references
+                .insert(ref_info.clone());
+
+            // Update forward index
+            if let Some(targets) = self.forward.get_mut(&ref_info.source_qname) {
+                targets.remove(&old_target);
+                targets.insert(new_target);
+            }
+        }
+
+        // Clean up empty entries
+        self.reverse.retain(|_, entry| !entry.references.is_empty());
+    }
+
     /// Remove all references from symbols in the given file.
     ///
     /// Called when a file is modified or deleted to invalidate stale references.

@@ -31,6 +31,12 @@ pub fn is_body_rule(r: Rule) -> bool {
             | Rule::calculation_body
             | Rule::requirement_body
             | Rule::usage_body
+            | Rule::constraint_body
+            | Rule::interface_body
+            | Rule::metadata_body
+            | Rule::view_definition_body
+            | Rule::state_usage_body
+            | Rule::view_body
     )
 }
 
@@ -47,6 +53,8 @@ pub fn is_usage_rule(r: Rule) -> bool {
             | Rule::concern_usage
             | Rule::case_usage
             | Rule::view_usage
+            | Rule::reference_usage
+            | Rule::default_reference_usage
             | Rule::satisfy_requirement_usage
             | Rule::perform_action_usage
             | Rule::exhibit_state_usage
@@ -54,6 +62,13 @@ pub fn is_usage_rule(r: Rule) -> bool {
             | Rule::objective_member
             | Rule::enumeration_usage
             | Rule::enumerated_value
+            | Rule::state_usage
+            | Rule::connection_usage
+            | Rule::constraint_usage
+            | Rule::assert_constraint_usage
+            | Rule::calculation_usage
+            | Rule::allocation_usage
+            | Rule::metadata_usage
     )
 }
 
@@ -486,10 +501,18 @@ pub fn to_usage_kind(rule: Rule) -> Result<UsageKind, ConversionError<Void>> {
         Rule::case_usage => UsageKind::Case,
         Rule::view_usage => UsageKind::View,
         Rule::enumeration_usage | Rule::enumerated_value => UsageKind::Enumeration,
+        Rule::reference_usage | Rule::default_reference_usage | Rule::metadata_usage => {
+            UsageKind::Reference
+        }
         Rule::satisfy_requirement_usage => UsageKind::SatisfyRequirement,
         Rule::perform_action_usage => UsageKind::PerformAction,
         Rule::exhibit_state_usage => UsageKind::ExhibitState,
         Rule::include_use_case_usage => UsageKind::IncludeUseCase,
+        Rule::state_usage => UsageKind::State,
+        Rule::connection_usage => UsageKind::Connection,
+        Rule::constraint_usage | Rule::assert_constraint_usage => UsageKind::Constraint,
+        Rule::calculation_usage => UsageKind::Calculation,
+        Rule::allocation_usage => UsageKind::Allocation,
         // Occurrence-based usages
         Rule::occurrence_usage => UsageKind::Occurrence,
         Rule::individual_usage => UsageKind::Individual,

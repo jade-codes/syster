@@ -359,7 +359,7 @@ fn visit_pair(pair: &Pair<Rule>, ctx: &mut ParseContext, depth: usize, in_body: 
         Rule::abstract_token => ctx.is_abstract = true,
         Rule::variation_token => ctx.is_variation = true,
         Rule::derived_token => ctx.is_derived = true,
-        Rule::readonly_token => ctx.is_readonly = true,
+        Rule::constant_token => ctx.is_readonly = true,
 
         // Also check in prefix rules
         Rule::basic_definition_prefix | Rule::definition_prefix | Rule::ref_prefix => {
@@ -650,26 +650,50 @@ pub fn parse_import(pairs: &mut Pairs<Rule>) -> Result<Import, ParseError> {
     let mut path_span = None;
     let mut span = None;
 
-    for pair in pairs {
+    fn process_pair(
+        pair: Pair<Rule>,
+        path: &mut String,
+        path_span: &mut Option<Span>,
+        span: &mut Option<Span>,
+        is_public: &mut bool,
+        is_recursive: &mut bool,
+    ) {
         match pair.as_rule() {
             Rule::import_prefix => {
                 for child in pair.into_inner() {
                     if child.as_rule() == Rule::visibility {
-                        is_public = child.as_str().trim() == "public";
+                        *is_public = child.as_str().trim() == "public";
                     }
                 }
             }
-            Rule::imported_reference => {
-                path = pair.as_str().to_string();
-                span = Some(to_span(pair.as_span()));
-                path_span = Some(to_span(pair.as_span()));
-                is_recursive = pair
+            Rule::imported_membership | Rule::imported_namespace => {
+                *path = pair.as_str().to_string();
+                *span = Some(to_span(pair.as_span()));
+                *path_span = Some(to_span(pair.as_span()));
+                *is_recursive = pair
                     .clone()
                     .into_inner()
                     .any(|p| p.as_rule() == Rule::recursive_marker);
             }
+            Rule::membership_import | Rule::namespace_import => {
+                // These contain import_prefix and imported_membership/imported_namespace
+                for child in pair.into_inner() {
+                    process_pair(child, path, path_span, span, is_public, is_recursive);
+                }
+            }
             _ => {}
         }
+    }
+
+    for pair in pairs {
+        process_pair(
+            pair,
+            &mut path,
+            &mut path_span,
+            &mut span,
+            &mut is_public,
+            &mut is_recursive,
+        );
     }
 
     Ok(Import {
@@ -752,29 +776,37 @@ pub fn parse_file(pairs: &mut Pairs<Rule>) -> Result<SysMLFile, ParseError> {
     let mut namespace = None;
     let mut namespaces = Vec::new();
 
+    // Grammar structure: model = { SOI ~ root_namespace ~ EOI }
+    // root_namespace = { package_body_element* }
+    // package_body_element = { package | library_package | import | ... }
+    // So we need to find root_namespace, then iterate its package_body_element children
     for pair in model.into_inner() {
-        if pair.as_rule() == Rule::namespace_element
-            && let Ok(element) = parse_element(&mut pair.into_inner())
-        {
-            // Track all package declarations (Issue #10)
-            if let Element::Package(ref pkg) = element
-                && pkg.elements.is_empty()
-                && let Some(ref name) = pkg.name
-            {
-                let ns = NamespaceDeclaration {
-                    name: name.clone(),
-                    span: pkg.span,
-                };
+        if pair.as_rule() == Rule::root_namespace {
+            for body_element in pair.into_inner() {
+                // body_element is package_body_element, which contains the actual element
+                // We need to iterate its inner to get the actual rule (package, import, etc.)
+                if let Ok(element) = parse_element(&mut body_element.into_inner()) {
+                    // Track all package declarations (Issue #10)
+                    if let Element::Package(ref pkg) = element
+                        && pkg.elements.is_empty()
+                        && let Some(ref name) = pkg.name
+                    {
+                        let ns = NamespaceDeclaration {
+                            name: name.clone(),
+                            span: pkg.span,
+                        };
 
-                // Keep first namespace for backward compatibility
-                if namespace.is_none() {
-                    namespace = Some(ns.clone());
+                        // Keep first namespace for backward compatibility
+                        if namespace.is_none() {
+                            namespace = Some(ns.clone());
+                        }
+
+                        // Collect all namespaces
+                        namespaces.push(ns);
+                    }
+                    elements.push(element);
                 }
-
-                // Collect all namespaces
-                namespaces.push(ns);
             }
-            elements.push(element);
         }
     }
 

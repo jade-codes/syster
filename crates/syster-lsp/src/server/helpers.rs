@@ -143,7 +143,7 @@ pub fn span_to_folding_range(
     }
 }
 
-/// Collect all reference locations for a symbol (relationship refs + import refs)
+/// Collect all reference locations for a symbol (reference index refs + import refs)
 ///
 /// This is the shared implementation used by both get_references and get_rename_edits.
 pub fn collect_reference_locations(
@@ -154,19 +154,17 @@ pub fn collect_reference_locations(
 
     let mut locations = Vec::new();
 
-    // Query relationship graph by qualified name
-    // The graph stores resolved qualified names, so this matches correctly
-    let refs = workspace
-        .relationship_graph()
-        .get_references_to(qualified_name);
+    // Query reference index by qualified name
+    // References are resolved to qualified names during population
+    let refs = workspace.reference_index().get_references(qualified_name);
 
-    debug!("[COLLECT_REFS] relationship refs count={}", refs.len());
+    debug!("[COLLECT_REFS] reference index refs count={}", refs.len());
 
-    for (file_path, reference_span) in refs {
-        if let Ok(uri) = Url::from_file_path(file_path) {
+    for ref_info in refs {
+        if let Ok(uri) = Url::from_file_path(&ref_info.file) {
             locations.push(Location {
                 uri,
-                range: span_to_lsp_range(reference_span),
+                range: span_to_lsp_range(&ref_info.span),
             });
         }
     }
@@ -263,9 +261,11 @@ pub fn format_rich_hover(
         );
     }
     if !relationships.is_empty() {
+        use syster::core::constants::relationship_label;
         let resolver = Resolver::new(workspace.symbol_table());
         for (rel_type, targets) in relationships {
-            result.push_str(&format!("\n**{rel_type}:**\n"));
+            let label = relationship_label(&rel_type);
+            result.push_str(&format!("\n**{label}:**\n"));
             for target in targets {
                 // Try to make targets clickable too
                 if let Some(target_symbol) = resolver.resolve(&target)
@@ -287,7 +287,16 @@ pub fn format_rich_hover(
 
     // Incoming references (use Shift+F12 to see all)
     // Reuse the shared collect_reference_locations to include both relationship and import refs
-    let references: Vec<Location> = collect_reference_locations(workspace, symbol.qualified_name());
+    let mut references: Vec<Location> =
+        collect_reference_locations(workspace, symbol.qualified_name());
+    // Sort references for deterministic output (by URI then line then column)
+    references.sort_by(|a, b| {
+        a.uri
+            .as_str()
+            .cmp(b.uri.as_str())
+            .then(a.range.start.line.cmp(&b.range.start.line))
+            .then(a.range.start.character.cmp(&b.range.start.character))
+    });
     if !references.is_empty() {
         let count = references.len();
         let plural = if count == 1 { "" } else { "s" };
@@ -331,13 +340,35 @@ fn format_symbol_declaration(symbol: &Symbol) -> String {
     }
 }
 
-/// Get relationships for a symbol from the workspace, grouped by relationship type
+/// Get relationships for a symbol from the workspace's reference index.
+///
+/// Uses the forward index to find what this symbol references (specializations)
+/// and also extracts typing from Usage symbols.
 fn get_symbol_relationships(
     symbol: &Symbol,
     workspace: &syster::semantic::Workspace<SyntaxFile>,
 ) -> Vec<(String, Vec<String>)> {
-    let qname = symbol.qualified_name();
-    let graph = workspace.relationship_graph();
+    let mut relationships = Vec::new();
 
-    graph.get_relationships_grouped(qname)
+    // For Usage symbols, extract typing relationship from usage_type field
+    if let Symbol::Usage { usage_type, .. } = symbol {
+        if let Some(type_name) = usage_type {
+            relationships.push(("Typed by".to_string(), vec![type_name.clone()]));
+        }
+    }
+
+    // Get specializations from the reference index
+    let qname = symbol.qualified_name();
+    let index = workspace.reference_index();
+    let targets: Vec<String> = index
+        .get_targets(qname)
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+    if !targets.is_empty() {
+        relationships.push(("Specializes".to_string(), targets));
+    }
+
+    relationships
 }

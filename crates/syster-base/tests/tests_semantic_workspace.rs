@@ -623,7 +623,6 @@ fn test_file_count_after_removal() {
     assert_eq!(workspace.file_count(), 0);
 }
 
-// Tests for Workspace::<SyntaxFile>::relationship_graph() - Issue #379
 #[test]
 fn test_symbol_table_mut_basic() {
     use syster::semantic::symbol_table::Symbol;
