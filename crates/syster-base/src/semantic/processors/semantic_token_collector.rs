@@ -1,5 +1,6 @@
 use crate::core::Span;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
+use crate::semantic::types::TokenType;
 use crate::semantic::workspace::Workspace;
 use crate::syntax::SyntaxFile;
 
@@ -34,16 +35,6 @@ impl SemanticToken {
             token_type,
         }
     }
-}
-
-/// Token types for semantic highlighting
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TokenType {
-    Namespace = 0,
-    Type = 1,
-    Variable = 2,
-    Property = 3,
-    Keyword = 4,
 }
 
 /// Collects semantic tokens from a symbol table
@@ -105,7 +96,9 @@ impl SemanticTokenCollector {
             .reference_index()
             .get_references_in_file(file_path)
         {
-            let token = SemanticToken::from_span(&ref_info.span, TokenType::Type);
+            // Use the token type from the reference, or default to Type
+            let token_type = ref_info.token_type.unwrap_or(TokenType::Type);
+            let token = SemanticToken::from_span(&ref_info.span, token_type);
             if !existing_positions.contains(&(token.line, token.column)) {
                 tokens.push(token);
             }

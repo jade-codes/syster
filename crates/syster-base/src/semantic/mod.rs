@@ -21,6 +21,7 @@ pub use resolver::{
 };
 pub use symbol_table::SymbolTable;
 pub use types::FoldingRangeInfo;
+pub use types::TokenType;
 pub use types::{
     DependencyEvent, Diagnostic, Location as DiagnosticLocation, Location, Position, Range,
     SemanticError, SemanticErrorKind, SemanticResult, SemanticRole, Severity, SymbolTableEvent,

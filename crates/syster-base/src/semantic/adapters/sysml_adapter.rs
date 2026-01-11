@@ -40,13 +40,34 @@ impl<'a> SysmlAdapter<'a> {
     /// 2. Prefixed with the current namespace (relative to current scope)
     /// 3. Walking up the namespace chain to find the symbol
     pub(super) fn index_reference(&mut self, source_qname: &str, target: &str, span: Option<Span>) {
+        self.index_reference_with_type(source_qname, target, span, None);
+    }
+
+    /// Index a reference with an explicit token type for semantic highlighting.
+    ///
+    /// Use this for references where the default Type token is not appropriate:
+    /// - Property for redefines/subsets targets (they reference usages/features)
+    /// - Type for typed_by targets (they reference definitions/classifiers)
+    pub(super) fn index_reference_with_type(
+        &mut self,
+        source_qname: &str,
+        target: &str,
+        span: Option<Span>,
+        token_type: Option<crate::semantic::types::TokenType>,
+    ) {
         // First resolve the target (needs immutable borrow of self)
         let resolved_target = self.resolve_reference_target(target);
         let file = self.symbol_table.current_file().map(PathBuf::from);
 
         // Then add to index (needs mutable borrow of reference_index)
         if let Some(index) = &mut self.reference_index {
-            index.add_reference(source_qname, &resolved_target, file.as_ref(), span);
+            index.add_reference_with_type(
+                source_qname,
+                &resolved_target,
+                file.as_ref(),
+                span,
+                token_type,
+            );
         }
     }
 

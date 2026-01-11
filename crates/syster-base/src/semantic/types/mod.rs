@@ -4,6 +4,7 @@ pub mod events;
 pub mod folding_range;
 pub mod inlay_hint;
 pub mod semantic_role;
+pub mod token_type;
 
 pub use diagnostic::{Diagnostic, Location as DiagnosticLocation, Position, Range, Severity};
 pub use error::{Location, SemanticError, SemanticErrorKind, SemanticResult};
@@ -11,6 +12,7 @@ pub use events::{DependencyEvent, SymbolTableEvent, WorkspaceEvent};
 pub use folding_range::FoldingRangeInfo;
 pub use inlay_hint::{InlayHint, InlayHintKind};
 pub use semantic_role::SemanticRole;
+pub use token_type::TokenType;
 
 #[cfg(test)]
 mod tests;
