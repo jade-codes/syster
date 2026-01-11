@@ -378,7 +378,6 @@ fn test_parse_terminate_action(#[case] rule: Rule, #[case] input: &str, #[case] 
     "port myPort : ~ConjugatedPortType;",
     "port usage with conjugated type"
 )]
-#[case(Rule::life_class, "life class MyLifeClass;", "life class")]
 fn test_parse_conjugated_port_definitions(
     #[case] rule: Rule,
     #[case] input: &str,

@@ -1489,7 +1489,7 @@ fn test_parse_istype_operator() {
 
 // Test end feature with relationships before feature keyword
 #[test]
-fn test_parse_end_feature_with_relationships_before_feature() {
+fn test_parse_end_feature_with_index_before_feature() {
     let input = "end happensWhile [1..*] subsets timeCoincidentOccurrences feature thatOccurrence: Occurrence redefines longerOccurrence;";
     let result = KerMLParser::parse(Rule::end_feature, input);
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());

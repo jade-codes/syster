@@ -7,16 +7,11 @@ use syster::syntax::SyntaxFile;
 use syster::semantic::Workspace;
 
 /// Convert a URI to a PathBuf, returning None if the conversion fails
-///
-/// This is the standard pattern for handling file URIs in LSP handlers.
-/// Use this when the handler should return None/empty on invalid URIs.
 pub fn uri_to_path(uri: &Url) -> Option<PathBuf> {
     uri.to_file_path().ok()
 }
 
 /// Convert a character offset in a line to UTF-16 code units
-///
-/// LSP uses UTF-16 code units for positions, so we need to convert from character offsets
 pub fn char_offset_to_utf16(line: &str, char_offset: usize) -> u32 {
     line.chars()
         .take(char_offset)
@@ -32,7 +27,6 @@ pub fn char_offset_to_byte(line: &str, char_offset: usize) -> usize {
 /// Convert LSP Position to byte offset in text
 ///
 /// Handles multi-line documents by calculating line offsets and character positions
-/// Correctly handles both LF (\n) and CRLF (\r\n) line endings.
 /// Note: Treats position.character as character count (not strict UTF-16 code units)
 pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, String> {
     let line_idx = pos.line as usize;
@@ -41,7 +35,6 @@ pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, Strin
     // Split by \n to handle both LF and CRLF (since \r\n split on \n leaves \r at line end)
     let lines: Vec<&str> = text.split('\n').collect();
 
-    // Allow line == lines.len() for end-of-document positions
     if line_idx > lines.len() {
         return Err(format!(
             "Line {} out of bounds (total lines: {})",
@@ -50,24 +43,20 @@ pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, Strin
         ));
     }
 
-    // If at end of document (past last line), return total byte length
     if line_idx == lines.len() {
         return Ok(text.len());
     }
 
     // Calculate byte offset up to the start of the target line
-    // Each line includes its content plus the \n separator (split removes \n)
     let mut byte_offset = 0;
     for (i, line) in lines.iter().enumerate() {
         if i == line_idx {
             break;
         }
-        // line.len() + 1 accounts for the \n that was split on
-        byte_offset += line.len() + 1;
+        byte_offset += line.len() + 1; // +1 for newline
     }
 
     // Add character offset within the line converted to bytes
-    // Note: For CRLF files, line still contains trailing \r
     let line = lines[line_idx];
     let line_byte_offset = char_offset_to_byte(line, char_offset);
 
@@ -75,14 +64,10 @@ pub fn position_to_byte_offset(text: &str, pos: Position) -> Result<usize, Strin
 }
 
 /// Apply a text edit to a string based on LSP range
-///
-/// Converts LSP Position (line, character) to byte offset and performs the edit
 pub fn apply_text_edit(text: &str, range: &Range, new_text: &str) -> Result<String, String> {
-    // Convert start and end positions to byte offsets
     let start_byte = position_to_byte_offset(text, range.start)?;
     let end_byte = position_to_byte_offset(text, range.end)?;
 
-    // Validate range
     if start_byte > end_byte {
         return Err(format!(
             "Invalid range: start ({start_byte}) > end ({end_byte})"
@@ -97,7 +82,6 @@ pub fn apply_text_edit(text: &str, range: &Range, new_text: &str) -> Result<Stri
         ));
     }
 
-    // Build new text: prefix + new_text + suffix
     let mut result = String::with_capacity(text.len() + new_text.len());
     result.push_str(&text[..start_byte]);
     result.push_str(new_text);
@@ -143,7 +127,7 @@ pub fn span_to_folding_range(
     }
 }
 
-/// Collect all reference locations for a symbol (reference index refs + import refs)
+/// Collect all reference locations for a symbol (relationship refs + import refs)
 ///
 /// This is the shared implementation used by both get_references and get_rename_edits.
 pub fn collect_reference_locations(
@@ -154,14 +138,16 @@ pub fn collect_reference_locations(
 
     let mut locations = Vec::new();
 
-    // Query reference index by qualified name
-    // References are resolved to qualified names during population
-    let refs = workspace.reference_index().get_references(qualified_name);
+    // Query relationship graph by qualified name
+    // The graph stores resolved qualified names, so this matches correctly
+    let refs = workspace
+        .relationship_graph()
+        .get_references_to(qualified_name);
 
-    debug!("[COLLECT_REFS] reference index refs count={}", refs.len());
+    debug!("[COLLECT_REFS] relationship refs count={}", refs.len());
 
-    for ref_info in refs {
-        if let Ok(uri) = Url::from_file_path(&ref_info.file) {
+    for (file_path, reference_span) in refs {
+        if let Ok(uri) = Url::from_file_path(file_path) {
             locations.push(Location {
                 uri,
                 range: span_to_lsp_range(&ref_info.span),
@@ -170,7 +156,6 @@ pub fn collect_reference_locations(
     }
 
     // Add import references by iterating all imports (computed on demand)
-    // This is O(imports) per query but avoids pre-computing on every keystroke
     let symbol_table = workspace.symbol_table();
     let mut import_count = 0;
     for scope_id in 0..symbol_table.scope_count() {
@@ -235,7 +220,7 @@ pub fn format_rich_hover(
                 .unwrap_or(file);
 
             if let Some(span) = symbol.span() {
-                let line = span.start.line + 1; // 0-indexed to 1-indexed
+                let line = span.start.line + 1;
                 let col = span.start.column + 1;
                 result.push_str(&format!(
                     "\n**Defined in:** [{file_name}:{line}:{col}]({uri}#L{line})\n"
@@ -261,14 +246,11 @@ pub fn format_rich_hover(
         );
     }
     if !relationships.is_empty() {
-        use syster::core::constants::relationship_label;
         let resolver = Resolver::new(workspace.symbol_table());
         for (rel_type, targets) in relationships {
-            let label = relationship_label(&rel_type);
-            result.push_str(&format!("\n**{label}:**\n"));
+            result.push_str(&format!("\n**{rel_type}:**\n"));
             for target in targets {
-                // Try to make targets clickable too
-                if let Some(target_symbol) = resolver.resolve(&target)
+                if let Some(target_symbol) = resolver.resolve(target)
                     && let Some(target_file) = target_symbol.source_file()
                     && let Ok(target_uri) = Url::from_file_path(target_file)
                 {
@@ -285,18 +267,32 @@ pub fn format_rich_hover(
         }
     }
 
+    // Show usage_type for usages
+    if let Symbol::Usage {
+        usage_type: Some(typed_by),
+        ..
+    } = symbol
+    {
+        let resolver = Resolver::new(workspace.symbol_table());
+        result.push_str("\n**Typed by:**\n");
+        if let Some(target_symbol) = resolver.resolve(typed_by)
+            && let Some(target_file) = target_symbol.source_file()
+            && let Ok(target_uri) = Url::from_file_path(target_file)
+        {
+            if let Some(target_span) = target_symbol.span() {
+                let line = target_span.start.line + 1;
+                result.push_str(&format!("- [{typed_by}]({target_uri}#L{line})\n"));
+            } else {
+                result.push_str(&format!("- [{typed_by}]({target_uri})\n"));
+            }
+        } else {
+            result.push_str(&format!("- `{typed_by}`\n"));
+        }
+    }
+
     // Incoming references (use Shift+F12 to see all)
     // Reuse the shared collect_reference_locations to include both relationship and import refs
-    let mut references: Vec<Location> =
-        collect_reference_locations(workspace, symbol.qualified_name());
-    // Sort references for deterministic output (by URI then line then column)
-    references.sort_by(|a, b| {
-        a.uri
-            .as_str()
-            .cmp(b.uri.as_str())
-            .then(a.range.start.line.cmp(&b.range.start.line))
-            .then(a.range.start.character.cmp(&b.range.start.character))
-    });
+    let references: Vec<Location> = collect_reference_locations(workspace, symbol.qualified_name());
     if !references.is_empty() {
         let count = references.len();
         let plural = if count == 1 { "" } else { "s" };
@@ -340,35 +336,13 @@ fn format_symbol_declaration(symbol: &Symbol) -> String {
     }
 }
 
-/// Get relationships for a symbol from the workspace's reference index.
-///
-/// Uses the forward index to find what this symbol references (specializations)
-/// and also extracts typing from Usage symbols.
+/// Get relationships for a symbol from the workspace, grouped by relationship type
 fn get_symbol_relationships(
     symbol: &Symbol,
     workspace: &syster::semantic::Workspace<SyntaxFile>,
 ) -> Vec<(String, Vec<String>)> {
-    let mut relationships = Vec::new();
-
-    // For Usage symbols, extract typing relationship from usage_type field
-    if let Symbol::Usage { usage_type, .. } = symbol {
-        if let Some(type_name) = usage_type {
-            relationships.push(("Typed by".to_string(), vec![type_name.clone()]));
-        }
-    }
-
-    // Get specializations from the reference index
     let qname = symbol.qualified_name();
-    let index = workspace.reference_index();
-    let targets: Vec<String> = index
-        .get_targets(qname)
-        .into_iter()
-        .map(String::from)
-        .collect();
+    let graph = workspace.relationship_graph();
 
-    if !targets.is_empty() {
-        relationships.push(("Specializes".to_string(), targets));
-    }
-
-    relationships
+    graph.get_relationships_grouped(qname)
 }
