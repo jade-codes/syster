@@ -1333,6 +1333,24 @@ fn test_relationship_type_refs_get_semantic_tokens() {
             expected_definitions: vec![],
             expected_type_refs: vec!["wheels"],
         },
+        // Metadata body usage with ref :>> redefines
+        ConstructTest {
+            name: "metadata body usage redefines",
+            source: r#"metadata def TestMeta {
+                ref :>> annotatedElement : Usage;
+            }"#,
+            expected_definitions: vec!["TestMeta"],
+            expected_type_refs: vec!["Usage"],
+        },
+        // Metadata body usage with value assignment
+        ConstructTest {
+            name: "metadata body usage with value",
+            source: r#"metadata def TestMeta2 {
+                ref :>> baseType = causes as Usage;
+            }"#,
+            expected_definitions: vec!["TestMeta2"],
+            expected_type_refs: vec!["Usage"], // "causes" is a value, "Usage" is a type
+        },
     ];
 
     let mut failures: Vec<String> = vec![];

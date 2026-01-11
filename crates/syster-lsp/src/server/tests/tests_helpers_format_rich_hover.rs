@@ -171,7 +171,7 @@ package Test {
     // The hover content should include relationship information
     let hover_content = hover.unwrap();
     if let async_lsp::lsp_types::HoverContents::Scalar(
-        async_lsp::lsp_types::MarkedString::String(content),
+        async_lsp::lsp_types::MarkedString::String(_content),
     ) = hover_content.contents
     {
         // Should contain specialization relationship

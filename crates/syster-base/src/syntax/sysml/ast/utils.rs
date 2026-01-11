@@ -23,19 +23,34 @@ pub fn to_span(pest_span: pest::Span) -> Span {
 // Rule predicates
 // ============================================================================
 
-/// Check if rule represents a body element
+/// Check if rule represents a body element that may contain members.
+///
+/// These are all the `*_body` rules in the grammar that can contain
+/// nested usages, definitions, or other extractable members.
+///
+/// Note: Some body rules are intentionally excluded:
+/// - `package_body`: Packages are handled separately with their own visitor
+/// - `expression_body`: Expression internals, not AST members
+/// - `relationship_body`: Connection relationship bodies, special handling
 pub fn is_body_rule(r: Rule) -> bool {
     matches!(
         r,
+        // Definition bodies
         Rule::definition_body
             | Rule::action_body
-            | Rule::enumeration_body
-            | Rule::state_def_body
-            | Rule::case_body
             | Rule::calculation_body
-            | Rule::requirement_body
-            | Rule::usage_body
+            | Rule::case_body
             | Rule::constraint_body
+            | Rule::enumeration_body
+            | Rule::interface_body
+            | Rule::metadata_body
+            | Rule::requirement_body
+            | Rule::state_def_body
+            | Rule::view_definition_body
+            // Usage bodies
+            | Rule::state_usage_body
+            | Rule::usage_body
+            | Rule::view_body
     )
 }
 
@@ -71,6 +86,10 @@ pub fn is_usage_rule(r: Rule) -> bool {
             | Rule::flow_connection_usage
             | Rule::succession_flow_connection_usage
             | Rule::directed_parameter_member
+            // Note: Only metadata_body_usage_member is listed here, not metadata_body_usage.
+            // metadata_body_usage_member wraps metadata_body_usage, and we need to prevent
+            // visit_pair from early-returning when it recursively enters metadata_body_usage.
+            | Rule::metadata_body_usage_member
     )
 }
 
@@ -130,18 +149,18 @@ pub fn extract_name_from_identification(
 
     // Look for regular_name first (preferred)
     for p in &inner {
-        if p.as_rule() == Rule::regular_name {
-            if let Some(id) = p.clone().into_inner().next() {
-                let name = if id.as_rule() == Rule::quoted_name {
-                    id.as_str()
-                        .trim_start_matches('\'')
-                        .trim_end_matches('\'')
-                        .to_string()
-                } else {
-                    id.as_str().to_string()
-                };
-                return (Some(name), Some(to_span(id.as_span())));
-            }
+        if p.as_rule() == Rule::regular_name
+            && let Some(id) = p.clone().into_inner().next()
+        {
+            let name = if id.as_rule() == Rule::quoted_name {
+                id.as_str()
+                    .trim_start_matches('\'')
+                    .trim_end_matches('\'')
+                    .to_string()
+            } else {
+                id.as_str().to_string()
+            };
+            return (Some(name), Some(to_span(id.as_span())));
         }
     }
 
@@ -232,9 +251,11 @@ pub fn to_usage_kind(rule: Rule) -> Option<UsageKind> {
         Rule::occurrence_usage => UsageKind::Occurrence,
         Rule::individual_usage => UsageKind::Individual,
         Rule::portion_usage => UsageKind::Snapshot,
-        Rule::reference_usage | Rule::default_reference_usage | Rule::directed_parameter_member => {
-            UsageKind::Reference
-        }
+        Rule::reference_usage
+        | Rule::default_reference_usage
+        | Rule::directed_parameter_member
+        | Rule::metadata_body_usage
+        | Rule::metadata_body_usage_member => UsageKind::Reference,
         Rule::constraint_usage | Rule::assert_constraint_usage => UsageKind::Constraint,
         Rule::calculation_usage => UsageKind::Calculation,
         Rule::state_usage => UsageKind::State,

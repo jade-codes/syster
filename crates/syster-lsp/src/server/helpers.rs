@@ -132,20 +132,22 @@ pub fn collect_reference_locations(
     let mut locations = Vec::new();
 
     // Query reference index for references with their actual spans
-    // Try both the fully qualified name and the simple name (last segment)
+    // References are stored with fully resolved qualified names during population,
+    // so we just need to look up by the qualified name directly
     let mut refs = workspace.reference_index().get_references(qualified_name);
 
     // Also try simple name if different from qualified name
-    if let Some(simple_name) = qualified_name.rsplit("::").next() {
-        if simple_name != qualified_name {
-            let simple_refs = workspace.reference_index().get_references(simple_name);
-            for r in simple_refs {
-                if !refs
-                    .iter()
-                    .any(|existing| existing.file == r.file && existing.span == r.span)
-                {
-                    refs.push(r);
-                }
+    // This handles cases where the source uses just the simple name
+    if let Some(simple_name) = qualified_name.rsplit("::").next()
+        && simple_name != qualified_name
+    {
+        let simple_refs = workspace.reference_index().get_references(simple_name);
+        for r in simple_refs {
+            if !refs
+                .iter()
+                .any(|existing| existing.file == r.file && existing.span == r.span)
+            {
+                refs.push(r);
             }
         }
     }
@@ -240,9 +242,37 @@ pub fn format_rich_hover(
         }
     }
 
-    // Outgoing relationships - get from symbol's relationships field
-    // (Note: Symbol doesn't store relationship targets, so this is limited)
-    // For now, show the usage_type if available
+    // Outgoing relationships - get from forward index
+    // Show specializations for definitions
+    if matches!(
+        symbol,
+        Symbol::Definition { .. } | Symbol::Classifier { .. }
+    ) {
+        let targets = workspace
+            .reference_index()
+            .get_targets(symbol.qualified_name());
+        if !targets.is_empty() {
+            let resolver = Resolver::new(workspace.symbol_table());
+            result.push_str("\n**Specializes:**\n");
+            for target in targets {
+                if let Some(target_symbol) = resolver.resolve(target)
+                    && let Some(target_file) = target_symbol.source_file()
+                    && let Ok(target_uri) = Url::from_file_path(target_file)
+                {
+                    if let Some(target_span) = target_symbol.span() {
+                        let line = target_span.start.line + 1;
+                        result.push_str(&format!("- [{target}]({target_uri}#L{line})\n"));
+                    } else {
+                        result.push_str(&format!("- [{target}]({target_uri})\n"));
+                    }
+                } else {
+                    result.push_str(&format!("- `{target}`\n"));
+                }
+            }
+        }
+    }
+
+    // Show usage_type for usages
     if let Symbol::Usage {
         usage_type: Some(typed_by),
         ..
@@ -266,7 +296,16 @@ pub fn format_rich_hover(
     }
 
     // Incoming references (use Shift+F12 to see all)
-    let references: Vec<Location> = collect_reference_locations(workspace, symbol.qualified_name());
+    let mut references: Vec<Location> =
+        collect_reference_locations(workspace, symbol.qualified_name());
+    // Sort by file path, then line, then column for deterministic ordering
+    references.sort_by(|a, b| {
+        a.uri
+            .as_str()
+            .cmp(b.uri.as_str())
+            .then(a.range.start.line.cmp(&b.range.start.line))
+            .then(a.range.start.character.cmp(&b.range.start.character))
+    });
     if !references.is_empty() {
         let count = references.len();
         let plural = if count == 1 { "" } else { "s" };

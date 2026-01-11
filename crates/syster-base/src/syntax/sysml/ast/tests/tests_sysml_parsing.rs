@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::parser::{sysml::Rule, SysMLParser};
+use crate::parser::{SysMLParser, sysml::Rule};
 use crate::syntax::sysml::ast::{parse_definition, parse_usage};
 use pest::Parser;
 

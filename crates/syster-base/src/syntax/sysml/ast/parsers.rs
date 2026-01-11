@@ -185,25 +185,29 @@ fn collect_refs_recursive(pair: &Pair<Rule>, refs: &mut Vec<(String, Option<Span
     }
 }
 
-/// Extract meta type references from expressions (e.g., "= effects meta SysML::Usage")
-/// Walks the expression tree looking for `meta_operator ~ type_result_member` patterns
+/// Extract type references from expressions (e.g., "= effects meta SysML::Usage" or "= causes as SysML::Usage")
+/// Walks the expression tree looking for `meta_operator ~ type_result_member` or `as_operator ~ type_result_member` patterns
 fn extract_meta_types_from_expression(pair: &Pair<Rule>) -> Vec<MetaRel> {
     let mut metas = Vec::new();
     collect_meta_types_recursive(pair, &mut metas, false);
     metas
 }
 
-fn collect_meta_types_recursive(pair: &Pair<Rule>, metas: &mut Vec<MetaRel>, saw_meta: bool) {
+fn collect_meta_types_recursive(
+    pair: &Pair<Rule>,
+    metas: &mut Vec<MetaRel>,
+    saw_type_operator: bool,
+) {
     let rule = pair.as_rule();
 
     match rule {
-        Rule::meta_operator => {
+        Rule::meta_operator | Rule::as_operator => {
             // Next sibling should be the type reference
             // We handle this by setting a flag and looking for the type in children
         }
         Rule::type_result_member | Rule::type_reference_member | Rule::type_reference => {
-            if saw_meta {
-                // This is the type after a meta operator
+            if saw_type_operator {
+                // This is the type after a meta or as operator
                 if let Some((target, span)) = ref_with_span_from(pair) {
                     metas.push(MetaRel {
                         target,
@@ -213,18 +217,18 @@ fn collect_meta_types_recursive(pair: &Pair<Rule>, metas: &mut Vec<MetaRel>, saw
             }
         }
         Rule::classification_expression => {
-            // Look for meta_operator followed by type
+            // Look for meta_operator or as_operator followed by type
             let children: Vec<_> = pair.clone().into_inner().collect();
             for (i, child) in children.iter().enumerate() {
-                if child.as_rule() == Rule::meta_operator {
+                if child.as_rule() == Rule::meta_operator || child.as_rule() == Rule::as_operator {
                     // Next child should be the type
-                    if let Some(type_child) = children.get(i + 1) {
-                        if let Some((target, span)) = ref_with_span_from(type_child) {
-                            metas.push(MetaRel {
-                                target,
-                                span: Some(span),
-                            });
-                        }
+                    if let Some(type_child) = children.get(i + 1)
+                        && let Some((target, span)) = ref_with_span_from(type_child)
+                    {
+                        metas.push(MetaRel {
+                            target,
+                            span: Some(span),
+                        });
                     }
                 } else {
                     collect_meta_types_recursive(child, metas, false);
@@ -237,7 +241,7 @@ fn collect_meta_types_recursive(pair: &Pair<Rule>, metas: &mut Vec<MetaRel>, saw
 
     // Recurse into children
     for inner in pair.clone().into_inner() {
-        collect_meta_types_recursive(&inner, metas, saw_meta);
+        collect_meta_types_recursive(&inner, metas, saw_type_operator);
     }
 }
 

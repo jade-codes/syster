@@ -1,4 +1,4 @@
-use crate::semantic::workspace::{populator::WorkspacePopulator, Workspace};
+use crate::semantic::workspace::{Workspace, populator::WorkspacePopulator};
 use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 

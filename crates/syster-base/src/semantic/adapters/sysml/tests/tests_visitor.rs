@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used)]
 use crate::semantic::resolver::Resolver;
 
-use crate::core::constants::*;
 use crate::parser::{SysMLParser, sysml::Rule};
 use crate::semantic::adapters::SysmlAdapter;
 use crate::semantic::graphs::ReferenceIndex;

@@ -1,8 +1,9 @@
-//! Reverse lookup index for references with span information.
+//! Bidirectional index for references with span information.
 //!
 //! Stores qualified names along with their reference spans and file paths.
-//! This enables accurate "Find References" by pointing to the actual reference
-//! location, not the source symbol's declaration.
+//! Enables both:
+//! - "Find References": given a target, find all sources that reference it
+//! - "Find Specializations": given a source, find all targets it references
 
 use crate::core::Span;
 use std::collections::{HashMap, HashSet};
@@ -26,13 +27,17 @@ struct ReferenceEntry {
     references: HashSet<ReferenceInfo>,
 }
 
-/// Reverse lookup index for references.
+/// Bidirectional index for references.
 ///
 /// Stores references with their spans for accurate "Find References" results.
+/// Also supports forward lookups (source → targets) for hover and documentation.
 #[derive(Debug, Clone, Default)]
 pub struct ReferenceIndex {
     /// Reverse index: target_name → references to it
     reverse: HashMap<String, ReferenceEntry>,
+
+    /// Forward index: source_qname → targets it references
+    forward: HashMap<String, HashSet<String>>,
 
     /// Track which sources came from which file (for cleanup on file change)
     source_to_file: HashMap<String, PathBuf>,
@@ -65,11 +70,18 @@ impl ReferenceIndex {
                 span,
             };
 
+            // Add to reverse index (target → sources)
             self.reverse
                 .entry(target_name.to_string())
                 .or_default()
                 .references
                 .insert(info);
+
+            // Add to forward index (source → targets)
+            self.forward
+                .entry(source_qname.to_string())
+                .or_default()
+                .insert(target_name.to_string());
 
             // Track file for cleanup
             self.source_to_file
@@ -84,6 +96,17 @@ impl ReferenceIndex {
         self.reverse
             .get(target)
             .map(|entry| entry.references.iter().collect())
+            .unwrap_or_default()
+    }
+
+    /// Get all targets that a source references (forward lookup).
+    ///
+    /// Returns the qualified names of all symbols that this source references.
+    /// Useful for showing specializations in hover.
+    pub fn get_targets(&self, source_qname: &str) -> Vec<&str> {
+        self.forward
+            .get(source_qname)
+            .map(|targets| targets.iter().map(|s| s.as_str()).collect())
             .unwrap_or_default()
     }
 
@@ -139,6 +162,7 @@ impl ReferenceIndex {
 
         for source in &sources_to_remove {
             self.source_to_file.remove(source);
+            self.forward.remove(source);
         }
 
         // Clean up empty entries
@@ -149,6 +173,9 @@ impl ReferenceIndex {
     pub fn remove_source(&mut self, source_qname: &str) {
         // Remove from source_to_file
         self.source_to_file.remove(source_qname);
+
+        // Remove from forward index
+        self.forward.remove(source_qname);
 
         // Remove references from this source
         for entry in self.reverse.values_mut() {
@@ -162,6 +189,7 @@ impl ReferenceIndex {
     /// Clear all entries.
     pub fn clear(&mut self) {
         self.reverse.clear();
+        self.forward.clear();
         self.source_to_file.clear();
     }
 

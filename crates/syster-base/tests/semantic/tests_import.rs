@@ -1,12 +1,12 @@
 #![allow(clippy::unwrap_used)]
 use syster::semantic::resolver::Resolver;
 
-use syster::syntax::sysml::ast::parse_file;
 use pest::Parser;
 use std::path::PathBuf;
 use syster::parser::{SysMLParser, sysml::Rule};
 use syster::semantic::Workspace;
 use syster::syntax::SyntaxFile;
+use syster::syntax::sysml::ast::parse_file;
 
 #[test]
 fn test_parse_import_statement() {

@@ -1,5 +1,4 @@
 use crate::core::Span;
-use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::symbol_table::{Symbol, SymbolTable};
 use crate::semantic::workspace::Workspace;
 use crate::syntax::SyntaxFile;
@@ -95,12 +94,21 @@ impl SemanticTokenCollector {
     ) -> Vec<SemanticToken> {
         let mut tokens = Self::collect_from_symbols(workspace.symbol_table(), file_path);
 
+        // Track positions that already have tokens from symbols
+        // (symbol tokens take precedence over reference tokens)
+        let existing_positions: std::collections::HashSet<(u32, u32)> =
+            tokens.iter().map(|t| (t.line, t.column)).collect();
+
         // Also collect type references from the reference index
+        // Skip if there's already a token at this position (from the symbol table)
         for ref_info in workspace
             .reference_index()
             .get_references_in_file(file_path)
         {
-            tokens.push(SemanticToken::from_span(&ref_info.span, TokenType::Type));
+            let token = SemanticToken::from_span(&ref_info.span, TokenType::Type);
+            if !existing_positions.contains(&(token.line, token.column)) {
+                tokens.push(token);
+            }
         }
 
         // Sort tokens by position (line, then column)
