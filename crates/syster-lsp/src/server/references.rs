@@ -5,7 +5,7 @@ use async_lsp::lsp_types::{Location, Position, Url};
 impl LspServer {
     /// Find all references to a symbol at the given position
     ///
-    /// Queries the RelationshipGraph directly for references instead of
+    /// Queries the ReferenceIndex directly for references instead of
     /// pre-computing them on every document change. This provides O(1) lookup
     /// instead of O(n) on every keystroke.
     /// Optionally includes the symbol's declaration location.

@@ -68,6 +68,12 @@ pub struct VerifyRel {
     pub span: Option<Span>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct MetaRel {
+    pub target: String,
+    pub span: Option<Span>,
+}
+
 /// Represents a parsed SysML file with support for multiple package declarations
 #[derive(Debug, Clone, PartialEq)]
 pub struct SysMLFile {
@@ -123,12 +129,136 @@ pub struct Relationships {
     pub asserts: Vec<AssertRel>,
     /// Verify (verify) - requirement verification
     pub verifies: Vec<VerifyRel>,
+    /// Meta type references (meta Qualified::Name)
+    pub meta: Vec<MetaRel>,
 }
 
 impl Relationships {
     /// Create an empty relationships struct (for tests)
     pub fn none() -> Self {
         Self::default()
+    }
+
+    /// Get the span for a relationship to a specific target.
+    /// Searches all relationship types for a matching target name.
+    pub fn get_span_for_target(&self, target: &str) -> Option<Span> {
+        // Check typing first (most common for usages)
+        if self.typed_by.as_deref() == Some(target) {
+            return self.typed_by_span;
+        }
+
+        // Check all one-to-many relationship vectors
+        for rel in &self.specializes {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.redefines {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.subsets {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.references {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.crosses {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.satisfies {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.performs {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.exhibits {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.includes {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.asserts {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.verifies {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+        for rel in &self.meta {
+            if rel.target == target {
+                return rel.span;
+            }
+        }
+
+        None
+    }
+
+    /// Get all relationship targets with their spans.
+    /// Returns tuples of (relationship_kind, target_name, span).
+    pub fn all_targets_with_spans(&self) -> Vec<(&'static str, &str, Option<Span>)> {
+        let mut result = Vec::new();
+
+        if let Some(ref target) = self.typed_by {
+            result.push(("typing", target.as_str(), self.typed_by_span));
+        }
+
+        for rel in &self.specializes {
+            result.push(("specialization", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.redefines {
+            result.push(("redefinition", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.subsets {
+            result.push(("subsetting", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.references {
+            result.push(("reference", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.crosses {
+            result.push(("cross", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.satisfies {
+            result.push(("satisfy", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.performs {
+            result.push(("perform", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.exhibits {
+            result.push(("exhibit", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.includes {
+            result.push(("include", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.asserts {
+            result.push(("assert", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.verifies {
+            result.push(("verify", rel.target.as_str(), rel.span));
+        }
+        for rel in &self.meta {
+            result.push(("meta", rel.target.as_str(), rel.span));
+        }
+
+        result
     }
 }
 
@@ -209,6 +339,29 @@ impl Usage {
             span: None,
             is_derived: false,
             is_readonly: false,
+        }
+    }
+
+    /// For domain-specific usages (satisfy, perform, exhibit, include), get the primary target.
+    /// Returns the target and its span from whichever syntactic position it appears in.
+    /// Priority: typed_by > first subset > name
+    pub fn domain_target(&self) -> Option<(&str, Option<Span>)> {
+        match self.kind {
+            UsageKind::SatisfyRequirement
+            | UsageKind::PerformAction
+            | UsageKind::ExhibitState
+            | UsageKind::IncludeUseCase => {
+                if let Some(ref typed_by) = self.relationships.typed_by {
+                    Some((typed_by.as_str(), self.relationships.typed_by_span))
+                } else if let Some(first_subset) = self.relationships.subsets.first() {
+                    Some((first_subset.target.as_str(), first_subset.span))
+                } else if let Some(ref name) = self.name {
+                    Some((name.as_str(), self.span))
+                } else {
+                    None
+                }
+            }
+            _ => None,
         }
     }
 }

@@ -32,7 +32,7 @@ impl<T: ParsedFile> Workspace<T> {
             return false;
         }
 
-        // Emit event BEFORE clearing dependencies so listeners can query the graph
+        // Emit event BEFORE modifying so listeners can query state
         let _ = {
             let event = WorkspaceEvent::FileUpdated { path: path.clone() };
             OperationResult::<(), String, WorkspaceEvent>::success((), Some(event))
@@ -41,9 +41,6 @@ impl<T: ParsedFile> Workspace<T> {
 
         // Now update the file
         if let Some(file) = self.files.get_mut(path) {
-            // Clear old dependencies
-            self.dependency_graph.remove_file(path);
-
             // Extract new imports
             let imports = content.extract_imports();
             self.file_imports.insert(path.clone(), imports);
@@ -59,8 +56,12 @@ impl<T: ParsedFile> Workspace<T> {
     pub fn remove_file(&mut self, path: &PathBuf) -> bool {
         let existed = self.files.remove(path).is_some();
         if existed {
-            self.dependency_graph.remove_file(path);
             self.file_imports.remove(path);
+
+            // Remove references from this file
+            let file_path_str = path.to_string_lossy().to_string();
+            self.reference_index
+                .remove_references_from_file(&file_path_str);
 
             let _ = {
                 let event = WorkspaceEvent::FileRemoved { path: path.clone() };

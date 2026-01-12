@@ -15,39 +15,7 @@ impl LspServer {
 
         let file_path_str = path.to_string_lossy().to_string();
 
-        // First, check the ReferenceIndex for a pre-computed binding at this position.
-        // This handles references like `Inner::Vehicle` that were resolved during semantic analysis.
-        if let Some(qualified_name) = self.workspace.get_binding_at(
-            &file_path_str,
-            position.line as usize,
-            position.character as usize,
-        ) {
-            // Look up the symbol to get its span for the hover range
-            if let Some(symbol) = self
-                .workspace
-                .symbol_table()
-                .find_by_qualified_name(qualified_name)
-            {
-                let range = symbol
-                    .span()
-                    .map(|s| span_to_lsp_range(&s))
-                    .unwrap_or(Range {
-                        start: position,
-                        end: position,
-                    });
-                return Some((qualified_name.to_string(), range));
-            }
-            // Even if symbol lookup fails, return the qualified name from the index
-            return Some((
-                qualified_name.to_string(),
-                Range {
-                    start: position,
-                    end: position,
-                },
-            ));
-        }
-
-        // Fallback: Get document text to extract word at cursor
+        // Get document text to extract word at cursor
         let source = self.document_texts.get(path)?;
 
         let line = source.lines().nth(position.line as usize)?;
@@ -79,10 +47,12 @@ impl LspServer {
             },
         };
 
-        // If the word is a qualified name (contains ::), try to resolve it directly.
-        // This handles imports like "import ISQ::MassValue" where MassValue is fully qualified.
+        // If the word is a qualified name (contains ::), try to resolve it.
+        // First try fully qualified (e.g., "ISQ::MassValue" in import statements),
+        // then try relative qualified (e.g., "Inner::Vehicle" where Inner is in scope).
         if word.contains("::") {
             let resolver = self.resolver();
+            // Try fully qualified first
             if let Some(symbol) = resolver.resolve_qualified(&word) {
                 let qualified_name = symbol.qualified_name().to_string();
                 let range = symbol
@@ -90,6 +60,37 @@ impl LspServer {
                     .map(|s| span_to_lsp_range(&s))
                     .unwrap_or(word_range);
                 return Some((qualified_name, range));
+            }
+            // Try relative qualified in file's scope (e.g., "Inner::Vehicle" where Inner is visible)
+            if let Some(scope_id) = self
+                .workspace
+                .symbol_table()
+                .get_scope_for_file(&file_path_str)
+                && let Some(symbol) = resolver.resolve_in_scope(&word, scope_id)
+            {
+                let qualified_name = symbol.qualified_name().to_string();
+                let range = symbol
+                    .span()
+                    .map(|s| span_to_lsp_range(&s))
+                    .unwrap_or(word_range);
+                return Some((qualified_name, range));
+            }
+
+            // Fallback: search for symbols in this file whose qualified name ends with the pattern.
+            // This handles nested scopes where the cursor is inside a package body but
+            // get_scope_for_file returns the file's root scope.
+            let suffix = format!("::{}", word);
+            for symbol in self.workspace.symbol_table().iter_symbols() {
+                if symbol.source_file() == Some(&file_path_str)
+                    && symbol.qualified_name().ends_with(&suffix)
+                {
+                    let qualified_name = symbol.qualified_name().to_string();
+                    let range = symbol
+                        .span()
+                        .map(|s| span_to_lsp_range(&s))
+                        .unwrap_or(word_range);
+                    return Some((qualified_name, range));
+                }
             }
         }
 

@@ -1,7 +1,7 @@
 use crate::core::Span;
 use crate::parser::kerml::Rule;
 use crate::syntax::kerml::ast::enums::{ClassifierKind, FeatureDirection};
-use from_pest::{ConversionError, Void};
+use crate::syntax::kerml::ast::parsers::ParseError;
 use pest::iterators::Pair;
 
 /// Convert pest Span to our Span type
@@ -124,7 +124,7 @@ pub fn is_classifier_rule(r: Rule) -> bool {
 }
 
 /// Map pest Rule to ClassifierKind
-pub fn to_classifier_kind(rule: Rule) -> Result<ClassifierKind, ConversionError<Void>> {
+pub fn to_classifier_kind(rule: Rule) -> Result<ClassifierKind, ParseError> {
     Ok(match rule {
         Rule::type_def => ClassifierKind::Type,
         Rule::classifier => ClassifierKind::Classifier,
@@ -136,6 +136,6 @@ pub fn to_classifier_kind(rule: Rule) -> Result<ClassifierKind, ConversionError<
         Rule::association => ClassifierKind::Association,
         Rule::association_structure => ClassifierKind::AssociationStructure,
         Rule::metaclass => ClassifierKind::Metaclass,
-        _ => return Err(ConversionError::NoMatch),
+        _ => return Err(ParseError::no_match()),
     })
 }

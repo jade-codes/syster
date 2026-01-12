@@ -1,14 +1,40 @@
-use super::enums::{ClassifierMember, FeatureMember, ImportKind};
+//! KerML AST parsing.
+//!
+//! This module provides parsing for efficient AST construction.
+
+use super::enums::{ClassifierMember, Element, FeatureMember, ImportKind};
 use super::types::{
-    Classifier, Feature, Import, Redefinition, Specialization, Subsetting, TypingRelationship,
+    Annotation, Classifier, Comment, Feature, Import, KerMLFile, NamespaceDeclaration, Package,
+    Redefinition, Specialization, Subsetting, TypingRelationship,
 };
 use super::utils::{
-    extract_direction, extract_flags, find_identifier_span, find_name, to_classifier_kind, to_span,
+    extract_direction, extract_flags, find_identifier_span, find_name, is_classifier_rule,
+    to_classifier_kind, to_span,
 };
 use crate::core::Span;
 use crate::parser::kerml::Rule;
-use from_pest::{ConversionError, Void};
-use pest::iterators::Pair;
+use crate::syntax::kerml::model::types::Documentation;
+use pest::iterators::{Pair, Pairs};
+
+/// Parse error type for AST construction
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseError {
+    pub message: String,
+}
+
+impl ParseError {
+    pub fn no_match() -> Self {
+        Self {
+            message: "No matching rule".to_string(),
+        }
+    }
+
+    pub fn invalid_rule(rule: &str) -> Self {
+        Self {
+            message: format!("Invalid rule: {rule}"),
+        }
+    }
+}
 
 // ============================================================================
 // Body parsing
@@ -43,6 +69,11 @@ fn extract_classifier_members(pair: &Pair<Rule>, members: &mut Vec<ClassifierMem
             }
         }
         Rule::feature => {
+            members.push(ClassifierMember::Feature(parse_feature(pair.clone())));
+        }
+        Rule::parameter_membership | Rule::return_parameter_membership => {
+            // Function parameters like "in x: NumericalValue[1]" or "return : NumericalValue[1]"
+            // Parse as features to capture their typing relationships
             members.push(ClassifierMember::Feature(parse_feature(pair.clone())));
         }
         Rule::import => {
@@ -240,7 +271,7 @@ fn detect_import_kind(pair: &Pair<Rule>) -> ImportKind {
 // ============================================================================
 
 /// Parse a classifier from a pest pair
-pub fn parse_classifier(pair: Pair<Rule>) -> Result<Classifier, ConversionError<Void>> {
+pub fn parse_classifier(pair: Pair<Rule>) -> Result<Classifier, ParseError> {
     let kind = to_classifier_kind(pair.as_rule())?;
     let pairs: Vec<_> = pair.clone().into_inner().collect();
 
@@ -280,6 +311,192 @@ pub fn parse_feature(pair: Pair<Rule>) -> Feature {
         body,
         span,
     }
+}
+
+/// Parse a package from pest pairs
+pub fn parse_package(pest: &mut Pairs<Rule>) -> Result<Package, ParseError> {
+    let mut elements = Vec::new();
+    let pairs: Vec<_> = pest.collect();
+
+    for pair in &pairs {
+        if pair.as_rule() == Rule::namespace_body {
+            elements = pair
+                .clone()
+                .into_inner()
+                .filter(|p| p.as_rule() == Rule::namespace_body_elements)
+                .flat_map(|p| p.into_inner())
+                .filter(|p| p.as_rule() == Rule::namespace_body_element)
+                .filter_map(|p| parse_element(&mut p.into_inner()).ok())
+                .collect();
+        }
+    }
+
+    // Use find_identifier_span to get the name AND its span together
+    // This ensures the span points to the package name, not 'standard' or 'library'
+    let (name, span) = find_identifier_span(pairs.into_iter());
+
+    Ok(Package {
+        name,
+        elements,
+        span,
+    })
+}
+
+/// Parse a comment from pest pairs
+pub fn parse_comment(pest: &mut Pairs<Rule>) -> Result<Comment, ParseError> {
+    let mut content = String::new();
+    let mut span = None;
+
+    for pair in pest {
+        span.get_or_insert_with(|| to_span(pair.as_span()));
+        if pair.as_rule() == Rule::comment_annotation {
+            content = pair.as_str().to_string();
+        }
+    }
+
+    Ok(Comment {
+        content,
+        about: Vec::new(),
+        locale: None,
+        span,
+    })
+}
+
+/// Parse documentation from pest pairs
+pub fn parse_documentation(pest: &mut Pairs<Rule>) -> Result<Documentation, ParseError> {
+    let pair = pest.next().ok_or(ParseError::no_match())?;
+    if pair.as_rule() != Rule::documentation {
+        return Err(ParseError::no_match());
+    }
+
+    let span = Some(to_span(pair.as_span()));
+    let content = pair.as_str().to_string();
+
+    Ok(Documentation {
+        comment: Comment {
+            content,
+            about: Vec::new(),
+            locale: None,
+            span,
+        },
+        span,
+    })
+}
+
+/// Parse an import from pest pairs
+pub fn parse_import(pest: &mut Pairs<Rule>) -> Result<Import, ParseError> {
+    let mut path = String::new();
+    let mut path_span = None;
+    let mut is_recursive = false;
+    let mut span = None;
+
+    for pair in pest {
+        if pair.as_rule() == Rule::imported_reference {
+            span = Some(to_span(pair.as_span()));
+            // imported_reference contains element_reference and optional import_kind
+            for child in pair.into_inner() {
+                match child.as_rule() {
+                    Rule::element_reference => {
+                        path = child.as_str().to_string();
+                        path_span = Some(to_span(child.as_span()));
+                    }
+                    Rule::import_kind => {
+                        is_recursive = child.as_str().contains("**");
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    Ok(Import {
+        path,
+        path_span,
+        is_recursive,
+        is_public: false, // Will be overridden by parse_element if public
+        kind: ImportKind::Normal,
+        span,
+    })
+}
+
+/// Parse an element from pest pairs
+pub fn parse_element(pest: &mut Pairs<Rule>) -> Result<Element, ParseError> {
+    let mut pair = pest.next().ok_or(ParseError::no_match())?;
+    let mut is_public = false;
+
+    // Capture visibility prefix
+    if pair.as_rule() == Rule::visibility_kind {
+        is_public = pair.as_str().trim() == "public";
+        pair = pest.next().ok_or(ParseError::no_match())?;
+    }
+
+    Ok(match pair.as_rule() {
+        // Package rules
+        Rule::package | Rule::library_package => {
+            Element::Package(parse_package(&mut pair.into_inner())?)
+        }
+
+        // Wrapper rules - recurse
+        Rule::namespace_body_element
+        | Rule::non_feature_member
+        | Rule::non_feature_element
+        | Rule::namespace_feature_member
+        | Rule::typed_feature_member => parse_element(&mut pair.into_inner())?,
+
+        // Classifier rules
+        r if is_classifier_rule(r) => Element::Classifier(parse_classifier(pair)?),
+
+        // Feature rules
+        Rule::feature | Rule::feature_element => Element::Feature(parse_feature(pair)),
+
+        // Other elements
+        Rule::comment_annotation => Element::Comment(parse_comment(&mut pair.into_inner())?),
+        Rule::annotation => Element::Annotation(Annotation {
+            reference: pair.as_str().to_string(),
+            span: Some(to_span(pair.as_span())),
+        }),
+        Rule::import => {
+            let mut import = parse_import(&mut pair.into_inner())?;
+            import.is_public = is_public;
+            Element::Import(import)
+        }
+
+        _ => return Err(ParseError::no_match()),
+    })
+}
+
+/// Parse a KerMLFile from pest pairs
+pub fn parse_file(pest: &mut Pairs<Rule>) -> Result<KerMLFile, ParseError> {
+    let model = pest.next().ok_or(ParseError::no_match())?;
+    if model.as_rule() != Rule::file {
+        return Err(ParseError::no_match());
+    }
+
+    let mut elements = Vec::new();
+    let mut namespace = None;
+
+    for pair in model.into_inner() {
+        if pair.as_rule() == Rule::namespace_element
+            && let Ok(element) = parse_element(&mut pair.into_inner())
+        {
+            if let Element::Package(ref pkg) = element
+                && namespace.is_none()
+                && pkg.elements.is_empty()
+                && let Some(ref name) = pkg.name
+            {
+                namespace = Some(NamespaceDeclaration {
+                    name: name.clone(),
+                    span: pkg.span,
+                });
+            }
+            elements.push(element);
+        }
+    }
+
+    Ok(KerMLFile {
+        namespace,
+        elements,
+    })
 }
 
 #[cfg(test)]
@@ -487,5 +704,161 @@ mod tests {
 
         assert_eq!(classifier.name, Some("calculateArea".to_string()));
         assert_eq!(classifier.kind, ClassifierKind::Function);
+    }
+
+    #[test]
+    fn test_function_with_parameters_extracts_typing() {
+        // Test that function parameters like "in x: NumericalValue[1]" are parsed as features
+        // with typing relationships, so their type references get semantic token highlighting
+        let source = r#"abstract function '+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"#;
+
+        let parsed = KerMLParser::parse(Rule::function, source)
+            .expect("Should parse")
+            .next()
+            .expect("Should have pair");
+
+        let classifier = parse_classifier(parsed).expect("Should convert to Classifier");
+
+        assert_eq!(classifier.name, Some("'+'".to_string()));
+        assert_eq!(classifier.kind, ClassifierKind::Function);
+
+        // Should have 3 features: in x, in y, return
+        let features: Vec<_> = classifier
+            .body
+            .iter()
+            .filter_map(|m| match m {
+                ClassifierMember::Feature(f) => Some(f),
+                _ => None,
+            })
+            .collect();
+
+        assert_eq!(
+            features.len(),
+            3,
+            "Should have 3 features (in x, in y, return)"
+        );
+
+        // Check that parameters have typing relationships captured
+        for feature in &features {
+            let typing_members: Vec<_> = feature
+                .body
+                .iter()
+                .filter(|m| matches!(m, FeatureMember::Typing(_)))
+                .collect();
+            assert!(
+                !typing_members.is_empty(),
+                "Feature {:?} should have typing relationship for NumericalValue",
+                feature.name
+            );
+
+            // Check that the typing has a span (needed for semantic tokens)
+            if let Some(FeatureMember::Typing(typing)) = typing_members.first() {
+                assert_eq!(typing.typed, "NumericalValue");
+                assert!(
+                    typing.span.is_some(),
+                    "Typing relationship should have a span for semantic token highlighting"
+                );
+            }
+        }
+    }
+
+    // ========================================================================
+    // ParseError tests
+    // ========================================================================
+
+    #[test]
+    fn test_parse_error_no_match() {
+        let error = ParseError::no_match();
+        assert_eq!(error.message, "No matching rule");
+    }
+
+    #[test]
+    fn test_parse_error_invalid_rule() {
+        let error = ParseError::invalid_rule("unknown_rule");
+        assert_eq!(error.message, "Invalid rule: unknown_rule");
+    }
+
+    // ========================================================================
+    // Parameter membership parsing tests
+    // ========================================================================
+
+    #[test]
+    fn test_parameter_membership_parsed_as_feature() {
+        // Test that parameter_membership (e.g., "in x: Type") is parsed as a Feature
+        // so its typing relationship is captured for semantic tokens
+        let source = "function compute { in value: Real; }";
+
+        let parsed = KerMLParser::parse(Rule::function, source)
+            .expect("Should parse")
+            .next()
+            .expect("Should have pair");
+
+        let classifier = parse_classifier(parsed).expect("Should convert to Classifier");
+
+        // Find features in the body
+        let features: Vec<_> = classifier
+            .body
+            .iter()
+            .filter_map(|m| match m {
+                ClassifierMember::Feature(f) => Some(f),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !features.is_empty(),
+            "Parameter should be parsed as feature"
+        );
+
+        // Check that the parameter has a typing relationship
+        let param = features.first().expect("Should have parameter feature");
+        let has_typing = param
+            .body
+            .iter()
+            .any(|m| matches!(m, FeatureMember::Typing(_)));
+        assert!(
+            has_typing,
+            "Parameter feature should have typing relationship for Real"
+        );
+    }
+
+    #[test]
+    fn test_return_parameter_membership_parsed_as_feature() {
+        // Test that return_parameter_membership is parsed as a Feature
+        let source = "function getValue { return : Integer; }";
+
+        let parsed = KerMLParser::parse(Rule::function, source)
+            .expect("Should parse")
+            .next()
+            .expect("Should have pair");
+
+        let classifier = parse_classifier(parsed).expect("Should convert to Classifier");
+
+        // Find features in the body
+        let features: Vec<_> = classifier
+            .body
+            .iter()
+            .filter_map(|m| match m {
+                ClassifierMember::Feature(f) => Some(f),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !features.is_empty(),
+            "Return parameter should be parsed as feature"
+        );
+
+        // Check that the return parameter has a typing relationship to Integer
+        let has_integer_typing = features.iter().any(|f| {
+            f.body.iter().any(|m| match m {
+                FeatureMember::Typing(t) => t.typed == "Integer",
+                _ => false,
+            })
+        });
+        assert!(
+            has_integer_typing,
+            "Return parameter should have typing relationship for Integer"
+        );
     }
 }

@@ -83,6 +83,14 @@ impl<'a> SysmlAdapter<'a> {
             UsageKind::PerformAction => "PerformAction".to_string(),
             UsageKind::ExhibitState => "ExhibitState".to_string(),
             UsageKind::IncludeUseCase => "IncludeUseCase".to_string(),
+            UsageKind::Reference => "Reference".to_string(),
+            UsageKind::Constraint => "Constraint".to_string(),
+            UsageKind::Calculation => "Calculation".to_string(),
+            UsageKind::State => "State".to_string(),
+            UsageKind::Connection => "Connection".to_string(),
+            UsageKind::Interface => "Interface".to_string(),
+            UsageKind::Allocation => "Allocation".to_string(),
+            UsageKind::Flow => "Flow".to_string(),
         }
     }
 
@@ -141,6 +149,16 @@ impl<'a> SysmlAdapter<'a> {
             UsageKind::Individual => SemanticRole::Component,
             UsageKind::Snapshot => SemanticRole::Component,
             UsageKind::Timeslice => SemanticRole::Component,
+            // Reference usages (parameters with direction like `in`, `out`, `inout`)
+            UsageKind::Reference => SemanticRole::Attribute,
+            // Additional usage types
+            UsageKind::Constraint => SemanticRole::Constraint,
+            UsageKind::Calculation => SemanticRole::Action,
+            UsageKind::State => SemanticRole::State,
+            UsageKind::Connection => SemanticRole::Component,
+            UsageKind::Interface => SemanticRole::Interface,
+            UsageKind::Allocation => SemanticRole::Component,
+            UsageKind::Flow => SemanticRole::Component,
         }
     }
 }
