@@ -356,10 +356,12 @@ fn get_symbol_relationships(
     let mut relationships = Vec::new();
 
     // For Usage symbols, extract typing relationship from usage_type field
-    if let Symbol::Usage { usage_type, .. } = symbol {
-        if let Some(type_name) = usage_type {
-            relationships.push(("Typed by".to_string(), vec![type_name.clone()]));
-        }
+    if let Symbol::Usage {
+        usage_type: Some(type_name),
+        ..
+    } = symbol
+    {
+        relationships.push(("Typed by".to_string(), vec![type_name.clone()]));
     }
 
     // Get specializations from the reference index
