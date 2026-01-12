@@ -267,28 +267,8 @@ pub fn format_rich_hover(
         }
     }
 
-    // Show usage_type for usages
-    if let Symbol::Usage {
-        usage_type: Some(typed_by),
-        ..
-    } = symbol
-    {
-        let resolver = Resolver::new(workspace.symbol_table());
-        result.push_str("\n**Typed by:**\n");
-        if let Some(target_symbol) = resolver.resolve(typed_by)
-            && let Some(target_file) = target_symbol.source_file()
-            && let Ok(target_uri) = Url::from_file_path(target_file)
-        {
-            if let Some(target_span) = target_symbol.span() {
-                let line = target_span.start.line + 1;
-                result.push_str(&format!("- [{typed_by}]({target_uri}#L{line})\n"));
-            } else {
-                result.push_str(&format!("- [{typed_by}]({target_uri})\n"));
-            }
-        } else {
-            result.push_str(&format!("- `{typed_by}`\n"));
-        }
-    }
+    // Note: Typing for Usage symbols is now handled in get_symbol_relationships()
+    // and displayed via the relationships loop above, so no duplicate handling needed here.
 
     // Incoming references (use Shift+F12 to see all)
     // Reuse the shared collect_reference_locations to include both relationship and import refs
