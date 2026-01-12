@@ -1,5 +1,5 @@
 {
-  "name": "syster",
+  "name": "sysml-language-support",
   "displayName": "SysML v2 Language Support",
   "description": "Language support for SysML v2 and KerML with LSP-based features",
   "version": "0.1.7-alpha",
