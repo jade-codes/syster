@@ -1,6 +1,6 @@
 use crate::core::{ParseError, ParseResult, get_extension, load_file, validate_extension};
 use crate::syntax::kerml::ast::KerMLFile;
-use ::from_pest::FromPest;
+use crate::syntax::kerml::ast::parsers::parse_file;
 use pest::Parser;
 use std::path::{Path, PathBuf};
 
@@ -30,8 +30,7 @@ pub fn parse_content(content: &str, path: &Path) -> Result<KerMLFile, String> {
     let mut pairs = crate::parser::KerMLParser::parse(crate::parser::kerml::Rule::file, content)
         .map_err(|e| format!("Parse error in {}: {}", path.display(), e))?;
 
-    KerMLFile::from_pest(&mut pairs)
-        .map_err(|e| format!("AST error in {}: {:?}", path.display(), e))
+    parse_file(&mut pairs).map_err(|e| format!("AST error in {}: {:?}", path.display(), e))
 }
 
 /// Parses content and returns a ParseResult with detailed error information.
@@ -42,7 +41,7 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<KerMLFile> {
     }
 
     match crate::parser::KerMLParser::parse(crate::parser::kerml::Rule::file, content) {
-        Ok(mut pairs) => match KerMLFile::from_pest(&mut pairs) {
+        Ok(mut pairs) => match parse_file(&mut pairs) {
             Ok(file) => ParseResult::success(file),
             Err(e) => {
                 let error = ParseError::ast_error(format!("{e:?}"), 0, 0);

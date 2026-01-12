@@ -1,8 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use crate::parser::{SysMLParser, sysml::Rule};
-use crate::syntax::sysml::ast::{Definition, Usage};
-use from_pest::FromPest;
+use crate::syntax::sysml::ast::{parse_definition, parse_usage};
 use pest::Parser;
 
 #[test]
@@ -12,7 +11,7 @@ fn test_parse_definition_with_specialization() {
     let pairs = SysMLParser::parse(Rule::part_definition, source);
     assert!(pairs.is_ok(), "Failed to parse: {:?}", pairs.err());
 
-    let def = Definition::from_pest(&mut pairs.unwrap());
+    let def = parse_definition(pairs.unwrap().next().unwrap());
     assert!(def.is_ok(), "Failed to convert to AST: {:?}", def.err());
 
     let def = def.unwrap();
@@ -33,10 +32,7 @@ fn test_parse_usage_with_typed_by() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok(), "Failed to parse: {:?}", pairs.err());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap());
-    assert!(usage.is_ok(), "Failed to convert to AST: {:?}", usage.err());
-
-    let usage = usage.unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("vehicle".to_string()));
     assert_eq!(
         usage.relationships.typed_by,
@@ -53,10 +49,7 @@ fn test_parse_usage_with_subsets() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok(), "Failed to parse: {:?}", pairs.err());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap());
-    assert!(usage.is_ok(), "Failed to convert to AST: {:?}", usage.err());
-
-    let usage = usage.unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("vehicle2".to_string()));
     assert_eq!(
         usage.relationships.subsets.len(),
@@ -74,10 +67,7 @@ fn test_parse_usage_with_redefines() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok(), "Failed to parse: {:?}", pairs.err());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap());
-    assert!(usage.is_ok(), "Failed to convert to AST: {:?}", usage.err());
-
-    let usage = usage.unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("vehicle2".to_string()));
     assert_eq!(
         usage.relationships.redefines.len(),
@@ -95,7 +85,7 @@ fn test_parse_definition_with_multiple_specializations() {
     let pairs = SysMLParser::parse(Rule::part_definition, source);
     assert!(pairs.is_ok());
 
-    let def = Definition::from_pest(&mut pairs.unwrap()).unwrap();
+    let def = parse_definition(pairs.unwrap().next().unwrap()).unwrap();
     assert_eq!(def.name, Some("SportsCar".to_string()));
     assert_eq!(def.relationships.specializes.len(), 2);
     assert_eq!(def.relationships.specializes[0].target, "Car");
@@ -109,7 +99,7 @@ fn test_parse_usage_with_multiple_subsets() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap()).unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("myPart".to_string()));
     assert_eq!(usage.relationships.subsets.len(), 3);
     assert_eq!(usage.relationships.subsets[0].target, "part1");
@@ -124,7 +114,7 @@ fn test_parse_usage_with_typed_and_subsets() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap()).unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("vehicle".to_string()));
     assert_eq!(usage.relationships.typed_by, Some("VehicleDef".to_string()));
     assert_eq!(usage.relationships.subsets.len(), 1);
@@ -138,7 +128,7 @@ fn test_parse_usage_with_multiple_redefines() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap()).unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("newPart".to_string()));
     assert_eq!(usage.relationships.redefines.len(), 2);
     assert_eq!(usage.relationships.redefines[0].target, "oldPart1");
@@ -152,7 +142,7 @@ fn test_parse_action_definition_with_specialization() {
     let pairs = SysMLParser::parse(Rule::action_definition, source);
     assert!(pairs.is_ok());
 
-    let def = Definition::from_pest(&mut pairs.unwrap()).unwrap();
+    let def = parse_definition(pairs.unwrap().next().unwrap()).unwrap();
     assert_eq!(def.name, Some("Drive".to_string()));
     assert_eq!(def.relationships.specializes.len(), 1);
     assert_eq!(def.relationships.specializes[0].target, "Action");
@@ -165,7 +155,7 @@ fn test_parse_requirement_definition_with_specialization() {
     let pairs = SysMLParser::parse(Rule::requirement_definition, source);
     assert!(pairs.is_ok());
 
-    let def = Definition::from_pest(&mut pairs.unwrap()).unwrap();
+    let def = parse_definition(pairs.unwrap().next().unwrap()).unwrap();
     assert_eq!(def.name, Some("SafetyReq".to_string()));
     assert_eq!(def.relationships.specializes.len(), 1);
     assert_eq!(def.relationships.specializes[0].target, "BaseRequirement");
@@ -178,31 +168,31 @@ fn test_parse_anonymous_definition() {
     let pairs = SysMLParser::parse(Rule::part_definition, source);
     assert!(pairs.is_ok());
 
-    let def = Definition::from_pest(&mut pairs.unwrap()).unwrap();
+    let def = parse_definition(pairs.unwrap().next().unwrap()).unwrap();
     assert_eq!(def.name, None);
     assert_eq!(def.relationships.specializes.len(), 0);
 }
 
 #[test]
-fn test_parse_item_definition_with_relationships() {
+fn test_parse_item_definition_with_index() {
     let source = "item def Fuel :> Material;";
 
     let pairs = SysMLParser::parse(Rule::item_definition, source);
     assert!(pairs.is_ok());
 
-    let def = Definition::from_pest(&mut pairs.unwrap()).unwrap();
+    let def = parse_definition(pairs.unwrap().next().unwrap()).unwrap();
     assert_eq!(def.name, Some("Fuel".to_string()));
     assert_eq!(def.relationships.specializes.len(), 1);
 }
 
 #[test]
-fn test_parse_attribute_definition_with_relationships() {
+fn test_parse_attribute_definition_with_index() {
     let source = "attribute def Speed :> Measurement;";
 
     let pairs = SysMLParser::parse(Rule::attribute_definition, source);
     assert!(pairs.is_ok());
 
-    let def = Definition::from_pest(&mut pairs.unwrap()).unwrap();
+    let def = parse_definition(pairs.unwrap().next().unwrap()).unwrap();
     assert_eq!(def.name, Some("Speed".to_string()));
     assert_eq!(def.relationships.specializes.len(), 1);
 }
@@ -214,7 +204,7 @@ fn test_parse_usage_complex_relationships() {
     let pairs = SysMLParser::parse(Rule::part_usage, source);
     assert!(pairs.is_ok());
 
-    let usage = Usage::from_pest(&mut pairs.unwrap()).unwrap();
+    let usage = parse_usage(pairs.unwrap().next().unwrap());
     assert_eq!(usage.name, Some("enginePart".to_string()));
     assert_eq!(usage.relationships.typed_by, Some("Engine".to_string()));
     assert_eq!(usage.relationships.subsets.len(), 1);
@@ -225,7 +215,6 @@ fn test_parse_usage_complex_relationships() {
 
 #[test]
 fn test_parse_model_with_satisfy_relationship() {
-    // Integration test - satisfy is parsed as part of a complete model
     let source = "requirement def SafetyReq; case def SafetyCase { satisfy SafetyReq; }";
 
     let pairs = SysMLParser::parse(Rule::model, source);
@@ -238,7 +227,6 @@ fn test_parse_model_with_satisfy_relationship() {
 
 #[test]
 fn test_parse_model_with_satisfy_requirement_keyword() {
-    // Test satisfy with full 'requirement' keyword
     let source =
         "requirement def SafetyReq; case def SafetyCase { satisfy requirement SafetyReq; }";
 
@@ -276,7 +264,6 @@ fn test_parse_model_with_exhibit_relationship() {
 
 #[test]
 fn test_parse_model_with_include_relationship() {
-    // Integration test - include is parsed as part of a complete model
     let source = "use case def Login; use case def ManageAccount { include Login; }";
 
     let pairs = SysMLParser::parse(Rule::model, source);

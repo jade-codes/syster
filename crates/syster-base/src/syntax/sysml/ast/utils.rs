@@ -1,8 +1,12 @@
+//! Utility functions for SysML AST construction.
+//!
+//! This module provides helper functions used by the parsers for AST construction.
+
 use crate::{core::Span, parser::sysml::Rule};
-use from_pest::{ConversionError, Void};
 use pest::iterators::Pair;
 
 use super::enums::{DefinitionKind, UsageKind};
+use super::parsers::{ParseError, all_refs_with_spans_from, ref_with_span_from};
 
 // ============================================================================
 // Span conversion
@@ -15,22 +19,43 @@ pub fn to_span(pest_span: pest::Span) -> Span {
     Span::from_coords(sl - 1, sc - 1, el - 1, ec - 1)
 }
 
+/// Extract just the name from a reference (without span)
+pub fn ref_from(pair: &Pair<Rule>) -> Option<String> {
+    ref_with_span_from(pair).map(|(name, _span)| name)
+}
+
 // ============================================================================
 // Rule predicates
 // ============================================================================
 
-/// Check if rule represents a body element
+/// Check if rule represents a body element that may contain members.
+///
+/// These are all the `*_body` rules in the grammar that can contain
+/// nested usages, definitions, or other extractable members.
+///
+/// Note: Some body rules are intentionally excluded:
+/// - `package_body`: Packages are handled separately with their own visitor
+/// - `expression_body`: Expression internals, not AST members
+/// - `relationship_body`: Connection relationship bodies, special handling
 pub fn is_body_rule(r: Rule) -> bool {
     matches!(
         r,
+        // Definition bodies
         Rule::definition_body
             | Rule::action_body
-            | Rule::enumeration_body
-            | Rule::state_def_body
-            | Rule::case_body
             | Rule::calculation_body
+            | Rule::case_body
+            | Rule::constraint_body
+            | Rule::enumeration_body
+            | Rule::interface_body
+            | Rule::metadata_body
             | Rule::requirement_body
+            | Rule::state_def_body
+            | Rule::view_definition_body
+            // Usage bodies
+            | Rule::state_usage_body
             | Rule::usage_body
+            | Rule::view_body
     )
 }
 
@@ -47,6 +72,8 @@ pub fn is_usage_rule(r: Rule) -> bool {
             | Rule::concern_usage
             | Rule::case_usage
             | Rule::view_usage
+            | Rule::reference_usage
+            | Rule::default_reference_usage
             | Rule::satisfy_requirement_usage
             | Rule::perform_action_usage
             | Rule::exhibit_state_usage
@@ -54,6 +81,13 @@ pub fn is_usage_rule(r: Rule) -> bool {
             | Rule::objective_member
             | Rule::enumeration_usage
             | Rule::enumerated_value
+            | Rule::state_usage
+            | Rule::connection_usage
+            | Rule::constraint_usage
+            | Rule::assert_constraint_usage
+            | Rule::calculation_usage
+            | Rule::allocation_usage
+            | Rule::metadata_usage
     )
 }
 
@@ -90,265 +124,12 @@ pub fn is_definition_rule(r: Rule) -> bool {
 }
 
 // ============================================================================
-// Reference extraction
-// ============================================================================
-
-/// Strip surrounding quotes from a quoted name string.
-fn strip_quotes(s: &str) -> String {
-    s.trim()
-        .trim_start_matches('\'')
-        .trim_end_matches('\'')
-        .to_string()
-}
-
-/// Extract reference from pair or its immediate children.
-/// Quoted names have their surrounding quotes stripped.
-pub fn ref_from(pair: &Pair<Rule>) -> Option<String> {
-    ref_with_span_from(pair).map(|(name, _span)| name)
-}
-
-/// Extract reference with span from pair or its immediate children.
-/// Quoted names have their surrounding quotes stripped.
-pub fn ref_with_span_from(pair: &Pair<Rule>) -> Option<(String, crate::core::Span)> {
-    match pair.as_rule() {
-        Rule::identifier => Some((pair.as_str().trim().to_string(), to_span(pair.as_span()))),
-        Rule::quoted_name => Some((strip_quotes(pair.as_str()), to_span(pair.as_span()))),
-        // qualified_name may contain quoted_name segments, but we return the whole string
-        // with any quoted segments unquoted
-        Rule::qualified_name => {
-            let unquoted = pair
-                .clone()
-                .into_inner()
-                .map(|p| {
-                    if p.as_rule() == Rule::quoted_name {
-                        strip_quotes(p.as_str())
-                    } else {
-                        p.as_str().to_string()
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("::");
-            Some((unquoted, to_span(pair.as_span())))
-        }
-        // feature_reference and classifier_reference may contain quoted_name inside,
-        // so we need to recurse to get the unquoted value
-        Rule::feature_reference | Rule::classifier_reference => pair
-            .clone()
-            .into_inner()
-            .find_map(|p| ref_with_span_from(&p))
-            .or_else(|| Some((pair.as_str().trim().to_string(), to_span(pair.as_span())))),
-        _ => pair
-            .clone()
-            .into_inner()
-            .find_map(|p| ref_with_span_from(&p)),
-    }
-}
-
-/// Extract all references from a pair
-pub fn all_refs_from(pair: &Pair<Rule>) -> Vec<String> {
-    pair.clone()
-        .into_inner()
-        .filter_map(|p| ref_from(&p))
-        .collect()
-}
-
-/// Extract all references with spans for relationship structs
-pub fn all_refs_with_spans_from(pair: &Pair<Rule>) -> Vec<(String, Option<crate::core::Span>)> {
-    pair.clone()
-        .into_inner()
-        .filter_map(|p| ref_with_span_from(&p).map(|(name, span)| (name, Some(span))))
-        .collect()
-}
-
-// ============================================================================
-// Name extraction
+// Name extraction (for FromPest implementations)
 // ============================================================================
 
 /// Find first matching rule in children
 pub fn find_in<'a>(pair: &Pair<'a, Rule>, rule: Rule) -> Option<Pair<'a, Rule>> {
     pair.clone().into_inner().find(|p| p.as_rule() == rule)
-}
-
-/// Recursively find name in nested identification rules
-/// Skips relationship parts to avoid extracting identifiers from redefinitions, subsettings, etc.
-pub fn find_name<'pest>(pairs: impl Iterator<Item = Pair<'pest, Rule>>) -> Option<String> {
-    for pair in pairs {
-        // Skip relationship parts - don't extract identifiers from within these
-        if is_relationship_part(&pair) {
-            continue;
-        }
-
-        if matches!(pair.as_rule(), Rule::identifier | Rule::identification) {
-            return Some(pair.as_str().to_string());
-        }
-        // Recursively search in children
-        if let Some(name) = find_name(pair.into_inner()) {
-            return Some(name);
-        }
-    }
-    None
-}
-
-/// Recursively find identifier and return (name, span, short_name, short_name_span)
-/// Skips relationship parts to avoid extracting identifiers from redefinitions, subsettings, etc.
-///
-/// For identification rules with short names (e.g., `<kg> kilogram`), extracts both names.
-pub fn find_names_with_short<'a>(
-    pairs: impl Iterator<Item = Pair<'a, Rule>>,
-) -> (
-    Option<String>,
-    Option<crate::core::Span>,
-    Option<String>,
-    Option<crate::core::Span>,
-) {
-    for pair in pairs {
-        // Skip relationship parts - don't extract identifiers from within these
-        if is_relationship_part(&pair) {
-            continue;
-        }
-
-        if pair.as_rule() == Rule::identifier {
-            return (
-                Some(pair.as_str().to_string()),
-                Some(to_span(pair.as_span())),
-                None,
-                None,
-            );
-        }
-
-        // Handle identification specially - extract both regular_name and short_name
-        if pair.as_rule() == Rule::identification {
-            return extract_names_from_identification(pair);
-        }
-
-        if let (Some(name), Some(span), short_name, short_name_span) =
-            find_names_with_short(pair.into_inner())
-        {
-            return (Some(name), Some(span), short_name, short_name_span);
-        }
-    }
-    (None, None, None, None)
-}
-
-/// Recursively find identifier and return (name, span)
-/// Skips relationship parts to avoid extracting identifiers from redefinitions, subsettings, etc.
-///
-/// For identification rules with short names (e.g., `<kg> kilogram`), extracts the regular name
-/// if present, or the short name content if only a short name is provided.
-pub fn find_identifier_span<'a>(
-    pairs: impl Iterator<Item = Pair<'a, Rule>>,
-) -> (Option<String>, Option<crate::core::Span>) {
-    for pair in pairs {
-        // Skip relationship parts - don't extract identifiers from within these
-        if is_relationship_part(&pair) {
-            continue;
-        }
-
-        if pair.as_rule() == Rule::identifier {
-            return (
-                Some(pair.as_str().to_string()),
-                Some(to_span(pair.as_span())),
-            );
-        }
-
-        // Handle identification specially - extract regular_name if present,
-        // otherwise extract identifier from short_name
-        if pair.as_rule() == Rule::identification {
-            return extract_name_from_identification(pair);
-        }
-
-        if let (Some(name), Some(span)) = find_identifier_span(pair.into_inner()) {
-            return (Some(name), Some(span));
-        }
-    }
-    (None, None)
-}
-
-/// Extract both the regular name and short name from an identification rule.
-/// identification = { (short_name ~ regular_name?) | regular_name }
-///
-/// Returns (regular_name, regular_name_span, short_name, short_name_span).
-/// For example:
-/// - `<kg> kilogram` → returns (Some("kilogram"), span, Some("kg"), Some(short_span))
-/// - `<kg>` → returns (Some("kg"), span, Some("kg"), Some(span)) - short name used as primary
-/// - `myName` → returns (Some("myName"), span, None, None)
-pub fn extract_names_from_identification(
-    pair: Pair<Rule>,
-) -> (
-    Option<String>,
-    Option<crate::core::Span>,
-    Option<String>,
-    Option<crate::core::Span>,
-) {
-    let inner: Vec<_> = pair.into_inner().collect();
-
-    let mut regular_name: Option<(String, crate::core::Span)> = None;
-    let mut short_name: Option<(String, crate::core::Span)> = None;
-
-    // Extract short_name if present (with span)
-    for p in &inner {
-        if p.as_rule() == Rule::short_name {
-            for inner_p in p.clone().into_inner() {
-                if inner_p.as_rule() == Rule::identifier {
-                    short_name = Some((inner_p.as_str().to_string(), to_span(inner_p.as_span())));
-                    break;
-                } else if inner_p.as_rule() == Rule::quoted_name {
-                    short_name = Some((
-                        inner_p
-                            .as_str()
-                            .trim_start_matches('\'')
-                            .trim_end_matches('\'')
-                            .to_string(),
-                        to_span(inner_p.as_span()),
-                    ));
-                    break;
-                }
-            }
-        }
-    }
-
-    // Extract regular_name if present
-    for p in &inner {
-        if p.as_rule() == Rule::regular_name
-            && let Some(id) = p.clone().into_inner().next()
-        {
-            let name = if id.as_rule() == Rule::quoted_name {
-                id.as_str()
-                    .trim_start_matches('\'')
-                    .trim_end_matches('\'')
-                    .to_string()
-            } else {
-                id.as_str().to_string()
-            };
-            regular_name = Some((name, to_span(id.as_span())));
-        }
-    }
-
-    // If we have a regular name, return it with the short name
-    if let Some((name, span)) = regular_name {
-        let (sn, sn_span) = short_name.map_or((None, None), |(n, s)| (Some(n), Some(s)));
-        return (Some(name), Some(span), sn, sn_span);
-    }
-
-    // No regular_name, use short_name as the primary name
-    if let Some((sn, sn_span)) = short_name {
-        // Return short name as primary (no separate short_name field since it IS the primary)
-        return (Some(sn), Some(sn_span), None, None);
-    }
-
-    // Fallback: direct identifier
-    for p in &inner {
-        if p.as_rule() == Rule::identifier {
-            return (
-                Some(p.as_str().to_string()),
-                Some(to_span(p.as_span())),
-                None,
-                None,
-            );
-        }
-    }
-
-    (None, None, None, None)
 }
 
 /// Extract the name from an identification rule.
@@ -366,27 +147,24 @@ pub fn extract_name_from_identification(
 
     // Look for regular_name first (preferred)
     for p in &inner {
-        if p.as_rule() == Rule::regular_name {
-            // regular_name contains identifier or quoted_name
-            if let Some(id) = p.clone().into_inner().next() {
-                let name = if id.as_rule() == Rule::quoted_name {
-                    // Remove surrounding quotes
-                    id.as_str()
-                        .trim_start_matches('\'')
-                        .trim_end_matches('\'')
-                        .to_string()
-                } else {
-                    id.as_str().to_string()
-                };
-                return (Some(name), Some(to_span(id.as_span())));
-            }
+        if p.as_rule() == Rule::regular_name
+            && let Some(id) = p.clone().into_inner().next()
+        {
+            let name = if id.as_rule() == Rule::quoted_name {
+                id.as_str()
+                    .trim_start_matches('\'')
+                    .trim_end_matches('\'')
+                    .to_string()
+            } else {
+                id.as_str().to_string()
+            };
+            return (Some(name), Some(to_span(id.as_span())));
         }
     }
 
     // No regular_name found, look for short_name and extract identifier from within
     for p in &inner {
         if p.as_rule() == Rule::short_name {
-            // short_name = { "<" ~ (identifier | quoted_name) ~ ">" }
             for inner_p in p.clone().into_inner() {
                 if inner_p.as_rule() == Rule::identifier {
                     return (
@@ -405,7 +183,7 @@ pub fn extract_name_from_identification(
         }
     }
 
-    // Fallback: if there's a direct identifier (for regular_name without nested structure)
+    // Fallback: if there's a direct identifier
     for p in &inner {
         if p.as_rule() == Rule::identifier {
             return (Some(p.as_str().to_string()), Some(to_span(p.as_span())));
@@ -415,34 +193,12 @@ pub fn extract_name_from_identification(
     (None, None)
 }
 
-/// Check if a rule represents a relationship part that should be skipped when finding names
-fn is_relationship_part(pair: &Pair<Rule>) -> bool {
-    matches!(
-        pair.as_rule(),
-        Rule::feature_specialization
-            | Rule::feature_specialization_part
-            | Rule::redefinition_part
-            | Rule::redefinitions
-            | Rule::owned_redefinition
-            | Rule::subsettings
-            | Rule::owned_subsetting
-            | Rule::typings
-            | Rule::references
-            | Rule::owned_reference_subsetting
-            | Rule::crosses
-            | Rule::subclassification_part
-            | Rule::owned_subclassification
-            | Rule::feature_value
-            | Rule::value_part
-    )
-}
-
 // ============================================================================
 // Kind mapping
 // ============================================================================
 
 /// Map pest Rule to DefinitionKind
-pub fn to_def_kind(rule: Rule) -> Result<DefinitionKind, ConversionError<Void>> {
+pub fn to_def_kind(rule: Rule) -> Result<DefinitionKind, ParseError> {
     Ok(match rule {
         Rule::part_definition => DefinitionKind::Part,
         Rule::action_definition => DefinitionKind::Action,
@@ -469,13 +225,13 @@ pub fn to_def_kind(rule: Rule) -> Result<DefinitionKind, ConversionError<Void>> 
         Rule::interface_definition => DefinitionKind::Interface,
         Rule::occurrence_definition => DefinitionKind::Occurrence,
         Rule::metadata_definition => DefinitionKind::Metadata,
-        _ => return Err(ConversionError::NoMatch),
+        _ => return Err(ParseError::no_match()),
     })
 }
 
 /// Map pest Rule to UsageKind
-pub fn to_usage_kind(rule: Rule) -> Result<UsageKind, ConversionError<Void>> {
-    Ok(match rule {
+pub fn to_usage_kind(rule: Rule) -> Option<UsageKind> {
+    Some(match rule {
         Rule::part_usage => UsageKind::Part,
         Rule::action_usage => UsageKind::Action,
         Rule::requirement_usage | Rule::objective_member => UsageKind::Requirement,
@@ -486,15 +242,27 @@ pub fn to_usage_kind(rule: Rule) -> Result<UsageKind, ConversionError<Void>> {
         Rule::case_usage => UsageKind::Case,
         Rule::view_usage => UsageKind::View,
         Rule::enumeration_usage | Rule::enumerated_value => UsageKind::Enumeration,
+        Rule::reference_usage
+        | Rule::default_reference_usage
+        | Rule::metadata_usage
+        | Rule::directed_parameter_member
+        | Rule::metadata_body_usage
+        | Rule::metadata_body_usage_member => UsageKind::Reference,
         Rule::satisfy_requirement_usage => UsageKind::SatisfyRequirement,
         Rule::perform_action_usage => UsageKind::PerformAction,
         Rule::exhibit_state_usage => UsageKind::ExhibitState,
         Rule::include_use_case_usage => UsageKind::IncludeUseCase,
+        Rule::state_usage => UsageKind::State,
+        Rule::connection_usage => UsageKind::Connection,
+        Rule::constraint_usage | Rule::assert_constraint_usage => UsageKind::Constraint,
+        Rule::calculation_usage => UsageKind::Calculation,
+        Rule::allocation_usage => UsageKind::Allocation,
+        Rule::interface_usage => UsageKind::Interface,
         // Occurrence-based usages
         Rule::occurrence_usage => UsageKind::Occurrence,
         Rule::individual_usage => UsageKind::Individual,
-        Rule::portion_usage => UsageKind::Snapshot, // portion_usage can be snapshot or timeslice
-        _ => return Err(ConversionError::NoMatch),
+        Rule::portion_usage => UsageKind::Snapshot,
+        _ => return None,
     })
 }
 

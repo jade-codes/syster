@@ -4,7 +4,7 @@
 //! This is the only place in the semantic layer that dispatches on SysML vs KerML.
 
 use crate::core::{Position, Span};
-use crate::semantic::graphs::RelationshipGraph;
+use crate::semantic::graphs::ReferenceIndex;
 use crate::semantic::symbol_table::SymbolTable;
 use crate::semantic::types::{FoldingRangeInfo, InlayHint, SemanticError};
 use crate::syntax::SyntaxFile;
@@ -20,15 +20,15 @@ use super::{KermlAdapter, SysmlAdapter};
 pub fn populate_syntax_file(
     syntax_file: &SyntaxFile,
     symbol_table: &mut SymbolTable,
-    relationship_graph: &mut RelationshipGraph,
+    reference_index: &mut ReferenceIndex,
 ) -> Result<(), Vec<SemanticError>> {
     match syntax_file {
         SyntaxFile::SysML(sysml_file) => {
-            let mut adapter = SysmlAdapter::with_relationships(symbol_table, relationship_graph);
+            let mut adapter = SysmlAdapter::with_index(symbol_table, reference_index);
             adapter.populate(sysml_file)
         }
         SyntaxFile::KerML(kerml_file) => {
-            let mut adapter = KermlAdapter::with_relationships(symbol_table, relationship_graph);
+            let mut adapter = KermlAdapter::with_index(symbol_table, reference_index);
             adapter.populate(kerml_file)
         }
     }

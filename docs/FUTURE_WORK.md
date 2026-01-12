@@ -112,3 +112,51 @@
 - [ ] Create relationship type constants (RELATIONSHIP_SATISFY, RELATIONSHIP_PERFORM, etc.)
 - [ ] Extract `is_abstract` and `is_variation` from definition_prefix in AST
 - [ ] Add annotation properties to KerML types
+
+### Graph Layer Refactoring → ReferenceIndex 🚧 IN PROGRESS
+
+**Goal:** Replace `RelationshipGraph` with minimal `ReferenceIndex` to eliminate span duplication.
+
+**Current:** Graph stores `source → target` WITH spans, files, relationship types (duplicates AST)
+**Target:** Index stores ONLY `target → Vec<source_qname>`, spans retrieved from AST on-demand
+
+#### Phase 1: Add Infrastructure (Keep Both)
+- [x] **1.1** Add `get_span_for_target()` and `all_targets_with_spans()` methods to `Relationships`
+  - Returns span for a specific relationship target
+  - `rels.get_span_for_target("Vehicle")` → `Some(Span{5:10})`
+- [ ] **1.2** Add `get_symbol_with_ast()` to `Workspace`
+  - Returns `(&Symbol, Option<&Element>)` to access AST for a symbol
+- [x] **1.3** Create `ReferenceIndex` in `semantic/graphs/reference_index.rs`
+  ```rust
+  struct ReferenceIndex {
+      // target_qname → sources
+      reverse: HashMap<String, ReferenceEntry>,
+      // source_qname → file (for cleanup on file change)
+      source_to_file: HashMap<String, PathBuf>,
+  }
+  ```
+- [ ] **1.4** Add `ReferenceIndex` to `Workspace` alongside `RelationshipGraph`
+- [ ] **1.5** Populate both during visitor walk (temporary duplication)
+
+#### Phase 2: Migrate Consumers
+- [ ] **2.1** Migrate `helpers.rs::collect_reference_locations()`
+  - Use `ReferenceIndex.get_sources(target)` 
+  - For each source, lookup Symbol → get span from AST
+- [ ] **2.2** Migrate `helpers.rs::get_symbol_relationships()`
+  - Build from AST directly via Symbol's relationships
+- [ ] **2.3** Migrate `semantic_token_collector.rs`
+  - Get spans from Symbol → Definition/Usage → relationships
+- [ ] **2.4** Update all tests to use new API
+
+#### Phase 3: Remove Old Graph
+- [ ] **3.1** Remove `RelationshipGraph` struct
+- [ ] **3.2** Delete `RefLocation`, relationship constants
+- [ ] **3.3** Remove graph population from visitors
+- [ ] **3.4** Rename `ReferenceIndex` → final name (or keep it)
+- [ ] **3.5** Update ARCHITECTURE.md
+
+#### Key Design Decisions
+1. **Source of truth:** AST nodes (`Definition.relationships`, `Usage.relationships`)
+2. **Index purpose:** Fast reverse lookups only (target → sources)
+3. **Span retrieval:** O(1) via Symbol → Element lookup, not AST walk
+4. **File cleanup:** `source_files` map enables O(1) removal when file changes

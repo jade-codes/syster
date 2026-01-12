@@ -1,16 +1,15 @@
-use crate::core::constants::REL_TYPING;
 use crate::semantic::resolver::Resolver;
 use crate::semantic::workspace::{Workspace, populator::WorkspacePopulator};
 use crate::syntax::SyntaxFile;
 use std::path::PathBuf;
 
 impl Workspace<SyntaxFile> {
-    /// Populates the symbol table and relationship graph for all files
+    /// Populates the symbol table and reference index for all files
     pub fn populate_all(&mut self) -> Result<(), String> {
         let mut populator = WorkspacePopulator::new(
             &self.files,
             &mut self.symbol_table,
-            &mut self.relationship_graph,
+            &mut self.reference_index,
         );
         let populated_paths = populator.populate_all()?;
 
@@ -18,8 +17,9 @@ impl Workspace<SyntaxFile> {
             self.mark_file_populated(&path);
         }
 
-        // Resolve relationship targets after all symbols are populated
-        self.resolve_relationship_targets();
+        // Re-resolve reference targets after population
+        // This handles cross-file references that used simple names during population
+        self.resolve_reference_targets();
 
         Ok(())
     }
@@ -29,7 +29,7 @@ impl Workspace<SyntaxFile> {
         let mut populator = WorkspacePopulator::new(
             &self.files,
             &mut self.symbol_table,
-            &mut self.relationship_graph,
+            &mut self.reference_index,
         );
         let populated_paths = populator.populate_affected()?;
         let count = populated_paths.len();
@@ -38,8 +38,8 @@ impl Workspace<SyntaxFile> {
             self.mark_file_populated(&path);
         }
 
-        // Resolve relationship targets after population
-        self.resolve_relationship_targets();
+        // Re-resolve reference targets after population
+        self.resolve_reference_targets();
 
         Ok(count)
     }
@@ -49,56 +49,43 @@ impl Workspace<SyntaxFile> {
         let mut populator = WorkspacePopulator::new(
             &self.files,
             &mut self.symbol_table,
-            &mut self.relationship_graph,
+            &mut self.reference_index,
         );
         populator.populate_file(path)?;
         self.mark_file_populated(path);
 
-        // Resolve relationship targets after population
-        self.resolve_relationship_targets();
+        // Re-resolve reference targets for the updated file
+        self.resolve_reference_targets();
 
         Ok(())
     }
 
-    /// Resolves unqualified targets in relationships to their fully qualified names.
-    /// This runs after population when all symbols are available.
-    fn resolve_relationship_targets(&mut self) {
-        use crate::core::constants::{
-            REL_EXHIBIT, REL_INCLUDE, REL_PERFORM, REL_REDEFINITION, REL_SATISFY,
-            REL_SPECIALIZATION, REL_SUBSETTING,
-        };
+    /// Re-resolve reference targets from simple names to qualified names.
+    ///
+    /// After population, some cross-file references may have been stored with simple names
+    /// because import resolution hadn't run yet. This method uses the Resolver to look up
+    /// the correct qualified names based on each file's scope.
+    fn resolve_reference_targets(&mut self) {
+        // Build a map of file path -> scope ID for resolution
+        let file_scopes: std::collections::HashMap<PathBuf, usize> = self
+            .symbol_table
+            .iter_symbols()
+            .filter_map(|sym| {
+                sym.source_file()
+                    .and_then(|f| self.symbol_table.get_scope_for_file(f))
+                    .map(|scope| (PathBuf::from(sym.source_file().unwrap()), scope))
+            })
+            .collect();
 
-        let resolver = Resolver::new(&self.symbol_table);
+        self.reference_index.resolve_targets(|simple_name, file| {
+            // Get the scope for this file
+            let scope_id = file_scopes.get(file).copied()?;
 
-        // Helper closure to resolve a target in the context of its source symbol
-        let resolve_in_context = |source: &str, target: &str| -> Option<String> {
-            let scope_id = self
-                .symbol_table
-                .find_by_qualified_name(source)
-                .map(|sym| sym.scope_id())
-                .unwrap_or(0);
+            // Use the Resolver to look up the symbol in scope
+            let resolver = Resolver::new(&self.symbol_table);
+            let symbol = resolver.resolve_in_scope(simple_name, scope_id)?;
 
-            resolver
-                .resolve_in_scope(target, scope_id)
-                .map(|sym| sym.qualified_name().to_string())
-        };
-
-        // Resolve one-to-one relationship targets (e.g., typing)
-        self.relationship_graph
-            .resolve_targets(REL_TYPING, resolve_in_context);
-
-        // Resolve one-to-many relationship targets
-        for rel_type in [
-            REL_SPECIALIZATION,
-            REL_REDEFINITION,
-            REL_SUBSETTING,
-            REL_SATISFY,
-            REL_PERFORM,
-            REL_EXHIBIT,
-            REL_INCLUDE,
-        ] {
-            self.relationship_graph
-                .resolve_one_to_many_targets(rel_type, resolve_in_context);
-        }
+            Some(symbol.qualified_name().to_string())
+        });
     }
 }

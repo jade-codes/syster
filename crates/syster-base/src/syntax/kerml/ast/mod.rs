@@ -1,6 +1,4 @@
 pub mod enums;
-#[allow(clippy::module_inception)] // from_pest is not inception, it's trait implementations
-pub mod from_pest;
 pub mod parsers;
 pub mod types;
 pub mod utils;
@@ -9,4 +7,8 @@ pub mod utils;
 mod tests;
 
 pub use enums::*;
+pub use parsers::{
+    ParseError, parse_classifier, parse_comment, parse_documentation, parse_element, parse_feature,
+    parse_file, parse_import, parse_package,
+};
 pub use types::*;

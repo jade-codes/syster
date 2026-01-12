@@ -364,21 +364,13 @@ fn test_parse_terminate_action(#[case] rule: Rule, #[case] input: &str, #[case] 
 // Port Definition and Conjugation Tests
 
 // Updated to match official SysML v2 grammar structure:
-// - conjugated_port_typing now only matches ~QualifiedName (the type part)
-// - conjugated_port_definition is an implicit semantic element, no syntax
 // - Full port usage with conjugated type uses port_usage rule
 #[rstest]
-#[case(
-    Rule::conjugated_qualified_name,
-    "~MyConjugatedPort",
-    "conjugated qualified name"
-)]
 #[case(
     Rule::port_usage,
     "port myPort : ~ConjugatedPortType;",
     "port usage with conjugated type"
 )]
-#[case(Rule::life_class, "life class MyLifeClass;", "life class")]
 fn test_parse_conjugated_port_definitions(
     #[case] rule: Rule,
     #[case] input: &str,

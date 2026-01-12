@@ -5,18 +5,37 @@ use async_lsp::lsp_types::{
     SemanticTokensResult, Url,
 };
 use syster::semantic::processors::{SemanticToken, SemanticTokenCollector};
+use tracing::debug;
 
 impl LspServer {
     /// Get semantic tokens for a document
     pub fn get_semantic_tokens(&self, uri: &Url) -> Option<SemanticTokensResult> {
         let path = uri_to_path(uri)?;
-        let document_text = self.document_texts.get(&path)?;
+        debug!("semantic_tokens: path from URI = {:?}", path);
+
+        let document_text = self.document_texts.get(&path);
+        if document_text.is_none() {
+            debug!(
+                "semantic_tokens: document_text NOT FOUND for path {:?}",
+                path
+            );
+            debug!(
+                "semantic_tokens: available paths: {:?}",
+                self.document_texts.keys().collect::<Vec<_>>()
+            );
+        }
+        let document_text = document_text?;
         let lines: Vec<&str> = document_text.lines().collect();
 
-        let tokens = SemanticTokenCollector::collect_from_workspace(
-            &self.workspace,
-            &path.to_string_lossy(),
+        let path_str = path.to_string_lossy();
+        debug!(
+            "semantic_tokens: collecting from workspace with path_str = {}",
+            path_str
         );
+
+        let tokens = SemanticTokenCollector::collect_from_workspace(&self.workspace, &path_str);
+
+        debug!("semantic_tokens: got {} tokens", tokens.len());
 
         let lsp_tokens = encode_tokens_as_deltas(&tokens, &lines);
 

@@ -2,6 +2,24 @@
 
 All notable changes to the "SysML v2 Language Support" extension will be documented in this file.
 
+## [0.1.7-alpha] - 2026-01-11
+
+### Fixed
+- Semantic token highlighting for feature chains like `pwrCmd.pwrLevel` now highlights each identifier separately
+- Semantic token highlighting for qualified names like `SysML::Usage` works correctly with stdlib
+- Token span calculation no longer includes trailing whitespace
+- Path normalization ensures consistent file matching between symbol table and reference index
+
+### Added
+- Path utilities module (`path_utils.rs`) for consistent file path handling across the codebase
+- Separate reference extraction for feature chain parts (each identifier gets its own span)
+- TokenType enum for semantic token classification (Type, Property, etc.)
+
+### Improved
+- Grammar rules `owned_feature_chain` and `qualified_name` are now atomic for precise span calculation
+- Quote stripping for qualified names with quoted parts like `'Foo'::'Bar'`
+- Enhanced reference indexing with proper token type classification
+
 ## [0.1.6-alpha] - 2026-01-09
 
 ### Improved
@@ -46,37 +64,24 @@ All notable changes to the "SysML v2 Language Support" extension will be documen
 ## [0.1.2-alpha] - 2026-01-08
 
 ### Fixed
-- Fixed previous release date in changelog
+- Critical bug fix for extension activation
+- Corrected Language Server initialization
 
-## [0.1.1-alpha] - 2026-01-08
+## [0.1.1-alpha] - 2026-01-07
 
-### Changed
-- LSP server binary is now bundled with the extension (no separate installation required)
-- SysML v2 standard library is now bundled with the extension
-- Updated README to reflect bundled installation
-
-### Improved
-- LSP performance optimizations
-
-### Fixed
-- Simplified setup process - extension works out of the box
+### Added
+- Initial public release
+- SysML v2 syntax highlighting
+- Code completion for keywords
+- Go to definition
+- Find references
+- Hover documentation
+- Document outline
+- Folding ranges
+- Semantic token highlighting
 
 ## [0.1.0-alpha] - 2026-01-06
 
 ### Added
-- Initial release
-- Basic syntax highlighting for comments and strings
-- LSP-based language features:
-  - Diagnostics (errors and warnings)
-  - Hover information
-  - Go to definition
-  - Find references
-  - Code completion
-  - Document symbols (outline)
-  - Rename symbol
-  - Semantic tokens (rich syntax coloring)
-- Support for both `.sysml` and `.kerml` files
-- Auto-detection of `syster-lsp` binary
-- "Restart Language Server" command
-- Status bar indicator
-- Configuration options for LSP path, tracing, and stdlib
+- Project scaffolding
+- Basic grammar parsing

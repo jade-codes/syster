@@ -63,6 +63,16 @@ pub enum UsageKind {
     PerformAction,
     ExhibitState,
     IncludeUseCase,
+    // Reference usages (parameters with direction like `in`, `out`, `inout`)
+    Reference,
+    // Additional usage types
+    Constraint,
+    Calculation,
+    State,
+    Connection,
+    Interface,
+    Allocation,
+    Flow,
 }
 
 #[derive(Debug, Clone, PartialEq)]
