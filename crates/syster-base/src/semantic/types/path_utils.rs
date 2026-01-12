@@ -3,6 +3,7 @@
 //! This module provides functions for normalizing file paths to ensure
 //! consistent storage and lookup across the symbol table and reference index.
 
+use crate::core::constants::STDLIB_DIR;
 use std::path::{Path, PathBuf};
 
 /// Normalize a file path for consistent storage and lookup.
@@ -28,7 +29,9 @@ use std::path::{Path, PathBuf};
 /// ```
 pub fn normalize_path(path: &str) -> String {
     // Check if this is a stdlib file
-    if let Some(idx) = path.find("sysml.library/") {
+    // Use STDLIB_DIR constant with trailing slash for consistent matching
+    let stdlib_pattern = format!("{STDLIB_DIR}/");
+    if let Some(idx) = path.find(&stdlib_pattern) {
         return path[idx..].to_string();
     }
 

@@ -761,4 +761,104 @@ mod tests {
             }
         }
     }
+
+    // ========================================================================
+    // ParseError tests
+    // ========================================================================
+
+    #[test]
+    fn test_parse_error_no_match() {
+        let error = ParseError::no_match();
+        assert_eq!(error.message, "No matching rule");
+    }
+
+    #[test]
+    fn test_parse_error_invalid_rule() {
+        let error = ParseError::invalid_rule("unknown_rule");
+        assert_eq!(error.message, "Invalid rule: unknown_rule");
+    }
+
+    // ========================================================================
+    // Parameter membership parsing tests
+    // ========================================================================
+
+    #[test]
+    fn test_parameter_membership_parsed_as_feature() {
+        // Test that parameter_membership (e.g., "in x: Type") is parsed as a Feature
+        // so its typing relationship is captured for semantic tokens
+        let source = "function compute { in value: Real; }";
+
+        let parsed = KerMLParser::parse(Rule::function, source)
+            .expect("Should parse")
+            .next()
+            .expect("Should have pair");
+
+        let classifier = parse_classifier(parsed).expect("Should convert to Classifier");
+
+        // Find features in the body
+        let features: Vec<_> = classifier
+            .body
+            .iter()
+            .filter_map(|m| match m {
+                ClassifierMember::Feature(f) => Some(f),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !features.is_empty(),
+            "Parameter should be parsed as feature"
+        );
+
+        // Check that the parameter has a typing relationship
+        let param = features.first().expect("Should have parameter feature");
+        let has_typing = param
+            .body
+            .iter()
+            .any(|m| matches!(m, FeatureMember::Typing(_)));
+        assert!(
+            has_typing,
+            "Parameter feature should have typing relationship for Real"
+        );
+    }
+
+    #[test]
+    fn test_return_parameter_membership_parsed_as_feature() {
+        // Test that return_parameter_membership is parsed as a Feature
+        let source = "function getValue { return : Integer; }";
+
+        let parsed = KerMLParser::parse(Rule::function, source)
+            .expect("Should parse")
+            .next()
+            .expect("Should have pair");
+
+        let classifier = parse_classifier(parsed).expect("Should convert to Classifier");
+
+        // Find features in the body
+        let features: Vec<_> = classifier
+            .body
+            .iter()
+            .filter_map(|m| match m {
+                ClassifierMember::Feature(f) => Some(f),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !features.is_empty(),
+            "Return parameter should be parsed as feature"
+        );
+
+        // Check that the return parameter has a typing relationship to Integer
+        let has_integer_typing = features.iter().any(|f| {
+            f.body.iter().any(|m| match m {
+                FeatureMember::Typing(t) => t.typed == "Integer",
+                _ => false,
+            })
+        });
+        assert!(
+            has_integer_typing,
+            "Return parameter should have typing relationship for Integer"
+        );
+    }
 }

@@ -1157,4 +1157,48 @@ mod tests {
             assert_eq!(span.end.column, 29, "pwrLevel should end at column 29");
         }
     }
+
+    // ========================================================================
+    // ParseError tests
+    // ========================================================================
+
+    #[test]
+    fn test_parse_error_no_match() {
+        let error = ParseError::no_match();
+        assert_eq!(error.message, "No matching rule");
+    }
+
+    #[test]
+    fn test_parse_error_invalid_rule() {
+        let error = ParseError::invalid_rule("some_rule");
+        assert_eq!(error.message, "Invalid rule: some_rule");
+    }
+
+    #[test]
+    fn test_parse_error_invalid_rule_empty() {
+        let error = ParseError::invalid_rule("");
+        assert_eq!(error.message, "Invalid rule: ");
+    }
+
+    #[test]
+    fn test_parse_error_equality() {
+        let error1 = ParseError::no_match();
+        let error2 = ParseError::no_match();
+        assert_eq!(error1, error2);
+
+        let error3 = ParseError::invalid_rule("rule_a");
+        let error4 = ParseError::invalid_rule("rule_a");
+        assert_eq!(error3, error4);
+
+        // Different errors should not be equal
+        assert_ne!(error1, error3);
+    }
+
+    #[test]
+    fn test_parse_error_clone() {
+        let error = ParseError::invalid_rule("test");
+        let cloned = error.clone();
+        assert_eq!(error, cloned);
+        assert_eq!(cloned.message, "Invalid rule: test");
+    }
 }
