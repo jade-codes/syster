@@ -85,6 +85,10 @@ function createClientOptions(context: vscode.ExtensionContext, outputChannel: vs
                 const result = await next(document, options, token);
                 outputChannel.appendLine(`[Client] Format Document result: ${result ? result.length + ' edits' : 'null'}`);
                 return result;
+            },
+            provideWorkspaceSymbols: async (query, token, next) => {
+                outputChannel.appendLine(`[Client] Workspace Symbols requested: ${query}`);
+                return await next(query, token);
             }
         }
     };

@@ -16,6 +16,7 @@ mod references;
 mod rename;
 mod selection_range;
 mod semantic_tokens;
+mod workspace_symbols;
 
 pub mod background_tasks;
 

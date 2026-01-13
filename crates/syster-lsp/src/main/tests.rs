@@ -136,6 +136,7 @@ async fn test_initialize_capabilities() {
     assert!(caps.selection_range_provider.is_some());
     assert!(caps.inlay_hint_provider.is_some());
     assert!(caps.semantic_tokens_provider.is_some());
+    assert!(caps.workspace_symbol_provider.is_some());
 }
 
 #[tokio::test]
