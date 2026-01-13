@@ -3260,3 +3260,28 @@ fn test_folding_ranges_whitespace_only() {
         "Whitespace-only file should have no folding ranges"
     );
 }
+
+#[test]
+fn test_workspace_symbols_query() {
+    let mut server = LspServer::new();
+
+    let uri1 = Url::parse("file:///symbols1.sysml").unwrap();
+    let uri2 = Url::parse("file:///symbols2.sysml").unwrap();
+
+    server
+        .open_document(&uri1, "part def UniqueThing123;")
+        .unwrap();
+    server
+        .open_document(&uri2, "part def AnotherThing456;")
+        .unwrap();
+
+    let results = server.get_workspace_symbols("UniqueThing123");
+
+    assert!(!results.is_empty(), "Expected at least one matching symbol");
+    assert!(
+        results
+            .iter()
+            .all(|symbol| symbol.name.contains("UniqueThing123")),
+        "All results should match the query"
+    );
+}
