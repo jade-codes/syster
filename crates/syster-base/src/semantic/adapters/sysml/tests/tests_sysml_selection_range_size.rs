@@ -34,7 +34,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>, body: Vec<UsageMe
         body,
         span,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     }
 }
 

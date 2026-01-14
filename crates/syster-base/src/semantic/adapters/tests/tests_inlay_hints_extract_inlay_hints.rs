@@ -83,7 +83,7 @@ fn test_extract_inlay_hints_delegates_to_sysml_adapter() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -123,7 +123,7 @@ fn test_extract_inlay_hints_delegates_to_kerml_adapter() {
     let feature = Feature {
         name: Some("myFeature".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(1, 0, 1, 9)),
@@ -172,7 +172,7 @@ fn test_extract_inlay_hints_respects_range_filter_sysml() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -215,7 +215,7 @@ fn test_extract_inlay_hints_respects_range_filter_kerml() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(10, 0, 10, 5)),
@@ -290,7 +290,7 @@ fn test_sysml_usage_without_explicit_type_shows_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -330,7 +330,7 @@ fn test_sysml_usage_with_explicit_type_no_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -360,7 +360,7 @@ fn test_sysml_usage_without_name_no_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -406,7 +406,7 @@ fn test_sysml_usage_without_span_no_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -436,7 +436,7 @@ fn test_sysml_usage_not_in_symbol_table_no_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -483,7 +483,7 @@ fn test_sysml_usage_symbol_without_type_no_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -529,7 +529,7 @@ fn test_sysml_non_usage_symbol_no_hint() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -575,7 +575,7 @@ fn test_sysml_nested_usages_in_definition() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -635,7 +635,7 @@ fn test_sysml_deeply_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let mid_usage = Usage {
@@ -647,7 +647,7 @@ fn test_sysml_deeply_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let top_usage = Usage {
@@ -659,7 +659,7 @@ fn test_sysml_deeply_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -722,7 +722,7 @@ fn test_sysml_multiple_usages_multiple_hints() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let usage2 = Usage {
@@ -734,7 +734,7 @@ fn test_sysml_multiple_usages_multiple_hints() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -782,7 +782,7 @@ fn test_sysml_range_filter_excludes_usage_before_range() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -836,7 +836,7 @@ fn test_sysml_range_filter_excludes_usage_after_range() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -887,7 +887,7 @@ fn test_sysml_range_filter_includes_usage_in_range() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -941,7 +941,7 @@ fn test_sysml_package_traversal() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let package = Package {
@@ -995,7 +995,7 @@ fn test_sysml_hint_position_calculation() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1054,7 +1054,7 @@ fn test_kerml_feature_without_explicit_typing_shows_hint() {
     let feature = Feature {
         name: Some("mass".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![], // No explicit typing
         span: Some(Span::from_coords(1, 8, 1, 12)),
@@ -1085,7 +1085,7 @@ fn test_kerml_feature_with_explicit_typing_no_hint() {
     let feature = Feature {
         name: Some("value".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![FeatureMember::Typing(
             crate::syntax::kerml::ast::TypingRelationship {
@@ -1116,7 +1116,7 @@ fn test_kerml_feature_without_name_no_hint() {
     let feature = Feature {
         name: None, // No name
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(1, 8, 1, 13)),
@@ -1156,7 +1156,7 @@ fn test_kerml_feature_without_span_no_hint() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: None, // No span
@@ -1182,7 +1182,7 @@ fn test_kerml_feature_not_in_symbol_table_no_hint() {
     let feature = Feature {
         name: Some("unknownFeature".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(1, 8, 1, 22)),
@@ -1223,7 +1223,7 @@ fn test_kerml_feature_symbol_without_type_no_hint() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(1, 8, 1, 13)),
@@ -1265,7 +1265,7 @@ fn test_kerml_non_feature_symbol_no_hint() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(1, 8, 1, 13)),
@@ -1319,7 +1319,7 @@ fn test_kerml_multiple_features_multiple_hints() {
     let feature1 = Feature {
         name: Some("width".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(1, 8, 1, 13)),
@@ -1328,7 +1328,7 @@ fn test_kerml_multiple_features_multiple_hints() {
     let feature2 = Feature {
         name: Some("height".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(2, 8, 2, 14)),
@@ -1373,7 +1373,7 @@ fn test_kerml_range_filter_excludes_feature_before_range() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(2, 0, 2, 5)),
@@ -1421,7 +1421,7 @@ fn test_kerml_range_filter_excludes_feature_after_range() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(10, 0, 10, 5)),
@@ -1466,7 +1466,7 @@ fn test_kerml_range_filter_includes_feature_in_range() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(5, 0, 5, 5)),
@@ -1515,7 +1515,7 @@ fn test_kerml_package_traversal() {
     let feature = Feature {
         name: Some("feat1".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(3, 4, 3, 9)),
@@ -1563,7 +1563,7 @@ fn test_kerml_hint_position_calculation() {
     let feature = Feature {
         name: Some("velocity".to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(Span::from_coords(7, 12, 7, 20)),

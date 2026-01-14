@@ -1,6 +1,7 @@
 use pest_derive::Parser;
 
 #[derive(Parser)]
+#[grammar = "parser/kerml_expressions.pest"]
 #[grammar = "parser/sysml.pest"]
 pub struct SysMLParser;
 

@@ -23,7 +23,7 @@ pub const KERML_KEYWORDS: &[&str] = &[
     "alias",
     "member",
     "abstract",
-    "readonly",
+    "const",
     "derived",
     "composite",
     "portion",

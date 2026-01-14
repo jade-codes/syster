@@ -124,7 +124,7 @@ fn test_parse_kerml_identifier() {
 #[case("private")]
 #[case("protected")]
 #[case("public")]
-#[case("readonly")]
+#[case("const")]
 #[case("redefinition")]
 #[case("redefines")]
 #[case("rep")]
@@ -624,14 +624,14 @@ fn test_parse_abstract_marker() {
 }
 
 #[test]
-fn test_parse_readonly() {
-    assert_round_trip(Rule::readonly, "readonly", "readonly");
+fn test_parse_const_modifier() {
+    assert_round_trip(Rule::const_modifier, "const", "const modifier");
 }
 
 /// Tests that keyword modifiers require whitespace before the next token.
-/// "readonlyfeature" should NOT parse as "readonly feature".
+/// "constfeature" should NOT parse as "const feature".
 #[rstest]
-#[case("readonlyfeature MyFeature;")]
+#[case("constfeature MyFeature;")]
 #[case("derivedfeature MyFeature;")]
 fn test_modifier_requires_space_before_feature(#[case] input: &str) {
     let result = KerMLParser::parse(Rule::feature, input);
@@ -644,9 +644,9 @@ fn test_modifier_requires_space_before_feature(#[case] input: &str) {
 
 /// Tests that valid modifier + feature syntax is accepted
 #[rstest]
-#[case("readonly feature MyFeature;")]
+#[case("const feature MyFeature;")]
 #[case("derived feature MyFeature;")]
-#[case("readonly derived feature MyFeature;")]
+#[case("const derived feature MyFeature;")]
 fn test_modifier_with_space_before_feature(#[case] input: &str) {
     let result = KerMLParser::parse(Rule::feature, input);
     assert!(
@@ -1826,12 +1826,12 @@ fn test_parse_abstract_classifier_ast() {
 }
 
 #[test]
-fn test_parse_readonly_feature_ast() {
+fn test_parse_const_feature_ast() {
     use syster::syntax::kerml::ast::parse_file;
 
     let input = r#"
         package Test {
-            readonly feature id : String;
+            const feature id : String;
         }
     "#;
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
@@ -1853,7 +1853,7 @@ fn test_parse_readonly_feature_ast() {
     };
 
     assert_eq!(f.name, Some("id".to_string()));
-    assert!(f.is_readonly, "Feature should be readonly");
+    assert!(f.is_const, "Feature should be const");
 }
 
 #[test]
@@ -2795,8 +2795,8 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "feature_with_composition"
 )]
 #[case(
-    "readonly feature MyFeature;",
-    "readonly feature MyFeature;",
+    "const feature MyFeature;",
+    "const feature MyFeature;",
     Rule::feature,
     "feature_with_property"
 )]
@@ -2831,8 +2831,8 @@ fn test_feature_direction_kind_rejects_prefixes(#[case] input: &str) {
     "feature_with_multiplicity_properties"
 )]
 #[case(
-    "in abstract readonly feature MyFeature ordered;",
-    "in abstract readonly feature MyFeature ordered;",
+    "in abstract const feature MyFeature ordered;",
+    "in abstract const feature MyFeature ordered;",
     Rule::feature,
     "feature_combined_modifiers"
 )]
@@ -3836,7 +3836,7 @@ fn test_ordering_modifiers(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("abstract", "abstract only")]
 #[case("composite", "composite only")]
-#[case("abstract readonly", "abstract readonly")]
+#[case("abstract const", "abstract const")]
 #[case("composite derived", "composite derived")]
 #[case("portion var", "portion with var")]
 #[case("", "empty is valid")]
@@ -3848,8 +3848,8 @@ fn test_feature_prefix_modifiers(#[case] input: &str, #[case] desc: &str) {
 #[rstest]
 #[case("abstract", "abstract only")]
 #[case("composite", "composite only")]
-#[case("abstract readonly", "abstract then readonly")]
-#[case("readonly", "readonly only")]
+#[case("abstract const", "abstract then const")]
+#[case("const", "const only")]
 #[case("", "empty is valid")]
 fn test_connector_feature_modifiers(#[case] input: &str, #[case] desc: &str) {
     assert_round_trip(Rule::connector_feature_modifiers, input, desc);

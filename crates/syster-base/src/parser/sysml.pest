@@ -396,93 +396,13 @@ parameter_binding = {
     | ref_token? ~ identifier ~ (specializes_operator | colon) ~ owned_feature_typing ~ (forward_curl_brace ~ visible_annotating_member* ~ backward_curl_brace)?
 }
 
-owned_expression_member = {
-    owned_expression
-}
+// =============================================================================
+// EXPRESSION RULES
+// Most expression rules come from kerml_expressions.pest (shared with KerML)
+// Below are SysML-specific rules and token definitions
+// =============================================================================
 
-owned_expression = {
-    conditional_expression
-}
-
-owned_expression_reference = {
-    owned_expression_member
-}
-
-// Conditional Expressions (with operator precedence)
-
-concrete_conditional_expression = {
-    if_token ~ null_coalescing_expression ~ question_mark ~ owned_expression_reference ~ else_token ~ owned_expression_reference
-}
-
-conditional_expression = {
-    concrete_conditional_expression
-    | null_coalescing_expression
-}
-
-null_coalescing_expression = {
-    implies_expression ~ (double_question_mark ~ implies_expression_reference)*
-}
-
-// Logical Expressions
-implies_expression_reference = {
-    implies_expression_member
-}
-
-implies_expression_member = {
-    implies_expression
-}
-
-implies_expression = {
-    or_expression ~ (implies_token ~ or_expression_reference)*
-}
-
-or_expression_reference = {
-    or_expression_member
-}
-
-or_expression_member = {
-    or_expression
-}
-
-or_expression = {
-    xor_expression ~ (
-        ("|" ~ xor_expression)
-        | (or_token ~ xor_expression_reference)
-    )*
-}
-
-xor_expression_reference = {
-    xor_expression_member
-}
-
-xor_expression_member = {
-    xor_expression
-}
-
-xor_expression = {
-    and_expression ~ ("xor" ~ and_expression)*
-}
-
-and_expression = {
-    equality_expression ~ (
-        ("&" ~ equality_expression)
-        | ("and" ~ equality_expression_reference)
-    )*
-}
-
-equality_expression_reference = {
-    equality_expression_member
-}
-
-equality_expression_member = {
-    equality_expression
-}
-
-// Equality Expressions
-equality_expression = {
-    classification_expression ~ (equality_operator ~ classification_expression)*
-}
-
+// Equality operator tokens
 equality_operator = {
     "===" | "!==" | "==" | "!="
 }
@@ -526,51 +446,22 @@ metadata_reference = {
     qualified_name | metadata_token
 }
 
-// Relational Expressions
-relational_expression = {
-    range_expression ~ (relational_operator ~ range_expression)*
-}
-
+// Relational operator tokens
 relational_operator = {
     "<=" | ">=" | "<" | ">"
 }
 
-// Range Expressions
-range_expression = {
-    additive_expression ~ (".." ~ additive_expression)?
-}
-
-// Arithmetic Expressions - Additive
-additive_expression = {
-    multiplicative_expression ~ ((additive_operator ~ multiplicative_expression)*)
-}
-
+// Arithmetic operator tokens
 additive_operator = {
     "+" | "-"
-}
-
-// Arithmetic Expressions - Multiplicative
-multiplicative_expression = {
-    exponentiation_expression ~ ((multiplicative_operator ~ exponentiation_expression)*)
 }
 
 multiplicative_operator = {
     "*" | "/" | "%"
 }
 
-// Arithmetic Expressions - Exponentiation
-exponentiation_expression = {
-    unary_expression ~ ((exponentiation_operator ~ exponentiation_expression)?)
-}
-
 exponentiation_operator = {
     "**" | "^"
-}
-
-// Unary Expressions
-unary_expression = {
-    unary_operator ~ extent_expression
-    | extent_expression
 }
 
 unary_operator = {

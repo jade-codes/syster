@@ -196,10 +196,10 @@ fn test_parse_abstract_classifier_ast() {
 }
 
 #[test]
-fn test_parse_readonly_feature_ast() {
+fn test_parse_const_feature_ast() {
     let input = r#"
         package Test {
-            readonly feature id : String;
+            const feature id : String;
         }
     "#;
     let mut pairs = KerMLParser::parse(Rule::file, input).unwrap();
@@ -221,7 +221,7 @@ fn test_parse_readonly_feature_ast() {
     };
 
     assert_eq!(f.name, Some("id".to_string()));
-    assert!(f.is_readonly, "Feature should be readonly");
+    assert!(f.is_const, "Feature should be const");
 }
 
 #[test]

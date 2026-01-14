@@ -102,10 +102,10 @@ fn test_format_attribute_with_default_value() {
 }
 
 #[test]
-fn test_format_readonly_attribute() {
+fn test_format_const_attribute() {
     assert_format(
-        "readonly  attribute   id : String ;",
-        "readonly attribute id : String ;",
+        "const  attribute   id : String ;",
+        "const attribute id : String ;",
     );
 }
 

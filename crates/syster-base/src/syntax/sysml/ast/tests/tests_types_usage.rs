@@ -19,7 +19,7 @@ fn test_usage_creation() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     assert_eq!(usage.kind, UsageKind::Part);
@@ -27,7 +27,7 @@ fn test_usage_creation() {
     assert_eq!(usage.body.len(), 0);
     assert_eq!(usage.span, None);
     assert!(!usage.is_derived);
-    assert!(!usage.is_readonly);
+    assert!(!usage.is_const);
 }
 
 #[test]
@@ -44,7 +44,7 @@ fn test_usage_new_constructor() {
     assert_eq!(usage.body.len(), 0);
     assert_eq!(usage.span, None);
     assert!(!usage.is_derived);
-    assert!(!usage.is_readonly);
+    assert!(!usage.is_const);
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn test_usage_with_span() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     assert_eq!(usage.span, Some(span));
@@ -93,15 +93,15 @@ fn test_usage_derived_flag() {
         short_name: None,
         short_name_span: None,
         is_derived: true,
-        is_readonly: false,
+        is_const: false,
     };
 
     assert!(usage.is_derived);
-    assert!(!usage.is_readonly);
+    assert!(!usage.is_const);
 }
 
 #[test]
-fn test_usage_readonly_flag() {
+fn test_usage_const_flag() {
     let usage = Usage {
         kind: UsageKind::Attribute,
         name: Some("readonlyAttr".to_string()),
@@ -111,15 +111,15 @@ fn test_usage_readonly_flag() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: true,
+        is_const: true,
     };
 
     assert!(!usage.is_derived);
-    assert!(usage.is_readonly);
+    assert!(usage.is_const);
 }
 
 #[test]
-fn test_usage_derived_and_readonly() {
+fn test_usage_derived_and_const() {
     let usage = Usage {
         kind: UsageKind::Attribute,
         name: Some("constAttr".to_string()),
@@ -129,11 +129,11 @@ fn test_usage_derived_and_readonly() {
         short_name: None,
         short_name_span: None,
         is_derived: true,
-        is_readonly: true,
+        is_const: true,
     };
 
     assert!(usage.is_derived);
-    assert!(usage.is_readonly);
+    assert!(usage.is_const);
 }
 
 #[test]
@@ -629,7 +629,7 @@ fn test_usage_multiple_spans() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     assert_eq!(usage.span, Some(name_span));
@@ -647,7 +647,7 @@ fn test_usage_comparison_with_different_flags() {
         short_name: None,
         short_name_span: None,
         is_derived: true,
-        is_readonly: false,
+        is_const: false,
     };
 
     let usage2 = Usage {
@@ -659,7 +659,7 @@ fn test_usage_comparison_with_different_flags() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: true,
+        is_const: true,
     };
 
     assert_ne!(usage1, usage2, "Different flags should make usages unequal");

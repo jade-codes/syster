@@ -59,8 +59,8 @@ pub enum LogosToken {
     AttributeKw,
     #[token("abstract")]
     AbstractKw,
-    #[token("readonly")]
-    ReadonlyKw,
+    #[token("const")]
+    ConstKw,
     #[token("behavior")]
     BehaviorKw,
     #[token("function")]
@@ -381,7 +381,7 @@ fn to_syntax_kind(token: LogosToken) -> SyntaxKind {
         LogosToken::IndividualKw => SyntaxKind::IndividualKw,
         LogosToken::AbstractKw => SyntaxKind::AbstractKw,
         LogosToken::RefKw => SyntaxKind::RefKw,
-        LogosToken::ReadonlyKw => SyntaxKind::ReadonlyKw,
+        LogosToken::ConstKw => SyntaxKind::ConstKw,
         LogosToken::DerivedKw => SyntaxKind::DerivedKw,
         LogosToken::EndKw => SyntaxKind::EndKw,
         LogosToken::InKw => SyntaxKind::InKw,

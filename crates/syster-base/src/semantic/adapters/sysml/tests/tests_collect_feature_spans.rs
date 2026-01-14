@@ -26,7 +26,7 @@ fn make_feature_with_span(name: &str, span: Option<Span>) -> Feature {
     Feature {
         name: Some(name.to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span,
@@ -37,7 +37,7 @@ fn make_feature_with_body(name: &str, span: Option<Span>, body: Vec<FeatureMembe
     Feature {
         name: Some(name.to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body,
         span,
@@ -247,7 +247,7 @@ fn test_feature_with_different_directions() {
     let feature_in = Feature {
         name: Some("inputFeature".to_string()),
         direction: Some(FeatureDirection::In),
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body: vec![],
         span: Some(make_span(1, 0, 2, 1)),
@@ -271,7 +271,7 @@ fn test_feature_readonly_and_derived() {
     let feature = Feature {
         name: Some("readonlyFeature".to_string()),
         direction: None,
-        is_readonly: true,
+        is_const: true,
         is_derived: true,
         body: vec![],
         span: Some(make_span(1, 0, 2, 1)),
