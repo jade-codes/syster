@@ -117,7 +117,7 @@ fn test_parse_kerml_identifier() {
 #[case("private")]
 #[case("protected")]
 #[case("public")]
-#[case("readonly")]
+#[case("const")]
 #[case("redefinition")]
 #[case("redefines")]
 #[case("rep")]
@@ -660,7 +660,7 @@ fn test_parse_relationship_operators(#[case] rule: Rule, #[case] input: &str, #[
 
 #[rstest]
 #[case(Rule::abstract_marker, "abstract", "abstract marker")]
-#[case(Rule::readonly, "readonly", "readonly")]
+#[case(Rule::const_modifier, "const", "const modifier")]
 #[case(Rule::sufficient, "all", "sufficient")]
 fn test_parse_common_fragments(#[case] rule: Rule, #[case] input: &str, #[case] desc: &str) {
     assert_round_trip(rule, input, desc);
@@ -1330,7 +1330,7 @@ fn test_parse_step_expression_invariant(
 #[case(Rule::feature, "composite feature MyFeature;", "composite feature")]
 #[case(Rule::feature, "portion feature MyFeature;", "portion feature")]
 // with property
-#[case(Rule::feature, "readonly feature MyFeature;", "readonly feature")]
+#[case(Rule::feature, "const feature MyFeature;", "const feature")]
 #[case(Rule::feature, "derived feature MyFeature;", "derived feature")]
 #[case(Rule::feature, "end feature MyFeature;", "end feature")]
 // with multiplicity properties
@@ -1344,7 +1344,7 @@ fn test_parse_step_expression_invariant(
 // combined modifiers
 #[case(
     Rule::feature,
-    "in abstract readonly feature MyFeature ordered;",
+    "in abstract const feature MyFeature ordered;",
     "combined modifiers 1"
 )]
 #[case(

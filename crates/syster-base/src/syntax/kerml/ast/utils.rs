@@ -80,17 +80,17 @@ pub fn has_flag(pair: &Pair<Rule>, flag: Rule) -> bool {
     {
         return pair.clone().into_inner().any(|p| has_flag(&p, flag));
     }
-    // Also check direct children for the flag (e.g., readonly directly under feature)
+    // Also check direct children for the flag (e.g., const directly under feature)
     pair.clone()
         .into_inner()
         .any(|inner| inner.as_rule() == flag || has_flag(&inner, flag))
 }
 
-/// Extract readonly and derived flags from pairs
+/// Extract const and derived flags from pairs
 pub fn extract_flags(pairs: &[Pair<Rule>]) -> (bool, bool) {
-    let readonly = pairs.iter().any(|p| has_flag(p, Rule::readonly));
+    let is_const = pairs.iter().any(|p| has_flag(p, Rule::const_modifier));
     let derived = pairs.iter().any(|p| has_flag(p, Rule::derived));
-    (readonly, derived)
+    (is_const, derived)
 }
 
 /// Extract feature direction from pairs

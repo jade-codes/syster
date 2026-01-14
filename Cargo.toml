@@ -64,10 +64,74 @@ codegen-units = 256
 opt-level = 1
 
 # Test profile inherits from dev but can have overrides
+# Using opt-level = 1 for faster tests while keeping debug info
 [profile.test]
-opt-level = 0
+opt-level = 1
 debug = true
 incremental = true
+
+# Optimize parsing dependencies in test builds for faster tests
+[profile.test.package.pest]
+opt-level = 3
+
+[profile.test.package.pest_derive]
+opt-level = 3
+
+[profile.test.package.pest_meta]
+opt-level = 3
+
+[profile.test.package.pest_generator]
+opt-level = 3
+
+# Also optimize in dev builds
+[profile.dev.package.pest]
+opt-level = 3
+
+[profile.dev.package.pest_derive]
+opt-level = 3
+
+[profile.dev.package.pest_meta]
+opt-level = 3
+
+[profile.dev.package.pest_generator]
+opt-level = 3
+
+# Optimize other parsing/syntax dependencies
+[profile.dev.package.rowan]
+opt-level = 3
+
+[profile.dev.package.logos]
+opt-level = 3
+
+[profile.dev.package.from-pest]
+opt-level = 3
+
+[profile.dev.package.pest-ast]
+opt-level = 3
+
+[profile.dev.package.rayon]
+opt-level = 3
+
+[profile.dev.package.rayon-core]
+opt-level = 3
+
+[profile.test.package.rowan]
+opt-level = 3
+
+[profile.test.package.logos]
+opt-level = 3
+
+[profile.test.package.from-pest]
+opt-level = 3
+
+[profile.test.package.pest-ast]
+opt-level = 3
+
+[profile.test.package.rayon]
+opt-level = 3
+
+[profile.test.package.rayon-core]
+opt-level = 3
 
 # Release profile: balanced for dev containers (lower memory usage)
 [profile.release]

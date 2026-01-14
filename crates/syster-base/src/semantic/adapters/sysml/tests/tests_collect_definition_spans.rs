@@ -54,7 +54,7 @@ fn test_collect_definition_spans_with_usage() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -131,7 +131,7 @@ fn test_collect_definition_spans_multiple_members() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let comment = Comment {
@@ -148,7 +148,7 @@ fn test_collect_definition_spans_multiple_members() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -194,7 +194,7 @@ fn test_collect_definition_spans_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let outer_usage = Usage {
@@ -206,7 +206,7 @@ fn test_collect_definition_spans_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {

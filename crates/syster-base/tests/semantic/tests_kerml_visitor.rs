@@ -212,8 +212,8 @@ fn test_kerml_visitor_handles_abstract_classifiers() {
 }
 
 #[test]
-fn test_kerml_visitor_handles_readonly_features() {
-    let source = "readonly feature timestamp;";
+fn test_kerml_visitor_handles_const_features() {
+    let source = "const feature timestamp;";
     let mut pairs = KerMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
@@ -222,7 +222,7 @@ fn test_kerml_visitor_handles_readonly_features() {
     let mut adapter = KermlAdapter::with_index(&mut symbol_table, &mut graph);
     adapter.populate(&file).unwrap();
 
-    // For now, just verify the symbol exists - readonly modifier tracking will be added later
+    // For now, just verify the symbol exists - const modifier tracking will be added later
     let resolver = Resolver::new(&symbol_table);
     let symbol = resolver.resolve("timestamp");
     assert!(symbol.is_some(), "timestamp feature should exist");

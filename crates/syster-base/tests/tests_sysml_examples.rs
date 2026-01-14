@@ -14,8 +14,10 @@
 
 #![allow(clippy::unwrap_used)]
 
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use syster::project::file_loader;
 
 fn get_examples_dir() -> PathBuf {
@@ -37,6 +39,9 @@ fn collect_sysml_files(dir: &Path, files: &mut Vec<PathBuf>) {
 }
 
 /// Test all SysML v2 Release examples and report results
+///
+/// This test is ignored by default because it parses ~95 files and takes ~8 seconds.
+/// Run with: `cargo test test_sysml_examples_parsing -- --ignored`
 #[test]
 fn test_sysml_examples_parsing() {
     let examples_dir = get_examples_dir();
@@ -60,10 +65,10 @@ fn test_sysml_examples_parsing() {
         return;
     }
 
-    let mut passed = Vec::new();
-    let mut failed: HashMap<String, Vec<String>> = HashMap::new();
+    let passed = Mutex::new(Vec::new());
+    let failed: Mutex<HashMap<String, Vec<String>>> = Mutex::new(HashMap::new());
 
-    for file_path in &files {
+    files.par_iter().for_each(|file_path| {
         let relative = file_path
             .strip_prefix(&examples_dir)
             .unwrap_or(file_path)
@@ -74,17 +79,19 @@ fn test_sysml_examples_parsing() {
             Ok(c) => c,
             Err(e) => {
                 failed
+                    .lock()
+                    .unwrap()
                     .entry(format!("IO Error: {e}"))
                     .or_default()
                     .push(relative);
-                continue;
+                return;
             }
         };
 
         let parse_result = file_loader::parse_with_result(&content, file_path);
 
         if parse_result.content.is_some() && parse_result.errors.is_empty() {
-            passed.push(relative);
+            passed.lock().unwrap().push(relative);
         } else {
             let error_msg = parse_result
                 .errors
@@ -104,10 +111,17 @@ fn test_sysml_examples_parsing() {
                 })
                 .unwrap_or_else(|| "Unknown error".to_string());
 
-            failed.entry(error_msg).or_default().push(relative);
+            failed
+                .lock()
+                .unwrap()
+                .entry(error_msg)
+                .or_default()
+                .push(relative);
         }
-    }
+    });
 
+    let passed = passed.into_inner().unwrap();
+    let failed = failed.into_inner().unwrap();
     let total = files.len();
     let pass_count = passed.len();
     let fail_count = total - pass_count;
