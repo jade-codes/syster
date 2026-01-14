@@ -79,7 +79,7 @@ pub enum SyntaxKind {
     IndividualKw,
     AbstractKw,
     RefKw,
-    ReadonlyKw,
+    ConstKw,
     DerivedKw,
     EndKw,
     InKw,

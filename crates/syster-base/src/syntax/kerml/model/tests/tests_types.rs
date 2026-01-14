@@ -30,7 +30,7 @@ fn create_literal_expression() -> LiteralExpression {
         is_derived: None,
         is_end: None,
         is_portion: None,
-        is_readonly: None,
+        is_const: None,
         value: None,
         write: None,
         crossing_feature: None,
@@ -68,7 +68,7 @@ fn create_literal_expression_with_name(name: &str) -> LiteralExpression {
         is_derived: None,
         is_end: None,
         is_portion: None,
-        is_readonly: None,
+        is_const: None,
         value: None,
         write: None,
         crossing_feature: None,
@@ -497,7 +497,7 @@ fn test_feature_basic() {
         is_derived: None,
         is_end: None,
         is_portion: None,
-        is_readonly: None,
+        is_const: None,
         value: None,
         write: None,
         crossing_feature: None,
@@ -535,7 +535,7 @@ fn test_feature_ordered() {
         is_derived: None,
         is_end: None,
         is_portion: None,
-        is_readonly: None,
+        is_const: None,
         value: None,
         write: None,
         crossing_feature: None,
@@ -572,7 +572,7 @@ fn test_feature_composite() {
         is_derived: None,
         is_end: None,
         is_portion: None,
-        is_readonly: None,
+        is_const: None,
         value: None,
         write: None,
         crossing_feature: None,
@@ -609,13 +609,13 @@ fn test_feature_readonly() {
         is_derived: None,
         is_end: None,
         is_portion: None,
-        is_readonly: Some(ReadonlyMarker::Readonly),
+        is_const: Some(ReadonlyMarker::Readonly),
         value: None,
         write: None,
         crossing_feature: None,
     };
 
-    assert_eq!(feature.is_readonly, Some(ReadonlyMarker::Readonly));
+    assert_eq!(feature.is_const, Some(ReadonlyMarker::Readonly));
 }
 
 #[test]
@@ -646,7 +646,7 @@ fn test_feature_derived() {
         is_derived: Some(DerivedMarker::Derived),
         is_end: None,
         is_portion: None,
-        is_readonly: None,
+        is_const: None,
         value: None,
         write: None,
         crossing_feature: None,

@@ -24,9 +24,11 @@
 #![allow(clippy::panic)]
 
 use pest::Parser;
+use rayon::prelude::*;
 use rstest::rstest;
 use std::fs;
 use std::path::Path;
+use std::sync::Mutex;
 use syster::parser::KerMLParser;
 use syster::parser::kerml::Rule;
 
@@ -55,9 +57,9 @@ fn test_parse_all_kerml_examples() {
     let files = get_kerml_example_files();
     assert!(!files.is_empty(), "No KerML example files found!");
 
-    let mut failures: Vec<(String, String)> = Vec::new();
+    let failures: Mutex<Vec<(String, String)>> = Mutex::new(Vec::new());
 
-    for file_path in &files {
+    files.par_iter().for_each(|file_path| {
         let content = fs::read_to_string(file_path).unwrap();
         let filename = Path::new(file_path)
             .file_name()
@@ -71,10 +73,12 @@ fn test_parse_all_kerml_examples() {
             }
             Err(e) => {
                 println!("✗ {}", filename);
-                failures.push((filename, format!("{}", e)));
+                failures.lock().unwrap().push((filename, format!("{}", e)));
             }
         }
-    }
+    });
+
+    let failures = failures.into_inner().unwrap();
 
     if !failures.is_empty() {
         let failure_report: String = failures

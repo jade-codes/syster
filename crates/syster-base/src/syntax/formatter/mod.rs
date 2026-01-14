@@ -85,7 +85,7 @@ fn parse_element(tokens: &[Token], mut pos: usize, builder: &mut GreenNodeBuilde
         | SyntaxKind::CalcKw
         | SyntaxKind::CaseKw
         | SyntaxKind::IndividualKw => parse_definition_or_usage(tokens, pos, builder),
-        SyntaxKind::AbstractKw | SyntaxKind::RefKw | SyntaxKind::ReadonlyKw => {
+        SyntaxKind::AbstractKw | SyntaxKind::RefKw | SyntaxKind::ConstKw => {
             parse_definition_or_usage(tokens, pos, builder)
         }
         SyntaxKind::ImportKw => parse_import(tokens, pos, builder),
@@ -195,10 +195,10 @@ fn parse_definition_or_usage(
         builder.start_node(SyntaxKind::Usage.into());
     }
 
-    // Consume modifiers (abstract, ref, readonly)
+    // Consume modifiers (abstract, ref, const)
     while pos < tokens.len() {
         match tokens[pos].kind {
-            SyntaxKind::AbstractKw | SyntaxKind::RefKw | SyntaxKind::ReadonlyKw => {
+            SyntaxKind::AbstractKw | SyntaxKind::RefKw | SyntaxKind::ConstKw => {
                 builder.token(tokens[pos].kind.into(), tokens[pos].text);
                 pos += 1;
                 pos = consume_trivia(tokens, pos, builder);

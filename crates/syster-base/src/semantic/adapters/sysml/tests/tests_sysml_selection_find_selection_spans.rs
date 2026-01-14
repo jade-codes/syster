@@ -55,7 +55,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>) -> Usage {
         body: vec![],
         span,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     }
 }
 

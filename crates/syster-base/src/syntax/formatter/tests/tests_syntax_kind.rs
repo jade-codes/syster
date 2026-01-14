@@ -181,7 +181,7 @@ fn test_roundtrip_sysml_modifier_keywords() {
     assert_roundtrip_conversion(&[
         SyntaxKind::AbstractKw,
         SyntaxKind::RefKw,
-        SyntaxKind::ReadonlyKw,
+        SyntaxKind::ConstKw,
         SyntaxKind::DerivedKw,
         SyntaxKind::InKw,
         SyntaxKind::OutKw,

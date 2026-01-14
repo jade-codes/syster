@@ -62,7 +62,7 @@ fn make_feature(name: &str, span: Option<Span>, body: Vec<FeatureMember>) -> Fea
     Feature {
         name: Some(name.to_string()),
         direction: None,
-        is_readonly: false,
+        is_const: false,
         is_derived: false,
         body,
         span,

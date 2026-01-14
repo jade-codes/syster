@@ -123,7 +123,7 @@ fn test_kerml_feature_in_classifier() {
                 ClassifierMember::Feature(Feature {
                     name: Some("feature1".to_string()),
                     direction: None,
-                    is_readonly: false,
+                    is_const: false,
                     is_derived: false,
                     span: Some(make_span(2, 5)),
                     body: vec![],
@@ -131,7 +131,7 @@ fn test_kerml_feature_in_classifier() {
                 ClassifierMember::Feature(Feature {
                     name: Some("feature2".to_string()),
                     direction: None,
-                    is_readonly: false,
+                    is_const: false,
                     is_derived: false,
                     span: Some(make_span(6, 9)),
                     body: vec![],
@@ -177,7 +177,7 @@ fn test_kerml_comments_in_feature() {
         elements: vec![KerMLElement::Feature(Feature {
             name: Some("myFeature".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             span: Some(make_span(1, 10)),
             body: vec![FeatureMember::Comment(KerMLComment {
@@ -289,7 +289,7 @@ fn test_kerml_mixed_nesting_with_comments() {
                             ClassifierMember::Feature(Feature {
                                 name: Some("feat".to_string()),
                                 direction: None,
-                                is_readonly: false,
+                                is_const: false,
                                 is_derived: false,
                                 span: Some(make_span(12, 18)),
                                 body: vec![FeatureMember::Comment(KerMLComment {
@@ -343,7 +343,7 @@ fn test_kerml_empty_bodies() {
             KerMLElement::Feature(Feature {
                 name: Some("emptyFeature".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 span: Some(make_span(7, 9)),
                 body: vec![],
@@ -409,7 +409,7 @@ fn test_kerml_deep_nesting() {
                     body: vec![ClassifierMember::Feature(Feature {
                         name: Some("Level4".to_string()),
                         direction: None,
-                        is_readonly: false,
+                        is_const: false,
                         is_derived: false,
                         span: Some(make_span(4, 17)),
                         body: vec![],

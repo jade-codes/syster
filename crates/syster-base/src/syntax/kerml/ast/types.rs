@@ -38,7 +38,7 @@ pub struct Classifier {
 pub struct Feature {
     pub name: Option<String>,
     pub direction: Option<FeatureDirection>,
-    pub is_readonly: bool,
+    pub is_const: bool,
     pub is_derived: bool,
     pub body: Vec<FeatureMember>,
     /// Span of the feature name identifier

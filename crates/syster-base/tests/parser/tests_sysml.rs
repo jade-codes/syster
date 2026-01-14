@@ -3952,25 +3952,6 @@ fn test_parse_conditional_expression(#[case] rule: Rule, #[case] input: &str, #[
 
 #[rstest]
 #[case(
-    Rule::concrete_conditional_expression,
-    "if x ? a else b",
-    "concrete conditional expression with short names"
-)]
-#[case(
-    Rule::concrete_conditional_expression,
-    "if condition ? trueValue else falseValue",
-    "concrete conditional expression"
-)]
-fn test_parse_concrete_conditional_expression(
-    #[case] rule: Rule,
-    #[case] input: &str,
-    #[case] desc: &str,
-) {
-    assert_round_trip(rule, input, desc);
-}
-
-#[rstest]
-#[case(
     Rule::null_coalescing_expression,
     "value",
     "null coalescing expression with single value"

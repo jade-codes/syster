@@ -73,7 +73,7 @@ fn test_collect_containing_spans_usage_element() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {

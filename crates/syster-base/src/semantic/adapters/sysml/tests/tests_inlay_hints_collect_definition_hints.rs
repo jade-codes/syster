@@ -37,7 +37,7 @@ fn make_usage(name: &str, kind: UsageKind, span: Option<Span>, _body: Vec<()>) -
         body: vec![],
         span,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     }
 }
 
@@ -320,7 +320,7 @@ fn test_collect_definition_hints_usage_with_explicit_typing() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Element::Definition(make_definition(

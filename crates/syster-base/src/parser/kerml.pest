@@ -39,7 +39,7 @@ featured_token = @{ "featured" ~ !(ASCII_ALPHANUMERIC | "_") }
 function_token = @{ "function" ~ !(ASCII_ALPHANUMERIC | "_") }
 language_token = @{ "language" ~ !(ASCII_ALPHANUMERIC | "_") }
 metadata_token = @{ "metadata" ~ !(ASCII_ALPHANUMERIC | "_") }
-readonly_token = @{ "readonly" ~ !(ASCII_ALPHANUMERIC | "_") }
+const_token = @{ "const" ~ !(ASCII_ALPHANUMERIC | "_") }
 behavior_token = @{ "behavior" ~ !(ASCII_ALPHANUMERIC | "_") }
 binding_token = @{ "binding" ~ !(ASCII_ALPHANUMERIC | "_") }
 comment_token = @{ "comment" ~ !(ASCII_ALPHANUMERIC | "_") }
@@ -135,7 +135,7 @@ keyword = @{
     | specializes_token | succession_token | predicate_token | protected_token | references_token
     | redefines_token | standard_token | featuring_token | metaclass_token | connector_token
     | datatype_token | disjoint_token | featured_token | function_token | language_token
-    | metadata_token | readonly_token | behavior_token | binding_token | comment_token
+    | metadata_token | const_token | behavior_token | binding_token | comment_token
     | crosses_token | default_token | derived_token | feature_token | hastype_token
     | implies_token | inverse_token | istype_token | library_token | ordered_token
     | package_token | portion_token | private_token | public_token | struct_token
@@ -190,21 +190,27 @@ visibility_kind = @{ protected_token | private_token | public_token }
 // Use negative lookahead to ensure direction kinds are complete words
 // This prevents "in" from matching the start of "interface"
 feature_direction_kind = @{ inout_token | in_token | out_token }
+
+// Expression operators (used by kerml_expressions.pest)
 unary_operator = @{ "+" | "-" ~ !(">" | "->") | not_token | "~" }
 classification_test_operator = @{ "@@" | hastype_token | istype_token | "@" }
 equality_operator = @{ "!==" | "!=" | "===" | "==" }
-import_kind = @{ "::*::**" | "::**" | "::*" }
 relational_operator = @{ "<=" | "<" | ">=" | ">" }
+additive_operator = { "+" | "-" }
+multiplicative_operator = { "*" | "/" | "%" }
+exponentiation_operator = { "**" | "^" }
+
+import_kind = @{ "::*::**" | "::**" | "::*" }
 
 // Common Fragments
 
 abstract_marker = { abstract_token }
 visibility = { visibility_kind }
-readonly = { readonly_token }
+const_modifier = { const_token }
 derived = { derived_token }
 end_marker = { end_token }
 variable_marker = { variation_token | var_token }
-feature_modifier = { readonly | derived | end_marker | variable_marker }
+feature_modifier = { const_modifier | derived | end_marker | variable_marker }
 sufficient = { all_token }
 standard_marker = { standard_token }
 import_all = { all_token }
@@ -212,8 +218,8 @@ import_all = { all_token }
 // Common modifier pattern for abstract/composite/portion
 acp_modifier = { abstract_token | composite_token | portion_token }
 
-// Unified: Feature prefix modifiers (abstract, composite, portion, member, readonly, etc.)
-feature_prefix_modifiers = { (abstract_token | composite_token | portion_token | member_token | readonly | derived | end_marker | variable_marker)* }
+// Unified: Feature prefix modifiers (abstract, composite, portion, member, const, etc.)
+feature_prefix_modifiers = { (abstract_token | composite_token | portion_token | member_token | const_modifier | derived | end_marker | variable_marker)* }
 
 // Unified: Classifier relationships (includes inheritance for classifiers)
 classifier_relationships = { (any_relationship | inheritance)* }
@@ -647,9 +653,11 @@ feature_relationship_part = {
     featuring | owned_feature_inverting | feature_chaining | type_relationship
 }
 
-// End feature with identification and multiplicity: end <id> [mult] feature ... or end [mult] feature <id> ...
+// End feature with identification and multiplicity: const? end <id> [mult] feature ... or const? end [mult] feature <id> ...
+// Per official grammar: EndFeaturePrefix = ( isConstant ?= 'const')? isEnd ?= 'end'
 end_feature = {
     prefix_metadata? ~
+    const_token? ~
     end_marker ~ (
         identification ~ multiplicity_bounds ~ multiplicity_properties? ~ feature_specialization_part? ~ feature_token ~ identification? ~ feature_specialization_part?  // end name [mult] ordered? nonunique? relationships? feature ...
         | identification ~ feature_specialization_part ~ feature_token ~ identification? ~ feature_specialization_part?                       // end name relationships feature ...
@@ -709,7 +717,7 @@ metadata_body_feature_member = {
 multiplicity = {
     prefix_metadata? ~
     feature_direction_kind? ~
-    (acp_modifier | member_token | readonly | derived | end_marker | variable_marker)* ~
+    (acp_modifier | member_token | const_modifier | derived | end_marker | variable_marker)* ~
     (multiplicity_token | feature_token) ~ identification? ~
     feature_specialization_part? ~
     feature_value? ~
@@ -1120,10 +1128,7 @@ filter_package_member = {
     "[" ~ operator_expression ~ "]"
 }
 
-// Owned Expression (forward reference - define later with expressions)
-owned_expression = {
-    expression
-}
+// Note: owned_expression is defined in kerml_expressions.pest (shared with SysML)
 
 // MembershipImport extends Import
 membership_import = {
@@ -1287,98 +1292,24 @@ null_expression = {
     null_token | ("(" ~ ")")
 }
 
-// Complex Expression Types (placeholders for full implementation)
+// =============================================================================
+// EXPRESSION CHAIN
+// The core expression precedence chain (owned_expression through unary_expression)
+// is defined in kerml_expressions.pest and shared with SysML.
+// Below are KerML-specific extension points referenced by that chain.
+// =============================================================================
 
-// OperatorExpression - base for operator-based expressions with proper precedence
+// OperatorExpression - alias for owned_expression for backwards compatibility
 operator_expression = {
-    conditional_expression
+    owned_expression
 }
 
-// Conditional Expression (if-then-else ternary)
-conditional_expression = {
-    if_token ~ null_coalescing_expression ~ "?" ~ operator_expression ~ else_token ~ operator_expression
-    | null_coalescing_expression
-}
-
-// Null coalescing (default) expression
-null_coalescing_expression = {
-    implies_expression ~ ("??" ~ implies_expression)*
-}
-
-// Implies expression (logical implication)
-implies_expression = {
-    or_expression ~ (implies_token ~ or_expression)*
-}
-
-// Logical OR expressions
-or_expression = {
-    xor_expression ~ ((or_token | "|") ~ xor_expression)*
-}
-
-// Logical XOR expressions
-xor_expression = {
-    and_expression ~ (xor_token ~ and_expression)*
-}
-
-// Logical AND expressions
-and_expression = {
-    equality_expression ~ ((and_token | "&") ~ equality_expression)*
-}
-
-// Equality Expressions
-equality_expression = {
-    classification_expression ~ (equality_operator ~ classification_expression)*
-}
-
-// Classification Expressions (as/istype/hastype/meta operators for type operations)
+// Classification Expressions (KerML-specific: includes @@ for metadata)
 // Per official grammar: 'meta' is MetaCastOperator for metadata type casting
 // '@TypeName' is a shorthand with implicit self operand (like 'self @ TypeName')
 classification_expression = {
     classification_test_operator ~ type_reference              // @Structure (implicit self)
     | relational_expression ~ ((as_token | meta_token | classification_test_operator) ~ type_reference)?
-}
-
-// Relational Expressions
-relational_expression = {
-    range_expression ~ (relational_operator ~ range_expression)*
-}
-
-// Range Expressions (handles .. operator)
-range_expression = {
-    additive_expression ~ (".." ~ additive_expression)?
-}
-
-// Additive Expressions
-additive_expression = {
-    multiplicative_expression ~ (additive_operator ~ multiplicative_expression)*
-}
-
-additive_operator = {
-    "+" | "-"
-}
-
-// Multiplicative Expressions
-multiplicative_expression = {
-    exponentiation_expression ~ (multiplicative_operator ~ exponentiation_expression)*
-}
-
-multiplicative_operator = {
-    "*" | "/" | "%"
-}
-
-// Exponentiation Expressions
-exponentiation_expression = {
-    unary_expression ~ (exponentiation_operator ~ exponentiation_expression)?
-}
-
-exponentiation_operator = {
-    "**" | "^"
-}
-
-// Unary Expressions
-unary_expression = {
-    unary_operator ~ extent_expression
-    | extent_expression
 }
 
 // ExtentExpression per official grammar: 'all' TypeReference | PrimaryExpression
@@ -1618,7 +1549,7 @@ shorthand_feature_member = {
 // Examples: abstract #Classified z2; or #Security feature z;
 prefix_metadata_feature_member = {
     visibility_kind? ~
-    (abstract_token | composite_token | portion_token | readonly | derived | end_marker | variable_marker)* ~
+    (abstract_token | composite_token | portion_token | const_modifier | derived | end_marker | variable_marker)* ~
     prefix_metadata ~
     identification? ~
     feature_specialization_part? ~
