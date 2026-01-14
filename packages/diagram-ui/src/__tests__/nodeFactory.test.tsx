@@ -9,7 +9,7 @@ mock.module('@xyflow/react', () => ({
   ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-import { createDefinitionNode, nodeTypes, getNodeConfig } from '../nodes/nodeFactory';
+import { createSysMLNode, nodeTypes, getNodeConfig } from '../nodes/nodeFactory';
 import { NODE_CONFIGS } from '../nodes/nodeConfig';
 
 // Clean up after each test to prevent DOM pollution
@@ -24,9 +24,9 @@ interface TestNodeData {
   direction?: string;
 }
 
-describe('createDefinitionNode', () => {
+describe('createSysMLNode', () => {
   test('creates a component with the specified stereotype', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'test def',
       showFeatures: true,
@@ -43,7 +43,7 @@ describe('createDefinitionNode', () => {
   });
 
   test('shows features when showFeatures is true', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'test def',
       showFeatures: true,
@@ -60,7 +60,7 @@ describe('createDefinitionNode', () => {
   });
 
   test('shows multiple features correctly', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'test def',
       showFeatures: true,
@@ -79,7 +79,7 @@ describe('createDefinitionNode', () => {
   });
 
   test('hides features when showFeatures is false', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'test def',
       showFeatures: false,
@@ -96,7 +96,7 @@ describe('createDefinitionNode', () => {
   });
 
   test('hides direction when showDirection is false', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'port def',
       showDirection: false,
@@ -113,7 +113,7 @@ describe('createDefinitionNode', () => {
   });
 
   test('shows direction when showDirection is true', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'port def',
       showDirection: true,
@@ -130,7 +130,7 @@ describe('createDefinitionNode', () => {
   });
 
   test('sets displayName based on stereotype', () => {
-    const TestNode = createDefinitionNode({
+    const TestNode = createSysMLNode({
       borderColor: '#ff0000',
       stereotype: 'part def',
     });

@@ -1,0 +1,7 @@
+[test]
+coverage = true
+coverageDir = "coverage"
+coverageReporter = ["text", "lcov"]
+coveragePathIgnorePatterns = ["**/test-setup.ts", "**/__mocks__/**"]
+coverageSkipTestFiles = true
+coverageThreshold = { global = { branches = 95, functions = 95, lines = 95, statements = 95 } }

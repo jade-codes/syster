@@ -50,14 +50,53 @@ export async function findServerBinary(options: ServerLocatorOptions = {}): Prom
                 return path.join(extensionPath, 'server', binaryName);
             }
         },
-        // 3. Development fallback - check if running in dev container
+        // 3. Development fallback - workspace relative paths
         {
             name: 'Development build (release)',
-            path: () => '/workspaces/syster/target/release/syster-lsp'
+            path: () => {
+                // Try to find the workspace root by looking for Cargo.toml
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (workspaceFolders) {
+                    for (const folder of workspaceFolders) {
+                        // Check if this is the syster workspace or a parent
+                        const candidates = [
+                            path.join(folder.uri.fsPath, 'target', 'release', 'syster-lsp'),
+                            path.join(folder.uri.fsPath, '..', '..', 'target', 'release', 'syster-lsp'),
+                            path.join(folder.uri.fsPath, '..', '..', '..', 'target', 'release', 'syster-lsp'),
+                        ];
+                        for (const candidate of candidates) {
+                            if (fs.existsSync(candidate)) {
+                                return candidate;
+                            }
+                        }
+                    }
+                }
+                // Fallback to common dev paths
+                const homedir = process.env.HOME || process.env.USERPROFILE || '';
+                return path.join(homedir, 'syster', 'target', 'release', 'syster-lsp');
+            }
         },
         {
             name: 'Development build (debug)',
-            path: () => '/workspaces/syster/target/debug/syster-lsp'
+            path: () => {
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (workspaceFolders) {
+                    for (const folder of workspaceFolders) {
+                        const candidates = [
+                            path.join(folder.uri.fsPath, 'target', 'debug', 'syster-lsp'),
+                            path.join(folder.uri.fsPath, '..', '..', 'target', 'debug', 'syster-lsp'),
+                            path.join(folder.uri.fsPath, '..', '..', '..', 'target', 'debug', 'syster-lsp'),
+                        ];
+                        for (const candidate of candidates) {
+                            if (fs.existsSync(candidate)) {
+                                return candidate;
+                            }
+                        }
+                    }
+                }
+                const homedir = process.env.HOME || process.env.USERPROFILE || '';
+                return path.join(homedir, 'syster', 'target', 'debug', 'syster-lsp');
+            }
         }
     ];
 

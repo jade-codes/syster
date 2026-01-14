@@ -2,6 +2,7 @@ mod code_lens;
 mod completion;
 mod core;
 mod definition;
+pub mod diagram;
 mod diagnostics;
 mod document;
 mod document_links;

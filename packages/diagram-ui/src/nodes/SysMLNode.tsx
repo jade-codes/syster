@@ -2,7 +2,7 @@ import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { SymbolData } from '@syster/diagram-core';
 
-export interface DefinitionNodeProps {
+export interface SysMLNodeProps {
   id: string;
   data: SymbolData;
   borderColor: string;
@@ -12,10 +12,10 @@ export interface DefinitionNodeProps {
 }
 
 /**
- * Base node component for SysML definitions.
+ * Base node component for SysML definitions and usages.
  * Displays stereotype, name, and optional features or direction.
  */
-export const DefinitionNode: React.FC<DefinitionNodeProps> = ({
+export const SysMLNode: React.FC<SysMLNodeProps> = ({
   data,
   borderColor,
   stereotype,
