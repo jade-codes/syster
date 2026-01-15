@@ -1,0 +1,84 @@
+{
+  "name": "syster-modeller",
+  "displayName": "SysML v2 Diagram Modeller",
+  "description": "Interactive diagram editor for SysML v2 models",
+  "version": "0.1.0-alpha",
+  "publisher": "jade-codes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jade-codes/syster"
+  },
+  "license": "MIT",
+  "icon": "images/syster.jpg",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "sysml",
+    "diagram",
+    "modeller",
+    "editor",
+    "systems modeling"
+  ],
+  "extensionDependencies": [
+    "jade-codes.sysml-language-support"
+  ],
+  "activationEvents": [
+    "onLanguage:sysml",
+    "onLanguage:kerml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "syster.openModeller",
+        "title": "Open Diagram Editor",
+        "category": "SysML",
+        "icon": "$(edit)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "syster.openModeller",
+          "when": "resourceLangId == sysml || resourceLangId == kerml",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "syster.openModeller",
+          "when": "resourceLangId == sysml || resourceLangId == kerml"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build-webview && npm run esbuild-base -- --minify",
+    "compile": "tsc -p ./",
+    "build-webview": "cd webview && bun run build",
+    "esbuild-base": "esbuild ./client/src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint client/src --ext ts",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.27.2",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { DefinitionNode } from './DefinitionNode';
+import { SysMLNode } from './SysMLNode';
 import { NodeConfig, NODE_CONFIGS } from './nodeConfig';
 import type { SymbolData } from '@syster/diagram-core';
 
@@ -24,16 +24,16 @@ interface SysMLNodeProps {
  * 
  * @example
  * ```tsx
- * const MyPartDefNode = createDefinitionNode({
+ * const MyPartDefNode = createSysMLNode({
  *   borderColor: '#2563eb',
  *   stereotype: 'part def',
  *   showFeatures: true,
  * });
  * ```
  */
-export function createDefinitionNode(config: NodeConfig): FC<SysMLNodeProps> {
+export function createSysMLNode(config: NodeConfig): FC<SysMLNodeProps> {
   const NodeComponent: FC<SysMLNodeProps> = ({ id, data }) => (
-    <DefinitionNode
+    <SysMLNode
       id={id}
       data={data}
       borderColor={config.borderColor}
@@ -64,7 +64,7 @@ export function createDefinitionNode(config: NodeConfig): FC<SysMLNodeProps> {
  * ```
  */
 export const nodeTypes: Record<string, FC<SysMLNodeProps>> = Object.fromEntries(
-  Object.entries(NODE_CONFIGS).map(([type, config]) => [type, createDefinitionNode(config)])
+  Object.entries(NODE_CONFIGS).map(([type, config]) => [type, createSysMLNode(config)])
 );
 
 /**

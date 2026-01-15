@@ -1,0 +1,23 @@
+{
+  "name": "@syster/vscode-modeller-webview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./src/index.tsx --outdir=../media --minify --format=iife --target=browser",
+    "build:dev": "bun build ./src/index.tsx --outdir=../media --sourcemap=inline --format=iife --target=browser",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@syster/diagram-core": "workspace:*",
+    "@syster/diagram-ui": "workspace:*",
+    "@xyflow/react": "^12.10.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}

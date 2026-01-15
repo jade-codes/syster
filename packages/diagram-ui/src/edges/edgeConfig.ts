@@ -17,135 +17,110 @@ export interface EdgeConfig {
   markerEnd: MarkerType;
 }
 
+// ========== Color Palette ==========
+
+const COLORS = {
+  /** Core relationships (specialization, typing, subsetting) */
+  core: '#475569',       // slate-600
+  /** Structural (composition) */
+  structural: '#2563eb', // blue-600
+  /** Ports, interfaces, connections, flows */
+  interface: '#7c3aed',  // violet-600
+  /** Behavioral (perform, exhibit, succession) */
+  behavioral: '#059669', // emerald-600
+  /** Requirements (satisfy, verify) */
+  requirement: '#d97706', // amber-600
+} as const;
+
+// ========== Config Builders ==========
+
+/** Solid line with closed arrow */
+const solid = (color: string, label?: string): EdgeConfig => ({
+  strokeColor: color,
+  strokeWidth: 2,
+  markerEnd: MarkerType.ArrowClosed,
+  ...(label && { label }),
+});
+
+/** Dashed line with closed arrow */
+const dashed = (color: string, label?: string): EdgeConfig => ({
+  strokeColor: color,
+  strokeWidth: 2,
+  strokeDasharray: '5 5',
+  markerEnd: MarkerType.ArrowClosed,
+  ...(label && { label }),
+});
+
+/** Dashed line with open arrow (subsetting-style) */
+const dashedOpen = (color: string, label?: string): EdgeConfig => ({
+  strokeColor: color,
+  strokeWidth: 2,
+  strokeDasharray: '5 5',
+  markerEnd: MarkerType.Arrow,
+  ...(label && { label }),
+});
+
+/** Solid line with open arrow */
+const solidOpen = (color: string, label?: string): EdgeConfig => ({
+  strokeColor: color,
+  strokeWidth: 2,
+  markerEnd: MarkerType.Arrow,
+  ...(label && { label }),
+});
+
+// ========== Edge Configurations ==========
+
 /**
  * SysML v2 edge type configurations.
- *
- * Visual conventions:
- * - Specialization: Solid line with hollow triangle (using ArrowClosed as approximation)
- * - Composition: Solid line with filled diamond marker
- * - Typing: Dashed line with open arrow
- * - Subsetting/Redefinition: Dashed line with open arrow
- * - Requirements (satisfy/verify): Dashed line
- * - Behavioral (perform/exhibit): Solid line with arrow
- *
- * Color scheme:
- * - Slate (#475569): Core relationships (specialization, typing)
- * - Blue (#2563eb): Structural (composition)
- * - Orange (#d97706): Requirements (satisfy, verify)
- * - Green (#059669): Behavioral (perform, exhibit)
- * - Purple (#7c3aed): Cases (include, assert)
+ * 
+ * Organized by category with consistent visual patterns:
+ * - Solid lines: Direct relationships (specialization, composition, perform)
+ * - Dashed lines: Indirect/constraint relationships (typing, subsetting, satisfy)
  */
 export const EDGE_CONFIGS: Record<string, EdgeConfig> = {
-  // ========== Core Relationships ==========
+  // ==================== Core Relationships (Slate) ====================
+  // Inheritance, typing, subsetting
+  
+  [EDGE_TYPES.SPECIALIZATION]:       solid(COLORS.core, 'specializes'),
+  [EDGE_TYPES.TYPING]:               dashedOpen(COLORS.core, ':'),
+  [EDGE_TYPES.REDEFINITION]:         dashedOpen(COLORS.core, 'redefines'),
+  [EDGE_TYPES.SUBSETTING]:           dashedOpen(COLORS.core, 'subsets'),
+  [EDGE_TYPES.REFERENCE_SUBSETTING]: dashedOpen(COLORS.core, 'references'),
+  [EDGE_TYPES.CROSS_SUBSETTING]:     dashedOpen(COLORS.core, 'cross-subsets'),
+  [EDGE_TYPES.DEPENDENCY]:           dashedOpen(COLORS.core, '«dependency»'),
+  [EDGE_TYPES.MEMBERSHIP]:           { ...dashedOpen(COLORS.core), strokeWidth: 1, strokeDasharray: '2 2' },
 
-  [EDGE_TYPES.SPECIALIZATION]: {
-    strokeColor: '#475569',
-    strokeWidth: 2,
-    markerEnd: MarkerType.ArrowClosed,
-    label: 'specializes',
-  },
+  // ==================== Structural (Blue) ====================
+  // Composition
+  
+  [EDGE_TYPES.COMPOSITION]:          solid(COLORS.structural),
+  // Note: Ideally composition would use a filled diamond marker
+  // React Flow doesn't have built-in diamond markers
+  
+  [EDGE_TYPES.ALLOCATION]:           dashed(COLORS.core, '«allocate»'),
 
-  [EDGE_TYPES.TYPING]: {
-    strokeColor: '#475569',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.Arrow,
-    label: ':',
-  },
+  // ==================== Interfaces (Purple) ====================
+  // Connections, bindings, flows, conjugation
+  
+  [EDGE_TYPES.CONNECTION]:           solid(COLORS.interface, 'connect'),
+  [EDGE_TYPES.BINDING]:              solid(COLORS.interface, '='),
+  [EDGE_TYPES.FLOW]:                 solidOpen(COLORS.interface, 'flow'),
+  [EDGE_TYPES.CONJUGATION]:          solidOpen(COLORS.interface, '~'),
+  [EDGE_TYPES.INCLUDE]:              dashed(COLORS.interface, '«include»'),
+  [EDGE_TYPES.ASSERT]:               dashed(COLORS.interface, '«assert»'),
 
-  [EDGE_TYPES.REDEFINITION]: {
-    strokeColor: '#475569',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.Arrow,
-    label: 'redefines',
-  },
+  // ==================== Behavioral (Green) ====================
+  // Perform, exhibit, succession
+  
+  [EDGE_TYPES.PERFORM]:              solid(COLORS.behavioral, '«perform»'),
+  [EDGE_TYPES.EXHIBIT]:              solid(COLORS.behavioral, '«exhibit»'),
+  [EDGE_TYPES.SUCCESSION]:           solid(COLORS.behavioral, 'then'),
 
-  [EDGE_TYPES.SUBSETTING]: {
-    strokeColor: '#475569',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.Arrow,
-    label: 'subsets',
-  },
-
-  [EDGE_TYPES.REFERENCE_SUBSETTING]: {
-    strokeColor: '#475569',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.Arrow,
-    label: 'references',
-  },
-
-  [EDGE_TYPES.CROSS_SUBSETTING]: {
-    strokeColor: '#475569',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.Arrow,
-    label: 'cross-subsets',
-  },
-
-  // ========== Structural ==========
-
-  [EDGE_TYPES.COMPOSITION]: {
-    strokeColor: '#2563eb',
-    strokeWidth: 2,
-    markerEnd: MarkerType.ArrowClosed,
-    // Note: Ideally this would use a filled diamond marker
-    // React Flow doesn't have built-in diamond markers
-  },
-
-  // ========== Requirements ==========
-
-  [EDGE_TYPES.SATISFY]: {
-    strokeColor: '#d97706',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.ArrowClosed,
-    label: '«satisfy»',
-  },
-
-  [EDGE_TYPES.VERIFY]: {
-    strokeColor: '#d97706',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.ArrowClosed,
-    label: '«verify»',
-  },
-
-  // ========== Behavioral ==========
-
-  [EDGE_TYPES.PERFORM]: {
-    strokeColor: '#059669',
-    strokeWidth: 2,
-    markerEnd: MarkerType.ArrowClosed,
-    label: '«perform»',
-  },
-
-  [EDGE_TYPES.EXHIBIT]: {
-    strokeColor: '#059669',
-    strokeWidth: 2,
-    markerEnd: MarkerType.ArrowClosed,
-    label: '«exhibit»',
-  },
-
-  // ========== Cases ==========
-
-  [EDGE_TYPES.INCLUDE]: {
-    strokeColor: '#7c3aed',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.ArrowClosed,
-    label: '«include»',
-  },
-
-  [EDGE_TYPES.ASSERT]: {
-    strokeColor: '#7c3aed',
-    strokeWidth: 2,
-    strokeDasharray: '5 5',
-    markerEnd: MarkerType.ArrowClosed,
-    label: '«assert»',
-  },
+  // ==================== Requirements (Orange) ====================
+  // Satisfy, verify
+  
+  [EDGE_TYPES.SATISFY]:              dashed(COLORS.requirement, '«satisfy»'),
+  [EDGE_TYPES.VERIFY]:               dashed(COLORS.requirement, '«verify»'),
 };
 
 /**

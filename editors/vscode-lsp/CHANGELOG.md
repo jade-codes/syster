@@ -2,6 +2,26 @@
 
 All notable changes to the "SysML v2 Language Support" extension will be documented in this file.
 
+## [0.1.8-alpha] - 2026-01-15
+
+### Added
+- New diagram viewer extension (`syster-viewer`) for visualizing SysML models
+- New diagram modeller extension (`syster-modeller`) for interactive model editing
+- Custom LSP endpoint `syster/getDiagram` for diagram data retrieval
+- React Flow based webview for rendering diagrams
+
+### Fixed
+- Replaced deprecated `all_symbols()` with `iter_symbols()` in diagram endpoint
+- Fixed relationship extraction to use symbol data directly instead of hardcoded typing
+- Fixed webview bundling to use esbuild with proper `import.meta` handling for VS Code compatibility
+- Added `isDisposed` guard in diagram panel to prevent "Webview is disposed" errors
+- Restored `sysml-language-support` package name for marketplace compatibility
+- Updated CI workflow paths for refactored extension structure
+
+### Improved
+- Simplified kind mapping in diagram endpoint (pass through directly)
+- Better error handling for disposed webviews during async operations
+
 ## [0.1.7-alpha] - 2026-01-11
 
 ### Fixed
