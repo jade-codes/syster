@@ -19,3 +19,6 @@
 [submodule "editors/vscode-modeller"]
 	path = editors/vscode-modeller
 	url = https://github.com/jade-codes/syster-modeller.git
+[submodule "pipelines"]
+	path = pipelines
+	url = https://github.com/jade-codes/syster-pipelines.git
