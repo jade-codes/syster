@@ -1,18 +1,32 @@
 {
-  "name": "syster-web",
+  "name": "syster-meta",
   "version": "0.1.0",
   "private": true,
-  "description": "Web packages for Syster",
+  "description": "Syster - SysML v2 Parser and Tooling (Meta Repository)",
   "workspaces": [
     "packages/*",
-    "editors/vscode-viewer/webview",
-    "editors/vscode-modeller/webview"
+    "editors/*"
   ],
   "scripts": {
-    "test": "bun test --recursive",
-    "test:coverage": "bun test --recursive --coverage"
+    "install:all": "npm install",
+    "build:packages": "npm run build --workspace=packages/diagram-core && npm run build --workspace=packages/diagram-ui",
+    "build:extensions": "npm run build --workspaces --if-present",
+    "test:packages": "npm run test --workspaces --if-present",
+    "lint:packages": "npm run lint --workspaces --if-present",
+    "typecheck:packages": "npm run typecheck --workspaces --if-present"
   },
-  "devDependencies": {
-    "bun-types": "latest"
-  }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jade-codes/syster.git"
+  },
+  "keywords": [
+    "sysml",
+    "sysml-v2",
+    "kerml",
+    "parser",
+    "systems-engineering",
+    "modeling"
+  ],
+  "author": "jade-codes",
+  "license": "MIT"
 }

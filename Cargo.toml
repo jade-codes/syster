@@ -1,8 +1,12 @@
+# Syster Meta-Repository
+# This workspace aggregates all Syster Rust crates via git submodules.
+# Each crate lives in its own repository for independent development and versioning.
+
 [workspace]
 members = [
     "crates/syster-base",
-    "crates/syster-lsp",
     "crates/syster-cli",
+    # Note: syster-lsp has its own Cargo.toml workspace structure
 ]
 resolver = "2"
 

@@ -4,13 +4,57 @@
 
 A Rust-based parser and tooling for SysML v2 (Systems Modeling Language) and KerML (Kernel Modeling Language).
 
-## Project Structure
+## Meta-Repository Structure
 
-Syster is organized as a Cargo workspace with three crates:
+This is a **meta-repository** that aggregates all Syster components via Git submodules. Each component lives in its own repository for independent development and versioning.
 
-- **syster-base** - Core library with parser, AST, and semantic analysis
-- **syster-cli** - Command-line tool for analyzing SysML/KerML files
-- **syster-lsp** - Language Server Protocol implementation with full IDE support
+### Rust Crates
+
+| Component | Repository | Description |
+|-----------|------------|-------------|
+| **syster-base** | [jade-codes/syster-base](https://github.com/jade-codes/syster-base) | Core library with parser, AST, and semantic analysis |
+| **syster-cli** | [jade-codes/syster-cli](https://github.com/jade-codes/syster-cli) | Command-line tool for analyzing SysML/KerML files |
+| **syster-lsp** | [jade-codes/syster-lsp](https://github.com/jade-codes/syster-lsp) | Language Server Protocol implementation with VS Code extension |
+
+### TypeScript Packages
+
+| Component | Repository | Description |
+|-----------|------------|-------------|
+| **@syster/diagram-core** | [jade-codes/syster-diagram-core](https://github.com/jade-codes/syster-diagram-core) | Core diagram types and layout algorithms |
+| **@syster/diagram-ui** | [jade-codes/syster-diagram-ui](https://github.com/jade-codes/syster-diagram-ui) | React Flow UI components for diagrams |
+
+### VS Code Extensions
+
+| Extension | Repository | Description |
+|-----------|------------|-------------|
+| **syster-viewer** | [jade-codes/syster-viewer](https://github.com/jade-codes/syster-viewer) | Diagram viewer extension |
+| **syster-modeller** | [jade-codes/syster-modeller](https://github.com/jade-codes/syster-modeller) | Diagram modeller extension |
+
+## Getting Started
+
+### Clone with Submodules
+
+```bash
+# Clone with all submodules
+git clone --recurse-submodules https://github.com/jade-codes/syster.git
+
+# Or if already cloned, initialize submodules
+git submodule update --init --recursive
+```
+
+### Build Rust Crates
+
+```bash
+cargo build
+cargo test
+```
+
+### Build TypeScript Packages
+
+```bash
+npm install
+npm run build:packages
+```
 
 ## Documentation
 
@@ -25,29 +69,6 @@ Syster provides a comprehensive implementation of parsers and Abstract Syntax Tr
 1. **Parse Layer** - Grammar-based parsing using Pest
 2. **Syntax Layer** - Language-specific Abstract Syntax Trees (AST)
 3. **Model Layer** - Semantic model representation (planned)
-
-## Features
-
-### Semantic Analysis
-- **Symbol Table**: Cross-file symbol resolution with qualified names
-- **Import Resolution**: 
-  - Namespace imports (`import Package::*`)
-  - Member imports (`import Package::Member`)
-  - Recursive imports (`import Package::*::**`)
-  - Alias support (`alias NewName for Target`)
-- **Relationship Graph**: Tracks specialization, typing, subsetting, redefinition, and satisfaction
-- **Workspace Management**: Multi-file projects with shared symbol table
-- **Standard Library Support**: Optional stdlib loading via `Workspace::with_stdlib()`
-
-### KerML Support
-- Complete grammar implementation for Kernel Modeling Language
-- AST representations for all classifier types:
-  - Type, Classifier, DataType, Class, Structure, Behavior, Function
-  - Association, AssociationStructure, Metaclass
-- Feature support with modifiers (readonly, derived, abstract)
-- Direction qualifiers (in, out, inout)
-- Package and namespace management
-- Import and annotation support
 - Comprehensive test coverage (28 tests)
 
 ### SysML v2 Support
