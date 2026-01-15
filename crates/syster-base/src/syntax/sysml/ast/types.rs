@@ -318,7 +318,7 @@ pub struct Usage {
     #[doc(hidden)]
     pub is_derived: bool,
     #[doc(hidden)]
-    pub is_readonly: bool,
+    pub is_const: bool,
 }
 
 impl Usage {
@@ -338,7 +338,7 @@ impl Usage {
             body,
             span: None,
             is_derived: false,
-            is_readonly: false,
+            is_const: false,
         }
     }
 

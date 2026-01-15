@@ -62,7 +62,7 @@ fn test_extract_inlay_hints_feature_without_name() {
         elements: vec![Element::Feature(Feature {
             name: None,
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 10)),
@@ -89,7 +89,7 @@ fn test_extract_inlay_hints_feature_without_span() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: None, // No span
@@ -115,7 +115,7 @@ fn test_extract_inlay_hints_feature_with_explicit_typing() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![FeatureMember::Typing(TypingRelationship {
                 typed: "Real".to_string(),
@@ -138,7 +138,7 @@ fn test_extract_inlay_hints_feature_not_in_symbol_table() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 15)),
@@ -161,7 +161,7 @@ fn test_extract_inlay_hints_feature_symbol_without_type() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 15)),
@@ -187,7 +187,7 @@ fn test_extract_inlay_hints_feature_with_inferred_type() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 15)),
@@ -234,7 +234,7 @@ fn test_extract_inlay_hints_multiple_features() {
             Element::Feature(Feature {
                 name: Some("speed".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 body: vec![],
                 span: Some(make_span(1, 0, 1, 15)),
@@ -242,7 +242,7 @@ fn test_extract_inlay_hints_multiple_features() {
             Element::Feature(Feature {
                 name: Some("distance".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 body: vec![],
                 span: Some(make_span(2, 0, 2, 20)),
@@ -280,7 +280,7 @@ fn test_extract_inlay_hints_non_feature_symbol_type() {
         elements: vec![Element::Feature(Feature {
             name: Some("Vehicle".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 15)),
@@ -312,7 +312,7 @@ fn test_extract_inlay_hints_nested_package() {
             elements: vec![Element::Feature(Feature {
                 name: Some("speed".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 body: vec![],
                 span: Some(make_span(2, 4, 2, 20)),
@@ -346,7 +346,7 @@ fn test_extract_inlay_hints_deeply_nested_packages() {
                 elements: vec![Element::Feature(Feature {
                     name: Some("value".to_string()),
                     direction: None,
-                    is_readonly: false,
+                    is_const: false,
                     is_derived: false,
                     body: vec![],
                     span: Some(make_span(3, 8, 3, 25)),
@@ -378,7 +378,7 @@ fn test_extract_inlay_hints_package_with_mixed_elements() {
                 Element::Feature(Feature {
                     name: Some("x".to_string()),
                     direction: None,
-                    is_readonly: false,
+                    is_const: false,
                     is_derived: false,
                     body: vec![],
                     span: Some(make_span(2, 4, 2, 15)),
@@ -422,7 +422,7 @@ fn test_extract_inlay_hints_with_range_inside() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(5, 0, 5, 15)),
@@ -452,7 +452,7 @@ fn test_extract_inlay_hints_with_range_before() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 15)), // Before range
@@ -481,7 +481,7 @@ fn test_extract_inlay_hints_with_range_after() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(15, 0, 15, 15)), // After range
@@ -510,7 +510,7 @@ fn test_extract_inlay_hints_with_range_at_boundary_start() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(5, 0, 5, 15)), // At range start
@@ -539,7 +539,7 @@ fn test_extract_inlay_hints_with_range_at_boundary_end() {
         elements: vec![Element::Feature(Feature {
             name: Some("speed".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(9, 0, 10, 0)), // Ends exactly at range end
@@ -572,7 +572,7 @@ fn test_extract_inlay_hints_with_range_multiple_features_filtered() {
             Element::Feature(Feature {
                 name: Some("a".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 body: vec![],
                 span: Some(make_span(1, 0, 1, 5)), // Before range
@@ -580,7 +580,7 @@ fn test_extract_inlay_hints_with_range_multiple_features_filtered() {
             Element::Feature(Feature {
                 name: Some("b".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 body: vec![],
                 span: Some(make_span(5, 0, 5, 5)), // Inside range
@@ -588,7 +588,7 @@ fn test_extract_inlay_hints_with_range_multiple_features_filtered() {
             Element::Feature(Feature {
                 name: Some("c".to_string()),
                 direction: None,
-                is_readonly: false,
+                is_const: false,
                 is_derived: false,
                 body: vec![],
                 span: Some(make_span(15, 0, 15, 5)), // After range
@@ -619,7 +619,7 @@ fn test_extract_inlay_hints_position_after_short_name() {
         elements: vec![Element::Feature(Feature {
             name: Some("x".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 10, 1, 20)),
@@ -647,7 +647,7 @@ fn test_extract_inlay_hints_position_after_long_name() {
         elements: vec![Element::Feature(Feature {
             name: Some("veryLongFeatureName".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(5, 20, 5, 50)),
@@ -676,7 +676,7 @@ fn test_extract_inlay_hints_label_format() {
         elements: vec![Element::Feature(Feature {
             name: Some("x".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 10)),
@@ -723,7 +723,7 @@ fn test_extract_inlay_hints_feature_with_non_typing_members() {
         elements: vec![Element::Feature(Feature {
             name: Some("x".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![FeatureMember::Subsetting(
                 crate::syntax::kerml::ast::Subsetting {
@@ -753,7 +753,7 @@ fn test_extract_inlay_hints_zero_length_feature_name() {
         elements: vec![Element::Feature(Feature {
             name: Some("".to_string()),
             direction: None,
-            is_readonly: false,
+            is_const: false,
             is_derived: false,
             body: vec![],
             span: Some(make_span(1, 0, 1, 10)),

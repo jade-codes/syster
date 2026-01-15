@@ -55,7 +55,7 @@ struct ParseContext {
     is_abstract: bool,
     is_variation: bool,
     is_derived: bool,
-    is_readonly: bool,
+    is_const: bool,
 
     // Relationships
     relationships: Relationships,
@@ -359,7 +359,7 @@ fn visit_pair(pair: &Pair<Rule>, ctx: &mut ParseContext, depth: usize, in_body: 
         Rule::abstract_token => ctx.is_abstract = true,
         Rule::variation_token => ctx.is_variation = true,
         Rule::derived_token => ctx.is_derived = true,
-        Rule::constant_token => ctx.is_readonly = true,
+        Rule::constant_token => ctx.is_const = true,
 
         // Also check in prefix rules
         Rule::basic_definition_prefix | Rule::definition_prefix | Rule::ref_prefix => {
@@ -581,7 +581,7 @@ fn parse_usage_with_kind(pair: Pair<Rule>, kind: UsageKind) -> Usage {
         body: ctx.usage_members,
         span: ctx.name_span,
         is_derived: ctx.is_derived,
-        is_readonly: ctx.is_readonly,
+        is_const: ctx.is_const,
     }
 }
 

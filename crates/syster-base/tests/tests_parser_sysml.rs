@@ -5889,13 +5889,16 @@ fn test_parse_conditional_expression(#[case] input: &str, #[case] desc: &str) {
 }
 
 #[rstest]
-#[case("if x ? a else b", "concrete conditional expression with short names")]
+#[case(
+    "if x ? a else b",
+    "conditional expression with if-then-else (short names)"
+)]
 #[case(
     "if condition ? trueValue else falseValue",
-    "concrete conditional expression"
+    "conditional expression with if-then-else"
 )]
-fn test_parse_concrete_conditional_expression(#[case] input: &str, #[case] desc: &str) {
-    let result = SysMLParser::parse(Rule::concrete_conditional_expression, input);
+fn test_parse_conditional_expression_ternary(#[case] input: &str, #[case] desc: &str) {
+    let result = SysMLParser::parse(Rule::conditional_expression, input);
 
     assert!(
         result.is_ok(),

@@ -126,7 +126,7 @@ pub struct Feature {
     pub is_derived: Option<DerivedMarker>,
     pub is_end: Option<EndMarker>,
     pub is_portion: Option<PortionMarker>,
-    pub is_readonly: Option<ReadonlyMarker>,
+    pub is_const: Option<ReadonlyMarker>,
     pub value: Option<Box<FeatureValue>>,
     pub write: Option<Box<Membership>>,
     pub crossing_feature: Option<Box<OwningMembership>>,

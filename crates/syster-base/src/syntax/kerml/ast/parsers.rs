@@ -294,7 +294,7 @@ pub fn parse_classifier(pair: Pair<Rule>) -> Result<Classifier, ParseError> {
 /// Parse a feature from a pest pair
 pub fn parse_feature(pair: Pair<Rule>) -> Feature {
     let pairs: Vec<_> = pair.clone().into_inner().collect();
-    let (is_readonly, is_derived) = extract_flags(&pairs);
+    let (is_const, is_derived) = extract_flags(&pairs);
 
     // Find the identifier and its span
     let (name, span) = find_identifier_span(pairs.iter().cloned());
@@ -306,7 +306,7 @@ pub fn parse_feature(pair: Pair<Rule>) -> Feature {
     Feature {
         name,
         direction: extract_direction(&pairs),
-        is_readonly,
+        is_const,
         is_derived,
         body,
         span,
@@ -644,8 +644,8 @@ mod tests {
     }
 
     #[test]
-    fn test_readonly_feature() {
-        let source = "readonly feature constant : Real;";
+    fn test_const_feature() {
+        let source = "const feature constant : Real;";
 
         let parsed = KerMLParser::parse(Rule::feature, source)
             .expect("Should parse")
@@ -655,7 +655,7 @@ mod tests {
         let feature = parse_feature(parsed);
 
         assert_eq!(feature.name, Some("constant".to_string()));
-        assert!(feature.is_readonly, "Feature should be marked as readonly");
+        assert!(feature.is_const, "Feature should be marked as const");
     }
 
     #[test]

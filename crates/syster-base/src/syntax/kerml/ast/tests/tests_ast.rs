@@ -160,7 +160,7 @@ fn test_kerml_feature() {
     let feature = parse_feature(pairs.next().unwrap());
     assert_eq!(feature.name, Some("myFeature".to_string()));
     assert_eq!(feature.direction, None);
-    assert!(!feature.is_readonly);
+    assert!(!feature.is_const);
     assert!(!feature.is_derived);
 }
 
@@ -174,12 +174,12 @@ fn test_kerml_feature_with_direction() {
 }
 
 #[test]
-fn test_kerml_readonly_feature() {
-    let input = "readonly feature readOnlyFeature;";
+fn test_kerml_const_feature() {
+    let input = "const feature constFeature;";
     let mut pairs = KerMLParser::parse(Rule::feature, input).unwrap();
     let feature = parse_feature(pairs.next().unwrap());
-    assert_eq!(feature.name, Some("readOnlyFeature".to_string()));
-    assert!(feature.is_readonly);
+    assert_eq!(feature.name, Some("constFeature".to_string()));
+    assert!(feature.is_const);
     assert!(!feature.is_derived);
 }
 
@@ -189,7 +189,7 @@ fn test_kerml_derived_feature() {
     let mut pairs = KerMLParser::parse(Rule::feature, input).unwrap();
     let feature = parse_feature(pairs.next().unwrap());
     assert_eq!(feature.name, Some("derivedFeature".to_string()));
-    assert!(!feature.is_readonly);
+    assert!(!feature.is_const);
     assert!(feature.is_derived);
 }
 
@@ -259,12 +259,12 @@ fn test_kerml_abstract_function() {
 
 #[test]
 fn test_kerml_feature_with_multiple_modifiers() {
-    let input = "in readonly feature multiModFeature;";
+    let input = "in const feature multiModFeature;";
     let mut pairs = KerMLParser::parse(Rule::feature, input).unwrap();
     let feature = parse_feature(pairs.next().unwrap());
     assert_eq!(feature.name, Some("multiModFeature".to_string()));
     assert_eq!(feature.direction, Some(FeatureDirection::In));
-    assert!(feature.is_readonly);
+    assert!(feature.is_const);
 }
 
 #[test]

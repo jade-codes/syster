@@ -66,7 +66,7 @@ fn test_collect_hints_package_traversal() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let package = Package {
@@ -117,7 +117,7 @@ fn test_collect_hints_nested_packages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let inner_package = Package {
@@ -174,7 +174,7 @@ fn test_collect_hints_definition_element() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -248,7 +248,7 @@ fn test_collect_hints_definition_with_multiple_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let usage2 = Usage {
@@ -260,7 +260,7 @@ fn test_collect_hints_definition_with_multiple_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -354,7 +354,7 @@ fn test_collect_hints_usage_element() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -481,7 +481,7 @@ fn test_collect_hints_mixed_element_types() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let alias = Alias {
@@ -543,7 +543,7 @@ fn test_collect_hints_deeply_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let mid_usage = Usage {
@@ -555,7 +555,7 @@ fn test_collect_hints_deeply_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let top_usage = Usage {
@@ -567,7 +567,7 @@ fn test_collect_hints_deeply_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -617,7 +617,7 @@ fn test_collect_hints_usage_with_comment_members() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let outer_usage = Usage {
@@ -632,7 +632,7 @@ fn test_collect_hints_usage_with_comment_members() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -677,7 +677,7 @@ fn test_collect_hints_package_definition_usage_hierarchy() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -745,7 +745,7 @@ fn test_collect_hints_range_filter_excludes_before() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -798,7 +798,7 @@ fn test_collect_hints_range_filter_excludes_after() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -848,7 +848,7 @@ fn test_collect_hints_range_filter_includes_in_range() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -918,7 +918,7 @@ fn test_collect_hints_range_filter_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     // Second inner usage at line 15 (out of range - starts after range end of line 10)
@@ -931,7 +931,7 @@ fn test_collect_hints_range_filter_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     // Outer usage must be fully within range for recursion to happen (lines 1-20)
@@ -947,7 +947,7 @@ fn test_collect_hints_range_filter_nested_usages() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1001,7 +1001,7 @@ fn test_collect_hints_range_filter_boundary_start() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1055,7 +1055,7 @@ fn test_collect_hints_range_filter_boundary_end() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1113,7 +1113,7 @@ fn test_collect_hints_multiple_packages_with_same_usage_names() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let usage2 = Usage {
@@ -1125,7 +1125,7 @@ fn test_collect_hints_multiple_packages_with_same_usage_names() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let package1 = Package {
@@ -1233,7 +1233,7 @@ fn test_collect_hints_usage_without_span() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1290,7 +1290,7 @@ fn test_collect_hints_multiple_element_types_in_package() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let definition = Definition {
@@ -1374,7 +1374,7 @@ fn test_collect_hints_no_range_filter() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let usage2 = Usage {
@@ -1386,7 +1386,7 @@ fn test_collect_hints_no_range_filter() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1431,7 +1431,7 @@ fn test_collect_usage_hints_with_explicit_type() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1478,7 +1478,7 @@ fn test_collect_usage_hints_nested_usage() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let parent_usage = Usage {
@@ -1490,7 +1490,7 @@ fn test_collect_usage_hints_nested_usage() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1557,7 +1557,7 @@ fn test_collect_usage_hints_with_range_filter() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let usage2 = Usage {
@@ -1569,7 +1569,7 @@ fn test_collect_usage_hints_with_range_filter() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1631,7 +1631,7 @@ fn test_collect_usage_hints_usage_without_name() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
@@ -1664,7 +1664,7 @@ fn test_collect_usage_hints_deeply_nested() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let level3 = Usage {
@@ -1676,7 +1676,7 @@ fn test_collect_usage_hints_deeply_nested() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let level2 = Usage {
@@ -1688,7 +1688,7 @@ fn test_collect_usage_hints_deeply_nested() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let level1 = Usage {
@@ -1700,7 +1700,7 @@ fn test_collect_usage_hints_deeply_nested() {
         short_name: None,
         short_name_span: None,
         is_derived: false,
-        is_readonly: false,
+        is_const: false,
     };
 
     let file = SysMLFile {
