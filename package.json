@@ -4,7 +4,9 @@
   "private": true,
   "description": "Web packages for Syster",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "editors/vscode-viewer/webview",
+    "editors/vscode-modeller/webview"
   ],
   "scripts": {
     "test": "bun test --recursive",

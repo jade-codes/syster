@@ -1,0 +1,24 @@
+{
+  "name": "@syster/vscode-viewer-webview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild ./src/index.tsx --bundle --outfile=../media/index.js --minify --format=iife --define:import.meta.url=\\\"\\\" --define:import.meta.env={} --loader:.css=css",
+    "build:dev": "esbuild ./src/index.tsx --bundle --outfile=../media/index.js --sourcemap=inline --format=iife --define:import.meta.url=\\\"\\\" --define:import.meta.env={} --loader:.css=css",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@syster/diagram-core": "workspace:*",
+    "@syster/diagram-ui": "workspace:*",
+    "@xyflow/react": "^12.10.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "esbuild": "^0.27.2",
+    "typescript": "^5.0.0"
+  }
+}

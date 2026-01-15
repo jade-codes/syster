@@ -2,7 +2,7 @@
   "name": "sysml-language-support",
   "displayName": "SysML v2 Language Support",
   "description": "Language support for SysML v2 and KerML with LSP-based features",
-  "version": "0.1.7-alpha",
+  "version": "0.1.8-alpha",
   "publisher": "jade-codes",
   "repository": {
     "type": "git",
@@ -112,15 +112,14 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run esbuild-base -- --minify && npm run bundle-assets",
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
     "compile": "tsc -p ./",
     "esbuild-base": "esbuild ./client/src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "watch": "tsc -watch -p ./",
     "lint": "eslint client/src --ext ts",
-    "package": "vsce package",
-    "bundle-assets": "node scripts/bundle-assets.js"
+    "package": "vsce package"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"

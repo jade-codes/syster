@@ -1,10 +1,15 @@
 import * as vscode from 'vscode';
 import { startClient, stopClient, getClient } from './client';
 
+// API exported for other extensions
+export interface SysterLspApi {
+    getClient: typeof getClient;
+}
+
 /**
  * Extension activation
  */
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<SysterLspApi> {
     console.log('SysML Language Support extension is activating...');
 
     try {
@@ -58,6 +63,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // Don't throw - allow extension to activate even if server fails
         // Users can try to restart manually
     }
+
+    // Return the API for other extensions to use
+    return {
+        getClient
+    };
 }
 
 /**

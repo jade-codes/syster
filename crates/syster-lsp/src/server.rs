@@ -3,6 +3,7 @@ mod completion;
 mod core;
 mod definition;
 mod diagnostics;
+pub mod diagram;
 mod document;
 mod document_links;
 mod document_symbols;

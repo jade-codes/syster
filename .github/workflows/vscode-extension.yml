@@ -94,11 +94,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: syster-lsp-${{ matrix.platform }}
-          path: editors/vscode/server/
+          path: editors/vscode-lsp/server/
       
       - name: Rename binary to platform-specific name
         run: |
-          cd editors/vscode/server
+          cd editors/vscode-lsp/server
           if [ "${{ matrix.platform }}" = "win32-x64" ]; then
             mv syster-lsp.exe syster-lsp-${{ matrix.platform }}.exe
           else
@@ -108,25 +108,25 @@ jobs:
       
       - name: Copy stdlib
         run: |
-          cp -r crates/syster-base/sysml.library editors/vscode/sysml.library
+          cp -r crates/syster-base/sysml.library editors/vscode-lsp/sysml.library
       
       - name: Install dependencies
-        working-directory: editors/vscode
+        working-directory: editors/vscode-lsp
         run: npm ci
       
       - name: Compile TypeScript
-        working-directory: editors/vscode
+        working-directory: editors/vscode-lsp
         run: npm run compile
       
       - name: Package extension
-        working-directory: editors/vscode
+        working-directory: editors/vscode-lsp
         run: npx vsce package --target ${{ matrix.vsce-target }} -o sysml-language-support-${{ matrix.platform }}.vsix
       
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
           name: vsix-${{ matrix.platform }}
-          path: editors/vscode/*.vsix
+          path: editors/vscode-lsp/*.vsix
 
   # Universal package (all platforms in one - larger but simpler)
   package-universal:
@@ -145,12 +145,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: syster-lsp-*
-          path: editors/vscode/server/
+          path: editors/vscode-lsp/server/
           merge-multiple: true
       
       - name: Rename binaries
         run: |
-          cd editors/vscode/server
+          cd editors/vscode-lsp/server
           for f in *; do
             if [ -f "$f" ]; then
               case "$f" in
@@ -166,25 +166,25 @@ jobs:
       
       - name: Copy stdlib
         run: |
-          cp -r crates/syster-base/sysml.library editors/vscode/sysml.library
+          cp -r crates/syster-base/sysml.library editors/vscode-lsp/sysml.library
       
       - name: Install dependencies
-        working-directory: editors/vscode
+        working-directory: editors/vscode-lsp
         run: npm ci
       
       - name: Compile TypeScript
-        working-directory: editors/vscode
+        working-directory: editors/vscode-lsp
         run: npm run compile
       
       - name: Package universal extension
-        working-directory: editors/vscode
+        working-directory: editors/vscode-lsp
         run: npx vsce package -o sysml-language-support-universal.vsix
       
       - name: Upload universal VSIX
         uses: actions/upload-artifact@v4
         with:
           name: vsix-universal
-          path: editors/vscode/*.vsix
+          path: editors/vscode-lsp/*.vsix
 
   publish:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') || github.event.inputs.publish == 'true'

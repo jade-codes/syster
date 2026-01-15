@@ -17,6 +17,7 @@ use tracing::{Level, info};
 mod server;
 use server::LspServer;
 use server::background_tasks::{debounce, events::ParseDocument};
+use server::diagram::GetDiagramRequest;
 use server::helpers::uri_to_path;
 
 /// Server state that owns the LspServer and client socket
@@ -378,6 +379,18 @@ impl ServerState {
                 version: None,
             });
             ControlFlow::Continue(())
+        });
+
+        // Custom request: syster/getDiagram
+        // Returns diagram data (symbols + relationships) for visualization
+        router.request::<GetDiagramRequest, _>(|state, params| {
+            let file_path = params
+                .uri
+                .as_ref()
+                .and_then(|uri| Url::parse(uri).ok())
+                .and_then(|url| url.to_file_path().ok());
+            let result = state.server.get_diagram(file_path.as_deref());
+            Box::pin(async move { Ok(result) })
         });
 
         router

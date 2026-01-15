@@ -8,15 +8,15 @@
 // ========== Nodes ==========
 
 // Base component
-export { DefinitionNode } from './nodes';
-export type { DefinitionNodeProps } from './nodes';
+export { SysMLNode } from './nodes';
+export type { SysMLNodeProps } from './nodes';
 
 // Node factory and configuration
 export { NODE_CONFIGS } from './nodes/nodeConfig';
 export type { NodeConfig } from './nodes/nodeConfig';
 
 export {
-  createDefinitionNode,
+  createSysMLNode,
   nodeTypes,
   getNodeConfig,
 } from './nodes/nodeFactory';
