@@ -17,7 +17,7 @@ use tracing::{Level, info};
 mod server;
 use server::LspServer;
 use server::background_tasks::{debounce, events::ParseDocument};
-use server::diagram::{DiagramData, GetDiagramParams, GetDiagramRequest};
+use server::diagram::GetDiagramRequest;
 use server::helpers::uri_to_path;
 
 /// Server state that owns the LspServer and client socket

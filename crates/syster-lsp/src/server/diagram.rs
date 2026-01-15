@@ -85,7 +85,7 @@ impl LspServer {
                     .into_iter(),
             )
         } else {
-            Box::new(self.workspace.symbol_table().all_symbols().into_iter())
+            Box::new(self.workspace.symbol_table().iter_symbols())
         };
 
         for symbol in symbol_iter {
