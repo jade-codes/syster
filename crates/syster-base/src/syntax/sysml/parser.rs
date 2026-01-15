@@ -26,7 +26,7 @@ pub fn load_and_parse(path: &PathBuf) -> Result<SysMLFile, String> {
 /// - The content fails to parse
 /// - AST construction fails
 pub fn parse_content(content: &str, path: &Path) -> Result<SysMLFile, String> {
-    let mut pairs = crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, content)
+    let mut pairs = crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::file, content)
         .map_err(|e| format!("Parse error in {}: {}", path.display(), e))?;
 
     parse_file(&mut pairs).map_err(|e| format!("AST error in {}: {:?}", path.display(), e))
@@ -43,7 +43,7 @@ pub fn parse_with_result(content: &str, path: &Path) -> ParseResult<SysMLFile> {
     }
 
     // Try full parse first (fastest for valid files)
-    match crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::model, content) {
+    match crate::parser::SysMLParser::parse(crate::parser::sysml::Rule::file, content) {
         Ok(mut pairs) => match parse_file(&mut pairs) {
             Ok(file) => ParseResult::success(file),
             Err(e) => {

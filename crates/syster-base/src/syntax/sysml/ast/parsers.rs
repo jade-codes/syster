@@ -768,7 +768,7 @@ pub fn parse_element(pairs: &mut Pairs<Rule>) -> Result<Element, ParseError> {
 /// Parse a SysML file from pest pairs (main entry point)
 pub fn parse_file(pairs: &mut Pairs<Rule>) -> Result<SysMLFile, ParseError> {
     let model = pairs.next().ok_or(ParseError::no_match())?;
-    if model.as_rule() != Rule::model {
+    if model.as_rule() != Rule::file {
         return Err(ParseError::no_match());
     }
 

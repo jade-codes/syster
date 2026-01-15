@@ -243,7 +243,7 @@ let source = r#"
     }
 "#;
 
-let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
 let file = SysMLFile::from_pest(&mut pairs).unwrap();
 
 // Create a workspace (without stdlib for tests, with stdlib for real projects)

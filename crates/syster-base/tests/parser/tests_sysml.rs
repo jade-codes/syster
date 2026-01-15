@@ -420,25 +420,25 @@ fn test_parse_markers(#[case] rule: Rule, #[case] input: &str, #[case] desc: &st
 // Model Entry Point Tests
 
 #[rstest]
-#[case(Rule::model, "", "empty model")]
-#[case(Rule::model, "package MyPackage;", "model with simple package")]
+#[case(Rule::file, "", "empty model")]
+#[case(Rule::file, "package MyPackage;", "model with simple package")]
 #[case(
-    Rule::model,
+    Rule::file,
     "library package MyLibrary;",
     "model with library package"
 )]
 #[case(
-    Rule::model,
+    Rule::file,
     "standard library package MyLibrary;",
     "model with standard library package"
 )]
 #[case(
-    Rule::model,
+    Rule::file,
     "package Pkg1; package Pkg2;",
     "model with multiple packages"
 )]
 #[case(
-    Rule::model,
+    Rule::file,
     "package MyPackage { part myPart; }",
     "model with package containing usage"
 )]
@@ -4438,7 +4438,7 @@ fn test_parse_package_with_constraints_and_import() {
         constraint c : C;
         private import q::**;
     }"#;
-    let result = SysMLParser::parse(Rule::model, input);
+    let result = SysMLParser::parse(Rule::file, input);
     assert!(
         result.is_ok(),
         "Failed to parse package with constraints and import: {:?}",
