@@ -1,4 +1,5 @@
 use async_lsp::lsp_types::{Location, Position, Range, Url};
+use percent_encoding::percent_decode_str;
 use std::path::PathBuf;
 use syster::semantic::resolver::Resolver;
 use syster::semantic::symbol_table::Symbol;
@@ -9,6 +10,17 @@ use syster::semantic::Workspace;
 /// Convert a URI to a PathBuf, returning None if the conversion fails
 pub fn uri_to_path(uri: &Url) -> Option<PathBuf> {
     uri.to_file_path().ok()
+}
+
+/// Decode percent-encoded strings (e.g., "my%20file.txt" -> "my file.txt")
+///
+/// Used to display file names to users with proper formatting instead of URL encoding.
+/// Handles invalid encoding gracefully by returning the original string.
+pub fn decode_uri_component(s: &str) -> String {
+    percent_decode_str(s)
+        .decode_utf8()
+        .map(|cow| cow.into_owned())
+        .unwrap_or_else(|_| s.to_string())
 }
 
 /// Convert a character offset in a line to UTF-16 code units
@@ -292,10 +304,11 @@ pub fn format_rich_hover(
                 .path_segments()
                 .and_then(|mut s| s.next_back())
                 .unwrap_or("unknown");
+            let decoded_file_name = decode_uri_component(file_name);
             let line = loc.range.start.line + 1;
             let col = loc.range.start.character + 1;
             result.push_str(&format!(
-                "- [{file_name}:{line}:{col}]({}#L{line})\n",
+                "- [{decoded_file_name}:{line}:{col}]({}#L{line})\n",
                 loc.uri
             ));
         }
