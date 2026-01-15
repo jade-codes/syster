@@ -115,7 +115,7 @@ export class ModellerPanel {
      * Get LSP client from the syster-lsp extension
      */
     private async getLspClient(): Promise<any> {
-        const lspExtension = vscode.extensions.getExtension('jade-codes.syster-lsp');
+        const lspExtension = vscode.extensions.getExtension('jade-codes.sysml-language-support');
         if (!lspExtension) {
             throw new Error('SysML Language Support extension not found. Please install it first.');
         }

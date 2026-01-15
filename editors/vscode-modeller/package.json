@@ -25,7 +25,7 @@
     "systems modeling"
   ],
   "extensionDependencies": [
-    "jade-codes.syster-lsp"
+    "jade-codes.sysml-language-support"
   ],
   "activationEvents": [
     "onLanguage:sysml",

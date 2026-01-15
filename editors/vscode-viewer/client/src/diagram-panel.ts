@@ -107,8 +107,8 @@ export class DiagramPanel {
      * Get LSP client from the syster-lsp extension
      */
     private async getLspClient(): Promise<any> {
-        console.log('[DiagramPanel] Looking for jade-codes.syster-lsp extension...');
-        const lspExtension = vscode.extensions.getExtension('jade-codes.syster-lsp');
+        console.log('[DiagramPanel] Looking for jade-codes.sysml-language-support extension...');
+        const lspExtension = vscode.extensions.getExtension('jade-codes.sysml-language-support');
         if (!lspExtension) {
             console.error('[DiagramPanel] LSP extension NOT FOUND');
             throw new Error('SysML Language Support extension not found. Please install it first.');
