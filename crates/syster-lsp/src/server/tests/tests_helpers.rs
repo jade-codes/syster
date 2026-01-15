@@ -1,5 +1,5 @@
 use crate::server::helpers::*;
-use async_lsp::lsp_types::{Position, Range};
+use async_lsp::lsp_types::{Position, Range, Url};
 
 // ========================================================================
 // Tests for char_offset_to_utf16
@@ -276,4 +276,53 @@ fn test_apply_text_edit_complete_replacement() {
     let range = Range::new(Position::new(0, 0), Position::new(0, 11));
     let result = apply_text_edit(text, &range, "goodbye").unwrap();
     assert_eq!(result, "goodbye");
+}
+
+// ========================================================================
+// Tests for URL path segment decoding behavior
+// ========================================================================
+
+#[test]
+fn test_url_path_segments_needs_decoding() {
+    // Test that path_segments() does NOT automatically decode URL encoding
+    let url = Url::parse("file:///path/to/my%20test%20file.sysml").unwrap();
+    let file_name = url
+        .path_segments()
+        .and_then(|mut s| s.next_back())
+        .unwrap_or("unknown");
+
+    // path_segments() returns encoded string
+    assert_eq!(file_name, "my%20test%20file.sysml");
+
+    // Use decode_uri_component to decode it
+    let decoded = decode_uri_component(file_name);
+    assert_eq!(decoded, "my test file.sysml");
+}
+
+#[test]
+fn test_decode_uri_component_with_spaces() {
+    let encoded = "my%20file%20name.txt";
+    let decoded = decode_uri_component(encoded);
+    assert_eq!(decoded, "my file name.txt");
+}
+
+#[test]
+fn test_decode_uri_component_with_special_chars() {
+    let encoded = "file%2Bname%28test%29.txt";
+    let decoded = decode_uri_component(encoded);
+    assert_eq!(decoded, "file+name(test).txt");
+}
+
+#[test]
+fn test_decode_uri_component_no_encoding() {
+    let plain = "simple.txt";
+    let decoded = decode_uri_component(plain);
+    assert_eq!(decoded, "simple.txt");
+}
+
+#[test]
+fn test_decode_uri_component_mixed() {
+    let encoded = "test%20file.txt";
+    let decoded = decode_uri_component(encoded);
+    assert_eq!(decoded, "test file.txt");
 }
