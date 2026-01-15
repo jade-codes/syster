@@ -21,7 +21,7 @@ fn test_parse_import_statement() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     // Verify we have elements (packages and import)
@@ -46,7 +46,7 @@ fn test_import_membership() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -91,7 +91,7 @@ fn test_import_membership_with_namespace() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -131,7 +131,7 @@ fn test_import_namespace() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -167,10 +167,10 @@ fn test_cross_file_import() {
         part def Car :> Vehicle;
     "#;
 
-    let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, file1_source).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
-    let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, file2_source).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -208,7 +208,7 @@ fn test_import_visibility() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -244,7 +244,7 @@ fn test_recursive_import() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -271,7 +271,7 @@ fn test_import_alias() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut workspace = Workspace::<SyntaxFile>::new();
@@ -351,7 +351,7 @@ fn test_stdlib_usage_pattern() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     // For user projects, use with_stdlib()
@@ -388,7 +388,7 @@ fn test_public_import_reexport_resolution() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("test.sysml");
@@ -436,7 +436,7 @@ fn test_private_import_not_reexported() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("test.sysml");
@@ -486,13 +486,13 @@ fn test_public_import_reexport_cross_file() {
     "#;
 
     // Parse each file
-    let mut pairs = SysMLParser::parse(Rule::model, isqbase_source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, isqbase_source).unwrap();
     let isqbase_file = parse_file(&mut pairs).unwrap();
 
-    let mut pairs = SysMLParser::parse(Rule::model, isq_source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, isq_source).unwrap();
     let isq_file = parse_file(&mut pairs).unwrap();
 
-    let mut pairs = SysMLParser::parse(Rule::model, consumer_source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, consumer_source).unwrap();
     let consumer_file = parse_file(&mut pairs).unwrap();
 
     // Add all files to workspace

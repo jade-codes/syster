@@ -224,7 +224,7 @@ fn test_parse_model_with_satisfy_relationship() {
     // Integration test - satisfy is parsed as part of a complete model
     let source = "requirement def SafetyReq; case def SafetyCase { satisfy SafetyReq; }";
 
-    let pairs = SysMLParser::parse(Rule::model, source);
+    let pairs = SysMLParser::parse(Rule::file, source);
     assert!(
         pairs.is_ok(),
         "Failed to parse model with satisfy: {:?}",
@@ -238,7 +238,7 @@ fn test_parse_model_with_satisfy_requirement_keyword() {
     let source =
         "requirement def SafetyReq; case def SafetyCase { satisfy requirement SafetyReq; }";
 
-    let pairs = SysMLParser::parse(Rule::model, source);
+    let pairs = SysMLParser::parse(Rule::file, source);
     assert!(
         pairs.is_ok(),
         "Failed to parse model with satisfy requirement: {:?}",
@@ -250,7 +250,7 @@ fn test_parse_model_with_satisfy_requirement_keyword() {
 fn test_parse_model_with_perform_relationship() {
     let source = "action def Move; part def Robot { perform Move; }";
 
-    let pairs = SysMLParser::parse(Rule::model, source);
+    let pairs = SysMLParser::parse(Rule::file, source);
     assert!(
         pairs.is_ok(),
         "Failed to parse model with perform: {:?}",
@@ -262,7 +262,7 @@ fn test_parse_model_with_perform_relationship() {
 fn test_parse_model_with_exhibit_relationship() {
     let source = "state def Moving; part def Vehicle { exhibit Moving; }";
 
-    let pairs = SysMLParser::parse(Rule::model, source);
+    let pairs = SysMLParser::parse(Rule::file, source);
     assert!(
         pairs.is_ok(),
         "Failed to parse model with exhibit: {:?}",
@@ -275,7 +275,7 @@ fn test_parse_model_with_include_relationship() {
     // Integration test - include is parsed as part of a complete model
     let source = "use case def Login; use case def ManageAccount { include Login; }";
 
-    let pairs = SysMLParser::parse(Rule::model, source);
+    let pairs = SysMLParser::parse(Rule::file, source);
     assert!(
         pairs.is_ok(),
         "Failed to parse model with include: {:?}",

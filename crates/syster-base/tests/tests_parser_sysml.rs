@@ -641,7 +641,7 @@ fn test_parse_markers(#[case] input: &str) {
     "model with package containing usage"
 )]
 fn test_parse_model(#[case] input: &str, #[case] description: &str) {
-    let result = SysMLParser::parse(Rule::model, input);
+    let result = SysMLParser::parse(Rule::file, input);
     assert!(
         result.is_ok(),
         "Failed to parse {}: {:?}",
@@ -7078,7 +7078,7 @@ fn test_parse_interface_usage_with_flows() {
         }
     }"#;
 
-    let result = SysMLParser::parse(Rule::model, input);
+    let result = SysMLParser::parse(Rule::file, input);
 
     assert!(
         result.is_ok(),

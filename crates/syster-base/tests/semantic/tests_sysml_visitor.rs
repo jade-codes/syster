@@ -11,7 +11,7 @@ use syster::syntax::sysml::ast::parse_file;
 #[test]
 fn test_visitor_creates_package_symbol() {
     let source = "package MyPackage;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -25,7 +25,7 @@ fn test_visitor_creates_package_symbol() {
 #[test]
 fn test_visitor_creates_definition_symbol() {
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -58,7 +58,7 @@ fn test_qualified_redefinition_does_not_create_duplicate_symbols() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -95,7 +95,7 @@ fn test_same_name_in_different_namespaces_creates_two_symbols() {
             item def Shell;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -161,7 +161,7 @@ fn test_comma_separated_redefinitions_do_not_create_duplicate_symbols() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -218,7 +218,7 @@ fn test_attribute_reference_in_expression_not_treated_as_definition() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -267,7 +267,7 @@ fn test_inline_attribute_definitions_with_same_name_create_duplicates() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -300,7 +300,7 @@ fn test_radius_redefinition_in_multiple_items_no_duplicates() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -345,7 +345,7 @@ fn test_simple_redefinition_creates_child_symbol() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -378,7 +378,7 @@ fn test_simple_redefinition_creates_child_symbol() {
 #[test]
 fn test_visitor_creates_usage_symbol() {
     let source = "part myCar : Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -399,7 +399,7 @@ fn test_visitor_creates_usage_symbol() {
 #[test]
 fn test_visitor_records_specialization_relationship() {
     let source = "part def Car :> Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -420,7 +420,7 @@ fn test_visitor_records_specialization_relationship() {
 #[test]
 fn test_visitor_records_typing_relationship() {
     let source = "part myCar : Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -441,7 +441,7 @@ fn test_visitor_records_typing_relationship() {
 #[test]
 fn test_visitor_handles_nested_usage() {
     let source = r#"part def Car { attribute mass : Real; }"#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -469,7 +469,7 @@ fn test_visitor_handles_nested_usage() {
 #[test]
 fn test_debug_symbol_table_contents() {
     let source = r#"part def Car { attribute mass : Real; }"#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -482,7 +482,7 @@ fn test_debug_symbol_table_contents() {
 #[test]
 fn test_multiple_specializations() {
     let source = "part def ElectricCar :> Car, Electric, Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -505,7 +505,7 @@ fn test_multiple_symbols_in_same_scope() {
         part def Truck;
         part def Motorcycle;
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -527,7 +527,7 @@ fn test_deeply_nested_symbols() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -569,7 +569,7 @@ fn test_different_definition_kinds() {
         action def ActionDef;
         requirement def ReqDef;
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -609,7 +609,7 @@ fn test_scoped_symbols_with_same_name() {
             attribute speed : Real;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -651,7 +651,7 @@ fn test_nested_packages() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -681,7 +681,7 @@ fn test_nested_packages() {
 #[test]
 fn test_empty_definition() {
     let source = "part def EmptyPart { }";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -700,7 +700,7 @@ fn test_empty_definition() {
 #[test]
 fn test_usage_without_type() {
     let source = "part untyped;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -730,7 +730,7 @@ fn test_qualified_names_are_correct() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -779,7 +779,7 @@ fn test_multiple_usages_of_same_type() {
         part car2 : Vehicle;
         part car3 : Vehicle;
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -812,7 +812,7 @@ fn test_multiple_usages_of_same_type() {
 #[test]
 fn test_redefinition_relationship() {
     let source = "part def SportsCar :>> Car;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -835,7 +835,7 @@ fn test_redefinition_relationship() {
 #[test]
 fn test_alias_definition() {
     let source = "alias MyAlias for SomeType;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -859,7 +859,7 @@ fn test_alias_definition() {
 #[test]
 fn test_import_statement() {
     let source = "import Vehicles::*;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -879,7 +879,7 @@ fn test_port_definition_and_usage() {
             port input : DataPort;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -922,7 +922,7 @@ fn test_action_with_parameters() {
             out item result : Integer;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -956,7 +956,7 @@ fn test_constraint_definition() {
             attribute maxSpeed : Real;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -983,7 +983,7 @@ fn test_enumeration_definition() {
             Blue;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1019,7 +1019,7 @@ fn test_state_definition() {
             state moving;
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1040,7 +1040,7 @@ fn test_state_definition() {
 #[test]
 fn test_connection_definition() {
     let source = "connection def DataFlow;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1061,7 +1061,7 @@ fn test_connection_definition() {
 #[test]
 fn test_interface_definition() {
     let source = "interface def NetworkInterface;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1082,7 +1082,7 @@ fn test_interface_definition() {
 #[test]
 fn test_allocation_definition() {
     let source = "allocation def ResourceAllocation;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1112,7 +1112,7 @@ fn test_mixed_definitions_and_usages() {
         }
         part myCar : Car;
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1150,7 +1150,7 @@ fn test_concern_and_requirement() {
         concern def Safety;
         requirement def SafetyRequirement;
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -1189,7 +1189,7 @@ fn test_identifier_in_default_value_not_treated_as_definition() {
             }
         }
     "#;
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();

@@ -22,7 +22,7 @@ fn test_add_file() {
     let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("vehicle.sysml");
@@ -37,7 +37,7 @@ fn test_populate_single_file() {
     let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("vehicle.sysml");
@@ -59,12 +59,12 @@ fn test_populate_multiple_files() {
 
     // File 1: Base definition
     let source1 = "part def Vehicle;";
-    let mut pairs1 = SysMLParser::parse(Rule::model, source1).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, source1).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
     // File 2: Derived definition
     let source2 = "part def Car :> Vehicle;";
-    let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, source2).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     workspace.add_file(
@@ -104,7 +104,7 @@ fn test_update_file_content() {
 
     // Add initial file
     let source1 = "part def Vehicle;";
-    let mut pairs1 = SysMLParser::parse(Rule::model, source1).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, source1).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
     let path = PathBuf::from("test.sysml");
@@ -123,7 +123,7 @@ fn test_update_file_content() {
 
     // Update file content (simulating LSP didChange)
     let source2 = "part def Car;";
-    let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, source2).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     let updated = workspace.update_file(&path, syster::syntax::SyntaxFile::SysML(file2));
@@ -140,7 +140,7 @@ fn test_update_file_content() {
     // Update non-existent file should return false
     let non_existent = PathBuf::from("missing.sysml");
     let source3 = "part def Other;";
-    let mut pairs3 = SysMLParser::parse(Rule::model, source3).unwrap();
+    let mut pairs3 = SysMLParser::parse(Rule::file, source3).unwrap();
     let file3 = parse_file(&mut pairs3).unwrap();
 
     let updated = workspace.update_file(&non_existent, syster::syntax::SyntaxFile::SysML(file3));
@@ -153,7 +153,7 @@ fn test_remove_file() {
     let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("test.sysml");
@@ -187,7 +187,7 @@ fn test_get_file() {
 
     // Add file
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
     workspace.add_file(path.clone(), syster::syntax::SyntaxFile::SysML(file));
 
@@ -206,7 +206,7 @@ fn test_file_version_increments() {
 
     // Add initial file
     let source1 = "part def V1;";
-    let mut pairs1 = SysMLParser::parse(Rule::model, source1).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, source1).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
     workspace.add_file(path.clone(), syster::syntax::SyntaxFile::SysML(file1));
 
@@ -215,7 +215,7 @@ fn test_file_version_increments() {
     // Update multiple times
     for i in 1..=5 {
         let source = format!("part def V{i};");
-        let mut pairs = SysMLParser::parse(Rule::model, &source).unwrap();
+        let mut pairs = SysMLParser::parse(Rule::file, &source).unwrap();
         let file = parse_file(&mut pairs).unwrap();
         workspace.update_file(&path, syster::syntax::SyntaxFile::SysML(file));
 
@@ -234,7 +234,7 @@ fn test_populated_flag_resets_on_update() {
 
     let path = PathBuf::from("test.sysml");
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     workspace.add_file(path.clone(), syster::syntax::SyntaxFile::SysML(file));
@@ -252,7 +252,7 @@ fn test_populated_flag_resets_on_update() {
 
     // Update content
     let source2 = "part def Car;";
-    let mut pairs2 = SysMLParser::parse(Rule::model, source2).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, source2).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
     workspace.update_file(&path, syster::syntax::SyntaxFile::SysML(file2));
 
@@ -377,7 +377,7 @@ fn test_populate_affected_single_file() {
     let mut workspace = Workspace::<SyntaxFile>::new();
 
     let source = "part def Vehicle;";
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("vehicle.sysml");
@@ -409,7 +409,7 @@ fn test_populate_affected_continues_on_error() {
         part def Car;
     "#;
     let bad_path = PathBuf::from("bad.sysml");
-    let mut pairs = SysMLParser::parse(Rule::model, bad_file).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, bad_file).unwrap();
     let parsed_bad = parse_file(&mut pairs).unwrap();
     workspace.add_file(bad_path.clone(), SyntaxFile::SysML(parsed_bad));
 
@@ -418,7 +418,7 @@ fn test_populate_affected_continues_on_error() {
         part def Truck;
     "#;
     let good_path = PathBuf::from("good.sysml");
-    let mut pairs = SysMLParser::parse(Rule::model, good_file).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, good_file).unwrap();
     let parsed_good = parse_file(&mut pairs).unwrap();
     workspace.add_file(good_path.clone(), SyntaxFile::SysML(parsed_good));
 
@@ -780,7 +780,7 @@ fn test_workspace_meta_type_references() {
         }
     "#;
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let path = PathBuf::from("test.sysml");

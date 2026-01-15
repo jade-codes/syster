@@ -33,10 +33,10 @@ fn test_cross_file_specialization() {
     let file2_source = "part def Car :> Vehicle;";
 
     // Parse both files
-    let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, file1_source).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
-    let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, file2_source).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     // Create a shared symbol table and reference index
@@ -93,10 +93,10 @@ fn test_cross_file_typing() {
     // File 2 creates a usage of that type
     let file2_source = "part myCar : Vehicle;";
 
-    let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, file1_source).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
-    let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, file2_source).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -129,13 +129,13 @@ fn test_cross_file_transitive_relationships() {
     // File 3: Final type specializing Vehicle
     let file3_source = "part def Car :> Vehicle;";
 
-    let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, file1_source).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
-    let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, file2_source).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
-    let mut pairs3 = SysMLParser::parse(Rule::model, file3_source).unwrap();
+    let mut pairs3 = SysMLParser::parse(Rule::file, file3_source).unwrap();
     let file3 = parse_file(&mut pairs3).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -188,7 +188,7 @@ fn test_unresolved_cross_file_reference() {
     // File references a type that doesn't exist in any file
     let source = "part def Car :> NonExistentVehicle;";
 
-    let mut pairs = SysMLParser::parse(Rule::model, source).unwrap();
+    let mut pairs = SysMLParser::parse(Rule::file, source).unwrap();
     let file = parse_file(&mut pairs).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -212,10 +212,10 @@ fn test_symbol_source_tracking() {
     let file1_source = "part def Vehicle;";
     let file2_source = "part def Car :> Vehicle;";
 
-    let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, file1_source).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
-    let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, file2_source).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     let mut symbol_table = SymbolTable::new();
@@ -252,17 +252,17 @@ fn test_workspace_with_file_paths() {
 
     // File 1: Base type
     let file1_source = "part def Vehicle;";
-    let mut pairs1 = SysMLParser::parse(Rule::model, file1_source).unwrap();
+    let mut pairs1 = SysMLParser::parse(Rule::file, file1_source).unwrap();
     let file1 = parse_file(&mut pairs1).unwrap();
 
     // File 2: Intermediate type
     let file2_source = "part def Car :> Vehicle;";
-    let mut pairs2 = SysMLParser::parse(Rule::model, file2_source).unwrap();
+    let mut pairs2 = SysMLParser::parse(Rule::file, file2_source).unwrap();
     let file2 = parse_file(&mut pairs2).unwrap();
 
     // File 3: Final type
     let file3_source = "part def SportsCar :> Car;";
-    let mut pairs3 = SysMLParser::parse(Rule::model, file3_source).unwrap();
+    let mut pairs3 = SysMLParser::parse(Rule::file, file3_source).unwrap();
     let file3 = parse_file(&mut pairs3).unwrap();
 
     // Add files to workspace
