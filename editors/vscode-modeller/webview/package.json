@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/index.tsx --outdir=../media --minify",
-    "build:dev": "bun build ./src/index.tsx --outdir=../media --sourcemap=inline",
+    "build": "bun build ./src/index.tsx --outdir=../media --minify --format=iife --target=browser",
+    "build:dev": "bun build ./src/index.tsx --outdir=../media --sourcemap=inline --format=iife --target=browser",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

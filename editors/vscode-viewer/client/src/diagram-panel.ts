@@ -41,6 +41,7 @@ export class DiagramPanel {
     private readonly panel: vscode.WebviewPanel;
     private readonly extensionUri: vscode.Uri;
     private disposables: vscode.Disposable[] = [];
+    private isDisposed = false;
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this.panel = panel;
@@ -140,15 +141,28 @@ export class DiagramPanel {
      * Refresh the diagram for a specific file
      */
     public async refreshDiagram(uri?: vscode.Uri): Promise<void> {
+        if (this.isDisposed) {
+            return;
+        }
         try {
             console.log('[DiagramPanel] Refreshing diagram for:', uri?.toString() || 'whole workspace');
             const client = await this.getLspClient();
+            
+            // Check again after async operation
+            if (this.isDisposed) {
+                return;
+            }
             console.log('[DiagramPanel] Got LSP client');
 
             // Send custom request to LSP
             const result: DiagramData = await client.sendRequest('syster/getDiagram', {
                 uri: uri?.toString()
             });
+            
+            // Check again after async operation
+            if (this.isDisposed) {
+                return;
+            }
             console.log('[DiagramPanel] LSP response:', JSON.stringify(result, null, 2));
 
             // Forward to webview
@@ -158,6 +172,9 @@ export class DiagramPanel {
             });
             console.log('[DiagramPanel] Sent diagram to webview');
         } catch (error) {
+            if (this.isDisposed) {
+                return;
+            }
             const message = error instanceof Error ? error.message : String(error);
             this.panel.webview.postMessage({
                 type: 'error',
@@ -171,6 +188,9 @@ export class DiagramPanel {
     }
 
     private handleMessage(message: WebviewMessage): void {
+        if (this.isDisposed) {
+            return;
+        }
         switch (message.type) {
             case 'ready':
                 // Webview is ready, send initial diagram for current file only
@@ -237,6 +257,7 @@ export class DiagramPanel {
     }
 
     public dispose(): void {
+        this.isDisposed = true;
         DiagramPanel.currentPanel = undefined;
 
         this.panel.dispose();

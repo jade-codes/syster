@@ -75,7 +75,7 @@ impl LspServer {
         let mut symbols = Vec::new();
         let mut relationships = Vec::new();
 
-        // Collect symbols
+        // Collect symbols based on file path or whole workspace
         let symbol_iter: Box<dyn Iterator<Item = &Symbol>> = if let Some(path) = file_path {
             let path_str = path.to_str().unwrap_or("");
             Box::new(
@@ -85,29 +85,21 @@ impl LspServer {
                     .into_iter(),
             )
         } else {
-            Box::new(self.workspace.symbol_table().all_symbols().into_iter())
+            Box::new(self.workspace.symbol_table().iter_symbols())
         };
 
+        // Convert symbols and extract relationships from symbol data
         for symbol in symbol_iter {
             if let Some(diagram_symbol) = convert_symbol_to_diagram(symbol) {
+                // Extract typing relationship from the symbol itself
+                if let Some(ref typed_by) = diagram_symbol.typed_by {
+                    relationships.push(DiagramRelationship {
+                        rel_type: "typing".to_string(),
+                        source: diagram_symbol.qualified_name.clone(),
+                        target: typed_by.clone(),
+                    });
+                }
                 symbols.push(diagram_symbol);
-            }
-        }
-
-        // Collect relationships from reference index
-        // For each symbol, get its forward references (typing, specialization, etc.)
-        let reference_index = self.workspace.reference_index();
-        for symbol in &symbols {
-            let targets = reference_index.get_targets(&symbol.qualified_name);
-            for target in targets {
-                // Determine relationship type based on context
-                // For now, we'll mark all as "typing" - this can be refined later
-                // by storing relationship types in the reference index
-                relationships.push(DiagramRelationship {
-                    rel_type: "typing".to_string(),
-                    source: symbol.qualified_name.clone(),
-                    target: target.to_string(),
-                });
             }
         }
 
@@ -126,95 +118,32 @@ fn convert_symbol_to_diagram(symbol: &Symbol) -> Option<DiagramSymbol> {
             qualified_name,
             kind,
             ..
-        } => {
-            let definition_kind = match kind.as_str() {
-                "part" => Some("Part".to_string()),
-                "port" => Some("Port".to_string()),
-                "action" => Some("Action".to_string()),
-                "state" => Some("State".to_string()),
-                "item" => Some("Item".to_string()),
-                "attribute" => Some("Attribute".to_string()),
-                "requirement" => Some("Requirement".to_string()),
-                "concern" => Some("Concern".to_string()),
-                "case" => Some("Case".to_string()),
-                "analysis case" => Some("AnalysisCase".to_string()),
-                "verification case" => Some("VerificationCase".to_string()),
-                "use case" => Some("UseCase".to_string()),
-                "view" => Some("View".to_string()),
-                "viewpoint" => Some("Viewpoint".to_string()),
-                "rendering" => Some("Rendering".to_string()),
-                "allocation" => Some("Allocation".to_string()),
-                "calculation" => Some("Calculation".to_string()),
-                "connection" => Some("Connection".to_string()),
-                "constraint" => Some("Constraint".to_string()),
-                "enumeration" => Some("Enumeration".to_string()),
-                "flow" => Some("Flow".to_string()),
-                "individual" => Some("Individual".to_string()),
-                "interface" => Some("Interface".to_string()),
-                "occurrence" => Some("Occurrence".to_string()),
-                "metadata" => Some("Metadata".to_string()),
-                _ => None,
-            };
-
-            Some(DiagramSymbol {
-                name: name.clone(),
-                qualified_name: qualified_name.clone(),
-                kind: "Definition".to_string(),
-                definition_kind,
-                usage_kind: None,
-                features: None,
-                typed_by: None,
-                direction: None,
-            })
-        }
+        } => Some(DiagramSymbol {
+            name: name.clone(),
+            qualified_name: qualified_name.clone(),
+            kind: "Definition".to_string(),
+            definition_kind: Some(kind.clone()),
+            usage_kind: None,
+            features: None,
+            typed_by: None,
+            direction: None,
+        }),
         Symbol::Usage {
             name,
             qualified_name,
             kind,
             usage_type,
             ..
-        } => {
-            let usage_kind = match kind.as_str() {
-                "part" => Some("Part".to_string()),
-                "port" => Some("Port".to_string()),
-                "action" => Some("Action".to_string()),
-                "item" => Some("Item".to_string()),
-                "attribute" => Some("Attribute".to_string()),
-                "requirement" => Some("Requirement".to_string()),
-                "concern" => Some("Concern".to_string()),
-                "case" => Some("Case".to_string()),
-                "view" => Some("View".to_string()),
-                "enumeration" => Some("Enumeration".to_string()),
-                "satisfy" => Some("SatisfyRequirement".to_string()),
-                "perform" => Some("PerformAction".to_string()),
-                "exhibit" => Some("ExhibitState".to_string()),
-                "include" => Some("IncludeUseCase".to_string()),
-                "state" => Some("State".to_string()),
-                "occurrence" => Some("Occurrence".to_string()),
-                "individual" => Some("Individual".to_string()),
-                "snapshot" => Some("Snapshot".to_string()),
-                "timeslice" => Some("Timeslice".to_string()),
-                "ref" | "reference" => Some("Reference".to_string()),
-                "constraint" => Some("Constraint".to_string()),
-                "calculation" | "calc" => Some("Calculation".to_string()),
-                "connection" => Some("Connection".to_string()),
-                "interface" => Some("Interface".to_string()),
-                "allocation" | "allocate" => Some("Allocation".to_string()),
-                "flow" => Some("Flow".to_string()),
-                _ => None,
-            };
-
-            Some(DiagramSymbol {
-                name: name.clone(),
-                qualified_name: qualified_name.clone(),
-                kind: "Usage".to_string(),
-                definition_kind: None,
-                usage_kind,
-                features: None,
-                typed_by: usage_type.clone(),
-                direction: None,
-            })
-        }
+        } => Some(DiagramSymbol {
+            name: name.clone(),
+            qualified_name: qualified_name.clone(),
+            kind: "Usage".to_string(),
+            definition_kind: None,
+            usage_kind: Some(kind.clone()),
+            features: None,
+            typed_by: usage_type.clone(),
+            direction: None,
+        }),
         Symbol::Package {
             name,
             qualified_name,
@@ -229,8 +158,37 @@ fn convert_symbol_to_diagram(symbol: &Symbol) -> Option<DiagramSymbol> {
             typed_by: None,
             direction: None,
         }),
-        // Skip other symbol types (Classifier, Feature, Alias, Import)
-        // as they don't map directly to diagram nodes
-        _ => None,
+        Symbol::Feature {
+            name,
+            qualified_name,
+            feature_type,
+            ..
+        } => Some(DiagramSymbol {
+            name: name.clone(),
+            qualified_name: qualified_name.clone(),
+            kind: "Feature".to_string(),
+            definition_kind: None,
+            usage_kind: None,
+            features: None,
+            typed_by: feature_type.clone(),
+            direction: None,
+        }),
+        Symbol::Classifier {
+            name,
+            qualified_name,
+            kind,
+            ..
+        } => Some(DiagramSymbol {
+            name: name.clone(),
+            qualified_name: qualified_name.clone(),
+            kind: "Classifier".to_string(),
+            definition_kind: Some(kind.clone()),
+            usage_kind: None,
+            features: None,
+            typed_by: None,
+            direction: None,
+        }),
+        // Skip Alias and Import - not useful for diagrams
+        Symbol::Alias { .. } | Symbol::Import { .. } => None,
     }
 }
