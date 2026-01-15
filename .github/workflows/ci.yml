@@ -8,8 +8,18 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/ci.yml'
 
 env:
   CARGO_TERM_COLOR: always
@@ -50,9 +60,9 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: macos-latest
+          - os: macos-13
             target: x86_64-apple-darwin
-          - os: macos-latest
+          - os: macos-14
             target: aarch64-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -72,5 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/syster*
+          path: |
+            target/${{ matrix.target }}/release/syster-cli${{ contains(matrix.target, 'windows') && '.exe' || '' }}
+            target/${{ matrix.target }}/release/syster-lsp${{ contains(matrix.target, 'windows') && '.exe' || '' }}
           if-no-files-found: ignore
