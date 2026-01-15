@@ -776,7 +776,7 @@ pub fn parse_file(pairs: &mut Pairs<Rule>) -> Result<SysMLFile, ParseError> {
     let mut namespace = None;
     let mut namespaces = Vec::new();
 
-    // Grammar structure: model = { SOI ~ root_namespace ~ EOI }
+    // Grammar structure: file = { SOI ~ root_namespace ~ EOI }
     // root_namespace = { package_body_element* }
     // package_body_element = { package | library_package | import | ... }
     // So we need to find root_namespace, then iterate its package_body_element children

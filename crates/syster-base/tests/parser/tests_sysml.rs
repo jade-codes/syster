@@ -422,11 +422,7 @@ fn test_parse_markers(#[case] rule: Rule, #[case] input: &str, #[case] desc: &st
 #[rstest]
 #[case(Rule::file, "", "empty model")]
 #[case(Rule::file, "package MyPackage;", "model with simple package")]
-#[case(
-    Rule::file,
-    "library package MyLibrary;",
-    "model with library package"
-)]
+#[case(Rule::file, "library package MyLibrary;", "model with library package")]
 #[case(
     Rule::file,
     "standard library package MyLibrary;",
