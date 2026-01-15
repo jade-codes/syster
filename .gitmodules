@@ -15,10 +15,10 @@
 	url = https://github.com/jade-codes/syster-diagram-ui.git
 [submodule "editors/vscode-viewer"]
 	path = editors/vscode-viewer
-	url = https://github.com/jade-codes/syster-viewer.git
+	url = https://github.com/jade-codes/syster-vscode-viewer.git
 [submodule "editors/vscode-modeller"]
 	path = editors/vscode-modeller
-	url = https://github.com/jade-codes/syster-modeller.git
+	url = https://github.com/jade-codes/syster-vscode-modeller.git
 [submodule "pipelines"]
 	path = pipelines
 	url = https://github.com/jade-codes/syster-pipelines.git

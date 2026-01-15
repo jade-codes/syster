@@ -28,8 +28,8 @@ This is a **meta-repository** that aggregates all Syster components via Git subm
 | Extension | Repository | Description |
 |-----------|------------|-------------|
 | **sysml-language-support** | [jade-codes/syster-vscode-lsp](https://github.com/jade-codes/syster-vscode-lsp) | Main language support extension (LSP client) |
-| **syster-viewer** | [jade-codes/syster-viewer](https://github.com/jade-codes/syster-viewer) | Diagram viewer extension |
-| **syster-modeller** | [jade-codes/syster-modeller](https://github.com/jade-codes/syster-modeller) | Diagram modeller extension |
+| **syster-viewer** | [jade-codes/syster-vscode-viewer](https://github.com/jade-codes/syster-vscode-viewer) | Diagram viewer extension |
+| **syster-modeller** | [jade-codes/syster-vscode-modeller](https://github.com/jade-codes/syster-vscode-modeller) | Diagram modeller extension |
 
 ### Infrastructure
 
