@@ -15,6 +15,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
 jobs:
   # Validate the release before publishing
   validate:
