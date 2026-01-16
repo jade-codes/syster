@@ -39,6 +39,17 @@ This is a **meta-repository** that aggregates all Syster components via Git subm
 
 ## Getting Started
 
+### Dev Container (Recommended)
+
+This repository includes a VS Code dev container with all development tools pre-installed:
+
+1. Open the repository in VS Code
+2. When prompted, click "Reopen in Container" (or run `Dev Containers: Reopen in Container` from the command palette)
+3. The container will automatically:
+   - Initialize all git submodules
+   - Install Rust, Node.js, and Bun
+   - Set up the VS Code LSP extension dependencies
+
 ### Clone with Submodules
 
 \`\`\`bash
@@ -61,10 +72,25 @@ cd crates/syster-lsp && cargo build
 
 ### Build TypeScript Packages
 
-\`\`\`bash
-npm install
-npm run build:packages
-\`\`\`
+```bash
+cd editors/vscode-lsp && npm install && npm run esbuild
+cd packages/diagram-core && bun install
+cd packages/diagram-ui && bun install
+```
+
+### Running the VS Code Extension Locally
+
+1. Build the LSP binary:
+   ```bash
+   cd crates/syster-lsp && cargo build --release
+   ```
+
+2. Build the extension:
+   ```bash
+   cd editors/vscode-lsp && npm install && npm run esbuild
+   ```
+
+3. Press `F5` in VS Code to launch the extension in a new window
 
 ## Documentation
 
