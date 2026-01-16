@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -64,19 +66,34 @@ jobs:
             ${{ runner.os }}-cargo-build-target-
       
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        run: |
+          cd crates/syster-base && cargo fmt --all -- --check
+          cd ../syster-cli && cargo fmt --all -- --check
+          cd ../syster-lsp && cargo fmt --all -- --check
       
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          cd crates/syster-base && cargo clippy --all-targets --all-features -- -D warnings
+          cd ../syster-cli && cargo clippy --all-targets --all-features -- -D warnings
+          cd ../syster-lsp && cargo clippy --all-targets --all-features -- -D warnings
       
       - name: Build
-        run: cargo build --verbose
+        run: |
+          cd crates/syster-base && cargo build --verbose
+          cd ../syster-cli && cargo build --verbose
+          cd ../syster-lsp && cargo build --verbose
       
       - name: Run tests
-        run: cargo test --verbose --all
+        run: |
+          cd crates/syster-base && cargo test --verbose --all
+          cd ../syster-cli && cargo test --verbose --all
+          cd ../syster-lsp && cargo test --verbose --all
       
       - name: Run doc tests
-        run: cargo test --doc --verbose
+        run: |
+          cd crates/syster-base && cargo test --doc --verbose
+          cd ../syster-cli && cargo test --doc --verbose
+          cd ../syster-lsp && cargo test --doc --verbose
 
   # coverage:
   #   name: Code Coverage
