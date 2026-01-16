@@ -1,5 +1,7 @@
-# CI workflow using reusable syster-pipelines workflow
-# See: https://github.com/jade-codes/syster-pipelines
+# Meta-repo CI workflow
+# This repo is a meta-repository that aggregates submodules.
+# Each submodule (syster-base, syster-cli, syster-lsp) has its own CI.
+# This workflow validates that submodules are properly configured.
 
 name: CI
 
@@ -10,5 +12,26 @@ on:
     branches: [main]
 
 jobs:
-  rust-ci:
-    uses: jade-codes/syster-pipelines/.github/workflows/rust-ci.yml@main
+  validate-submodules:
+    name: Validate Submodules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      
+      - name: Check submodule configuration
+        run: |
+          echo "Validating submodule configuration..."
+          git submodule status
+          echo "All submodules are properly configured."
+      
+      - name: Validate Cargo.toml
+        run: |
+          echo "Checking Cargo.toml..."
+          if grep -q 'members = \[\]' Cargo.toml; then
+            echo "✓ Meta-repo workspace configured correctly (no members)"
+          else
+            echo "✗ Expected meta-repo with no workspace members"
+            exit 1
+          fi
