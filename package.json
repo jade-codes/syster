@@ -2,18 +2,14 @@
   "name": "syster-meta",
   "version": "0.1.0",
   "private": true,
-  "description": "Syster - SysML v2 Parser and Tooling (Meta Repository)",
-  "workspaces": [
-    "packages/*",
-    "editors/*"
-  ],
+  "description": "Syster - SysML v2 Parser and Tooling (Meta Repository). This is a meta-repository - each subdirectory is a git submodule with its own dependencies.",
   "scripts": {
-    "install:all": "npm install",
-    "build:packages": "npm run build --workspace=packages/diagram-core && npm run build --workspace=packages/diagram-ui",
-    "build:extensions": "npm run build --workspaces --if-present",
-    "test:packages": "npm run test --workspaces --if-present",
-    "lint:packages": "npm run lint --workspaces --if-present",
-    "typecheck:packages": "npm run typecheck --workspaces --if-present"
+    "postinstall": "echo 'Note: This is a meta-repo. Run npm install in individual submodules as needed.'",
+    "setup:vscode-lsp": "cd editors/vscode-lsp && npm install",
+    "setup:vscode-viewer": "cd editors/vscode-viewer && npm install",
+    "setup:vscode-modeller": "cd editors/vscode-modeller && npm install",
+    "setup:packages": "cd packages/diagram-core && bun install && cd ../diagram-ui && bun install",
+    "setup:all": "npm run setup:vscode-lsp && npm run setup:packages"
   },
   "repository": {
     "type": "git",
