@@ -1,0 +1,160 @@
+# Meta-repo Release Workflow
+# Collects release artifacts from child repos and creates a unified release
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  collect-artifacts:
+    name: Collect Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Download syster-lsp binaries
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-lsp
+          workflow: ci.yml
+          branch: main
+          name: binaries-*
+          path: artifacts/syster-lsp
+          search_artifacts: true
+        continue-on-error: true
+
+      - name: Download syster-cli binaries
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-cli
+          workflow: ci.yml
+          branch: main
+          name: binaries-*
+          path: artifacts/syster-cli
+          search_artifacts: true
+        continue-on-error: true
+
+      - name: List collected artifacts
+        run: |
+          echo "=== Collected Artifacts ==="
+          find artifacts -type f 2>/dev/null || echo "No artifacts found"
+
+      - name: Package artifacts
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p release
+          
+          # Package syster-lsp binaries
+          if [ -d "artifacts/syster-lsp" ]; then
+            for dir in artifacts/syster-lsp/binaries-*; do
+              if [ -d "$dir" ]; then
+                target=$(basename "$dir" | sed 's/binaries-//')
+                echo "Packaging syster-lsp for $target"
+                cd "$dir"
+                if [ -f "syster-lsp" ] || [ -f "syster-lsp.exe" ]; then
+                  tar -czf "../../release/syster-lsp-${VERSION}-${target}.tar.gz" *
+                fi
+                cd - > /dev/null
+              fi
+            done
+          fi
+          
+          # Package syster-cli binaries
+          if [ -d "artifacts/syster-cli" ]; then
+            for dir in artifacts/syster-cli/binaries-*; do
+              if [ -d "$dir" ]; then
+                target=$(basename "$dir" | sed 's/binaries-//')
+                echo "Packaging syster-cli for $target"
+                cd "$dir"
+                if [ -f "syster" ] || [ -f "syster.exe" ]; then
+                  tar -czf "../../release/syster-cli-${VERSION}-${target}.tar.gz" *
+                fi
+                cd - > /dev/null
+              fi
+            done
+          fi
+          
+          ls -la release/ || echo "No packages created"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: release/
+          if-no-files-found: warn
+
+  create-release:
+    name: Create Release
+    needs: collect-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download release packages
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages
+          path: release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Syster ${{ steps.version.outputs.version }}
+          body: |
+            ## Syster ${{ steps.version.outputs.version }}
+            
+            This release includes:
+            - **syster-cli**: Command-line tool for SysML v2 analysis
+            - **syster-lsp**: Language Server Protocol implementation
+            
+            ### Installation
+            
+            Download the appropriate binary for your platform and extract it.
+            
+            ### Platforms
+            - Linux (x86_64)
+            - macOS (x86_64, aarch64)
+            - Windows (x86_64)
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
