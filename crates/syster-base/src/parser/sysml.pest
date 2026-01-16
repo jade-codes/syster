@@ -2392,8 +2392,6 @@ multiplicity_properties = {
 // It represents an implicit root namespace containing all top-level elements
 root_namespace = { package_body_element* }
 
-model = { SOI ~ root_namespace ~ EOI }
-
 // Package body elements that can appear at the root level
 package_body_element = {
     package
