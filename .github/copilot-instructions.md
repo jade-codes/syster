@@ -1,5 +1,7 @@
 # Syster - SysML v2 Parser and Tooling
 
+> **Quick Start:** Read [CLAUDE.md](../CLAUDE.md) first for fast context. This file has detailed instructions.
+
 ## Project Overview
 
 Syster is a comprehensive Rust-based parser and tooling suite for SysML v2 (Systems Modeling Language) and KerML (Kernel Modeling Language). The project provides:
@@ -153,6 +155,15 @@ Before making changes, review:
 ❌ **Don't:** Implement features before writing tests  
 ✅ **Do:** Follow strict TDD - test first, then implement
 
+## Release Checklist
+
+Before releasing ANY package/crate/extension:
+
+1. **Bump version** in `package.json` or `Cargo.toml`
+2. **Update CHANGELOG.md** with changes
+3. **Swap local packages** - Replace any `path = "../"` or `file:../` references with published versions
+4. **Run `make run-guidelines`** - Must pass format + lint + test
+
 ## Security & Best Practices
 
 - No hardcoded secrets or credentials
@@ -177,6 +188,8 @@ The `crates/syster-base/sysml.library/` directory contains the SysML v2 standard
 
 ## Getting Help
 
-- Check [ARCHITECTURE.md](../ARCHITECTURE.md) for design patterns
+- Check [CLAUDE.md](../CLAUDE.md) for quick AI context
+- Check [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) for design patterns
 - See [docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md) for detailed guides
+- Review [docs/SYSML_PRIMER.md](../docs/SYSML_PRIMER.md) for SysML concepts
 - Review [docs/SYSML_PRIMER.md](../docs/SYSML_PRIMER.md) for SysML concepts
