@@ -52,42 +52,42 @@ This repository includes a VS Code dev container with all development tools pre-
 
 ### Clone with Submodules
 
-\`\`\`bash
+```bash
 # Clone with all submodules
 git clone --recurse-submodules https://github.com/jade-codes/syster.git
 
 # Or if already cloned, initialize submodules
 git submodule update --init --recursive
-\`\`\`
+```
 
 ### Build Rust Crates
 
 Each crate is independent - build separately:
 
-\`\`\`bash
-cd crates/syster-base && cargo build && cargo test
-cd crates/syster-cli && cargo build
-cd crates/syster-lsp && cargo build
-\`\`\`
+```bash
+(cd crates/syster-base && cargo build && cargo test)
+(cd crates/syster-cli && cargo build)
+(cd crates/syster-lsp && cargo build)
+```
 
 ### Build TypeScript Packages
 
 ```bash
-cd editors/vscode-lsp && npm install && npm run esbuild
-cd packages/diagram-core && bun install
-cd packages/diagram-ui && bun install
+(cd editors/vscode-lsp && npm install && npm run esbuild)
+(cd packages/diagram-core && bun install)
+(cd packages/diagram-ui && bun install)
 ```
 
 ### Running the VS Code Extension Locally
 
 1. Build the LSP binary:
    ```bash
-   cd crates/syster-lsp && cargo build --release
+   (cd crates/syster-lsp && cargo build --release)
    ```
 
 2. Build the extension:
    ```bash
-   cd editors/vscode-lsp && npm install && npm run esbuild
+   (cd editors/vscode-lsp && npm install && npm run esbuild)
    ```
 
 3. Press `F5` in VS Code to launch the extension in a new window
