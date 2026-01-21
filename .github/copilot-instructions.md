@@ -24,11 +24,18 @@ Syster is a comprehensive Rust-based parser and tooling suite for SysML v2 (Syst
 
 ```
 syster/
-├── crates/
-│   ├── syster-base/      # Core library (parser, AST, semantic analysis)
-│   ├── syster-cli/       # Command-line tool
-│   └── syster-lsp/       # Language Server Protocol implementation
-├── editors/vscode/       # VS Code extension
+├── core/                 # syster-base: parser, AST, semantic analysis
+├── cli/                  # syster-cli: command-line tool
+├── lsp/
+│   ├── server/           # syster-lsp: Language Server Protocol implementation
+│   └── vscode/           # VS Code LSP extension
+├── modeller/
+│   ├── core/             # diagram-core: TypeScript diagram utilities
+│   ├── ui/               # diagram-ui: React diagram components
+│   └── vscode/           # VS Code modeller extension
+├── viewer/
+│   └── vscode/           # VS Code viewer extension
+├── pipelines/            # CI/CD pipeline definitions
 ├── docs/                 # Documentation
 └── .github/              # GitHub configuration and instructions
 ```

@@ -4,38 +4,39 @@
 
 A Rust-based parser and tooling for SysML v2 (Systems Modeling Language) and KerML (Kernel Modeling Language).
 
-## Meta-Repository Structure
+## Repository Structure
 
-This is a **meta-repository** that aggregates all Syster components via Git submodules. Each component lives in its own repository for independent development and versioning.
+Feature-based organization with independent submodules for versioning flexibility.
 
-### Rust Crates
+```
+syster/
+├── core/              # Parser, AST, semantic analysis
+├── cli/               # Command-line tool
+├── lsp/
+│   ├── server/        # Language Server Protocol implementation
+│   └── vscode/        # VS Code LSP extension
+├── modeller/
+│   ├── core/          # Diagram types and layout (TypeScript)
+│   ├── ui/            # React Flow components (TypeScript)
+│   └── vscode/        # VS Code modeller extension
+├── viewer/
+│   └── vscode/        # VS Code viewer extension
+└── pipelines/         # CI/CD pipeline templates
+```
 
-| Component | Repository | Description |
-|-----------|------------|-------------|
-| **syster-base** | [jade-codes/syster-base](https://github.com/jade-codes/syster-base) | Core library with parser, AST, and semantic analysis |
-| **syster-cli** | [jade-codes/syster-cli](https://github.com/jade-codes/syster-cli) | Command-line tool for analyzing SysML/KerML files |
-| **syster-lsp** | [jade-codes/syster-lsp](https://github.com/jade-codes/syster-lsp) | Language Server Protocol implementation with VS Code extension |
+### Components
 
-### TypeScript Packages
-
-| Component | Repository | Description |
-|-----------|------------|-------------|
-| **@syster/diagram-core** | [jade-codes/syster-diagram-core](https://github.com/jade-codes/syster-diagram-core) | Core diagram types and layout algorithms |
-| **@syster/diagram-ui** | [jade-codes/syster-diagram-ui](https://github.com/jade-codes/syster-diagram-ui) | React Flow UI components for diagrams |
-
-### VS Code Extensions
-
-| Extension | Repository | Description |
-|-----------|------------|-------------|
-| **sysml-language-support** | [jade-codes/syster-vscode-lsp](https://github.com/jade-codes/syster-vscode-lsp) | Main language support extension (LSP client) |
-| **syster-viewer** | [jade-codes/syster-vscode-viewer](https://github.com/jade-codes/syster-vscode-viewer) | Diagram viewer extension |
-| **syster-modeller** | [jade-codes/syster-vscode-modeller](https://github.com/jade-codes/syster-vscode-modeller) | Diagram modeller extension |
-
-### Infrastructure
-
-| Component | Repository | Description |
-|-----------|------------|-------------|
-| **syster-pipelines** | [jade-codes/syster-pipelines](https://github.com/jade-codes/syster-pipelines) | CI/CD pipeline templates |
+| Feature | Path | Repository | Description |
+|---------|------|------------|-------------|
+| **Core** | `core/` | [syster-base](https://github.com/jade-codes/syster-base) | Parser, AST, semantic analysis |
+| **CLI** | `cli/` | [syster-cli](https://github.com/jade-codes/syster-cli) | Command-line tool |
+| **LSP Server** | `lsp/server/` | [syster-lsp](https://github.com/jade-codes/syster-lsp) | Language Server Protocol |
+| **LSP Extension** | `lsp/vscode/` | [syster-vscode-lsp](https://github.com/jade-codes/syster-vscode-lsp) | VS Code language support |
+| **Diagram Core** | `modeller/core/` | [syster-diagram-core](https://github.com/jade-codes/syster-diagram-core) | Diagram types (TS) |
+| **Diagram UI** | `modeller/ui/` | [syster-diagram-ui](https://github.com/jade-codes/syster-diagram-ui) | React Flow components |
+| **Modeller** | `modeller/vscode/` | [syster-vscode-modeller](https://github.com/jade-codes/syster-vscode-modeller) | VS Code modeller |
+| **Viewer** | `viewer/vscode/` | [syster-vscode-viewer](https://github.com/jade-codes/syster-vscode-viewer) | VS Code viewer |
+| **Pipelines** | `pipelines/` | [syster-pipelines](https://github.com/jade-codes/syster-pipelines) | CI/CD templates |
 
 ## Getting Started
 
@@ -48,34 +49,32 @@ This repository includes a VS Code dev container with all development tools pre-
 3. The container will automatically:
    - Initialize all git submodules
    - Install Rust, Node.js, and Bun
-   - Set up the VS Code LSP extension dependencies
+   - Set up dependencies
 
 ### Clone with Submodules
 
-\`\`\`bash
+```bash
 # Clone with all submodules
 git clone --recurse-submodules https://github.com/jade-codes/syster.git
 
 # Or if already cloned, initialize submodules
 git submodule update --init --recursive
-\`\`\`
+```
 
-### Build Rust Crates
-
-Each crate is independent - build separately:
-
-\`\`\`bash
-cd crates/syster-base && cargo build && cargo test
-cd crates/syster-cli && cargo build
-cd crates/syster-lsp && cargo build
-\`\`\`
-
-### Build TypeScript Packages
+### Build
 
 ```bash
-cd editors/vscode-lsp && npm install && npm run esbuild
-cd packages/diagram-core && bun install
-cd packages/diagram-ui && bun install
+# Build all Rust crates from root
+cargo build
+cargo test
+
+# Install TypeScript dependencies
+bun install
+
+# Setup VS Code extensions
+npm run setup:lsp
+npm run setup:modeller
+npm run setup:viewer
 ```
 
 ### Running the VS Code Extension Locally
