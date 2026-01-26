@@ -168,7 +168,7 @@ Before making changes, review:
 
 ## VS Code Extension
 
-Located in `base/language-client/`:
+Located in `language-client/`:
 - TypeScript-based extension
 - Integrates with syster-lsp server
 - Provides syntax highlighting, IntelliSense, formatting, and more
