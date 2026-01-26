@@ -18,25 +18,21 @@ Syster is a comprehensive Rust-based parser and tooling suite for SysML v2 (Syst
 - **LSP:** async-lsp library for Language Server Protocol
 - **Formatter:** Rowan-based Concrete Syntax Tree (CST)
 - **VS Code Extension:** TypeScript, Node.js
-- **Build System:** Cargo workspace with 3 crates
+- **Build System:** Independent submodules, each with own Cargo.toml/package.json
 
 ## Repository Structure
 
 ```
 syster/
-├── core/                 # syster-base: parser, AST, semantic analysis
+├── base/                 # syster-base: parser, AST, semantic analysis
 ├── cli/                  # syster-cli: command-line tool
-├── lsp/
-│   ├── server/           # syster-lsp: Language Server Protocol implementation
-│   └── vscode/           # VS Code LSP extension
-├── modeller/
-│   ├── core/             # diagram-core: TypeScript diagram utilities
-│   ├── ui/               # diagram-ui: React diagram components
-│   └── vscode/           # VS Code modeller extension
-├── viewer/
-│   └── vscode/           # VS Code viewer extension
+├── language-server/      # syster-lsp: Language Server Protocol implementation
+├── language-client/      # VS Code LSP extension
+├── modeller/             # VS Code modeller extension
+├── viewer/               # VS Code viewer extension
+├── diagram-core/         # TypeScript diagram utilities
+├── diagram-ui/           # React diagram components
 ├── pipelines/            # CI/CD pipeline definitions
-├── docs/                 # Documentation
 └── .github/              # GitHub configuration and instructions
 ```
 
@@ -172,7 +168,7 @@ Before making changes, review:
 
 ## VS Code Extension
 
-Located in `editors/vscode/`:
+Located in `base/language-client/`:
 - TypeScript-based extension
 - Integrates with syster-lsp server
 - Provides syntax highlighting, IntelliSense, formatting, and more
@@ -180,7 +176,7 @@ Located in `editors/vscode/`:
 
 ## Standard Library
 
-The `crates/syster-base/sysml.library/` directory contains the SysML v2 standard library files. These are loaded automatically by the workspace when needed.
+The `core/sysml.library/` directory contains the SysML v2 standard library files. These are loaded automatically by the workspace when needed.
 
 ## Getting Help
 

@@ -10,32 +10,29 @@ Feature-based organization with independent submodules for versioning flexibilit
 
 ```
 syster/
-├── core/              # Parser, AST, semantic analysis
-├── cli/               # Command-line tool
-├── lsp/
-│   ├── server/        # Language Server Protocol implementation
-│   └── vscode/        # VS Code LSP extension
-├── modeller/
-│   ├── core/          # Diagram types and layout (TypeScript)
-│   ├── ui/            # React Flow components (TypeScript)
-│   └── vscode/        # VS Code modeller extension
-├── viewer/
-│   └── vscode/        # VS Code viewer extension
-└── pipelines/         # CI/CD pipeline templates
+├── base/                  # Parser, AST, semantic analysis
+├── cli/                   # Command-line tool
+├── language-server/       # Language Server Protocol implementation
+├── language-client/       # VS Code LSP extension
+├── modeller/              # VS Code modeller extension
+├── viewer/                # VS Code viewer extension
+├── diagram-core/          # Diagram types and layout (TypeScript)
+├── diagram-ui/            # React Flow components (TypeScript)
+└── pipelines/             # CI/CD pipeline templates
 ```
 
 ### Components
 
 | Feature | Path | Repository | Description |
 |---------|------|------------|-------------|
-| **Core** | `core/` | [syster-base](https://github.com/jade-codes/syster-base) | Parser, AST, semantic analysis |
+| **Base** | `base/` | [syster-base](https://github.com/jade-codes/syster-base) | Parser, AST, semantic analysis |
 | **CLI** | `cli/` | [syster-cli](https://github.com/jade-codes/syster-cli) | Command-line tool |
-| **LSP Server** | `lsp/server/` | [syster-lsp](https://github.com/jade-codes/syster-lsp) | Language Server Protocol |
-| **LSP Extension** | `lsp/vscode/` | [syster-vscode-lsp](https://github.com/jade-codes/syster-vscode-lsp) | VS Code language support |
-| **Diagram Core** | `modeller/core/` | [syster-diagram-core](https://github.com/jade-codes/syster-diagram-core) | Diagram types (TS) |
-| **Diagram UI** | `modeller/ui/` | [syster-diagram-ui](https://github.com/jade-codes/syster-diagram-ui) | React Flow components |
-| **Modeller** | `modeller/vscode/` | [syster-vscode-modeller](https://github.com/jade-codes/syster-vscode-modeller) | VS Code modeller |
-| **Viewer** | `viewer/vscode/` | [syster-vscode-viewer](https://github.com/jade-codes/syster-vscode-viewer) | VS Code viewer |
+| **LSP Server** | `language-server/` | [syster-lsp](https://github.com/jade-codes/syster-lsp) | Language Server Protocol |
+| **LSP Client** | `language-client/` | [syster-vscode-lsp](https://github.com/jade-codes/syster-vscode-lsp) | VS Code language support |
+| **Diagram Core** | `diagram-core/` | [syster-diagram-core](https://github.com/jade-codes/syster-diagram-core) | Diagram types (TS) |
+| **Diagram UI** | `diagram-ui/` | [syster-diagram-ui](https://github.com/jade-codes/syster-diagram-ui) | React Flow components |
+| **Modeller** | `modeller/` | [syster-vscode-modeller](https://github.com/jade-codes/syster-vscode-modeller) | VS Code modeller |
+| **Viewer** | `viewer/` | [syster-vscode-viewer](https://github.com/jade-codes/syster-vscode-viewer) | VS Code viewer |
 | **Pipelines** | `pipelines/` | [syster-pipelines](https://github.com/jade-codes/syster-pipelines) | CI/CD templates |
 
 ## Getting Started
@@ -63,30 +60,34 @@ git submodule update --init --recursive
 
 ### Build
 
+Each submodule is built independently. Navigate to the submodule directory and follow its README:
+
 ```bash
-# Build all Rust crates from root
-cargo build
-cargo test
+# Build the base parser
+cd base && cargo build && cargo test
 
-# Install TypeScript dependencies
-bun install
+# Build the CLI
+cd cli && cargo build
 
-# Setup VS Code extensions
-npm run setup:lsp
-npm run setup:modeller
-npm run setup:viewer
+# Build the LSP server
+cd language-server && cargo build
+
+# Build VS Code extensions
+cd language-client && npm install && npm run compile
+cd modeller && npm install && npm run compile
+cd viewer && npm install && npm run compile
 ```
 
 ### Running the VS Code Extension Locally
 
 1. Build the LSP binary:
    ```bash
-   cd crates/syster-lsp && cargo build --release
+   cd language-server && cargo build --release
    ```
 
 2. Build the extension:
    ```bash
-   cd editors/vscode-lsp && npm install && npm run esbuild
+   cd language-client && npm install && npm run esbuild
    ```
 
 3. Press `F5` in VS Code to launch the extension in a new window
