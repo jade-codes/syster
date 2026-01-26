@@ -4,6 +4,42 @@
 
 A Rust-based parser and tooling for SysML v2 (Systems Modeling Language) and KerML (Kernel Modeling Language).
 
+## Architecture
+
+```mermaid
+graph TB
+    subgraph "SysML v2 Files"
+        SysML[".sysml / .kerml"]
+    end
+
+    subgraph "Core (Rust)"
+        Base[base<br/>Parser, AST, Semantic Analysis]
+        CLI[cli<br/>Command Line Tool]
+        LSP[language-server<br/>LSP Implementation]
+    end
+
+    subgraph "VS Code Extensions (TypeScript)"
+        Client[language-client<br/>LSP Extension]
+        Modeller[modeller<br/>Diagram Editor]
+        Viewer[viewer<br/>Diagram Viewer]
+    end
+
+    subgraph "Diagram Library (TypeScript)"
+        Core[diagram-core<br/>Types & Layout]
+        UI[diagram-ui<br/>React Components]
+    end
+
+    SysML --> Base
+    Base --> CLI
+    Base --> LSP
+    LSP <--> Client
+    Core --> UI
+    UI --> Modeller
+    UI --> Viewer
+    Client --> Modeller
+    Client --> Viewer
+```
+
 ## Repository Structure
 
 Feature-based organization with independent submodules for versioning flexibility.
