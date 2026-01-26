@@ -176,7 +176,7 @@ Located in `language-client/`:
 
 ## Standard Library
 
-The `core/sysml.library/` directory contains the SysML v2 standard library files. These are loaded automatically by the workspace when needed.
+The `base/sysml.library/` directory contains the SysML v2 standard library files. These are loaded automatically by the workspace when needed.
 
 ## Getting Help
 
