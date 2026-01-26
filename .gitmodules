@@ -1,27 +1,27 @@
-[submodule "crates/syster-base"]
-	path = crates/syster-base
-	url = https://github.com/jade-codes/syster-base.git
-[submodule "crates/syster-cli"]
-	path = crates/syster-cli
-	url = https://github.com/jade-codes/syster-cli.git
-[submodule "crates/syster-lsp"]
-	path = crates/syster-lsp
-	url = https://github.com/jade-codes/syster-lsp.git
-[submodule "packages/diagram-core"]
-	path = packages/diagram-core
-	url = https://github.com/jade-codes/syster-diagram-core.git
-[submodule "packages/diagram-ui"]
-	path = packages/diagram-ui
-	url = https://github.com/jade-codes/syster-diagram-ui.git
-[submodule "editors/vscode-viewer"]
-	path = editors/vscode-viewer
-	url = https://github.com/jade-codes/syster-vscode-viewer.git
-[submodule "editors/vscode-modeller"]
-	path = editors/vscode-modeller
-	url = https://github.com/jade-codes/syster-vscode-modeller.git
 [submodule "pipelines"]
 	path = pipelines
 	url = https://github.com/jade-codes/syster-pipelines.git
-[submodule "editors/vscode-lsp"]
-	path = editors/vscode-lsp
+[submodule "base"]
+	path = base
+	url = https://github.com/jade-codes/syster-base.git
+[submodule "cli"]
+	path = cli
+	url = https://github.com/jade-codes/syster-cli.git
+[submodule "language-server"]
+	path = language-server
+	url = https://github.com/jade-codes/syster-lsp.git
+[submodule "language-client"]
+	path = language-client
 	url = https://github.com/jade-codes/syster-vscode-lsp.git
+[submodule "diagram-core"]
+	path = diagram-core
+	url = https://github.com/jade-codes/syster-diagram-core.git
+[submodule "diagram-ui"]
+	path = diagram-ui
+	url = https://github.com/jade-codes/syster-diagram-ui.git
+[submodule "modeller"]
+	path = modeller
+	url = https://github.com/jade-codes/syster-vscode-modeller.git
+[submodule "viewer"]
+	path = viewer
+	url = https://github.com/jade-codes/syster-vscode-viewer.git

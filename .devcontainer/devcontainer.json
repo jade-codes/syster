@@ -31,8 +31,7 @@
       }
     }
   },
-  "initializeCommand": "git submodule update --init --recursive",
-  "postCreateCommand": "rustc --version && cargo --version && git submodule update --init --recursive && cd editors/vscode-lsp && npm install && cd ../.. && ([ -d packages/diagram-core ] && cd packages/diagram-core && bun install || true) && ([ -d packages/diagram-ui ] && cd packages/diagram-ui && bun install || true)",
+  "initializeCommand": "git submodule deinit -f --all 2>/dev/null || true && git submodule update --init --recursive",
   "forwardPorts": [3000, 5173],
   "remoteUser": "vscode"
 }

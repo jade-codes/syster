@@ -18,18 +18,21 @@ Syster is a comprehensive Rust-based parser and tooling suite for SysML v2 (Syst
 - **LSP:** async-lsp library for Language Server Protocol
 - **Formatter:** Rowan-based Concrete Syntax Tree (CST)
 - **VS Code Extension:** TypeScript, Node.js
-- **Build System:** Cargo workspace with 3 crates
+- **Build System:** Independent submodules, each with own Cargo.toml/package.json
 
 ## Repository Structure
 
 ```
 syster/
-├── crates/
-│   ├── syster-base/      # Core library (parser, AST, semantic analysis)
-│   ├── syster-cli/       # Command-line tool
-│   └── syster-lsp/       # Language Server Protocol implementation
-├── editors/vscode/       # VS Code extension
-├── docs/                 # Documentation
+├── base/                 # syster-base: parser, AST, semantic analysis
+├── cli/                  # syster-cli: command-line tool
+├── language-server/      # syster-lsp: Language Server Protocol implementation
+├── language-client/      # VS Code LSP extension
+├── modeller/             # VS Code modeller extension
+├── viewer/               # VS Code viewer extension
+├── diagram-core/         # TypeScript diagram utilities
+├── diagram-ui/           # React diagram components
+├── pipelines/            # CI/CD pipeline definitions
 └── .github/              # GitHub configuration and instructions
 ```
 
@@ -165,7 +168,7 @@ Before making changes, review:
 
 ## VS Code Extension
 
-Located in `editors/vscode/`:
+Located in `language-client/`:
 - TypeScript-based extension
 - Integrates with syster-lsp server
 - Provides syntax highlighting, IntelliSense, formatting, and more
@@ -173,7 +176,7 @@ Located in `editors/vscode/`:
 
 ## Standard Library
 
-The `crates/syster-base/sysml.library/` directory contains the SysML v2 standard library files. These are loaded automatically by the workspace when needed.
+The `base/sysml.library/` directory contains the SysML v2 standard library files. These are loaded automatically by the workspace when needed.
 
 ## Getting Help
 

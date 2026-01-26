@@ -1,6 +1,6 @@
 # Meta-repo CI workflow
 # This repo is a meta-repository that aggregates submodules.
-# Each submodule (syster-base, syster-cli, syster-lsp) has its own CI.
+# Each submodule has its own CI workflow.
 # This workflow validates that submodules are properly configured.
 
 name: CI
@@ -26,12 +26,15 @@ jobs:
           git submodule status
           echo "All submodules are properly configured."
       
-      - name: Validate Cargo.toml
+      - name: Validate structure
         run: |
-          echo "Checking Cargo.toml..."
-          if grep -q 'members = \[\]' Cargo.toml; then
-            echo "✓ Meta-repo workspace configured correctly (no members)"
-          else
-            echo "✗ Expected meta-repo with no workspace members"
-            exit 1
-          fi
+          echo "Checking repository structure..."
+          for dir in base cli language-server language-client modeller viewer diagram-core diagram-ui pipelines; do
+            if [ -d "$dir" ]; then
+              echo "✓ $dir exists"
+            else
+              echo "✗ $dir missing"
+              exit 1
+            fi
+          done
+          echo "All expected directories present."

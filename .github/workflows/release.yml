@@ -37,6 +37,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
 
+      # Rust binaries
       - name: Download syster-lsp binaries
         uses: dawidd6/action-download-artifact@v3
         with:
@@ -61,6 +62,68 @@ jobs:
           search_artifacts: true
         continue-on-error: true
 
+      # VS Code extensions
+      - name: Download language-client extension
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-vscode-lsp
+          workflow: ci.yml
+          branch: main
+          name: vsix-*
+          path: artifacts/language-client
+          search_artifacts: true
+        continue-on-error: true
+
+      - name: Download modeller extension
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-vscode-modeller
+          workflow: ci.yml
+          branch: main
+          name: vsix-*
+          path: artifacts/modeller
+          search_artifacts: true
+        continue-on-error: true
+
+      - name: Download viewer extension
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-vscode-viewer
+          workflow: ci.yml
+          branch: main
+          name: vsix-*
+          path: artifacts/viewer
+          search_artifacts: true
+        continue-on-error: true
+
+      # npm packages
+      - name: Download diagram-core package
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-diagram-core
+          workflow: ci.yml
+          branch: main
+          name: npm-package
+          path: artifacts/diagram-core
+          search_artifacts: true
+        continue-on-error: true
+
+      - name: Download diagram-ui package
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: jade-codes/syster-diagram-ui
+          workflow: ci.yml
+          branch: main
+          name: npm-package
+          path: artifacts/diagram-ui
+          search_artifacts: true
+        continue-on-error: true
+
       - name: List collected artifacts
         run: |
           echo "=== Collected Artifacts ==="
@@ -68,38 +131,10 @@ jobs:
 
       - name: Package artifacts
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           mkdir -p release
           
-          # Package syster-lsp binaries
-          if [ -d "artifacts/syster-lsp" ]; then
-            for dir in artifacts/syster-lsp/binaries-*; do
-              if [ -d "$dir" ]; then
-                target=$(basename "$dir" | sed 's/binaries-//')
-                echo "Packaging syster-lsp for $target"
-                cd "$dir"
-                if [ -f "syster-lsp" ] || [ -f "syster-lsp.exe" ]; then
-                  tar -czf "../../release/syster-lsp-${VERSION}-${target}.tar.gz" *
-                fi
-                cd - > /dev/null
-              fi
-            done
-          fi
-          
-          # Package syster-cli binaries
-          if [ -d "artifacts/syster-cli" ]; then
-            for dir in artifacts/syster-cli/binaries-*; do
-              if [ -d "$dir" ]; then
-                target=$(basename "$dir" | sed 's/binaries-//')
-                echo "Packaging syster-cli for $target"
-                cd "$dir"
-                if [ -f "syster" ] || [ -f "syster.exe" ]; then
-                  tar -czf "../../release/syster-cli-${VERSION}-${target}.tar.gz" *
-                fi
-                cd - > /dev/null
-              fi
-            done
-          fi
+          # Copy all artifacts to release folder
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.vsix" -o -name "*.tgz" \) -exec cp {} release/ \; 2>/dev/null || true
           
           ls -la release/ || echo "No packages created"
 
@@ -141,13 +176,28 @@ jobs:
           body: |
             ## Syster ${{ steps.version.outputs.version }}
             
-            This release includes:
+            This release includes all Syster components:
+            
+            ### Binaries
             - **syster-cli**: Command-line tool for SysML v2 analysis
             - **syster-lsp**: Language Server Protocol implementation
             
+            ### VS Code Extensions
+            - **syster-lsp**: Language support (syntax, diagnostics, completion)
+            - **syster-modeller**: Visual diagram editor
+            - **syster-viewer**: Read-only diagram viewer
+            
+            ### npm Packages
+            - **@syster/diagram-core**: Diagram types and layout utilities
+            - **@syster/diagram-ui**: React Flow diagram components
+            
             ### Installation
             
-            Download the appropriate binary for your platform and extract it.
+            **CLI/LSP**: Download the appropriate binary for your platform and extract it.
+            
+            **VS Code Extensions**: Install the `.vsix` files via `Extensions: Install from VSIX...`
+            
+            **npm Packages**: `npm install @syster/diagram-core @syster/diagram-ui`
             
             ### Platforms
             - Linux (x86_64)
