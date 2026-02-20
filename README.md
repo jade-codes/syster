@@ -14,6 +14,7 @@ graph TB
 
     subgraph "Core (Rust)"
         Base[base<br/>Parser, AST, Semantic Analysis]
+        Codegen[codegen<br/>Grammar-based Code Generator]
         CLI[cli<br/>Command Line Tool]
         LSP[language-server<br/>LSP Implementation]
     end
@@ -34,6 +35,7 @@ graph TB
     end
 
     SysML --> Base
+    Codegen -->|generates parser| Base
     Base --> CLI
     Base --> LSP
     CLI --> Tree
@@ -52,6 +54,7 @@ Feature-based organization with independent submodules for versioning flexibilit
 ```
 syster/
 ├── base/                  # Parser, AST, semantic analysis
+├── codegen/               # KEBNF grammar parser & code generator
 ├── cli/                   # Command-line tool
 ├── tree/                  # Python wrapper (systree)
 ├── language-server/       # Language Server Protocol implementation
@@ -68,6 +71,7 @@ syster/
 | Feature | Path | Repository | Description |
 |---------|------|------------|-------------|
 | **Base** | `base/` | [syster-base](https://github.com/jade-codes/syster-base) | Parser, AST, semantic analysis |
+| **Codegen** | `codegen/` | [syster-codegen](https://github.com/jade-codes/syster-codegen) | KEBNF grammar parser & code generator |
 | **CLI** | `cli/` | [syster-cli](https://github.com/jade-codes/syster-cli) | Command-line tool |
 | **Python** | `tree/` | [syster-tree](https://github.com/jade-codes/syster-tree) | Python wrapper (`pip install systree`) |
 | **LSP Server** | `language-server/` | [syster-lsp](https://github.com/jade-codes/syster-lsp) | Language Server Protocol |
@@ -108,6 +112,9 @@ Each submodule is built independently. Navigate to the submodule directory and f
 ```bash
 # Build the base parser
 cd base && cargo build && cargo test
+
+# Build the codegen
+cd codegen && cargo build && cargo test
 
 # Build the CLI
 cd cli && cargo build
@@ -161,6 +168,7 @@ xmi = export_xmi("model.sysml")
 Documentation lives in each component's repository:
 
 - **[syster-base](https://github.com/jade-codes/syster-base)** - Core architecture, SysML primer, contributing guide
+- **[syster-codegen](https://github.com/jade-codes/syster-codegen)** - KEBNF grammar parser & code generator
 - **[syster-cli](https://github.com/jade-codes/syster-cli)** - CLI usage and interchange formats
 - **[syster-tree](https://github.com/jade-codes/syster-tree)** - Python API reference
 - **[syster-lsp](https://github.com/jade-codes/syster-lsp)** - LSP features and VS Code extension usage

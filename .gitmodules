@@ -28,3 +28,6 @@
 [submodule "tree"]
 	path = tree
 	url = https://github.com/jade-codes/syster-tree.git
+[submodule "codegen"]
+	path = codegen
+	url = https://github.com/jade-codes/syster-codegen.git
